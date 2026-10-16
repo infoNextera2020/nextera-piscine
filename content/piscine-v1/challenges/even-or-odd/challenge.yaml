@@ -1,0 +1,26 @@
+id: even-or-odd
+
+title: Even or Odd
+
+language: go
+
+submission:
+  required_files:
+    - even_or_odd.go
+
+  allowed_extensions:
+    - .go
+
+  max_size_kb: 256
+
+limits:
+  timeout_ms: 2000
+  memory_mb: 64
+  output_kb: 64
+
+judge:
+  testpack: even-or-odd-v1
+
+skills:
+  - conditions
+  - integer-reasoning

@@ -1,0 +1,26 @@
+id: hello-go
+
+title: Hello Go
+
+language: go
+
+submission:
+  required_files:
+    - hello.go
+
+  allowed_extensions:
+    - .go
+
+  max_size_kb: 256
+
+limits:
+  timeout_ms: 2000
+  memory_mb: 64
+  output_kb: 64
+
+judge:
+  testpack: hello-go-v1
+
+skills:
+  - go-syntax
+  - functions

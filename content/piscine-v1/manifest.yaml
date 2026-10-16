@@ -1,0 +1,33 @@
+id: nextera-piscine
+version: 0.1.0
+
+title: NextEra Piscine
+
+status: development
+
+default_language: go
+
+quests:
+  - id: foundations
+    title: Foundations
+    order: 1
+
+nodes:
+  - id: hello-go
+    quest: foundations
+    type: challenge
+    title: Hello Go
+    order: 1
+    difficulty: 1
+
+  - id: even-or-odd
+    quest: foundations
+    type: challenge
+    title: Even or Odd
+    order: 2
+    difficulty: 1
+
+edges:
+  - from: hello-go
+    to: even-or-odd
+    rule: requires_pass
