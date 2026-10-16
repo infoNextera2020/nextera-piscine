@@ -1,0 +1,14 @@
+node_modules
+.tools
+.pnpm-store
+.next
+dist
+coverage
+pnpm-lock.yaml
+**/next-env.d.ts
+# Accepted architecture and curriculum are unchanged by this foundation.
+docs/architecture
+docs/product
+content
+# Generated migration snapshots are reviewed, not reformatted.
+packages/db/migrations/meta

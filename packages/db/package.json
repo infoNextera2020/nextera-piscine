@@ -1,0 +1,28 @@
+{
+  "name": "@nextera/db",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./schema/index.ts",
+    "./schema": "./schema/index.ts",
+    "./connection": "./connection.ts"
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "db:generate": "drizzle-kit generate --name foundation_001",
+    "db:migrate": "tsx migrate.ts"
+  },
+  "dependencies": {
+    "@nextera/domain": "workspace:*",
+    "drizzle-orm": "0.45.4",
+    "postgres": "3.4.9",
+    "server-only": "0.0.1"
+  },
+  "devDependencies": {
+    "dotenv": "18.0.8",
+    "drizzle-kit": "0.31.11",
+    "tsx": "4.23.15"
+  }
+}

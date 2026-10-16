@@ -1,0 +1,13 @@
+node_modules/
+.pnpm-store/
+.tools/
+.next/
+dist/
+coverage/
+*.tsbuildinfo
+next-env.d.ts
+**/.env*
+!**/.env.example
+*.log
+.DS_Store
+Thumbs.db

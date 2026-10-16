@@ -25,11 +25,62 @@ The required first E2E starts with Hello Go available and Even or Odd locked.
 An incorrect Hello submission fails and leaves Even or Odd locked. A correct
 submission passes, Hello becomes mastered, and Even or Odd becomes available.
 
-Architecture has been reviewed with required revisions. The repository currently
-contains curriculum, architectural documentation, and an empty implementation
-skeleton. This update adds documentation only; application implementation waits
-for explicit authorization. See
+Architecture V0.1 is approved. **Foundation Commit 001** supplies a runnable web
+shell, framework-independent state types, and the initial PostgreSQL/Drizzle
+model. The complete learning flow remains future work. See
 [acceptance criteria and testing](docs/product/VERTICAL_SLICE_001.md).
+
+## Local setup
+
+Use **Node.js 24.19.0** (pinned in `.node-version`) and **pnpm 11.22.0** (pinned
+in `package.json`). For a WSL checkout, run commands in Ubuntu with that pinned
+toolchain. From the repository root:
+
+```sh
+pnpm install --frozen-lockfile
+pnpm dev
+```
+
+Open [the foundation page](http://localhost:3000). It identifies NextEra Piscine,
+Vertical Slice 001, and Foundation online. [GET /api/health](http://localhost:3000/api/health)
+reports application liveness with no secrets or database dependency. It does not
+claim database readiness or a working authentication/assessment flow.
+
+## Commands
+
+| Command                            | Purpose                                                             |
+| ---------------------------------- | ------------------------------------------------------------------- |
+| `pnpm dev`                         | Start the Next.js development server                                |
+| `pnpm build`                       | Build domain and database packages, then the Next.js production app |
+| `pnpm --filter @nextera/web start` | Serve the production build                                          |
+| `pnpm format:check`                | Check formatting without changing accepted architecture/curriculum  |
+| `pnpm lint`                        | ESLint/TypeScript/Next.js checks and domain import restrictions     |
+| `pnpm typecheck`                   | Check all packages and test code                                    |
+| `pnpm test`                        | Domain vocabulary, schema contracts, and health endpoint tests      |
+| `pnpm test:db`                     | Real PostgreSQL migration and constraint tests                      |
+| `pnpm db:generate`                 | Generate a migration for review; does not connect or apply changes  |
+| `pnpm db:migrate`                  | Apply committed migrations with the separate migration identity     |
+
+The domain and database packages also build individually with
+`pnpm --filter @nextera/domain build` and `pnpm --filter @nextera/db build`.
+No database connection or web application is required for either build.
+
+## Database setup
+
+Copy `.env.example` to an ignored root `.env` when database access is needed.
+Set `MIGRATION_DATABASE_URL` to a direct/session connection with migration-owner
+privileges. The target must already have Supabase-managed `auth.users`; the
+application migration never creates that table. Apply with `pnpm db:migrate`.
+
+`DATABASE_URL` is the separate restricted runtime connection. Supply it through
+the web server's environment or an ignored `apps/web/.env.local` when runtime
+database access is introduced. Do not put migration credentials in the web
+deployment, and never prefix database credentials with `NEXT_PUBLIC_`.
+
+`TEST_DATABASE_URL` selects a local disposable database named `foundation_test*`.
+The database integration harness supplies a minimal external Auth-table fixture
+and random test records there; it does not implement login or validate Supabase
+sessions. See [database setup, implemented guarantees, and protocol TODOs](packages/db/README.md).
 
 ## Architecture summary
 
@@ -50,18 +101,18 @@ for explicit authorization. See
 
 ## Repository map
 
-| Location | Responsibility |
-| --- | --- |
-| apps/web | Product routes, application services, local UI, Auth/storage adapters |
-| apps/runner | Independent Go Judge control plane and sandbox orchestration |
-| packages/domain | Pure submission/progression rules and persistence interfaces |
-| packages/db | Drizzle schema, persistence adapters, reviewed migrations |
-| packages/ui/tokens | Reserved future shared design tokens; currently empty |
-| packages/ui/primitives | Reserved future reusable NextEra primitives; currently empty |
-| content/piscine-v1 | Versioned YAML metadata and Markdown subjects |
-| docs/product | Frozen product specification and current slice acceptance |
-| docs/architecture | System context, schema, Runner security, workspace, ADRs |
-| infra | Future container, Judge host, publication, and maintenance configuration |
+| Location               | Responsibility                                                           |
+| ---------------------- | ------------------------------------------------------------------------ |
+| apps/web               | Product routes, application services, local UI, Auth/storage adapters    |
+| apps/runner            | Independent Go Judge control plane and sandbox orchestration             |
+| packages/domain        | Pure submission/progression rules and persistence interfaces             |
+| packages/db            | Drizzle schema, persistence adapters, reviewed migrations                |
+| packages/ui/tokens     | Reserved future shared design tokens; currently empty                    |
+| packages/ui/primitives | Reserved future reusable NextEra primitives; currently empty             |
+| content/piscine-v1     | Versioned YAML metadata and Markdown subjects                            |
+| docs/product           | Frozen product specification and current slice acceptance                |
+| docs/architecture      | System context, schema, Runner security, workspace, ADRs                 |
+| infra                  | Future container, Judge host, publication, and maintenance configuration |
 
 The [target workspace tree](docs/architecture/WORKSPACE_LAYOUT.md) distinguishes
 planned implementation files from existing documentation and empty folders.
