@@ -11,3 +11,7 @@ next-env.d.ts
 *.log
 .DS_Store
 Thumbs.db
+supabase/.temp/
+supabase/.branches/
+playwright-report/
+test-results/

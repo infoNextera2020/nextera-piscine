@@ -6,5 +6,5 @@
     "outDir": "dist",
     "rootDir": "."
   },
-  "include": ["index.ts", "states.ts"]
+  "include": ["index.ts", "states.ts", "access.ts"]
 }

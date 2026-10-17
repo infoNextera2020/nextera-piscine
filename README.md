@@ -25,9 +25,9 @@ The required first E2E starts with Hello Go available and Even or Odd locked.
 An incorrect Hello submission fails and leaves Even or Odd locked. A correct
 submission passes, Hello becomes mastered, and Even or Odd becomes available.
 
-Architecture V0.1 is approved. **Foundation Commit 001** supplies a runnable web
-shell, framework-independent state types, and the initial PostgreSQL/Drizzle
-model. The complete learning flow remains future work. See
+Architecture V0.1 is approved. **Foundation Commit 002A** adds Supabase identity,
+explicit domain-user provisioning, and server authorization to the runnable web
+shell and PostgreSQL/Drizzle foundation. The complete learning flow remains future work. See
 [acceptance criteria and testing](docs/product/VERTICAL_SLICE_001.md).
 
 ## Local setup
@@ -38,8 +38,67 @@ toolchain. From the repository root:
 
 ```sh
 pnpm install --frozen-lockfile
+```
+
+Start Docker Desktop (with Ubuntu WSL integration for a WSL checkout). The pinned
+Supabase CLI runs local PostgreSQL 17 and Auth; no production project is required:
+
+```sh
+docker network create -o com.docker.network.bridge.host_binding_ipv4=127.0.0.1 nextera-piscine-local
+pnpm supabase:start
+MIGRATION_DATABASE_URL=postgresql://postgres:postgres@127.0.0.1:54322/postgres pnpm db:migrate
+pnpm local:env
 pnpm dev
 ```
+
+Create the named Docker network once; reuse it on subsequent starts. Its host
+binding requests localhost-only development services, following the
+[Supabase local development guidance](https://supabase.com/docs/guides/local-development).
+Verify the actual bindings with `docker port supabase_kong_nextera-piscine`:
+Docker Desktop on the verification machine still published all interfaces despite
+this network option. Keep local services on a trusted machine/network and stop
+them after use; never expose the local stack publicly.
+
+If another service uses port 3000, run
+`pnpm --filter @nextera/web dev --port 3100` and open that port instead.
+
+The connection above is the CLI's disposable local development default. Never use
+it for hosting. `local:env` reads local CLI status without printing keys, creates a
+restricted local runtime login, and writes ignored root `.env` and
+`apps/web/.env.local` files. Existing files require explicit `--refresh`; that
+rotates the local runtime password and replaces those files. Restart web after it.
+Root `.env` contains administrative local tooling credentials and must never enter
+a deployment. The web file contains only the runtime connection and public Auth
+configuration. Environment variable names are in both `.env.example` files.
+
+`supabase/config.toml` disables application migrations/seeding in Supabase tooling;
+Drizzle remains the only application migration history. Do not use Supabase reset,
+push, diff, or pull to manage `app`/`judge`. Private schemas are absent from the
+Data API. Storage, Realtime, Edge runtime, and analytics are disabled for 002A.
+Stop local services with `pnpm supabase:stop` (local data is retained).
+
+### Local login and provisioning
+
+Open [local Studio](http://localhost:54323), choose Authentication → Users → Add
+user, and create a confirmed email/password identity. Public signup is disabled.
+Copy its Auth UUID, then provision NextEra access explicitly:
+
+```sh
+pnpm local:provision --auth-user-id <auth-uuid> --role learner --name 'Local Learner'
+```
+
+Use `operator` or `admin` to test those roles. Re-running the command explicitly
+updates the name/role and reactivates the local domain account. The script accepts
+only a loopback database on the local Supabase port; it is not a production user
+administration mechanism. To deactivate locally, an administrator can run
+`UPDATE app.users SET active = false, updated_at = now() WHERE auth_user_id = '<auth-uuid>';`.
+
+Visit [login](http://localhost:3000/login). `/` and `/login` remain public. `/app`
+requires an active provisioned domain user; `/operator` requires operator/admin.
+An authenticated identity without a domain record receives `NOT_PROVISIONED`;
+inactive users receive `INACTIVE`. Login does not create domain records or cohort
+memberships. Browser metadata never supplies the authoritative role. Sign out is
+available from the protected app and the access-denied page.
 
 Open [the foundation page](http://localhost:3000). It identifies NextEra Piscine,
 Vertical Slice 001, and Foundation online. [GET /api/health](http://localhost:3000/api/health)
@@ -58,6 +117,7 @@ claim database readiness or a working authentication/assessment flow.
 | `pnpm typecheck`                   | Check all packages and test code                                    |
 | `pnpm test`                        | Domain vocabulary, schema contracts, and health endpoint tests      |
 | `pnpm test:db`                     | Real PostgreSQL migration and constraint tests                      |
+| `pnpm test:auth`                   | Real local Supabase/browser identity and authorization tests        |
 | `pnpm db:generate`                 | Generate a migration for review; does not connect or apply changes  |
 | `pnpm db:migrate`                  | Apply committed migrations with the separate migration identity     |
 
@@ -74,13 +134,44 @@ application migration never creates that table. Apply with `pnpm db:migrate`.
 
 `DATABASE_URL` is the separate restricted runtime connection. Supply it through
 the web server's environment or an ignored `apps/web/.env.local` when runtime
-database access is introduced. Do not put migration credentials in the web
+database access is needed. Do not put migration credentials in the web
 deployment, and never prefix database credentials with `NEXT_PUBLIC_`.
 
 `TEST_DATABASE_URL` selects a local disposable database named `foundation_test*`.
 The database integration harness supplies a minimal external Auth-table fixture
 and random test records there; it does not implement login or validate Supabase
 sessions. See [database setup, implemented guarantees, and protocol TODOs](packages/db/README.md).
+
+Migration 0001 creates the NOLOGIN `nextera_web` permission role and grants only
+SELECT on the five user-resolution columns. A separately provisioned runtime
+LOGIN inherits that role; migration-owner credentials never serve web requests.
+Browser roles have no private schema/table access. Production provisioning must
+maintain those grants and keep private schemas out of the hosted Data API.
+
+### Verification
+
+```sh
+pnpm install --frozen-lockfile
+pnpm format:check
+pnpm lint
+pnpm typecheck
+pnpm test
+TEST_DATABASE_URL=postgresql://<local-test-owner>@127.0.0.1:<port>/foundation_test_identity pnpm test:db
+pnpm build
+pnpm exec playwright install chromium
+pnpm test:auth
+git diff --check
+```
+
+Database constraint tests use a disposable native PostgreSQL database with an
+external Auth-table fixture; the Auth E2E uses the actual local Supabase stack,
+both Drizzle migrations, the restricted runtime connection, and the production
+web build. It creates random temporary Auth identities, provisions domain users
+through the local script, and removes those fixtures afterwards. Port 3100 must
+be free; the suite starts its own production server. Tests cover denial states,
+database roles versus editable metadata, persisted/renewed sessions, and logout.
+No production credentials are needed. GitHub Actions runs checks, PostgreSQL
+integration, and local Supabase Auth E2E in separate jobs; it does not deploy.
 
 ## Architecture summary
 

@@ -1,6 +1,12 @@
 {
   "extends": "../../tsconfig.base.json",
   "compilerOptions": { "types": ["node"], "declaration": true, "outDir": "dist", "rootDir": "." },
-  "include": ["schema/**/*.ts", "connection.ts", "migrate.ts", "drizzle.config.ts"],
+  "include": [
+    "schema/**/*.ts",
+    "queries/**/*.ts",
+    "connection.ts",
+    "migrate.ts",
+    "drizzle.config.ts"
+  ],
   "exclude": ["dist", "node_modules", "tests"]
 }

@@ -1,3 +1,5 @@
+import Link from 'next/link';
+
 export default function HomePage() {
   return (
     <main className="mx-auto flex min-h-screen max-w-4xl flex-col justify-center px-6 py-16">
@@ -10,6 +12,9 @@ export default function HomePage() {
       <p className="mt-4 max-w-lg text-base leading-7 text-slate-400">
         Learn. Solve. Submit. Build evidence of mastery.
       </p>
+      <Link href="/login" className="mt-8 text-teal-300">
+        Sign in
+      </Link>
     </main>
   );
 }

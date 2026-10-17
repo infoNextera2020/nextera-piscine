@@ -26,6 +26,14 @@ access. Deferral permits inserting a submission and its required active job in
 one transaction while rejecting orphan commits. Drizzle's snapshot does not
 record this property; preserve the SQL addition on future constraint changes.
 
+Foundation 002A adds a separate reviewed privilege migration, `0001_identity_access`.
+The NOLOGIN `nextera_web` permission role receives schema usage and SELECT only
+on the five user-resolution columns. Browser roles and PUBLIC cannot access
+private app/judge objects. The local setup script provisions a separate runtime
+LOGIN; do not connect the web application as the migration owner. Hosted setup
+must keep private schemas out of the Data API and preserve explicit grants.
+No Judge protocol role or function is included.
+
 ## Structured fields
 
 Evaluation specifications/snapshots store positive budgets under
@@ -74,7 +82,10 @@ It requires `TEST_DATABASE_URL` to target a local `foundation_test*` database.
 The integration harness creates only a minimal external `auth.users(id)` fixture
 in that disposable database and random test records. It does not implement or
 simulate authentication, exercise Supabase sessions, or alter production Auth.
-Use local Supabase validation when Auth integration is implemented.
+`pnpm test:auth` separately validates both migrations against actual local
+Supabase Auth/PostgreSQL and exercises real browser sessions and authorization.
+It also verifies the external Auth FK, private Data API schemas, and browser
+role revocations. See the root README for setup and explicit provisioning.
 
 Tests leave their random fixtures in the disposable database and never drop an
 existing database. Do not point them at a shared or production service.
