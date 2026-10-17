@@ -3,6 +3,7 @@ import { cache } from 'react';
 import { redirect } from 'next/navigation';
 import { createDatabase } from '@nextera/db/connection';
 import { findDomainUser } from '@nextera/db/users';
+import { findAuthorizedCohort } from '@nextera/db/cohorts';
 import {
   AccessDenied,
   assertAuthenticated,
@@ -13,6 +14,7 @@ import {
 import { createClient } from '../supabase/server';
 
 let database: ReturnType<typeof createDatabase> | undefined;
+export const getDatabase = () => (database ??= createDatabase()).db;
 
 export const requireAuthenticatedUser = cache(async () => {
   const supabase = await createClient();
@@ -23,12 +25,18 @@ export const requireAuthenticatedUser = cache(async () => {
 
 export const requireDomainUser = cache(async () => {
   const identity = await requireAuthenticatedUser();
-  database ??= createDatabase();
-  return assertDomainUser(identity, await findDomainUser(database.db, identity.id));
+  return assertDomainUser(identity, await findDomainUser(getDatabase(), identity.id));
 });
 
 export async function requireRole(allowedRoles: readonly UserRole[]) {
   return assertRole(await requireDomainUser(), allowedRoles);
+}
+
+export async function requireCohortAccess(cohortId: string) {
+  const user = await requireDomainUser();
+  const cohort = await findAuthorizedCohort(getDatabase(), user, cohortId);
+  if (!cohort) throw new AccessDenied('FORBIDDEN');
+  return { user, cohort };
 }
 
 /** Page adapter only. Future API/actions call the same guards and map AccessDenied themselves. */

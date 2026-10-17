@@ -15,6 +15,13 @@
       "when": 1792170000000,
       "tag": "0001_identity_access",
       "breakpoints": true
+    },
+    {
+      "breakpoints": true,
+      "tag": "0002_curriculum_enrollment",
+      "version": "7",
+      "when": 1792230387265,
+      "idx": 2
     }
   ]
 }

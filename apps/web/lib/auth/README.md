@@ -12,7 +12,12 @@ Proxy refresh and UI visibility do not constitute authorization.
 
 React request memoization avoids repeated lookups within one render. There is no
 cross-request authorization cache; role changes/deactivation apply on the next
-request. Cohort authorization remains a later milestone before cohort data exists.
+request. Foundation 002B adds `requireCohortAccess`. Learners and operators need
+an active membership in an active cohort. Active admins have explicit read-only
+access to published cohort curricula. Cohort queries repeat these predicates;
+unauthorized cohort/subject page requests return 404 without revealing content.
+Learner subjects require available/in_progress/mastered progress. Assigned
+operators/admins may preview subjects without claiming learner progress.
 
 Supabase SSR clients are request scoped. Next.js Proxy refreshes cookies on both
 request and response and forwards the SDK cache headers. Session-aware responses

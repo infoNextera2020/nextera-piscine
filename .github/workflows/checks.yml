@@ -24,6 +24,7 @@ jobs:
       - run: pnpm lint
       - run: pnpm typecheck
       - run: pnpm test
+      - run: pnpm curriculum:validate
       - run: pnpm build
 
   database:
@@ -76,5 +77,6 @@ jobs:
       - run: pnpm local:env
       - run: pnpm build
       - run: pnpm test:auth
+      - run: pnpm test:cohorts
       - if: always()
         run: pnpm supabase:stop

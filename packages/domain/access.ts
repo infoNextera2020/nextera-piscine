@@ -21,6 +21,11 @@ export class AccessDenied extends Error {
   }
 }
 
+/** Operators need an assigned active cohort; admins have explicit read-only preview access. */
+export function canAccessCohort(user: DomainUser, membershipStatus: string | null): boolean {
+  return user.active && (user.role === 'admin' || membershipStatus === 'active');
+}
+
 export function assertAuthenticated(identity: AuthenticatedIdentity | null): AuthenticatedIdentity {
   if (!identity) throw new AccessDenied('UNAUTHENTICATED');
   return identity;

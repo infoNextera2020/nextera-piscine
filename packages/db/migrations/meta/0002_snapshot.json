@@ -1,0 +1,2868 @@
+{
+  "id": "0e6cbe53-f6c1-406c-9de4-dc1f08fe1641",
+  "prevId": "b83d9e81-dc43-4c72-912e-86950ddb139b",
+  "version": "7",
+  "dialect": "postgresql",
+  "tables": {
+    "app.activity_events": {
+      "name": "activity_events",
+      "schema": "app",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "event_type": {
+          "name": "event_type",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "event_version": {
+          "name": "event_version",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "user_id": {
+          "name": "user_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "cohort_id": {
+          "name": "cohort_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "curriculum_version_id": {
+          "name": "curriculum_version_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "node_key": {
+          "name": "node_key",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "submission_id": {
+          "name": "submission_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "result_id": {
+          "name": "result_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "correlation_id": {
+          "name": "correlation_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "payload": {
+          "name": "payload",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "occurred_at": {
+          "name": "occurred_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {
+        "activity_events_cohort_type_idx": {
+          "name": "activity_events_cohort_type_idx",
+          "columns": [
+            {
+              "expression": "cohort_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "event_type",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "occurred_at",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "activity_events_user_idx": {
+          "name": "activity_events_user_idx",
+          "columns": [
+            {
+              "expression": "user_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "activity_events_curriculum_node_idx": {
+          "name": "activity_events_curriculum_node_idx",
+          "columns": [
+            {
+              "expression": "curriculum_version_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "node_key",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "activity_events_submission_idx": {
+          "name": "activity_events_submission_idx",
+          "columns": [
+            {
+              "expression": "submission_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "activity_events_result_idx": {
+          "name": "activity_events_result_idx",
+          "columns": [
+            {
+              "expression": "result_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "activity_events_user_id_users_id_fk": {
+          "name": "activity_events_user_id_users_id_fk",
+          "tableFrom": "activity_events",
+          "tableTo": "users",
+          "schemaTo": "app",
+          "columnsFrom": [
+            "user_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "restrict",
+          "onUpdate": "no action"
+        },
+        "activity_events_cohort_id_cohorts_id_fk": {
+          "name": "activity_events_cohort_id_cohorts_id_fk",
+          "tableFrom": "activity_events",
+          "tableTo": "cohorts",
+          "schemaTo": "app",
+          "columnsFrom": [
+            "cohort_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "restrict",
+          "onUpdate": "no action"
+        },
+        "activity_events_curriculum_version_id_curriculum_versions_id_fk": {
+          "name": "activity_events_curriculum_version_id_curriculum_versions_id_fk",
+          "tableFrom": "activity_events",
+          "tableTo": "curriculum_versions",
+          "schemaTo": "app",
+          "columnsFrom": [
+            "curriculum_version_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "restrict",
+          "onUpdate": "no action"
+        },
+        "activity_events_submission_id_submissions_id_fk": {
+          "name": "activity_events_submission_id_submissions_id_fk",
+          "tableFrom": "activity_events",
+          "tableTo": "submissions",
+          "schemaTo": "app",
+          "columnsFrom": [
+            "submission_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "restrict",
+          "onUpdate": "no action"
+        },
+        "activity_events_result_id_results_id_fk": {
+          "name": "activity_events_result_id_results_id_fk",
+          "tableFrom": "activity_events",
+          "tableTo": "results",
+          "schemaTo": "judge",
+          "columnsFrom": [
+            "result_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "restrict",
+          "onUpdate": "no action"
+        },
+        "activity_events_node_fk": {
+          "name": "activity_events_node_fk",
+          "tableFrom": "activity_events",
+          "tableTo": "curriculum_nodes",
+          "schemaTo": "app",
+          "columnsFrom": [
+            "curriculum_version_id",
+            "node_key"
+          ],
+          "columnsTo": [
+            "curriculum_version_id",
+            "node_key"
+          ],
+          "onDelete": "restrict",
+          "onUpdate": "no action"
+        },
+        "activity_events_cohort_version_fk": {
+          "name": "activity_events_cohort_version_fk",
+          "tableFrom": "activity_events",
+          "tableTo": "cohorts",
+          "schemaTo": "app",
+          "columnsFrom": [
+            "cohort_id",
+            "curriculum_version_id"
+          ],
+          "columnsTo": [
+            "id",
+            "curriculum_version_id"
+          ],
+          "onDelete": "restrict",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {
+        "activity_events_version_check": {
+          "name": "activity_events_version_check",
+          "value": "\"app\".\"activity_events\".\"event_version\" > 0"
+        },
+        "activity_events_node_context_check": {
+          "name": "activity_events_node_context_check",
+          "value": "\"app\".\"activity_events\".\"node_key\" IS NULL OR \"app\".\"activity_events\".\"curriculum_version_id\" IS NOT NULL"
+        },
+        "activity_events_payload_check": {
+          "name": "activity_events_payload_check",
+          "value": "jsonb_typeof(\"app\".\"activity_events\".\"payload\") = 'object' AND octet_length(\"app\".\"activity_events\".\"payload\"::text) <= 65536"
+        }
+      },
+      "isRLSEnabled": false
+    },
+    "app.cohort_memberships": {
+      "name": "cohort_memberships",
+      "schema": "app",
+      "columns": {
+        "cohort_id": {
+          "name": "cohort_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "user_id": {
+          "name": "user_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "status": {
+          "name": "status",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'active'"
+        },
+        "joined_at": {
+          "name": "joined_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {
+        "memberships_user_idx": {
+          "name": "memberships_user_idx",
+          "columns": [
+            {
+              "expression": "user_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "cohort_memberships_cohort_id_cohorts_id_fk": {
+          "name": "cohort_memberships_cohort_id_cohorts_id_fk",
+          "tableFrom": "cohort_memberships",
+          "tableTo": "cohorts",
+          "schemaTo": "app",
+          "columnsFrom": [
+            "cohort_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "restrict",
+          "onUpdate": "no action"
+        },
+        "cohort_memberships_user_id_users_id_fk": {
+          "name": "cohort_memberships_user_id_users_id_fk",
+          "tableFrom": "cohort_memberships",
+          "tableTo": "users",
+          "schemaTo": "app",
+          "columnsFrom": [
+            "user_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "restrict",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {
+        "cohort_memberships_cohort_id_user_id_pk": {
+          "name": "cohort_memberships_cohort_id_user_id_pk",
+          "columns": [
+            "cohort_id",
+            "user_id"
+          ]
+        }
+      },
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {
+        "memberships_status_check": {
+          "name": "memberships_status_check",
+          "value": "\"app\".\"cohort_memberships\".\"status\" IN ('active', 'inactive')"
+        }
+      },
+      "isRLSEnabled": false
+    },
+    "app.cohorts": {
+      "name": "cohorts",
+      "schema": "app",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "slug": {
+          "name": "slug",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "name": {
+          "name": "name",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "curriculum_version_id": {
+          "name": "curriculum_version_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "status": {
+          "name": "status",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "starts_at": {
+          "name": "starts_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "ends_at": {
+          "name": "ends_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false
+        }
+      },
+      "indexes": {
+        "cohorts_curriculum_idx": {
+          "name": "cohorts_curriculum_idx",
+          "columns": [
+            {
+              "expression": "curriculum_version_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "cohorts_curriculum_version_id_curriculum_versions_id_fk": {
+          "name": "cohorts_curriculum_version_id_curriculum_versions_id_fk",
+          "tableFrom": "cohorts",
+          "tableTo": "curriculum_versions",
+          "schemaTo": "app",
+          "columnsFrom": [
+            "curriculum_version_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "restrict",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {
+        "cohorts_slug_unique": {
+          "name": "cohorts_slug_unique",
+          "nullsNotDistinct": false,
+          "columns": [
+            "slug"
+          ]
+        },
+        "cohorts_id_version_unique": {
+          "name": "cohorts_id_version_unique",
+          "nullsNotDistinct": false,
+          "columns": [
+            "id",
+            "curriculum_version_id"
+          ]
+        }
+      },
+      "policies": {},
+      "checkConstraints": {
+        "cohorts_status_check": {
+          "name": "cohorts_status_check",
+          "value": "length(trim(\"app\".\"cohorts\".\"status\")) > 0"
+        },
+        "cohorts_dates_check": {
+          "name": "cohorts_dates_check",
+          "value": "\"app\".\"cohorts\".\"ends_at\" IS NULL OR \"app\".\"cohorts\".\"ends_at\" >= \"app\".\"cohorts\".\"starts_at\""
+        }
+      },
+      "isRLSEnabled": false
+    },
+    "app.curriculum_nodes": {
+      "name": "curriculum_nodes",
+      "schema": "app",
+      "columns": {
+        "curriculum_version_id": {
+          "name": "curriculum_version_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "node_key": {
+          "name": "node_key",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "quest_key": {
+          "name": "quest_key",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "kind": {
+          "name": "kind",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "title": {
+          "name": "title",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "position": {
+          "name": "position",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "difficulty": {
+          "name": "difficulty",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "subject_markdown": {
+          "name": "subject_markdown",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "subject_digest": {
+          "name": "subject_digest",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "skills": {
+          "name": "skills",
+          "type": "text[]",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "submission_rules": {
+          "name": "submission_rules",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "resolved_evaluation_spec": {
+          "name": "resolved_evaluation_spec",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "evaluation_spec_digest": {
+          "name": "evaluation_spec_digest",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "nodes_quest_fk": {
+          "name": "nodes_quest_fk",
+          "tableFrom": "curriculum_nodes",
+          "tableTo": "quests",
+          "schemaTo": "app",
+          "columnsFrom": [
+            "curriculum_version_id",
+            "quest_key"
+          ],
+          "columnsTo": [
+            "curriculum_version_id",
+            "quest_key"
+          ],
+          "onDelete": "restrict",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {
+        "curriculum_nodes_curriculum_version_id_node_key_pk": {
+          "name": "curriculum_nodes_curriculum_version_id_node_key_pk",
+          "columns": [
+            "curriculum_version_id",
+            "node_key"
+          ]
+        }
+      },
+      "uniqueConstraints": {
+        "nodes_position_unique": {
+          "name": "nodes_position_unique",
+          "nullsNotDistinct": false,
+          "columns": [
+            "curriculum_version_id",
+            "quest_key",
+            "position"
+          ]
+        }
+      },
+      "policies": {},
+      "checkConstraints": {
+        "nodes_kind_check": {
+          "name": "nodes_kind_check",
+          "value": "\"app\".\"curriculum_nodes\".\"kind\" IN ('challenge', 'project', 'checkpoint')"
+        },
+        "nodes_position_check": {
+          "name": "nodes_position_check",
+          "value": "\"app\".\"curriculum_nodes\".\"position\" > 0"
+        },
+        "nodes_difficulty_check": {
+          "name": "nodes_difficulty_check",
+          "value": "\"app\".\"curriculum_nodes\".\"difficulty\" > 0"
+        },
+        "nodes_subject_digest_check": {
+          "name": "nodes_subject_digest_check",
+          "value": "\"app\".\"curriculum_nodes\".\"subject_digest\" ~ '^[0-9a-f]{64}$'"
+        },
+        "nodes_evaluation_digest_check": {
+          "name": "nodes_evaluation_digest_check",
+          "value": "\"app\".\"curriculum_nodes\".\"evaluation_spec_digest\" ~ '^[0-9a-f]{64}$'"
+        },
+        "nodes_submission_rules_check": {
+          "name": "nodes_submission_rules_check",
+          "value": "jsonb_typeof(\"app\".\"curriculum_nodes\".\"submission_rules\") = 'object'"
+        },
+        "nodes_resource_limits_check": {
+          "name": "nodes_resource_limits_check",
+          "value": "coalesce((jsonb_typeof(\"app\".\"curriculum_nodes\".\"resolved_evaluation_spec\") = 'object' AND (\n      jsonb_typeof(\"app\".\"curriculum_nodes\".\"resolved_evaluation_spec\"->'resource_limits'->'compilation'->'cpu_limit') = 'number'\n      AND (\"app\".\"curriculum_nodes\".\"resolved_evaluation_spec\"->'resource_limits'->'compilation'->>'cpu_limit')::numeric > 0\n    ) AND (\n      jsonb_typeof(\"app\".\"curriculum_nodes\".\"resolved_evaluation_spec\"->'resource_limits'->'compilation'->'memory_bytes') = 'number'\n      AND (\"app\".\"curriculum_nodes\".\"resolved_evaluation_spec\"->'resource_limits'->'compilation'->>'memory_bytes')::numeric > 0\n    ) AND (\n      jsonb_typeof(\"app\".\"curriculum_nodes\".\"resolved_evaluation_spec\"->'resource_limits'->'compilation'->'pid_limit') = 'number'\n      AND (\"app\".\"curriculum_nodes\".\"resolved_evaluation_spec\"->'resource_limits'->'compilation'->>'pid_limit')::numeric > 0\n    ) AND (\n      jsonb_typeof(\"app\".\"curriculum_nodes\".\"resolved_evaluation_spec\"->'resource_limits'->'compilation'->'timeout_ms') = 'number'\n      AND (\"app\".\"curriculum_nodes\".\"resolved_evaluation_spec\"->'resource_limits'->'compilation'->>'timeout_ms')::numeric > 0\n    ) AND (\n      jsonb_typeof(\"app\".\"curriculum_nodes\".\"resolved_evaluation_spec\"->'resource_limits'->'compilation'->'output_bytes') = 'number'\n      AND (\"app\".\"curriculum_nodes\".\"resolved_evaluation_spec\"->'resource_limits'->'compilation'->>'output_bytes')::numeric > 0\n    ) AND (\n      jsonb_typeof(\"app\".\"curriculum_nodes\".\"resolved_evaluation_spec\"->'resource_limits'->'compilation'->'temporary_filesystem_bytes') = 'number'\n      AND (\"app\".\"curriculum_nodes\".\"resolved_evaluation_spec\"->'resource_limits'->'compilation'->>'temporary_filesystem_bytes')::numeric > 0\n    ) AND (\n      jsonb_typeof(\"app\".\"curriculum_nodes\".\"resolved_evaluation_spec\"->'resource_limits'->'compilation'->'temporary_filesystem_inodes') = 'number'\n      AND (\"app\".\"curriculum_nodes\".\"resolved_evaluation_spec\"->'resource_limits'->'compilation'->>'temporary_filesystem_inodes')::numeric > 0\n    ) AND (\n      jsonb_typeof(\"app\".\"curriculum_nodes\".\"resolved_evaluation_spec\"->'resource_limits'->'execution'->'cpu_limit') = 'number'\n      AND (\"app\".\"curriculum_nodes\".\"resolved_evaluation_spec\"->'resource_limits'->'execution'->>'cpu_limit')::numeric > 0\n    ) AND (\n      jsonb_typeof(\"app\".\"curriculum_nodes\".\"resolved_evaluation_spec\"->'resource_limits'->'execution'->'memory_bytes') = 'number'\n      AND (\"app\".\"curriculum_nodes\".\"resolved_evaluation_spec\"->'resource_limits'->'execution'->>'memory_bytes')::numeric > 0\n    ) AND (\n      jsonb_typeof(\"app\".\"curriculum_nodes\".\"resolved_evaluation_spec\"->'resource_limits'->'execution'->'pid_limit') = 'number'\n      AND (\"app\".\"curriculum_nodes\".\"resolved_evaluation_spec\"->'resource_limits'->'execution'->>'pid_limit')::numeric > 0\n    ) AND (\n      jsonb_typeof(\"app\".\"curriculum_nodes\".\"resolved_evaluation_spec\"->'resource_limits'->'execution'->'timeout_ms') = 'number'\n      AND (\"app\".\"curriculum_nodes\".\"resolved_evaluation_spec\"->'resource_limits'->'execution'->>'timeout_ms')::numeric > 0\n    ) AND (\n      jsonb_typeof(\"app\".\"curriculum_nodes\".\"resolved_evaluation_spec\"->'resource_limits'->'execution'->'output_bytes') = 'number'\n      AND (\"app\".\"curriculum_nodes\".\"resolved_evaluation_spec\"->'resource_limits'->'execution'->>'output_bytes')::numeric > 0\n    ) AND (\n      jsonb_typeof(\"app\".\"curriculum_nodes\".\"resolved_evaluation_spec\"->'resource_limits'->'execution'->'temporary_filesystem_bytes') = 'number'\n      AND (\"app\".\"curriculum_nodes\".\"resolved_evaluation_spec\"->'resource_limits'->'execution'->>'temporary_filesystem_bytes')::numeric > 0\n    ) AND (\n      jsonb_typeof(\"app\".\"curriculum_nodes\".\"resolved_evaluation_spec\"->'resource_limits'->'execution'->'temporary_filesystem_inodes') = 'number'\n      AND (\"app\".\"curriculum_nodes\".\"resolved_evaluation_spec\"->'resource_limits'->'execution'->>'temporary_filesystem_inodes')::numeric > 0\n    )), false)"
+        }
+      },
+      "isRLSEnabled": false
+    },
+    "app.curriculum_versions": {
+      "name": "curriculum_versions",
+      "schema": "app",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "curriculum_key": {
+          "name": "curriculum_key",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "version": {
+          "name": "version",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "git_commit_sha": {
+          "name": "git_commit_sha",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "content_digest": {
+          "name": "content_digest",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "digest_format_version": {
+          "name": "digest_format_version",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "status": {
+          "name": "status",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'draft'"
+        },
+        "published_at": {
+          "name": "published_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {
+        "curriculum_key_version_unique": {
+          "name": "curriculum_key_version_unique",
+          "nullsNotDistinct": false,
+          "columns": [
+            "curriculum_key",
+            "version"
+          ]
+        }
+      },
+      "policies": {},
+      "checkConstraints": {
+        "curriculum_git_commit_check": {
+          "name": "curriculum_git_commit_check",
+          "value": "\"app\".\"curriculum_versions\".\"git_commit_sha\" ~ '^[0-9a-f]{40}$|^[0-9a-f]{64}$'"
+        },
+        "curriculum_content_digest_check": {
+          "name": "curriculum_content_digest_check",
+          "value": "\"app\".\"curriculum_versions\".\"content_digest\" ~ '^[0-9a-f]{64}$'"
+        },
+        "curriculum_digest_format_check": {
+          "name": "curriculum_digest_format_check",
+          "value": "\"app\".\"curriculum_versions\".\"digest_format_version\" > 0"
+        },
+        "curriculum_publication_check": {
+          "name": "curriculum_publication_check",
+          "value": "(\n    (\"app\".\"curriculum_versions\".\"status\" = 'draft' AND \"app\".\"curriculum_versions\".\"published_at\" IS NULL) OR\n    (\"app\".\"curriculum_versions\".\"status\" = 'published' AND \"app\".\"curriculum_versions\".\"published_at\" IS NOT NULL)\n  )"
+        }
+      },
+      "isRLSEnabled": false
+    },
+    "judge.attempts": {
+      "name": "attempts",
+      "schema": "judge",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "job_id": {
+          "name": "job_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "attempt_number": {
+          "name": "attempt_number",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "worker_id": {
+          "name": "worker_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "lease_generation": {
+          "name": "lease_generation",
+          "type": "bigint",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "claim_token": {
+          "name": "claim_token",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "state": {
+          "name": "state",
+          "type": "attempt_state",
+          "typeSchema": "judge",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'claimed'"
+        },
+        "claimed_at": {
+          "name": "claimed_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "started_at": {
+          "name": "started_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "finished_at": {
+          "name": "finished_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "infrastructure_error_code": {
+          "name": "infrastructure_error_code",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        }
+      },
+      "indexes": {
+        "attempts_worker_idx": {
+          "name": "attempts_worker_idx",
+          "columns": [
+            {
+              "expression": "worker_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "attempts_job_id_jobs_id_fk": {
+          "name": "attempts_job_id_jobs_id_fk",
+          "tableFrom": "attempts",
+          "tableTo": "jobs",
+          "schemaTo": "judge",
+          "columnsFrom": [
+            "job_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "restrict",
+          "onUpdate": "no action"
+        },
+        "attempts_worker_id_workers_id_fk": {
+          "name": "attempts_worker_id_workers_id_fk",
+          "tableFrom": "attempts",
+          "tableTo": "workers",
+          "schemaTo": "judge",
+          "columnsFrom": [
+            "worker_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "restrict",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {
+        "attempts_job_number_unique": {
+          "name": "attempts_job_number_unique",
+          "nullsNotDistinct": false,
+          "columns": [
+            "job_id",
+            "attempt_number"
+          ]
+        },
+        "attempts_id_job_unique": {
+          "name": "attempts_id_job_unique",
+          "nullsNotDistinct": false,
+          "columns": [
+            "id",
+            "job_id"
+          ]
+        },
+        "attempts_claim_identity_unique": {
+          "name": "attempts_claim_identity_unique",
+          "nullsNotDistinct": false,
+          "columns": [
+            "id",
+            "job_id",
+            "worker_id",
+            "lease_generation"
+          ]
+        }
+      },
+      "policies": {},
+      "checkConstraints": {
+        "attempts_number_check": {
+          "name": "attempts_number_check",
+          "value": "\"judge\".\"attempts\".\"attempt_number\" BETWEEN 1 AND 3"
+        },
+        "attempts_generation_check": {
+          "name": "attempts_generation_check",
+          "value": "\"judge\".\"attempts\".\"lease_generation\" > 0"
+        },
+        "attempts_lifecycle_check": {
+          "name": "attempts_lifecycle_check",
+          "value": "(\n    (\"judge\".\"attempts\".\"state\" = 'claimed' AND \"judge\".\"attempts\".\"started_at\" IS NULL AND \"judge\".\"attempts\".\"finished_at\" IS NULL AND \"judge\".\"attempts\".\"infrastructure_error_code\" IS NULL) OR\n    (\"judge\".\"attempts\".\"state\" = 'running' AND \"judge\".\"attempts\".\"started_at\" IS NOT NULL AND \"judge\".\"attempts\".\"finished_at\" IS NULL AND \"judge\".\"attempts\".\"infrastructure_error_code\" IS NULL) OR\n    (\"judge\".\"attempts\".\"state\" = 'completed' AND \"judge\".\"attempts\".\"started_at\" IS NOT NULL AND \"judge\".\"attempts\".\"finished_at\" IS NOT NULL AND \"judge\".\"attempts\".\"infrastructure_error_code\" IS NULL) OR\n    (\"judge\".\"attempts\".\"state\" = 'system_error' AND \"judge\".\"attempts\".\"finished_at\" IS NOT NULL AND \"judge\".\"attempts\".\"infrastructure_error_code\" IS NOT NULL)\n  )"
+        },
+        "attempts_timestamps_check": {
+          "name": "attempts_timestamps_check",
+          "value": "(\"judge\".\"attempts\".\"started_at\" IS NULL OR \"judge\".\"attempts\".\"started_at\" >= \"judge\".\"attempts\".\"claimed_at\") AND (\"judge\".\"attempts\".\"finished_at\" IS NULL OR (\"judge\".\"attempts\".\"finished_at\" >= \"judge\".\"attempts\".\"claimed_at\" AND (\"judge\".\"attempts\".\"started_at\" IS NULL OR \"judge\".\"attempts\".\"finished_at\" >= \"judge\".\"attempts\".\"started_at\")))"
+        }
+      },
+      "isRLSEnabled": false
+    },
+    "judge.jobs": {
+      "name": "jobs",
+      "schema": "judge",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "submission_id": {
+          "name": "submission_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "evaluation_number": {
+          "name": "evaluation_number",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 1
+        },
+        "state": {
+          "name": "state",
+          "type": "job_state",
+          "typeSchema": "judge",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'queued'"
+        },
+        "available_at": {
+          "name": "available_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "protocol_version": {
+          "name": "protocol_version",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "evaluation_snapshot": {
+          "name": "evaluation_snapshot",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "evaluation_digest": {
+          "name": "evaluation_digest",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "retry_count": {
+          "name": "retry_count",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 0
+        },
+        "lease_generation": {
+          "name": "lease_generation",
+          "type": "bigint",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "1"
+        },
+        "lease_token": {
+          "name": "lease_token",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "lease_expires_at": {
+          "name": "lease_expires_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "current_worker_id": {
+          "name": "current_worker_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "current_attempt_id": {
+          "name": "current_attempt_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "terminal_result_id": {
+          "name": "terminal_result_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "finished_at": {
+          "name": "finished_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false
+        }
+      },
+      "indexes": {
+        "jobs_one_active_submission_idx": {
+          "name": "jobs_one_active_submission_idx",
+          "columns": [
+            {
+              "expression": "submission_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": true,
+          "where": "\"judge\".\"jobs\".\"state\" IN ('queued', 'claimed', 'running')",
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "jobs_ready_idx": {
+          "name": "jobs_ready_idx",
+          "columns": [
+            {
+              "expression": "available_at",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "where": "\"judge\".\"jobs\".\"state\" = 'queued'",
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "jobs_expired_lease_idx": {
+          "name": "jobs_expired_lease_idx",
+          "columns": [
+            {
+              "expression": "lease_expires_at",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "where": "\"judge\".\"jobs\".\"state\" IN ('claimed', 'running')",
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "jobs_current_worker_idx": {
+          "name": "jobs_current_worker_idx",
+          "columns": [
+            {
+              "expression": "current_worker_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "jobs_current_attempt_idx": {
+          "name": "jobs_current_attempt_idx",
+          "columns": [
+            {
+              "expression": "current_attempt_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "jobs_terminal_result_idx": {
+          "name": "jobs_terminal_result_idx",
+          "columns": [
+            {
+              "expression": "terminal_result_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "jobs_submission_id_submissions_id_fk": {
+          "name": "jobs_submission_id_submissions_id_fk",
+          "tableFrom": "jobs",
+          "tableTo": "submissions",
+          "schemaTo": "app",
+          "columnsFrom": [
+            "submission_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "restrict",
+          "onUpdate": "no action"
+        },
+        "jobs_current_worker_id_workers_id_fk": {
+          "name": "jobs_current_worker_id_workers_id_fk",
+          "tableFrom": "jobs",
+          "tableTo": "workers",
+          "schemaTo": "judge",
+          "columnsFrom": [
+            "current_worker_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "restrict",
+          "onUpdate": "no action"
+        },
+        "jobs_current_attempt_fk": {
+          "name": "jobs_current_attempt_fk",
+          "tableFrom": "jobs",
+          "tableTo": "attempts",
+          "schemaTo": "judge",
+          "columnsFrom": [
+            "current_attempt_id",
+            "id",
+            "current_worker_id",
+            "lease_generation"
+          ],
+          "columnsTo": [
+            "id",
+            "job_id",
+            "worker_id",
+            "lease_generation"
+          ],
+          "onDelete": "restrict",
+          "onUpdate": "no action"
+        },
+        "jobs_terminal_result_fk": {
+          "name": "jobs_terminal_result_fk",
+          "tableFrom": "jobs",
+          "tableTo": "results",
+          "schemaTo": "judge",
+          "columnsFrom": [
+            "terminal_result_id",
+            "id",
+            "current_attempt_id"
+          ],
+          "columnsTo": [
+            "id",
+            "job_id",
+            "attempt_id"
+          ],
+          "onDelete": "restrict",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {
+        "jobs_submission_evaluation_unique": {
+          "name": "jobs_submission_evaluation_unique",
+          "nullsNotDistinct": false,
+          "columns": [
+            "submission_id",
+            "evaluation_number"
+          ]
+        },
+        "jobs_id_submission_unique": {
+          "name": "jobs_id_submission_unique",
+          "nullsNotDistinct": false,
+          "columns": [
+            "id",
+            "submission_id"
+          ]
+        }
+      },
+      "policies": {},
+      "checkConstraints": {
+        "jobs_evaluation_number_check": {
+          "name": "jobs_evaluation_number_check",
+          "value": "\"judge\".\"jobs\".\"evaluation_number\" > 0"
+        },
+        "jobs_protocol_check": {
+          "name": "jobs_protocol_check",
+          "value": "\"judge\".\"jobs\".\"protocol_version\" > 0"
+        },
+        "jobs_retry_count_check": {
+          "name": "jobs_retry_count_check",
+          "value": "\"judge\".\"jobs\".\"retry_count\" BETWEEN 0 AND 2"
+        },
+        "jobs_lease_generation_check": {
+          "name": "jobs_lease_generation_check",
+          "value": "\"judge\".\"jobs\".\"lease_generation\" > 0"
+        },
+        "jobs_evaluation_digest_check": {
+          "name": "jobs_evaluation_digest_check",
+          "value": "\"judge\".\"jobs\".\"evaluation_digest\" ~ '^[0-9a-f]{64}$'"
+        },
+        "jobs_resource_limits_check": {
+          "name": "jobs_resource_limits_check",
+          "value": "coalesce((jsonb_typeof(\"judge\".\"jobs\".\"evaluation_snapshot\") = 'object' AND (\n      jsonb_typeof(\"judge\".\"jobs\".\"evaluation_snapshot\"->'resource_limits'->'compilation'->'cpu_limit') = 'number'\n      AND (\"judge\".\"jobs\".\"evaluation_snapshot\"->'resource_limits'->'compilation'->>'cpu_limit')::numeric > 0\n    ) AND (\n      jsonb_typeof(\"judge\".\"jobs\".\"evaluation_snapshot\"->'resource_limits'->'compilation'->'memory_bytes') = 'number'\n      AND (\"judge\".\"jobs\".\"evaluation_snapshot\"->'resource_limits'->'compilation'->>'memory_bytes')::numeric > 0\n    ) AND (\n      jsonb_typeof(\"judge\".\"jobs\".\"evaluation_snapshot\"->'resource_limits'->'compilation'->'pid_limit') = 'number'\n      AND (\"judge\".\"jobs\".\"evaluation_snapshot\"->'resource_limits'->'compilation'->>'pid_limit')::numeric > 0\n    ) AND (\n      jsonb_typeof(\"judge\".\"jobs\".\"evaluation_snapshot\"->'resource_limits'->'compilation'->'timeout_ms') = 'number'\n      AND (\"judge\".\"jobs\".\"evaluation_snapshot\"->'resource_limits'->'compilation'->>'timeout_ms')::numeric > 0\n    ) AND (\n      jsonb_typeof(\"judge\".\"jobs\".\"evaluation_snapshot\"->'resource_limits'->'compilation'->'output_bytes') = 'number'\n      AND (\"judge\".\"jobs\".\"evaluation_snapshot\"->'resource_limits'->'compilation'->>'output_bytes')::numeric > 0\n    ) AND (\n      jsonb_typeof(\"judge\".\"jobs\".\"evaluation_snapshot\"->'resource_limits'->'compilation'->'temporary_filesystem_bytes') = 'number'\n      AND (\"judge\".\"jobs\".\"evaluation_snapshot\"->'resource_limits'->'compilation'->>'temporary_filesystem_bytes')::numeric > 0\n    ) AND (\n      jsonb_typeof(\"judge\".\"jobs\".\"evaluation_snapshot\"->'resource_limits'->'compilation'->'temporary_filesystem_inodes') = 'number'\n      AND (\"judge\".\"jobs\".\"evaluation_snapshot\"->'resource_limits'->'compilation'->>'temporary_filesystem_inodes')::numeric > 0\n    ) AND (\n      jsonb_typeof(\"judge\".\"jobs\".\"evaluation_snapshot\"->'resource_limits'->'execution'->'cpu_limit') = 'number'\n      AND (\"judge\".\"jobs\".\"evaluation_snapshot\"->'resource_limits'->'execution'->>'cpu_limit')::numeric > 0\n    ) AND (\n      jsonb_typeof(\"judge\".\"jobs\".\"evaluation_snapshot\"->'resource_limits'->'execution'->'memory_bytes') = 'number'\n      AND (\"judge\".\"jobs\".\"evaluation_snapshot\"->'resource_limits'->'execution'->>'memory_bytes')::numeric > 0\n    ) AND (\n      jsonb_typeof(\"judge\".\"jobs\".\"evaluation_snapshot\"->'resource_limits'->'execution'->'pid_limit') = 'number'\n      AND (\"judge\".\"jobs\".\"evaluation_snapshot\"->'resource_limits'->'execution'->>'pid_limit')::numeric > 0\n    ) AND (\n      jsonb_typeof(\"judge\".\"jobs\".\"evaluation_snapshot\"->'resource_limits'->'execution'->'timeout_ms') = 'number'\n      AND (\"judge\".\"jobs\".\"evaluation_snapshot\"->'resource_limits'->'execution'->>'timeout_ms')::numeric > 0\n    ) AND (\n      jsonb_typeof(\"judge\".\"jobs\".\"evaluation_snapshot\"->'resource_limits'->'execution'->'output_bytes') = 'number'\n      AND (\"judge\".\"jobs\".\"evaluation_snapshot\"->'resource_limits'->'execution'->>'output_bytes')::numeric > 0\n    ) AND (\n      jsonb_typeof(\"judge\".\"jobs\".\"evaluation_snapshot\"->'resource_limits'->'execution'->'temporary_filesystem_bytes') = 'number'\n      AND (\"judge\".\"jobs\".\"evaluation_snapshot\"->'resource_limits'->'execution'->>'temporary_filesystem_bytes')::numeric > 0\n    ) AND (\n      jsonb_typeof(\"judge\".\"jobs\".\"evaluation_snapshot\"->'resource_limits'->'execution'->'temporary_filesystem_inodes') = 'number'\n      AND (\"judge\".\"jobs\".\"evaluation_snapshot\"->'resource_limits'->'execution'->>'temporary_filesystem_inodes')::numeric > 0\n    )), false)"
+        },
+        "jobs_lifecycle_check": {
+          "name": "jobs_lifecycle_check",
+          "value": "(\n    (\"judge\".\"jobs\".\"state\" = 'queued' AND \"judge\".\"jobs\".\"lease_token\" IS NULL AND \"judge\".\"jobs\".\"lease_expires_at\" IS NULL AND \"judge\".\"jobs\".\"current_worker_id\" IS NULL AND \"judge\".\"jobs\".\"current_attempt_id\" IS NULL AND \"judge\".\"jobs\".\"terminal_result_id\" IS NULL AND \"judge\".\"jobs\".\"finished_at\" IS NULL) OR\n    (\"judge\".\"jobs\".\"state\" IN ('claimed', 'running') AND \"judge\".\"jobs\".\"lease_token\" IS NOT NULL AND \"judge\".\"jobs\".\"lease_expires_at\" IS NOT NULL AND \"judge\".\"jobs\".\"current_worker_id\" IS NOT NULL AND \"judge\".\"jobs\".\"current_attempt_id\" IS NOT NULL AND \"judge\".\"jobs\".\"terminal_result_id\" IS NULL AND \"judge\".\"jobs\".\"finished_at\" IS NULL) OR\n    (\"judge\".\"jobs\".\"state\" IN ('completed', 'system_error') AND \"judge\".\"jobs\".\"lease_token\" IS NULL AND \"judge\".\"jobs\".\"lease_expires_at\" IS NULL AND \"judge\".\"jobs\".\"current_worker_id\" IS NOT NULL AND \"judge\".\"jobs\".\"current_attempt_id\" IS NOT NULL AND \"judge\".\"jobs\".\"terminal_result_id\" IS NOT NULL AND \"judge\".\"jobs\".\"finished_at\" IS NOT NULL)\n  )"
+        },
+        "jobs_timestamps_check": {
+          "name": "jobs_timestamps_check",
+          "value": "(\"judge\".\"jobs\".\"finished_at\" IS NULL OR \"judge\".\"jobs\".\"finished_at\" >= \"judge\".\"jobs\".\"created_at\") AND (\"judge\".\"jobs\".\"lease_expires_at\" IS NULL OR \"judge\".\"jobs\".\"lease_expires_at\" > \"judge\".\"jobs\".\"created_at\")"
+        }
+      },
+      "isRLSEnabled": false
+    },
+    "judge.results": {
+      "name": "results",
+      "schema": "judge",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "job_id": {
+          "name": "job_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "attempt_id": {
+          "name": "attempt_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "evaluation_digest": {
+          "name": "evaluation_digest",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "verdict": {
+          "name": "verdict",
+          "type": "submission_state",
+          "typeSchema": "app",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "measurements": {
+          "name": "measurements",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "learner_feedback": {
+          "name": "learner_feedback",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "safe_operator_diagnostics": {
+          "name": "safe_operator_diagnostics",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "recorded_at": {
+          "name": "recorded_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "application_status": {
+          "name": "application_status",
+          "type": "result_application_status",
+          "typeSchema": "judge",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'pending'"
+        },
+        "processed_at": {
+          "name": "processed_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "application_reason": {
+          "name": "application_reason",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        }
+      },
+      "indexes": {
+        "results_job_idx": {
+          "name": "results_job_idx",
+          "columns": [
+            {
+              "expression": "job_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "results_pending_idx": {
+          "name": "results_pending_idx",
+          "columns": [
+            {
+              "expression": "recorded_at",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "where": "\"judge\".\"results\".\"application_status\" = 'pending'",
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "results_attempt_job_fk": {
+          "name": "results_attempt_job_fk",
+          "tableFrom": "results",
+          "tableTo": "attempts",
+          "schemaTo": "judge",
+          "columnsFrom": [
+            "attempt_id",
+            "job_id"
+          ],
+          "columnsTo": [
+            "id",
+            "job_id"
+          ],
+          "onDelete": "restrict",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {
+        "results_attempt_id_unique": {
+          "name": "results_attempt_id_unique",
+          "nullsNotDistinct": false,
+          "columns": [
+            "attempt_id"
+          ]
+        },
+        "results_id_job_attempt_unique": {
+          "name": "results_id_job_attempt_unique",
+          "nullsNotDistinct": false,
+          "columns": [
+            "id",
+            "job_id",
+            "attempt_id"
+          ]
+        }
+      },
+      "policies": {},
+      "checkConstraints": {
+        "results_evaluation_digest_check": {
+          "name": "results_evaluation_digest_check",
+          "value": "\"judge\".\"results\".\"evaluation_digest\" ~ '^[0-9a-f]{64}$'"
+        },
+        "results_terminal_verdict_check": {
+          "name": "results_terminal_verdict_check",
+          "value": "\"judge\".\"results\".\"verdict\" NOT IN ('queued', 'running')"
+        },
+        "results_measurements_check": {
+          "name": "results_measurements_check",
+          "value": "jsonb_typeof(\"judge\".\"results\".\"measurements\") = 'object' AND NOT jsonb_path_exists(\"judge\".\"results\".\"measurements\", '$.* ? (@.type() != \"number\" || @ < 0)')"
+        },
+        "results_feedback_check": {
+          "name": "results_feedback_check",
+          "value": "jsonb_typeof(\"judge\".\"results\".\"learner_feedback\") = 'object' AND octet_length(\"judge\".\"results\".\"learner_feedback\"::text) <= 65536"
+        },
+        "results_diagnostics_check": {
+          "name": "results_diagnostics_check",
+          "value": "jsonb_typeof(\"judge\".\"results\".\"safe_operator_diagnostics\") = 'object' AND octet_length(\"judge\".\"results\".\"safe_operator_diagnostics\"::text) <= 65536"
+        },
+        "results_application_check": {
+          "name": "results_application_check",
+          "value": "(\n    (\"judge\".\"results\".\"application_status\" = 'pending' AND \"judge\".\"results\".\"processed_at\" IS NULL AND \"judge\".\"results\".\"application_reason\" IS NULL) OR\n    (\"judge\".\"results\".\"application_status\" = 'applied' AND \"judge\".\"results\".\"processed_at\" IS NOT NULL) OR\n    (\"judge\".\"results\".\"application_status\" = 'superseded' AND \"judge\".\"results\".\"processed_at\" IS NOT NULL AND \"judge\".\"results\".\"application_reason\" IS NOT NULL AND length(trim(\"judge\".\"results\".\"application_reason\")) > 0)\n  )"
+        },
+        "results_timestamps_check": {
+          "name": "results_timestamps_check",
+          "value": "\"judge\".\"results\".\"processed_at\" IS NULL OR \"judge\".\"results\".\"processed_at\" >= \"judge\".\"results\".\"recorded_at\""
+        }
+      },
+      "isRLSEnabled": false
+    },
+    "judge.workers": {
+      "name": "workers",
+      "schema": "judge",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "db_principal": {
+          "name": "db_principal",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "runner_image_digest": {
+          "name": "runner_image_digest",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "protocol_versions": {
+          "name": "protocol_versions",
+          "type": "integer[]",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "platform": {
+          "name": "platform",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "capabilities": {
+          "name": "capabilities",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "enabled": {
+          "name": "enabled",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true,
+          "default": true
+        },
+        "last_heartbeat_at": {
+          "name": "last_heartbeat_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false
+        }
+      },
+      "indexes": {
+        "workers_heartbeat_idx": {
+          "name": "workers_heartbeat_idx",
+          "columns": [
+            {
+              "expression": "last_heartbeat_at",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "where": "\"judge\".\"workers\".\"enabled\" = true",
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {
+        "workers_db_principal_unique": {
+          "name": "workers_db_principal_unique",
+          "nullsNotDistinct": false,
+          "columns": [
+            "db_principal"
+          ]
+        }
+      },
+      "policies": {},
+      "checkConstraints": {
+        "workers_image_digest_check": {
+          "name": "workers_image_digest_check",
+          "value": "\"judge\".\"workers\".\"runner_image_digest\" ~ '^sha256:[0-9a-f]{64}$'"
+        },
+        "workers_protocols_check": {
+          "name": "workers_protocols_check",
+          "value": "cardinality(\"judge\".\"workers\".\"protocol_versions\") > 0 AND 0 < ALL(\"judge\".\"workers\".\"protocol_versions\") AND array_position(\"judge\".\"workers\".\"protocol_versions\", NULL) IS NULL"
+        },
+        "workers_capabilities_check": {
+          "name": "workers_capabilities_check",
+          "value": "jsonb_typeof(\"judge\".\"workers\".\"capabilities\") = 'object'"
+        }
+      },
+      "isRLSEnabled": false
+    },
+    "app.learner_node_progress": {
+      "name": "learner_node_progress",
+      "schema": "app",
+      "columns": {
+        "cohort_id": {
+          "name": "cohort_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "user_id": {
+          "name": "user_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "curriculum_version_id": {
+          "name": "curriculum_version_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "node_key": {
+          "name": "node_key",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "state": {
+          "name": "state",
+          "type": "progress_state",
+          "typeSchema": "app",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "unlocked_at": {
+          "name": "unlocked_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "started_at": {
+          "name": "started_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "mastered_at": {
+          "name": "mastered_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "first_passing_submission_id": {
+          "name": "first_passing_submission_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": false
+        }
+      },
+      "indexes": {
+        "progress_dashboard_idx": {
+          "name": "progress_dashboard_idx",
+          "columns": [
+            {
+              "expression": "cohort_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "user_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "state",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "progress_node_idx": {
+          "name": "progress_node_idx",
+          "columns": [
+            {
+              "expression": "curriculum_version_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "node_key",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "progress_passing_submission_idx": {
+          "name": "progress_passing_submission_idx",
+          "columns": [
+            {
+              "expression": "first_passing_submission_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "progress_membership_fk": {
+          "name": "progress_membership_fk",
+          "tableFrom": "learner_node_progress",
+          "tableTo": "cohort_memberships",
+          "schemaTo": "app",
+          "columnsFrom": [
+            "cohort_id",
+            "user_id"
+          ],
+          "columnsTo": [
+            "cohort_id",
+            "user_id"
+          ],
+          "onDelete": "restrict",
+          "onUpdate": "no action"
+        },
+        "progress_cohort_version_fk": {
+          "name": "progress_cohort_version_fk",
+          "tableFrom": "learner_node_progress",
+          "tableTo": "cohorts",
+          "schemaTo": "app",
+          "columnsFrom": [
+            "cohort_id",
+            "curriculum_version_id"
+          ],
+          "columnsTo": [
+            "id",
+            "curriculum_version_id"
+          ],
+          "onDelete": "restrict",
+          "onUpdate": "no action"
+        },
+        "progress_node_fk": {
+          "name": "progress_node_fk",
+          "tableFrom": "learner_node_progress",
+          "tableTo": "curriculum_nodes",
+          "schemaTo": "app",
+          "columnsFrom": [
+            "curriculum_version_id",
+            "node_key"
+          ],
+          "columnsTo": [
+            "curriculum_version_id",
+            "node_key"
+          ],
+          "onDelete": "restrict",
+          "onUpdate": "no action"
+        },
+        "progress_first_passing_submission_fk": {
+          "name": "progress_first_passing_submission_fk",
+          "tableFrom": "learner_node_progress",
+          "tableTo": "submissions",
+          "schemaTo": "app",
+          "columnsFrom": [
+            "first_passing_submission_id",
+            "cohort_id",
+            "user_id",
+            "curriculum_version_id",
+            "node_key"
+          ],
+          "columnsTo": [
+            "id",
+            "cohort_id",
+            "user_id",
+            "curriculum_version_id",
+            "node_key"
+          ],
+          "onDelete": "restrict",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {
+        "learner_node_progress_pk": {
+          "name": "learner_node_progress_pk",
+          "columns": [
+            "cohort_id",
+            "user_id",
+            "curriculum_version_id",
+            "node_key"
+          ]
+        }
+      },
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {
+        "progress_state_timestamps_check": {
+          "name": "progress_state_timestamps_check",
+          "value": "(\n    (\"app\".\"learner_node_progress\".\"state\" = 'locked' AND \"app\".\"learner_node_progress\".\"unlocked_at\" IS NULL AND \"app\".\"learner_node_progress\".\"started_at\" IS NULL AND \"app\".\"learner_node_progress\".\"mastered_at\" IS NULL AND \"app\".\"learner_node_progress\".\"first_passing_submission_id\" IS NULL) OR\n    (\"app\".\"learner_node_progress\".\"state\" = 'available' AND \"app\".\"learner_node_progress\".\"unlocked_at\" IS NOT NULL AND \"app\".\"learner_node_progress\".\"started_at\" IS NULL AND \"app\".\"learner_node_progress\".\"mastered_at\" IS NULL AND \"app\".\"learner_node_progress\".\"first_passing_submission_id\" IS NULL) OR\n    (\"app\".\"learner_node_progress\".\"state\" = 'in_progress' AND \"app\".\"learner_node_progress\".\"unlocked_at\" IS NOT NULL AND \"app\".\"learner_node_progress\".\"started_at\" IS NOT NULL AND \"app\".\"learner_node_progress\".\"mastered_at\" IS NULL AND \"app\".\"learner_node_progress\".\"first_passing_submission_id\" IS NULL) OR\n    (\"app\".\"learner_node_progress\".\"state\" = 'mastered' AND \"app\".\"learner_node_progress\".\"unlocked_at\" IS NOT NULL AND \"app\".\"learner_node_progress\".\"started_at\" IS NOT NULL AND \"app\".\"learner_node_progress\".\"mastered_at\" IS NOT NULL AND \"app\".\"learner_node_progress\".\"first_passing_submission_id\" IS NOT NULL)\n  )"
+        },
+        "progress_timestamp_order_check": {
+          "name": "progress_timestamp_order_check",
+          "value": "(\"app\".\"learner_node_progress\".\"started_at\" IS NULL OR \"app\".\"learner_node_progress\".\"started_at\" >= \"app\".\"learner_node_progress\".\"unlocked_at\") AND (\"app\".\"learner_node_progress\".\"mastered_at\" IS NULL OR \"app\".\"learner_node_progress\".\"mastered_at\" >= \"app\".\"learner_node_progress\".\"started_at\")"
+        }
+      },
+      "isRLSEnabled": false
+    },
+    "app.node_prerequisites": {
+      "name": "node_prerequisites",
+      "schema": "app",
+      "columns": {
+        "curriculum_version_id": {
+          "name": "curriculum_version_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "prerequisite_node_key": {
+          "name": "prerequisite_node_key",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "dependent_node_key": {
+          "name": "dependent_node_key",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "rule": {
+          "name": "rule",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        }
+      },
+      "indexes": {
+        "prerequisites_dependent_idx": {
+          "name": "prerequisites_dependent_idx",
+          "columns": [
+            {
+              "expression": "curriculum_version_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "dependent_node_key",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "prerequisites_source_fk": {
+          "name": "prerequisites_source_fk",
+          "tableFrom": "node_prerequisites",
+          "tableTo": "curriculum_nodes",
+          "schemaTo": "app",
+          "columnsFrom": [
+            "curriculum_version_id",
+            "prerequisite_node_key"
+          ],
+          "columnsTo": [
+            "curriculum_version_id",
+            "node_key"
+          ],
+          "onDelete": "restrict",
+          "onUpdate": "no action"
+        },
+        "prerequisites_target_fk": {
+          "name": "prerequisites_target_fk",
+          "tableFrom": "node_prerequisites",
+          "tableTo": "curriculum_nodes",
+          "schemaTo": "app",
+          "columnsFrom": [
+            "curriculum_version_id",
+            "dependent_node_key"
+          ],
+          "columnsTo": [
+            "curriculum_version_id",
+            "node_key"
+          ],
+          "onDelete": "restrict",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {
+        "node_prerequisites_pk": {
+          "name": "node_prerequisites_pk",
+          "columns": [
+            "curriculum_version_id",
+            "prerequisite_node_key",
+            "dependent_node_key"
+          ]
+        }
+      },
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {
+        "prerequisites_rule_check": {
+          "name": "prerequisites_rule_check",
+          "value": "\"app\".\"node_prerequisites\".\"rule\" = 'requires_pass'"
+        },
+        "prerequisites_no_self_edge_check": {
+          "name": "prerequisites_no_self_edge_check",
+          "value": "\"app\".\"node_prerequisites\".\"prerequisite_node_key\" <> \"app\".\"node_prerequisites\".\"dependent_node_key\""
+        }
+      },
+      "isRLSEnabled": false
+    },
+    "app.quests": {
+      "name": "quests",
+      "schema": "app",
+      "columns": {
+        "curriculum_version_id": {
+          "name": "curriculum_version_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "quest_key": {
+          "name": "quest_key",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "title": {
+          "name": "title",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "position": {
+          "name": "position",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "quests_curriculum_version_id_curriculum_versions_id_fk": {
+          "name": "quests_curriculum_version_id_curriculum_versions_id_fk",
+          "tableFrom": "quests",
+          "tableTo": "curriculum_versions",
+          "schemaTo": "app",
+          "columnsFrom": [
+            "curriculum_version_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "restrict",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {
+        "quests_curriculum_version_id_quest_key_pk": {
+          "name": "quests_curriculum_version_id_quest_key_pk",
+          "columns": [
+            "curriculum_version_id",
+            "quest_key"
+          ]
+        }
+      },
+      "uniqueConstraints": {
+        "quests_position_unique": {
+          "name": "quests_position_unique",
+          "nullsNotDistinct": false,
+          "columns": [
+            "curriculum_version_id",
+            "position"
+          ]
+        }
+      },
+      "policies": {},
+      "checkConstraints": {
+        "quests_position_check": {
+          "name": "quests_position_check",
+          "value": "\"app\".\"quests\".\"position\" > 0"
+        }
+      },
+      "isRLSEnabled": false
+    },
+    "app.state_events": {
+      "name": "state_events",
+      "schema": "app",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "submission_id": {
+          "name": "submission_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "job_id": {
+          "name": "job_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "attempt_id": {
+          "name": "attempt_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "result_id": {
+          "name": "result_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "entity_type": {
+          "name": "entity_type",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "previous_state": {
+          "name": "previous_state",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "next_state": {
+          "name": "next_state",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "actor_type": {
+          "name": "actor_type",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "actor_id": {
+          "name": "actor_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "reason": {
+          "name": "reason",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "correlation_id": {
+          "name": "correlation_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "occurred_at": {
+          "name": "occurred_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {
+        "state_events_submission_idx": {
+          "name": "state_events_submission_idx",
+          "columns": [
+            {
+              "expression": "submission_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "occurred_at",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "state_events_job_idx": {
+          "name": "state_events_job_idx",
+          "columns": [
+            {
+              "expression": "job_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "occurred_at",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "state_events_attempt_idx": {
+          "name": "state_events_attempt_idx",
+          "columns": [
+            {
+              "expression": "attempt_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "state_events_result_idx": {
+          "name": "state_events_result_idx",
+          "columns": [
+            {
+              "expression": "result_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "state_events_submission_id_submissions_id_fk": {
+          "name": "state_events_submission_id_submissions_id_fk",
+          "tableFrom": "state_events",
+          "tableTo": "submissions",
+          "schemaTo": "app",
+          "columnsFrom": [
+            "submission_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "restrict",
+          "onUpdate": "no action"
+        },
+        "state_events_job_submission_fk": {
+          "name": "state_events_job_submission_fk",
+          "tableFrom": "state_events",
+          "tableTo": "jobs",
+          "schemaTo": "judge",
+          "columnsFrom": [
+            "job_id",
+            "submission_id"
+          ],
+          "columnsTo": [
+            "id",
+            "submission_id"
+          ],
+          "onDelete": "restrict",
+          "onUpdate": "no action"
+        },
+        "state_events_attempt_job_fk": {
+          "name": "state_events_attempt_job_fk",
+          "tableFrom": "state_events",
+          "tableTo": "attempts",
+          "schemaTo": "judge",
+          "columnsFrom": [
+            "attempt_id",
+            "job_id"
+          ],
+          "columnsTo": [
+            "id",
+            "job_id"
+          ],
+          "onDelete": "restrict",
+          "onUpdate": "no action"
+        },
+        "state_events_result_fk": {
+          "name": "state_events_result_fk",
+          "tableFrom": "state_events",
+          "tableTo": "results",
+          "schemaTo": "judge",
+          "columnsFrom": [
+            "result_id",
+            "job_id",
+            "attempt_id"
+          ],
+          "columnsTo": [
+            "id",
+            "job_id",
+            "attempt_id"
+          ],
+          "onDelete": "restrict",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {
+        "state_events_entity_check": {
+          "name": "state_events_entity_check",
+          "value": "\"app\".\"state_events\".\"entity_type\" IN ('submission', 'job', 'attempt', 'progress')"
+        },
+        "state_events_actor_check": {
+          "name": "state_events_actor_check",
+          "value": "(\"app\".\"state_events\".\"actor_type\" IN ('user', 'worker') AND \"app\".\"state_events\".\"actor_id\" IS NOT NULL) OR (\"app\".\"state_events\".\"actor_type\" = 'system' AND \"app\".\"state_events\".\"actor_id\" IS NULL)"
+        },
+        "state_events_context_check": {
+          "name": "state_events_context_check",
+          "value": "(\"app\".\"state_events\".\"attempt_id\" IS NULL OR \"app\".\"state_events\".\"job_id\" IS NOT NULL) AND (\"app\".\"state_events\".\"result_id\" IS NULL OR (\"app\".\"state_events\".\"job_id\" IS NOT NULL AND \"app\".\"state_events\".\"attempt_id\" IS NOT NULL))"
+        },
+        "state_events_state_check": {
+          "name": "state_events_state_check",
+          "value": "(\n    (\"app\".\"state_events\".\"entity_type\" = 'submission' AND \"app\".\"state_events\".\"next_state\" IN ('queued', 'running', 'passed', 'failed', 'compile_error', 'runtime_error', 'timeout', 'system_error', 'cancelled') AND (\"app\".\"state_events\".\"previous_state\" IS NULL OR \"app\".\"state_events\".\"previous_state\" IN ('queued', 'running', 'passed', 'failed', 'compile_error', 'runtime_error', 'timeout', 'system_error', 'cancelled'))) OR\n    (\"app\".\"state_events\".\"entity_type\" = 'job' AND \"app\".\"state_events\".\"next_state\" IN ('queued', 'claimed', 'running', 'completed', 'system_error') AND (\"app\".\"state_events\".\"previous_state\" IS NULL OR \"app\".\"state_events\".\"previous_state\" IN ('queued', 'claimed', 'running', 'completed', 'system_error'))) OR\n    (\"app\".\"state_events\".\"entity_type\" = 'attempt' AND \"app\".\"state_events\".\"next_state\" IN ('claimed', 'running', 'completed', 'system_error') AND (\"app\".\"state_events\".\"previous_state\" IS NULL OR \"app\".\"state_events\".\"previous_state\" IN ('claimed', 'running', 'completed', 'system_error'))) OR\n    (\"app\".\"state_events\".\"entity_type\" = 'progress' AND \"app\".\"state_events\".\"next_state\" IN ('locked', 'available', 'in_progress', 'mastered') AND (\"app\".\"state_events\".\"previous_state\" IS NULL OR \"app\".\"state_events\".\"previous_state\" IN ('locked', 'available', 'in_progress', 'mastered')))\n  )"
+        }
+      },
+      "isRLSEnabled": false
+    },
+    "app.submission_artifacts": {
+      "name": "submission_artifacts",
+      "schema": "app",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "owner_user_id": {
+          "name": "owner_user_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "storage_bucket": {
+          "name": "storage_bucket",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "storage_key": {
+          "name": "storage_key",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "original_filename": {
+          "name": "original_filename",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "size_bytes": {
+          "name": "size_bytes",
+          "type": "bigint",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "sha256": {
+          "name": "sha256",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {
+        "artifacts_owner_idx": {
+          "name": "artifacts_owner_idx",
+          "columns": [
+            {
+              "expression": "owner_user_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "submission_artifacts_owner_user_id_users_id_fk": {
+          "name": "submission_artifacts_owner_user_id_users_id_fk",
+          "tableFrom": "submission_artifacts",
+          "tableTo": "users",
+          "schemaTo": "app",
+          "columnsFrom": [
+            "owner_user_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "restrict",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {
+        "artifacts_storage_unique": {
+          "name": "artifacts_storage_unique",
+          "nullsNotDistinct": false,
+          "columns": [
+            "storage_bucket",
+            "storage_key"
+          ]
+        },
+        "artifacts_id_owner_unique": {
+          "name": "artifacts_id_owner_unique",
+          "nullsNotDistinct": false,
+          "columns": [
+            "id",
+            "owner_user_id"
+          ]
+        }
+      },
+      "policies": {},
+      "checkConstraints": {
+        "artifacts_size_check": {
+          "name": "artifacts_size_check",
+          "value": "\"app\".\"submission_artifacts\".\"size_bytes\" > 0"
+        },
+        "artifacts_digest_check": {
+          "name": "artifacts_digest_check",
+          "value": "\"app\".\"submission_artifacts\".\"sha256\" ~ '^[0-9a-f]{64}$'"
+        }
+      },
+      "isRLSEnabled": false
+    },
+    "app.submissions": {
+      "name": "submissions",
+      "schema": "app",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "cohort_id": {
+          "name": "cohort_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "user_id": {
+          "name": "user_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "curriculum_version_id": {
+          "name": "curriculum_version_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "node_key": {
+          "name": "node_key",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "artifact_id": {
+          "name": "artifact_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "idempotency_key": {
+          "name": "idempotency_key",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "state": {
+          "name": "state",
+          "type": "submission_state",
+          "typeSchema": "app",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'queued'"
+        },
+        "evaluation_spec_digest": {
+          "name": "evaluation_spec_digest",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "active_judge_job_id": {
+          "name": "active_judge_job_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "started_at": {
+          "name": "started_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "finished_at": {
+          "name": "finished_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false
+        }
+      },
+      "indexes": {
+        "submissions_history_idx": {
+          "name": "submissions_history_idx",
+          "columns": [
+            {
+              "expression": "cohort_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "user_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "node_key",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "created_at",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "submissions_cohort_state_idx": {
+          "name": "submissions_cohort_state_idx",
+          "columns": [
+            {
+              "expression": "cohort_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "state",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "created_at",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "submissions_node_idx": {
+          "name": "submissions_node_idx",
+          "columns": [
+            {
+              "expression": "curriculum_version_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "node_key",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "submissions_artifact_owner_idx": {
+          "name": "submissions_artifact_owner_idx",
+          "columns": [
+            {
+              "expression": "artifact_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "user_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "submissions_active_job_idx": {
+          "name": "submissions_active_job_idx",
+          "columns": [
+            {
+              "expression": "active_judge_job_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "submissions_membership_fk": {
+          "name": "submissions_membership_fk",
+          "tableFrom": "submissions",
+          "tableTo": "cohort_memberships",
+          "schemaTo": "app",
+          "columnsFrom": [
+            "cohort_id",
+            "user_id"
+          ],
+          "columnsTo": [
+            "cohort_id",
+            "user_id"
+          ],
+          "onDelete": "restrict",
+          "onUpdate": "no action"
+        },
+        "submissions_cohort_version_fk": {
+          "name": "submissions_cohort_version_fk",
+          "tableFrom": "submissions",
+          "tableTo": "cohorts",
+          "schemaTo": "app",
+          "columnsFrom": [
+            "cohort_id",
+            "curriculum_version_id"
+          ],
+          "columnsTo": [
+            "id",
+            "curriculum_version_id"
+          ],
+          "onDelete": "restrict",
+          "onUpdate": "no action"
+        },
+        "submissions_node_fk": {
+          "name": "submissions_node_fk",
+          "tableFrom": "submissions",
+          "tableTo": "curriculum_nodes",
+          "schemaTo": "app",
+          "columnsFrom": [
+            "curriculum_version_id",
+            "node_key"
+          ],
+          "columnsTo": [
+            "curriculum_version_id",
+            "node_key"
+          ],
+          "onDelete": "restrict",
+          "onUpdate": "no action"
+        },
+        "submissions_artifact_owner_fk": {
+          "name": "submissions_artifact_owner_fk",
+          "tableFrom": "submissions",
+          "tableTo": "submission_artifacts",
+          "schemaTo": "app",
+          "columnsFrom": [
+            "artifact_id",
+            "user_id"
+          ],
+          "columnsTo": [
+            "id",
+            "owner_user_id"
+          ],
+          "onDelete": "restrict",
+          "onUpdate": "no action"
+        },
+        "submissions_active_job_fk": {
+          "name": "submissions_active_job_fk",
+          "tableFrom": "submissions",
+          "tableTo": "jobs",
+          "schemaTo": "judge",
+          "columnsFrom": [
+            "active_judge_job_id",
+            "id"
+          ],
+          "columnsTo": [
+            "id",
+            "submission_id"
+          ],
+          "onDelete": "restrict",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {
+        "submissions_idempotency_unique": {
+          "name": "submissions_idempotency_unique",
+          "nullsNotDistinct": false,
+          "columns": [
+            "cohort_id",
+            "user_id",
+            "idempotency_key"
+          ]
+        },
+        "submissions_progress_evidence_unique": {
+          "name": "submissions_progress_evidence_unique",
+          "nullsNotDistinct": false,
+          "columns": [
+            "id",
+            "cohort_id",
+            "user_id",
+            "curriculum_version_id",
+            "node_key"
+          ]
+        }
+      },
+      "policies": {},
+      "checkConstraints": {
+        "submissions_evaluation_digest_check": {
+          "name": "submissions_evaluation_digest_check",
+          "value": "\"app\".\"submissions\".\"evaluation_spec_digest\" ~ '^[0-9a-f]{64}$'"
+        },
+        "submissions_timestamps_check": {
+          "name": "submissions_timestamps_check",
+          "value": "(\"app\".\"submissions\".\"started_at\" IS NULL OR \"app\".\"submissions\".\"started_at\" >= \"app\".\"submissions\".\"created_at\") AND (\"app\".\"submissions\".\"finished_at\" IS NULL OR (\"app\".\"submissions\".\"finished_at\" >= \"app\".\"submissions\".\"created_at\" AND (\"app\".\"submissions\".\"started_at\" IS NULL OR \"app\".\"submissions\".\"finished_at\" >= \"app\".\"submissions\".\"started_at\")))"
+        },
+        "submissions_lifecycle_check": {
+          "name": "submissions_lifecycle_check",
+          "value": "(\"app\".\"submissions\".\"state\" = 'queued' AND \"app\".\"submissions\".\"finished_at\" IS NULL) OR (\"app\".\"submissions\".\"state\" = 'running' AND \"app\".\"submissions\".\"started_at\" IS NOT NULL AND \"app\".\"submissions\".\"finished_at\" IS NULL) OR (\"app\".\"submissions\".\"state\" NOT IN ('queued', 'running') AND \"app\".\"submissions\".\"finished_at\" IS NOT NULL)"
+        }
+      },
+      "isRLSEnabled": false
+    },
+    "app.users": {
+      "name": "users",
+      "schema": "app",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "auth_user_id": {
+          "name": "auth_user_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "display_name": {
+          "name": "display_name",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "role": {
+          "name": "role",
+          "type": "user_role",
+          "typeSchema": "app",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'learner'"
+        },
+        "active": {
+          "name": "active",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true,
+          "default": true
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "users_auth_user_id_users_id_fk": {
+          "name": "users_auth_user_id_users_id_fk",
+          "tableFrom": "users",
+          "tableTo": "users",
+          "schemaTo": "auth",
+          "columnsFrom": [
+            "auth_user_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "restrict",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {
+        "users_auth_user_id_unique": {
+          "name": "users_auth_user_id_unique",
+          "nullsNotDistinct": false,
+          "columns": [
+            "auth_user_id"
+          ]
+        }
+      },
+      "policies": {},
+      "checkConstraints": {
+        "users_timestamps_check": {
+          "name": "users_timestamps_check",
+          "value": "\"app\".\"users\".\"updated_at\" >= \"app\".\"users\".\"created_at\""
+        }
+      },
+      "isRLSEnabled": false
+    }
+  },
+  "enums": {
+    "judge.attempt_state": {
+      "name": "attempt_state",
+      "schema": "judge",
+      "values": [
+        "claimed",
+        "running",
+        "completed",
+        "system_error"
+      ]
+    },
+    "judge.job_state": {
+      "name": "job_state",
+      "schema": "judge",
+      "values": [
+        "queued",
+        "claimed",
+        "running",
+        "completed",
+        "system_error"
+      ]
+    },
+    "app.progress_state": {
+      "name": "progress_state",
+      "schema": "app",
+      "values": [
+        "locked",
+        "available",
+        "in_progress",
+        "mastered"
+      ]
+    },
+    "judge.result_application_status": {
+      "name": "result_application_status",
+      "schema": "judge",
+      "values": [
+        "pending",
+        "applied",
+        "superseded"
+      ]
+    },
+    "app.submission_state": {
+      "name": "submission_state",
+      "schema": "app",
+      "values": [
+        "queued",
+        "running",
+        "passed",
+        "failed",
+        "compile_error",
+        "runtime_error",
+        "timeout",
+        "system_error",
+        "cancelled"
+      ]
+    },
+    "app.user_role": {
+      "name": "user_role",
+      "schema": "app",
+      "values": [
+        "learner",
+        "operator",
+        "admin"
+      ]
+    }
+  },
+  "schemas": {
+    "app": "app",
+    "judge": "judge"
+  },
+  "sequences": {},
+  "roles": {},
+  "policies": {},
+  "views": {},
+  "_meta": {
+    "columns": {},
+    "schemas": {},
+    "tables": {}
+  }
+}

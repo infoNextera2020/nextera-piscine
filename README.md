@@ -25,9 +25,11 @@ The required first E2E starts with Hello Go available and Even or Odd locked.
 An incorrect Hello submission fails and leaves Even or Odd locked. A correct
 submission passes, Hello becomes mastered, and Even or Odd becomes available.
 
-Architecture V0.1 is approved. **Foundation Commit 002A** adds Supabase identity,
-explicit domain-user provisioning, and server authorization to the runnable web
-shell and PostgreSQL/Drizzle foundation. The complete learning flow remains future work. See
+Architecture V0.1 is approved. **Foundation Commit 002B** adds committed-curriculum
+validation/draft receipts, gated immutable publication, cohort administration,
+transactional enrollment, and database-backed learner routes. The real curriculum
+remains a draft until an approved evaluation metadata catalog exists. The complete
+learning flow remains future work. See
 [acceptance criteria and testing](docs/product/VERTICAL_SLICE_001.md).
 
 ## Local setup
@@ -74,7 +76,7 @@ configuration. Environment variable names are in both `.env.example` files.
 `supabase/config.toml` disables application migrations/seeding in Supabase tooling;
 Drizzle remains the only application migration history. Do not use Supabase reset,
 push, diff, or pull to manage `app`/`judge`. Private schemas are absent from the
-Data API. Storage, Realtime, Edge runtime, and analytics are disabled for 002A.
+Data API. Storage, Realtime, Edge runtime, and analytics remain disabled.
 Stop local services with `pnpm supabase:stop` (local data is retained).
 
 ### Local login and provisioning
@@ -100,6 +102,60 @@ inactive users receive `INACTIVE`. Login does not create domain records or cohor
 memberships. Browser metadata never supplies the authoritative role. Sign out is
 available from the protected app and the access-denied page.
 
+### Curriculum, cohorts, and enrollment
+
+Run from the repository root:
+
+```sh
+pnpm curriculum:validate
+pnpm curriculum:import
+```
+
+These commands read the five committed Git blobs under `content/piscine-v1/`
+from `HEAD`, not uncommitted working files. Use `--ref <commit-or-ref>` to select
+another committed revision. Validation reports the resolved source commit and
+content digest. `curriculum:import` stores an idempotent **draft source receipt**,
+without incomplete node/evaluation projections. A changed version's bytes require
+a new declared version; identical imports retain the original source commit.
+
+Operational commands require `OPERATIONS_DATABASE_URL` in the ignored root `.env`.
+New `pnpm local:env` output includes it; for an existing 002A setup, add the local
+migration connection under that name, or explicitly refresh local environment
+files. Refresh rotates runtime credentials and requires restarting web. This
+privileged connection never enters `apps/web`. Publication does not require a
+learner login. Hosted operations must use explicitly provisioned operational access.
+
+**Current boundary:** `pnpm curriculum:publish` fails with `PUBLICATION_BLOCKED`.
+Git has test-pack IDs and only timeout/memory/output limits; it has no approved
+artifact/image digests, exact toolchain/platform, complete compilation/execution
+budgets, or protocol identities. No fake catalog or Judge digest is supplied.
+Drafts cannot be pinned to cohorts or enrolled. The exact catalog contract and
+digest format are documented in [the 002B report](docs/FOUNDATION_002B_REPORT.md).
+
+After the trusted Judge build owner supplies an approved metadata-only catalog:
+
+```sh
+pnpm curriculum:publish --catalog /protected/approved-catalog.json
+pnpm cohort:create --slug piscine-nov-2026 --name 'NextEra Piscine — November 2026' --starts-at 2026-11-20T00:00:00Z --version-id <published-version-uuid>
+pnpm cohort:list
+pnpm cohort:enroll --cohort-id <cohort-uuid> --user-id <domain-learner-uuid>
+```
+
+`cohort:pin --cohort-id <uuid> --version-id <published-uuid>` works only before
+any membership exists. Enrollment requires an active provisioned domain learner.
+It atomically creates the membership and every node's progress: Hello Go becomes
+available with the enrollment timestamp; Even or Odd stays locked with null
+timestamps. Repeating enrollment preserves progress and timestamps. It never
+reactivates inactive memberships or silently repairs partial enrollment.
+
+Visit `/app`, select the real enrolled cohort, and refresh to verify persisted
+states. Available/in_progress/mastered challenges expose published Markdown and
+submission requirements. Locked learner subjects return 404 even through direct
+URLs. Operators need an explicit active cohort membership; administrators have
+read-only global cohort preview. Their subject previews are labeled and do not
+create learner progress. There is no public cohort administration or submission
+form. Cohort start dates are informational here; active membership controls access.
+
 Open [the foundation page](http://localhost:3000). It identifies NextEra Piscine,
 Vertical Slice 001, and Foundation online. [GET /api/health](http://localhost:3000/api/health)
 reports application liveness with no secrets or database dependency. It does not
@@ -107,19 +163,21 @@ claim database readiness or a working authentication/assessment flow.
 
 ## Commands
 
-| Command                            | Purpose                                                             |
-| ---------------------------------- | ------------------------------------------------------------------- |
-| `pnpm dev`                         | Start the Next.js development server                                |
-| `pnpm build`                       | Build domain and database packages, then the Next.js production app |
-| `pnpm --filter @nextera/web start` | Serve the production build                                          |
-| `pnpm format:check`                | Check formatting without changing accepted architecture/curriculum  |
-| `pnpm lint`                        | ESLint/TypeScript/Next.js checks and domain import restrictions     |
-| `pnpm typecheck`                   | Check all packages and test code                                    |
-| `pnpm test`                        | Domain vocabulary, schema contracts, and health endpoint tests      |
-| `pnpm test:db`                     | Real PostgreSQL migration and constraint tests                      |
-| `pnpm test:auth`                   | Real local Supabase/browser identity and authorization tests        |
-| `pnpm db:generate`                 | Generate a migration for review; does not connect or apply changes  |
-| `pnpm db:migrate`                  | Apply committed migrations with the separate migration identity     |
+| Command                            | Purpose                                                                |
+| ---------------------------------- | ---------------------------------------------------------------------- |
+| `pnpm dev`                         | Start the Next.js development server                                   |
+| `pnpm build`                       | Build domain and database packages, then the Next.js production app    |
+| `pnpm --filter @nextera/web start` | Serve the production build                                             |
+| `pnpm format:check`                | Check formatting without changing accepted architecture/curriculum     |
+| `pnpm lint`                        | ESLint/TypeScript/Next.js checks and domain import restrictions        |
+| `pnpm typecheck`                   | Check all packages and test code                                       |
+| `pnpm test`                        | Domain vocabulary, schema contracts, and health endpoint tests         |
+| `pnpm test:db`                     | Real PostgreSQL migration and constraint tests                         |
+| `pnpm test:auth`                   | Real local Supabase/browser identity and authorization tests           |
+| `pnpm test:curriculum`             | Curriculum parsing, validation, hashing, and evaluation-boundary tests |
+| `pnpm test:cohorts`                | Cohort/enrollment and subject-authorization browser tests              |
+| `pnpm db:generate`                 | Generate a migration for review; does not connect or apply changes     |
+| `pnpm db:migrate`                  | Apply committed migrations with the separate migration identity        |
 
 The domain and database packages also build individually with
 `pnpm --filter @nextera/domain build` and `pnpm --filter @nextera/db build`.
@@ -147,6 +205,8 @@ SELECT on the five user-resolution columns. A separately provisioned runtime
 LOGIN inherits that role; migration-owner credentials never serve web requests.
 Browser roles have no private schema/table access. Production provisioning must
 maintain those grants and keep private schemas out of the hosted Data API.
+Migration 0002 adds immutable-publication/cohort-pin guards and the narrowly
+scoped read grants listed in `packages/db/README.md`. Runtime writes remain denied.
 
 ### Verification
 
@@ -156,22 +216,29 @@ pnpm format:check
 pnpm lint
 pnpm typecheck
 pnpm test
+pnpm test:curriculum
+pnpm curriculum:validate
 TEST_DATABASE_URL=postgresql://<local-test-owner>@127.0.0.1:<port>/foundation_test_identity pnpm test:db
 pnpm build
 pnpm exec playwright install chromium
 pnpm test:auth
+pnpm test:cohorts
 git diff --check
 ```
 
 Database constraint tests use a disposable native PostgreSQL database with an
 external Auth-table fixture; the Auth E2E uses the actual local Supabase stack,
-both Drizzle migrations, the restricted runtime connection, and the production
+all Drizzle migrations, the restricted runtime connection, and the production
 web build. It creates random temporary Auth identities, provisions domain users
 through the local script, and removes those fixtures afterwards. Port 3100 must
 be free; the suite starts its own production server. Tests cover denial states,
 database roles versus editable metadata, persisted/renewed sessions, and logout.
 No production credentials are needed. GitHub Actions runs checks, PostgreSQL
 integration, and local Supabase Auth E2E in separate jobs; it does not deploy.
+The cohort suite uses isolated, explicitly non-runnable test-only projections;
+those fixtures are not an approved catalog. Its personal/cohort fixtures are
+removed after tests; immutable test curriculum records remain in local development
+storage. No real `nextera-piscine@0.1.0` node projection is published by tests.
 
 ## Architecture summary
 

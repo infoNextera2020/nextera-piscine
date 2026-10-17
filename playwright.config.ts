@@ -23,6 +23,7 @@ export default defineConfig({
   webServer: {
     env: {
       MIGRATION_DATABASE_URL: '',
+      OPERATIONS_DATABASE_URL: '',
       SUPABASE_LOCAL_SERVICE_ROLE_KEY: '',
       SUPABASE_LOCAL_URL: '',
     },

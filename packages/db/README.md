@@ -13,6 +13,9 @@ through `@nextera/db/connection`, guarded by `server-only`.
 - `MIGRATION_DATABASE_URL`: separate owner identity, using direct PostgreSQL or
   session pooling. `pnpm db:migrate` reads the repository-root `.env` when present.
 - `TEST_DATABASE_URL`: local disposable test database, named `foundation_test*`.
+- `OPERATIONS_DATABASE_URL`: privileged publication/cohort/enrollment tooling only;
+  separate from normal web runtime credentials. Local setup uses the disposable
+  local migration owner; hosted operations require separately provisioned access.
 
 `pnpm db:generate` generates reviewed SQL and metadata; `pnpm db:migrate` applies
 the committed history. There is no database-push command or startup migration.
@@ -34,6 +37,30 @@ LOGIN; do not connect the web application as the migration owner. Hosted setup
 must keep private schemas out of the Data API and preserve explicit grants.
 No Judge protocol role or function is included.
 
+Foundation 002B adds reviewed migration `0002_curriculum_enrollment`: four
+SECURITY INVOKER trigger functions guard published versions and child projections,
+serialize membership writes with cohort pinning, and prevent changing an enrolled
+cohort's version. Publication validates a nonempty DAG and complete metadata
+identities; existing positive-resource constraints remain intact. No table,
+column, enum, index, or Judge protocol function is added.
+
+Additional `nextera_web` SELECT column grants:
+
+| Table                 | Columns                                                                                                                   |
+| --------------------- | ------------------------------------------------------------------------------------------------------------------------- |
+| cohorts               | id, slug, name, curriculum_version_id, status, starts_at, ends_at                                                         |
+| cohort_memberships    | cohort_id, user_id, status, joined_at                                                                                     |
+| curriculum_versions   | id, curriculum_key, version, status                                                                                       |
+| quests                | curriculum_version_id, quest_key, title, position                                                                         |
+| curriculum_nodes      | curriculum_version_id, node_key, quest_key, kind, title, position, difficulty, skills, submission_rules, subject_markdown |
+| node_prerequisites    | curriculum_version_id, prerequisite_node_key, dependent_node_key, rule                                                    |
+| learner_node_progress | cohort_id, user_id, curriculum_version_id, node_key, state, unlocked_at, started_at, mastered_at                          |
+
+There are no web write grants or grants for evaluation specifications, publication
+digests, artifacts, submissions, Judge data, or new function execution. User/cohort
+row authorization remains enforced in server adapters as required by the accepted
+architecture; these direct SQL connections do not inherit browser JWT filtering.
+
 ## Structured fields
 
 Evaluation specifications/snapshots store positive budgets under
@@ -41,8 +68,9 @@ Evaluation specifications/snapshots store positive budgets under
 `memory_bytes`, `pid_limit`, `timeout_ms`, `output_bytes`,
 `temporary_filesystem_bytes`, and `temporary_filesystem_inodes`. Missing, null,
 non-numeric, zero, and negative budgets are rejected. The full immutable identity
-contract remains ADR-009; digest verification and runtime payload validation
-belong to publication/protocol milestones. No hidden test bytes belong here.
+contract remains ADR-009. Publication tooling validates a protected metadata-only
+catalog and hashes the resolved specifications. Runtime artifact verification and
+job snapshot validation belong to the Judge milestone. No hidden test bytes belong here.
 
 Measurements are flat nonnegative numeric objects. Feedback, safe diagnostics,
 and activity payloads are JSON objects bounded to 64 KiB each. Protocol code must
@@ -54,10 +82,8 @@ not prove hidden-test confidentiality.
 These are required future work, not guarantees supplied by ordinary CHECK/FK
 constraints or by this foundation:
 
-- Published curriculum/evaluation/artifact immutability and cohort-version
-  pinning after enrollment, through publication/runtime authorization boundaries.
-- Full evaluation identity validation, trusted digest resolution, supported
-  protocol matching, and resource-policy enforcement.
+- Submission artifact immutability, runtime protocol/toolchain matching,
+  artifact digest verification, and resource-policy enforcement.
 - Legal old-to-new state transitions, monotonic fencing generations, token
   matching, live-lease/database-clock checks, and atomic bounded retry decisions.
 - Enforcing that a current attempt's lifecycle matches the job lifecycle.
@@ -68,11 +94,11 @@ constraints or by this foundation:
 - Transactional verdict/progress/receipt/event application, append-only audit
   permissions, receipt ownership, and reconciliation.
 - Actor identity and cross-event semantic consistency beyond explicit foreign
-  keys; idempotency-key content matching; graph cycle validation.
+  keys; submission idempotency-key content matching.
 
 Do not expose runtime product or Judge operations before those boundaries are
-implemented. No Runner, protocol functions, publication, or progression service
-is included here.
+implemented. No Runner, Judge protocol functions, or result-driven progression
+service is included here. Only transactional enrollment initializes progress.
 
 ## Tests
 
@@ -82,10 +108,13 @@ It requires `TEST_DATABASE_URL` to target a local `foundation_test*` database.
 The integration harness creates only a minimal external `auth.users(id)` fixture
 in that disposable database and random test records. It does not implement or
 simulate authentication, exercise Supabase sessions, or alter production Auth.
-`pnpm test:auth` separately validates both migrations against actual local
+`pnpm test:auth` separately validates all migrations against actual local
 Supabase Auth/PostgreSQL and exercises real browser sessions and authorization.
 It also verifies the external Auth FK, private Data API schemas, and browser
 role revocations. See the root README for setup and explicit provisioning.
+`pnpm test:cohorts` tests real browser sessions, controlled CLI cohort/enrollment
+operations, scoped reads, and locked-subject denial with explicitly non-runnable
+test-only projections. They never publish the real unresolved curriculum.
 
 Tests leave their random fixtures in the disposable database and never drop an
 existing database. Do not point them at a shared or production service.

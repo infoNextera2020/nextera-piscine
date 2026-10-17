@@ -174,10 +174,30 @@ beforeAll(async () => {
           (curriculum_version_id,node_key,quest_key,kind,title,position,difficulty,subject_markdown,
            subject_digest,skills,submission_rules,resolved_evaluation_spec,evaluation_spec_digest)
           VALUES ($1,$2,'foundations','challenge',$2,$3,1,'Test subject',$4,'{}','{}',$5,$4)`,
-          [versionId, nodeKey, String(position), hash, JSON.stringify(snapshot)],
+          [
+            versionId,
+            nodeKey,
+            String(position),
+            hash,
+            JSON.stringify({
+              ...snapshot,
+              curriculum_key: versionId,
+              node_key: nodeKey,
+              configuration_digest: hash,
+              test_pack_artifact: `oci://test.invalid/non-runnable@sha256:${hash}`,
+              toolchain_version: 'go0.0.0',
+              build_flags: [],
+              dependency_policy: 'offline',
+              case_generation: { mode: 'static' },
+            }),
+          ],
         );
       }
     }
+    await tx.unsafe(
+      "UPDATE app.curriculum_versions SET status='published', published_at=now() WHERE id=$1",
+      [ids.version],
+    );
     await tx.unsafe(
       `INSERT INTO app.cohorts(id,slug,name,curriculum_version_id,status,starts_at)
       VALUES ($1,$4,'Test cohort',$2,'test',$3)`,
@@ -232,7 +252,7 @@ describe('migrated PostgreSQL constraints', () => {
       WHERE table_schema IN ('app','judge') AND table_type='BASE TABLE'`;
     expect(rows[0]?.count).toBe('16');
     const history = await client`SELECT * FROM drizzle.__drizzle_migrations`;
-    expect(history).toHaveLength(2);
+    expect(history).toHaveLength(3);
   });
 
   it.each(['locked', 'available', 'in_progress', 'mastered'])(
@@ -291,10 +311,10 @@ describe('migrated PostgreSQL constraints', () => {
 
   it('rejects a self-edge and a missing version-scoped endpoint', async () => {
     await expect(
-      client`INSERT INTO app.node_prerequisites VALUES (${ids.version},'hello-go','hello-go','requires_pass')`,
+      client`INSERT INTO app.node_prerequisites VALUES (${ids.otherVersion},'hello-go','hello-go','requires_pass')`,
     ).rejects.toMatchObject({ code: '23514' });
     await expect(
-      client`INSERT INTO app.node_prerequisites VALUES (${ids.version},'hello-go','missing','requires_pass')`,
+      client`INSERT INTO app.node_prerequisites VALUES (${ids.otherVersion},'hello-go','missing','requires_pass')`,
     ).rejects.toMatchObject({ code: '23503' });
   });
 

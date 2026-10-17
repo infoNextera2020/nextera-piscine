@@ -4,6 +4,7 @@
   "include": [
     "schema/**/*.ts",
     "queries/**/*.ts",
+    "operations/**/*.ts",
     "connection.ts",
     "migrate.ts",
     "drizzle.config.ts"

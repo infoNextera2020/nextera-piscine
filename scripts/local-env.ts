@@ -56,7 +56,7 @@ runtime.password = password;
 const publicEnv = `NEXT_PUBLIC_SUPABASE_URL=${apiUrl}\nNEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY=${publishable}\n`;
 writeFileSync(
   files[0]!,
-  `# Local tooling only; never deploy this file.\nMIGRATION_DATABASE_URL=${databaseUrl}\nDATABASE_URL=${runtime}\nSUPABASE_LOCAL_URL=${apiUrl}\nSUPABASE_LOCAL_SERVICE_ROLE_KEY=${serviceKey}\n`,
+  `# Local tooling only; never deploy this file.\nMIGRATION_DATABASE_URL=${databaseUrl}\nOPERATIONS_DATABASE_URL=${databaseUrl}\nDATABASE_URL=${runtime}\nSUPABASE_LOCAL_URL=${apiUrl}\nSUPABASE_LOCAL_SERVICE_ROLE_KEY=${serviceKey}\n`,
   { mode: 0o600 },
 );
 writeFileSync(files[1]!, `${publicEnv}DATABASE_URL=${runtime}\n`, { mode: 0o600 });

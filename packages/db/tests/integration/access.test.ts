@@ -36,7 +36,7 @@ afterAll(async () => {
 describe('identity runtime privileges', () => {
   it('grants the runtime only the needed user columns', async () => {
     const rows =
-      await sql`SELECT column_name, privilege_type FROM information_schema.column_privileges WHERE grantee = 'nextera_web' ORDER BY column_name`;
+      await sql`SELECT column_name, privilege_type FROM information_schema.column_privileges WHERE grantee = 'nextera_web' AND table_schema='app' AND table_name='users' ORDER BY column_name`;
     expect(rows.map((r) => r.column_name)).toEqual([
       'active',
       'auth_user_id',

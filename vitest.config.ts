@@ -6,6 +6,7 @@ export default defineConfig({
   test: {
     include: [
       'packages/domain/tests/**/*.test.ts',
+      'scripts/curriculum/tests/**/*.test.ts',
       'packages/db/tests/schema.test.ts',
       'apps/web/app/api/health/route.test.ts',
     ],

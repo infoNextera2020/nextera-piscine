@@ -13,7 +13,16 @@
     "typecheck": "pnpm --recursive --if-present typecheck && tsc -p tsconfig.test.json",
     "test": "vitest run",
     "test:db": "vitest run --config packages/db/vitest.integration.config.ts",
-    "test:auth": "playwright test",
+    "test:auth": "playwright test tests/e2e/identity-access.spec.ts",
+    "test:curriculum": "vitest run scripts/curriculum/tests",
+    "test:cohorts": "playwright test tests/e2e/cohort-enrollment.spec.ts",
+    "curriculum:validate": "tsx scripts/curriculum.ts validate",
+    "curriculum:import": "tsx scripts/curriculum.ts draft",
+    "curriculum:publish": "tsx scripts/curriculum.ts publish",
+    "cohort:create": "tsx scripts/cohort.ts create",
+    "cohort:list": "tsx scripts/cohort.ts list",
+    "cohort:pin": "tsx scripts/cohort.ts pin",
+    "cohort:enroll": "tsx scripts/cohort.ts enroll",
     "supabase:start": "supabase start --network-id nextera-piscine-local",
     "supabase:stop": "supabase stop",
     "local:env": "tsx scripts/local-env.ts",
@@ -24,6 +33,7 @@
     "db:migrate": "pnpm --filter @nextera/db db:migrate"
   },
   "devDependencies": {
+    "@nextera/db": "workspace:*",
     "@nextera/domain": "workspace:*",
     "@playwright/test": "1.64.1",
     "@supabase/supabase-js": "2.118.0",
@@ -31,6 +41,7 @@
     "@next/eslint-plugin-next": "16.4.2",
     "@types/node": "24.19.2",
     "dotenv": "18.0.8",
+    "drizzle-orm": "0.45.4",
     "eslint": "10.13.0",
     "postgres": "3.4.9",
     "supabase": "2.121.0",
@@ -38,6 +49,7 @@
     "prettier": "3.9.10",
     "typescript": "5.9.3",
     "typescript-eslint": "8.71.2",
-    "vitest": "5.0.5"
+    "vitest": "5.0.5",
+    "yaml": "2.9.1"
   }
 }
