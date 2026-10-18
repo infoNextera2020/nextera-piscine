@@ -9,6 +9,7 @@ export default defineConfig({
       'scripts/curriculum/tests/**/*.test.ts',
       'packages/db/tests/schema.test.ts',
       'apps/web/app/api/health/route.test.ts',
+      'apps/web/lib/submissions/*.test.ts',
     ],
   },
 });

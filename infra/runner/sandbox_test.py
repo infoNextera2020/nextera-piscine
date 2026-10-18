@@ -287,7 +287,10 @@ def fixtures(pack_id):
         "process_limit": (source('for i:=0;i<100;i++{cmd:=exec.Command("/bin/sleep","20");if cmd.Start()!=nil{return "blocked"}};return "escaped"', 'import "os/exec"'), "runtime_error"),
         "memory_limit": (source('b:=make([]byte,128<<20);for i:=range b{b[i]=1};return string(b)', ''), "runtime_error"),
         "tmpfs_limit": (source('b:=make([]byte,4<<20);if os.WriteFile("/tmp/full",b,0600)==nil{return "escaped"};'+correct, 'import "os"'), "runtime_error"),
-        "inode_limit": (source('for i:=0;i<2000;i++{if os.WriteFile(fmt.Sprintf("/workspace/f%d",i),nil,0600)!=nil{'+correct+'}};return "escaped"', 'import("fmt";"os")'), "runtime_error"),
+        # Exhaust once per process, not again for every case in the input array.
+        # The trusted supervisors still require observed inode exhaustion and
+        # runtime_error; the aggregate two-second execution budget is unchanged.
+        "inode_limit": (source('if !inodeProbed{inodeProbed=true;exhausted:=false;for i:=0;i<2000;i++{if os.WriteFile(fmt.Sprintf("/workspace/f%d",i),nil,0600)!=nil{exhausted=true;break}};if !exhausted{return "escaped"}};'+correct, 'import("fmt";"os")\nvar inodeProbed bool'), "runtime_error"),
         "secrets_socket": (source('if _,e:=os.Stat("/var/run/docker.sock");e==nil{return "escaped"};for _,v:=range os.Environ(){if strings.Contains(v,"DATABASE_URL="){return "escaped"}};'+correct, 'import("os";"strings")'), "passed"),
     }
 

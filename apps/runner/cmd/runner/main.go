@@ -11,7 +11,7 @@ import (
 	"runtime"
 )
 
-var version = "foundation-003"
+var version = "foundation-004"
 var revision = "working-tree"
 
 func run(args []string) error {
@@ -19,6 +19,8 @@ func run(args []string) error {
 		return fmt.Errorf("usage: runner version|capabilities|verify-artifact")
 	}
 	switch args[0] {
+	case "work":
+		return work(args[1:])
 	case "version", "capabilities":
 		return json.NewEncoder(os.Stdout).Encode(map[string]any{"version": version, "revision": revision, "build_toolchain": runtime.Version(), "protocol_versions": []int{1}, "snapshot_format_versions": []int{1}, "target_platform": artifact.Platform, "toolchain_version": artifact.Toolchain, "resource_profile": artifact.Profile, "dependency_policy": "offline"})
 	case "verify-catalog":

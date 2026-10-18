@@ -1,7 +1,8 @@
 # Trusted evaluation artifacts
 
-Foundation 003 provides local artifact construction and sandbox verification.
-It does not implement job intake, queue operations, results, or progression.
+Foundation 004 adds a real Go control plane, PostgreSQL claim/lease/result operations,
+and separate compilation/execution containers. The catalog remains CANDIDATE;
+ordinary deployment/publication and all progression application remain gated.
 
 ## Build boundary
 
@@ -26,10 +27,94 @@ and bridge; a different execution container receives only the bounded compiled
 ELF and input array. Neither receives the test pack, oracle, registry credentials,
 repository, home, database credentials, or container-runtime socket.
 
-For this Go function profile, fixture source declares `package main`; the trusted
-adapter owns `main`. A malformed signature/package fails compilation. No arbitrary
-Go modules, build commands, or dependencies are accepted. This is test tooling,
-not a learner submission endpoint or a general-purpose Runner evaluation API.
+For this Go function profile, fixture source declares `package main`; the public
+Go transport adapter owns `main` in the real executor. It is generated from the
+public function signatures and contains no cases, oracles or assessment decisions.
+The private pack's bridge is not copied into either real execution phase. The
+legacy Foundation 003 Python regression supervisor still uses its original bridge.
+The adapter contract requires the public signature. A malformed signature/package
+fails compilation. No arbitrary
+Go modules, build commands, or dependencies are accepted. Learner code is always
+compiled/run inside disposable sandboxes, never by the web server or host.
+
+## Durable local execution
+
+Build the artifacts using the commands below. The Runner image now contains a
+static Go 1.27.2 binary with pgx 5.11.0; Go module download/verification occurs in
+the trusted build stage only. Test/build execution is offline. The final scratch
+image includes public CA roots for control-plane TLS. Learner dependencies remain
+offline exactly as in Foundation 003.
+
+The local executor requires a binary extracted from that verified Runner image,
+the protected `local-images.json` receipt, CANDIDATE metadata and both OCI layouts.
+It checks binary revision, actual loaded image descriptors, protocol/snapshot/
+toolchain/platform/resource policy, exact snapshot/spec digest, and source bytes.
+It never substitutes latest or changes limits. Mismatches on an owned job are
+infrastructure failures. Incompatible registered workers do not claim the job.
+
+With local Supabase running/migrated and an explicitly created disposable
+`foundation_test004_browser` database, run from the repository root:
+
+```sh
+pnpm judge:local storage
+pnpm judge:fixture --database "$FIXTURE_MIGRATION_URL" --output /private/foundation004/run-001
+pnpm judge:local worker --database "$FIXTURE_MIGRATION_URL" --artifacts /private/artifacts --output /private/foundation004/run-001
+pnpm test:submissions --credentials /private/foundation004/run-001 --artifacts /private/artifacts --binary /private/bin/runner
+```
+
+The fixture command creates only a minimal external Auth FK fixture, applies
+reviewed Drizzle migrations, and provisions separate restricted web/maintenance
+logins. Browser sessions still use real local Supabase Auth. It creates no domain
+users/cohorts; the explicit test fixture does that later. This path accepts only
+loopback databases named `foundation_test*`, with credentials outside the checkout.
+Use a fresh protected output directory per run. The test wrapper supplies only
+the restricted runtime connection to the web server; operational secrets and
+artifact paths are cleared. Tests disable retained domain/Auth fixtures and
+logins afterward; assessment/source history stays retained in isolated storage.
+
+The local worker command provisions a unique database principal and a one-hour
+source-reader JWT. Its only Storage capability is reading the private learner
+source bucket; it cannot overwrite/delete sources or administer Auth/Storage.
+The JWT signing secret stays in the provisioning process. The worker receives
+only its credential, not the signing secret/service key. Token issuance is local
+CLI/legacy-HS256 only; hosted issuance/rotation is not implemented. Fixture cohort
+assignment starts empty and is set explicitly by the fixture administrator.
+
+The actual worker command is:
+
+```sh
+runner work --candidate /private/artifacts/candidate.json --layouts /private/artifacts --runner-image sha256:<actual-runner-manifest> --storage-url http://127.0.0.1:54321 --storage-token-file /private/foundation004/run-001/storage-reader.jwt --local-fixtures
+```
+
+Supply `JUDGE_DATABASE_URL` and public `JUDGE_STORAGE_PUBLISHABLE_KEY` from the
+protected `runner.env`; never pass product/service credentials. The binary uses
+only the existing local Unix Docker socket. No socket/credential/checkout/private
+pack source enters a learner container. Approved local OCI fixture references
+must match the configured protected layout exactly; the public candidate retains
+null artifact references. Normal publication guards are unchanged.
+
+Leases are 30 seconds, renew every 5 seconds, and heartbeat every 10 seconds.
+Each short database operation closes its connection before execution. Independent
+`MAINTENANCE_DATABASE_URL=… pnpm judge:maintenance` recovers expiry every 10 seconds
+(`--once` supports an external scheduler). It has a separate operation-only role,
+loads no product .env, and runs independently of workers/pages. Result application
+and reconciliation remain future product work; every result receipt stays pending.
+
+Normal phase deadlines remain 20/2 seconds with unchanged resource limits. A
+45-second container-lifetime watchdog additionally bounds orphan execution after
+a hard supervisor crash. A newly fenced claim removes older attempt containers
+for that job; periodic cleanup reaps stopped Judge containers. Normal completion,
+cancellation and lease loss destroy the phase container. Graceful idle shutdown
+does not manufacture a system_error. Exactly one authoritative terminal result
+is durable; duplicate/conflicting/stale recordings follow ADR-008.
+
+The protected browser suite exercises both real packs and public adversarial
+fixture generators, plus immutable uploads, replay, authorization, mismatch,
+Runner death and independent maintenance recovery. The older Python sandbox
+suite remains a separate regression. Neither suite prints/uploads raw hidden
+output, private cases or private pack source. Local Docker Desktop remains a
+shared development host; production separation/MAC policy and independent service
+supervision still need deployment validation. No production deployment is added.
 
 ## Local commands
 
@@ -113,7 +198,7 @@ After choosing an authorized private GHCR namespace, the trusted build owner:
    image archives**, preserving their manifests/digests, into the actual Runner
    and sandbox repositories. Do not rebuild, retag/push from a different format,
    or substitute local config IDs. Example after setting actual repository names:
-   `skopeo copy --preserve-digests oci-archive:/private/artifacts/runner.oci.tar docker://ghcr.io/$OWNER/$RUNNER_REPO:foundation-003`;
+   `skopeo copy --preserve-digests oci-archive:/private/artifacts/runner.oci.tar docker://ghcr.io/$OWNER/$RUNNER_REPO:foundation-004`;
    repeat for `sandbox.oci.tar` and its private repository.
 3. Copies each test-pack layout without repackaging:
    `oras cp --from-oci-layout /private/artifacts/hello-go-v1@sha256:$PACK_DIGEST ghcr.io/$OWNER/$PACK_REPO:hello-go-v1`;

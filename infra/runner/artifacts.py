@@ -123,7 +123,7 @@ def pack(inputs, output, pack_id, env):
 def image(name, dockerfile, context, output):
     metadata = output / (name + "-build.json")
     destination = output / (name + ".oci.tar")
-    sources = [(str(p.relative_to(context)), p.read_bytes()) for p in sorted(context.rglob("*")) if p.is_file() and (p.suffix == ".go" or p.name == "go.mod")]
+    sources = [(str(p.relative_to(context)), p.read_bytes()) for p in sorted(context.rglob("*")) if p.is_file() and (p.suffix == ".go" or p.name in ("go.mod", "go.sum"))]
     source_digest = "sha256:" + sha(encoded([(name, sha(data)) for name, data in sources]))
     command(["docker", "buildx", "build", "--platform=linux/amd64", "--provenance=false",
              "--sbom=false", "--build-arg=SOURCE_DATE_EPOCH=0", "--output",

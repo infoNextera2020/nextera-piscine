@@ -252,7 +252,7 @@ describe('migrated PostgreSQL constraints', () => {
       WHERE table_schema IN ('app','judge') AND table_type='BASE TABLE'`;
     expect(rows[0]?.count).toBe('16');
     const history = await client`SELECT * FROM drizzle.__drizzle_migrations`;
-    expect(history).toHaveLength(3);
+    expect(history).toHaveLength(5);
   });
 
   it.each(['locked', 'available', 'in_progress', 'mastered'])(
@@ -378,7 +378,7 @@ describe('migrated PostgreSQL constraints', () => {
     );
     await expect(client`UPDATE judge.results SET measurements='{"duration_ms":-1}' WHERE job_id IN
       (SELECT id FROM judge.jobs WHERE submission_id=${ids.passingSubmission})`).rejects.toMatchObject(
-      { code: '23514' },
+      { code: 'P0001' }, // The immutable-result guard now rejects any payload rewrite first.
     );
   });
 

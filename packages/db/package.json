@@ -9,6 +9,7 @@
     "./connection": "./connection.ts",
     "./users": "./queries/users.ts",
     "./cohorts": "./queries/cohorts.ts",
+    "./submissions": "./queries/submissions.ts",
     "./operations/curriculum": "./operations/curriculum.ts",
     "./operations/cohorts": "./operations/cohorts.ts"
   },

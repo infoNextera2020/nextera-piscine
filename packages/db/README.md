@@ -56,10 +56,70 @@ Additional `nextera_web` SELECT column grants:
 | node_prerequisites    | curriculum_version_id, prerequisite_node_key, dependent_node_key, rule                                                    |
 | learner_node_progress | cohort_id, user_id, curriculum_version_id, node_key, state, unlocked_at, started_at, mastered_at                          |
 
-There are no web write grants or grants for evaluation specifications, publication
-digests, artifacts, submissions, Judge data, or new function execution. User/cohort
+There are no direct web writes or direct reads of evaluation specifications,
+publication digests, artifacts, submissions, or Judge data. User/cohort
 row authorization remains enforced in server adapters as required by the accepted
 architecture; these direct SQL connections do not inherit browser JWT filtering.
+
+## Foundation 004 protocol
+
+Migration 0003 retains sixteen tables. Web receives EXECUTE on
+`app.submission_context`, `app.accept_submission`, and `app.read_submissions`.
+Verified server Auth identity supplies the acting UUID. Database functions repeat
+active learner/membership/cohort/node checks, resolve the pinned specification,
+and atomically create artifact/submission/job/audit rows. Advisory locks serialize
+request idempotency and learner ordinals. Changed content under an existing request
+ID is rejected. Source blobs never enter PostgreSQL. Progress remains unchanged.
+
+`nextera_runner` receives judge schema usage and exactly six EXECUTE grants:
+`claim_job`, `renew_lease`, `heartbeat`, `record_execution_attempt`, `record_result`,
+`record_infrastructure_failure`. A real LOGIN maps through `session_user` to its
+registered worker. No direct table, schema creation, role administration, progress,
+or result-receipt permissions reach workers. Optional provisioner-owned
+`fixture_cohort_ids` restrict fixture claims to explicitly assigned test cohorts.
+
+`nextera_judge_maintenance` receives only `recover_expired(integer)`. Run the
+independent maintenance process every ten seconds. It closes expired attempts
+before bounded retry, without applying results or progression. Claims use row
+locks and SKIP LOCKED; renew/start/new result recording validate worker, attempt,
+token, generation, state, and the database clock. Heartbeats never extend leases.
+Identical recording retries return the existing receipt after lease closure;
+conflicting payloads fail. Infrastructure retries wait 2/10 seconds and permit at
+most three attempts. Terminal outcomes cannot be claimed again.
+
+New functions use fixed `search_path=pg_catalog`, qualified objects, revoked PUBLIC
+execution, and restricted NOLOGIN owner `nextera_judge_owner`. Owner grants:
+
+- SELECT on users/cohorts/memberships/versions/nodes/progress/workers;
+- SELECT/INSERT on artifacts, state events and results;
+- SELECT/INSERT/UPDATE on submissions/jobs/attempts;
+- UPDATE(last_heartbeat_at) on workers;
+- UPDATE(id) on users/cohorts and UPDATE(joined_at) on memberships, solely because
+  PostgreSQL FOR SHARE requires an UPDATE privilege. Exposed functions never
+  change those columns.
+
+The owner has no progress, application-receipt or activity-event writes. Temporary
+schema CREATE and migration-login SET membership are revoked in the migration
+transaction. Supabase's automatic role-creator ADMIN record can remain, without
+INHERIT/SET access. No owner membership reaches runtime logins. Immutable-history
+triggers reject identity/snapshot/payload changes and audit updates/deletes.
+
+Migration 0004 creates Storage policies when its managed table exists; it changes
+no managed table definitions. Users insert/read their own private source prefix.
+A separate signed one-hour local credential reads the source bucket, with no
+overwrite/delete/admin capability. Restrictive policies protect source immutability
+and read scope even alongside unrelated permissive policies. app/judge stay private.
+
+The user approved an isolated fixture exception: real local OCI layout references
+require a `test_only` projection, the test curriculum prefix, and a disposable
+`foundation_test*` database. Runner additionally checks loopback fixture mode and
+the exact protected layout mapping. Normal intake still requires a remote OCI
+reference; publisher/candidate gates remain intact and candidate references null.
+
+Authorized history returns the learner's latest 50 safe summaries. Terminal state
+comes from the active job's authoritative result. Stored submission state can stay
+queued/running and result receipts stay pending until later product application.
+ADR-008's combined verdict/progression/receipt transaction is deliberately deferred.
 
 ## Structured fields
 
@@ -69,36 +129,37 @@ Evaluation specifications/snapshots store positive budgets under
 `temporary_filesystem_bytes`, and `temporary_filesystem_inodes`. Missing, null,
 non-numeric, zero, and negative budgets are rejected. The full immutable identity
 contract remains ADR-009. Publication tooling validates a protected metadata-only
-catalog and hashes the resolved specifications. Runtime artifact verification and
-job snapshot validation belong to the Judge milestone. No hidden test bytes belong here.
+catalog and hashes the resolved specifications. The Go executor verifies artifact
+bytes and frozen snapshots before execution. No hidden test bytes belong here.
+
+Snapshot digest format 1 is SHA-256 of UTF-8
+`nextera-evaluation-snapshot\0v1\0` followed by canonical JSON. Object keys sort
+by C/ASCII order, arrays retain order, and all current pilot budget numbers are
+integers (including CPU=1). The snapshot extends the published evaluation spec
+with curriculum UUID/Git commit, membership scope, learner submission UUID/ordinal,
+acceptance time, and source reference/size/SHA-256. SQL, TypeScript and Go agree in
+integration tests. Source SHA-256 hashes exact uploaded bytes without normalization.
 
 Measurements are flat nonnegative numeric objects. Feedback, safe diagnostics,
 and activity payloads are JSON objects bounded to 64 KiB each. Protocol code must
 construct the approved safe projections before persistence; a size check does
 not prove hidden-test confidentiality.
 
-## Explicitly deferred protocol invariants
+## Deferred product application
 
-These are required future work, not guarantees supplied by ordinary CHECK/FK
-constraints or by this foundation:
+The protocol above is implemented; these product responsibilities remain deferred:
 
-- Submission artifact immutability, runtime protocol/toolchain matching,
-  artifact digest verification, and resource-policy enforcement.
-- Legal old-to-new state transitions, monotonic fencing generations, token
-  matching, live-lease/database-clock checks, and atomic bounded retry decisions.
-- Enforcing that a current attempt's lifecycle matches the job lifecycle.
-- Classifying learner versus infrastructure failure and relating verdicts to
-  terminal job state; authorized Runner result recording only.
 - Verifying first-passing evidence is actually passed, authoritative, and the
   first applied evidence; mastery never regresses and its timestamps stay fixed.
-- Transactional verdict/progress/receipt/event application, append-only audit
-  permissions, receipt ownership, and reconciliation.
-- Actor identity and cross-event semantic consistency beyond explicit foreign
-  keys; submission idempotency-key content matching.
+- Transactional terminal submission/progress/receipt/event application and result
+  reconciliation, including superseded-result decisions.
+- Production storage credential issuance/rotation, retention policy and safe aged
+  orphan cleanup. This milestone retains objects and never deletes referenced work.
 
-Do not expose runtime product or Judge operations before those boundaries are
-implemented. No Runner, Judge protocol functions, or result-driven progression
-service is included here. Only transactional enrollment initializes progress.
+No result-driven progression service is included. Only controlled enrollment
+initializes progress. Notification/result-application failures never consume the
+infrastructure retry budget. Provisioner worker revocation closes live claims
+atomically; re-enabling the worker cannot resurrect an old token.
 
 ## Tests
 

@@ -20,19 +20,19 @@ jobs:
         working-directory: apps/runner
         env:
           GOTOOLCHAIN: local
-          GOPROXY: 'off'
-          GOSUMDB: 'off'
         run: |
+          go mod download
+          go mod verify
           test -z "$(gofmt -l cmd internal)"
-          go vet ./...
-          go test ./...
+          GOPROXY=off GOSUMDB=off go vet ./...
+          GOPROXY=off GOSUMDB=off go test ./...
           go run ./cmd/runner verify-catalog --candidate ../../infra/runner/catalog/candidate.json
       - name: Validate public artifact tooling
         run: |
           python3 -m py_compile infra/runner/artifacts.py infra/runner/sandbox_test.py
           python3 -m unittest discover -s infra/runner -p 'test_*.py'
       - name: Build public Runner control plane
-        run: docker build --network=none -f infra/docker/runner.Dockerfile apps/runner
+        run: docker build -f infra/docker/runner.Dockerfile apps/runner
       - name: Build pinned public Go sandbox (no private packs)
         run: docker build --network=none -f infra/docker/sandbox.Dockerfile infra/docker
 

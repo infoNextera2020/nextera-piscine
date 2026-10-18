@@ -280,3 +280,45 @@ func Verify(layout, id string, entry Entry) error {
 	}
 	return nil
 }
+
+// ReadVerified retains digest checks while loading bounded pack bytes into the
+// trusted comparator. Callers must never forward the returned map to a sandbox.
+func ReadVerified(layout, id string, entry Entry) (map[string][]byte, error) {
+	if Verify(layout, id, entry) != nil {
+		return nil, ErrInvalid
+	}
+	p := filepath.Join(layout, "blobs", "sha256", entry.Digest)
+	info, err := os.Lstat(p)
+	if err != nil {
+		return nil, ErrInvalid
+	}
+	raw, err := blob(layout, Descriptor{Digest: "sha256:" + entry.Digest, Size: info.Size()})
+	if err != nil {
+		return nil, err
+	}
+	var manifest Manifest
+	if Strict(raw, &manifest) != nil {
+		return nil, ErrInvalid
+	}
+	layer, err := blob(layout, manifest.Layers[0])
+	if err != nil {
+		return nil, err
+	}
+	r := tar.NewReader(bytes.NewReader(layer))
+	files := map[string][]byte{}
+	for {
+		h, e := r.Next()
+		if e == io.EOF {
+			break
+		}
+		if e != nil {
+			return nil, ErrInvalid
+		}
+		data, e := io.ReadAll(io.LimitReader(r, 1<<20))
+		if e != nil {
+			return nil, ErrInvalid
+		}
+		files[h.Name] = data
+	}
+	return files, nil
+}

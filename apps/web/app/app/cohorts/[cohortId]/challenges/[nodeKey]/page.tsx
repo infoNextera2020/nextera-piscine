@@ -5,6 +5,8 @@ import { readAccessibleSubject } from '@nextera/db/cohorts';
 import type { SubmissionRules } from '@nextera/domain';
 import { getDatabase } from '../../../../../../lib/auth/server';
 import { authorizeCohortPage } from '../../../../../../lib/cohorts/server';
+import { SubmissionForm } from '../../../../../../lib/submissions/form';
+import { submissionContext } from '@nextera/db/submissions';
 
 export default async function SubjectPage({
   params,
@@ -16,6 +18,15 @@ export default async function SubjectPage({
   const subject = await readAccessibleSubject(getDatabase(), user, cohort.id, nodeKey);
   if (!subject) notFound();
   const rules = subject.submissionRules as unknown as SubmissionRules;
+  let submittable = false;
+  if (user.role === 'learner') {
+    try {
+      await submissionContext(getDatabase(), user.authUserId, cohort.id, nodeKey);
+      submittable = true;
+    } catch {
+      // Unapproved/non-runnable fixtures remain readable but cannot accept work.
+    }
+  }
   return (
     <main className="mx-auto max-w-2xl space-y-6 px-6 py-16">
       <Link className="text-teal-300" href={`/app/cohorts/${cohort.id}`}>
@@ -36,8 +47,11 @@ export default async function SubjectPage({
         <p>Required files: {rules.required_files.join(', ')}</p>
         <p>Allowed extensions: {rules.allowed_extensions.join(', ')}</p>
         <p>Maximum size: {rules.max_size_kb} KiB</p>
-        <p>Write your solution locally. Submissions are not available in this milestone.</p>
+        <p>Write your solution locally.</p>
       </section>
+      {submittable && (
+        <SubmissionForm cohort={cohort.id} node={nodeKey} filename={rules.required_files[0]!} />
+      )}
     </main>
   );
 }
