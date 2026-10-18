@@ -12,3 +12,5 @@ docs/product
 content
 # Generated migration snapshots are reviewed, not reformatted.
 packages/db/migrations/meta
+# Deterministic generated metadata; Go/Python/catalog tests validate its format.
+infra/runner/catalog/candidate.json

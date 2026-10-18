@@ -126,6 +126,8 @@ privileged connection never enters `apps/web`. Publication does not require a
 learner login. Hosted operations must use explicitly provisioned operational access.
 
 **Current boundary:** `pnpm curriculum:publish` fails with `PUBLICATION_BLOCKED`.
+Foundation 003 supplies verified local digests in a gated candidate; private
+immutable OCI references and catalog approval remain missing.
 Git has test-pack IDs and only timeout/memory/output limits; it has no approved
 artifact/image digests, exact toolchain/platform, complete compilation/execution
 budgets, or protocol identities. No fake catalog or Judge digest is supplied.
@@ -239,6 +241,17 @@ The cohort suite uses isolated, explicitly non-runnable test-only projections;
 those fixtures are not an approved catalog. Its personal/cohort fixtures are
 removed after tests; immutable test curriculum records remain in local development
 storage. No real `nextera-piscine@0.1.0` node projection is published by tests.
+
+## Trusted evaluation artifacts (Foundation 003)
+
+The independent Go Runner module and pinned Go sandbox can be built and verified
+locally. Private test-pack inputs and OCI exports remain outside this product
+checkout. The metadata-only `infra/runner/catalog/candidate.json` is explicitly
+**CANDIDATE**, with no fabricated registry references. Local builds do not approve
+or publish the real curriculum. Private immutable OCI availability and explicit
+catalog review are still required. No submission intake or queue execution is
+implemented. See [trusted build commands and registry approval steps](infra/runner/README.md)
+and [the Foundation 003 report](docs/FOUNDATION_003_REPORT.md).
 
 ## Architecture summary
 

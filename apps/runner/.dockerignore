@@ -1,0 +1,10 @@
+*
+!go.mod
+!cmd/
+!cmd/runner/
+!cmd/runner/*.go
+!internal/
+!internal/artifact/
+!internal/artifact/*.go
+!internal/feedback/
+!internal/feedback/*.go

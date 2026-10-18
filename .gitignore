@@ -15,3 +15,5 @@ supabase/.temp/
 supabase/.branches/
 playwright-report/
 test-results/
+__pycache__/
+*.pyc
