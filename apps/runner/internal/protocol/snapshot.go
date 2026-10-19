@@ -10,6 +10,7 @@ import (
 	"net/url"
 	"nextera.local/runner/internal/artifact"
 	"path/filepath"
+	"reflect"
 	"regexp"
 	"strings"
 	"time"
@@ -108,13 +109,8 @@ func Verify(c Claim, catalog artifact.Catalog, runner, layouts string, local boo
 	if len(parts) != 4 || !uuid.MatchString(parts[0]) || parts[1] != s.Cohort || !uuid.MatchString(parts[2]) || parts[3] != s.Source.Digest {
 		return s, "", ErrIdentity
 	}
-	filename := "hello.go"
-	node := "hello-go"
-	if s.PackID == "even-or-odd-v1" {
-		filename = "even_or_odd.go"
-		node = "even-or-odd"
-	}
-	if s.Source.Filename != filename || s.Node != node {
+	contract, contractErr := artifact.ContractFor(s.PackID, entry.Contract)
+	if contractErr != nil || !reflect.DeepEqual(s.Contract, entry.Contract) || s.Source.Filename != contract.File || len(s.Node) > 100 || !regexp.MustCompile(`^[a-z0-9]+(?:-[a-z0-9]+)*$`).MatchString(s.Node) || (entry.Contract == nil && s.Node != contract.Item) {
 		return s, "", ErrIdentity
 	}
 	layout := filepath.Join(layouts, s.PackID)

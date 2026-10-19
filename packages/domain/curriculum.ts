@@ -1,3 +1,4 @@
+import type { CheckpointDefinition } from './checkpoints.ts';
 import type { ProgressState } from './states.ts';
 
 export const NODE_KINDS = ['challenge', 'project', 'checkpoint'] as const;
@@ -13,6 +14,7 @@ export interface SubmissionRules {
   max_size_kb: number;
 }
 export interface CurriculumNode {
+  checkpoint?: CheckpointDefinition;
   key: string;
   questKey: string;
   kind: NodeKind;

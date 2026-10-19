@@ -47,6 +47,13 @@ func TestIdentityMismatchNeverBecomesLearnerFailure(t *testing.T) {
 	for _, mutate := range []func(*Snapshot){
 		func(s *Snapshot) { s.Protocol = 2 }, func(s *Snapshot) { s.Snapshot = 2 }, func(s *Snapshot) { s.Runner = "sha256:" + strings.Repeat("0", 64) },
 		func(s *Snapshot) { s.Sandbox = "sha256:" + strings.Repeat("0", 64) }, func(s *Snapshot) { s.Toolchain = "go0.0.0" },
+		func(s *Snapshot) {
+			s.Contract = &artifact.ExecutionContract{Version: 1, Item: "injected", File: "hello.go", Function: "Injected", Input: "string", Output: "string"}
+		},
+		func(s *Snapshot) { s.Digest = strings.Repeat("0", 64) },
+		func(s *Snapshot) { s.Source.Filename = "other.go" },
+		func(s *Snapshot) { s.Profile = "other" },
+		func(s *Snapshot) { s.Platform = "linux/arm64" },
 	} {
 		s := makeSnapshot()
 		mutate(&s)

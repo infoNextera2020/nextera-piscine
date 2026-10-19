@@ -46,7 +46,7 @@ export default async function CohortPage({ params }: { params: Promise<{ cohortI
               {accessible && (
                 <Link
                   className="text-teal-300"
-                  href={`/app/cohorts/${cohort.id}/challenges/${node.nodeKey}`}
+                  href={`/app/cohorts/${cohort.id}/${node.kind === 'checkpoint' && user.role === 'learner' ? 'checkpoints' : 'challenges'}/${node.nodeKey}`}
                 >
                   Read {node.title}
                 </Link>

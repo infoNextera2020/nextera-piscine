@@ -60,9 +60,10 @@ type Environment struct {
 	Generation   Generation `json:"case_generation"`
 }
 type Entry struct {
-	Digest   string  `json:"test_pack_digest"`
-	Artifact *string `json:"test_pack_artifact"`
-	Runner   string  `json:"runner_image_digest"`
+	Contract *ExecutionContract `json:"execution_contract,omitempty"`
+	Digest   string             `json:"test_pack_digest"`
+	Artifact *string            `json:"test_pack_artifact"`
+	Runner   string             `json:"runner_image_digest"`
 	Environment
 }
 type Catalog struct {
@@ -75,8 +76,9 @@ type Candidate struct {
 	Catalog  Catalog  `json:"catalog"`
 }
 type Metadata struct {
-	Format int    `json:"format_version"`
-	ID     string `json:"test_pack_id"`
+	Contract *ExecutionContract `json:"execution_contract,omitempty"`
+	Format   int                `json:"format_version"`
+	ID       string             `json:"test_pack_id"`
 	Environment
 }
 type Descriptor struct {
@@ -153,11 +155,12 @@ func (e Environment) Valid() bool {
 		e.Protocol == 1 && e.Snapshot == 1 && e.Generation.Mode == "static"
 }
 func (c Catalog) Validate(allowLocal bool) error {
-	if c.Format != 1 || len(c.Packs) != 2 {
+	if c.Format != 1 || len(c.Packs) < 1 || len(c.Packs) > 64 {
 		return ErrInvalid
 	}
-	for _, id := range []string{"hello-go-v1", "even-or-odd-v1"} {
-		e, ok := c.Packs[id]
+	for id, e := range c.Packs {
+		_, contractError := ContractFor(id, e.Contract)
+		ok := len(id) <= 100 && itemPattern.MatchString(id) && contractError == nil
 		if !ok || !digestPattern.MatchString("sha256:"+e.Digest) || !digestPattern.MatchString(e.Runner) || !e.Environment.Valid() {
 			return ErrInvalid
 		}
@@ -270,7 +273,7 @@ func Verify(layout, id string, entry Entry) error {
 		}
 		if h.Name == "metadata.json" {
 			var meta Metadata
-			if Strict(data, &meta) != nil || meta.Format != 1 || meta.ID != id || !reflect.DeepEqual(meta.Environment, entry.Environment) {
+			if Strict(data, &meta) != nil || meta.Format != 1 || meta.ID != id || !reflect.DeepEqual(meta.Environment, entry.Environment) || !reflect.DeepEqual(meta.Contract, entry.Contract) {
 				return ErrInvalid
 			}
 		}

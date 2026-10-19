@@ -14,7 +14,10 @@ if (
   throw new Error('Judge E2E must use a disposable fixture database.');
 export default defineConfig({
   ...base,
-  testMatch: 'judge-execution.spec.ts',
+  testMatch:
+    process.env.JUDGE_CHECKPOINT_E2E === '1'
+      ? 'checkpoint-execution.spec.ts'
+      : 'judge-execution.spec.ts',
   timeout: 180000,
   maxFailures: 1,
   globalTimeout: 1800000,
@@ -38,6 +41,7 @@ export default defineConfig({
       JUDGE_CREDENTIALS: '',
       JUDGE_RUNNER_BINARY: '',
       NEXTERA_JUDGE_E2E: '',
+      JUDGE_CHECKPOINT_E2E: '',
       DOCKER_HOST: '',
       DOCKER_CONFIG: '',
     },

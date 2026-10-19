@@ -284,7 +284,11 @@ def fixtures(pack_id):
         "hidden_file_read": (source('if b,e:=os.ReadFile("/trusted/cases/private.json");e==nil{fmt.Print(string(b));return "escaped"};'+correct, 'import("fmt";"os")'), "passed"),
         "network": (source('c,e:=net.DialTimeout("tcp","1.1.1.1:53",100000000);if e==nil{c.Close();return "escaped"};'+correct, 'import "net"'), "passed"),
         "root_write": (source('if os.WriteFile("/escape",[]byte("x"),0600)==nil{return "escaped"};'+correct, 'import "os"'), "passed"),
-        "process_limit": (source('for i:=0;i<100;i++{cmd:=exec.Command("/bin/sleep","20");if cmd.Start()!=nil{return "blocked"}};return "escaped"', 'import "os/exec"'), "runtime_error"),
+        # Probe once per process, then reap children after the kernel denies a
+        # fork so trusted post-run measurements can execute. Repeating the flood
+        # per input would test aggregate elapsed time rather than the PID bound.
+        # The limit, two-second budget and nonzero pids.events assertion stay intact.
+        "process_limit": (source('if !pidProbed{pidProbed=true;children:=[]*exec.Cmd{};defer func(){for _,c:=range children{c.Process.Kill();c.Wait()}}();for i:=0;i<100;i++{cmd:=exec.Command("/bin/sleep","20");if cmd.Start()!=nil{return "blocked"};children=append(children,cmd)};return "escaped"};'+correct, 'import "os/exec"\nvar pidProbed bool'), "runtime_error"),
         "memory_limit": (source('b:=make([]byte,128<<20);for i:=range b{b[i]=1};return string(b)', ''), "runtime_error"),
         "tmpfs_limit": (source('b:=make([]byte,4<<20);if os.WriteFile("/tmp/full",b,0600)==nil{return "escaped"};'+correct, 'import "os"'), "runtime_error"),
         # Exhaust once per process, not again for every case in the input array.

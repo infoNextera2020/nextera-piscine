@@ -357,3 +357,9 @@ user/membership/cohort deactivation. It never reactivates access or relaxes inta
 and read authorization. Migration 0005 starts progress on valid intake and backfills
 Foundation 004's already accepted work from its original acceptance timestamps.
 All browser refresh/history endpoints remain read-only.
+
+## Foundation 006 checkpoint work
+
+Foundation 006 adds trusted 90-minute checkpoint attempts, four frozen checkpoint tasks, 3-of-4 aggregation, immutable outcome evidence, gated progression, bounded retakes and infrastructure replacement grants. See [the implementation report](docs/FOUNDATION_006_REPORT.md) and [accepted checkpoint policy](docs/product/FOUNDATION_006_CHECKPOINT_POLICY.md). The evaluation catalog remains CANDIDATE and real curriculum publication remains blocked.
+
+The independent product command `pnpm results:reconcile` now closes expired checkpoints, applies ready outcomes and announces eligible retakes, in addition to existing result reconciliation. It requires the separate product database connection; it does not depend on an open browser. Protected local checkpoint Judge verification uses `pnpm test:submissions --checkpoints` with the same private fixture/artifact/binary options as ordinary Judge verification.

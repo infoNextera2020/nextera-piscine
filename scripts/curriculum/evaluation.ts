@@ -1,4 +1,4 @@
-import type { Curriculum } from '@nextera/domain';
+import type { Curriculum, CheckpointTask } from '@nextera/domain';
 import { parseDocument } from 'yaml';
 import { evaluationDigest } from './digest';
 import { object, positive, text } from './load';
@@ -46,7 +46,7 @@ export function resolveEvaluations(curriculum: Curriculum, catalog?: unknown) {
   if (root.format_version !== 1)
     throw new EvaluationBoundaryError('Unsupported metadata catalog format.');
   const packs = object(root.test_packs, 'catalog.test_packs');
-  return curriculum.nodes.map((node) => {
+  const resolve = (node: Curriculum['nodes'][number] | CheckpointTask, nodeKey: string) => {
     const pack = object(packs[node.testPackId], `Missing approved test pack ${node.testPackId}`);
     fields(
       pack,
@@ -64,6 +64,7 @@ export function resolveEvaluations(curriculum: Curriculum, catalog?: unknown) {
         'protocol_version',
         'snapshot_format_version',
         'case_generation',
+        'execution_contract',
       ],
       node.testPackId,
     );
@@ -132,11 +133,34 @@ export function resolveEvaluations(curriculum: Curriculum, catalog?: unknown) {
       text(generation.seed, 'seed');
       text(generation.generator_version, 'generator_version');
     }
+    let contract: Record<string, unknown> | undefined;
+    if (pack.execution_contract !== undefined) {
+      contract = object(pack.execution_contract, 'execution_contract');
+      fields(
+        contract,
+        ['version', 'item_key', 'learner_file', 'function', 'input_type', 'output_type'],
+        'execution_contract',
+      );
+      if (
+        contract.version !== 1 ||
+        contract.item_key !== node.key ||
+        !/^[A-Z][A-Za-z0-9_]{0,63}$/.test(String(contract.function)) ||
+        !['string', 'int64'].includes(String(contract.input_type)) ||
+        contract.output_type !== 'string' ||
+        node.submissionRules.required_files.length !== 1 ||
+        node.submissionRules.required_files[0] !== contract.learner_file ||
+        !/^[A-Za-z0-9_][A-Za-z0-9_]*[.]go$/.test(String(contract.learner_file)) ||
+        contract.learner_file === 'main.go'
+      )
+        throw new EvaluationBoundaryError(
+          'Trusted execution contract conflicts with curriculum task.',
+        );
+    }
     const spec = {
       curriculum_key: curriculum.key,
       curriculum_version: curriculum.version,
       content_digest: curriculum.contentDigest,
-      node_key: node.key,
+      node_key: nodeKey,
       subject_digest: node.subjectDigest,
       configuration_digest: node.configurationDigest,
       test_pack_id: node.testPackId,
@@ -153,7 +177,28 @@ export function resolveEvaluations(curriculum: Curriculum, catalog?: unknown) {
       protocol_version: positive(pack.protocol_version, 'protocol_version'),
       snapshot_format_version: positive(pack.snapshot_format_version, 'snapshot_format_version'),
       case_generation: generation,
+      ...(contract ? { execution_contract: contract } : {}),
     };
-    return { nodeKey: node.key, spec, digest: evaluationDigest(spec) };
+    return { nodeKey, spec, digest: evaluationDigest(spec) };
+  };
+  return curriculum.nodes.map((node) => {
+    if (node.kind !== 'checkpoint') return resolve(node, node.key);
+    if (!node.checkpoint) throw new EvaluationBoundaryError('Checkpoint definition required.');
+    const tasks = node.checkpoint.tasks.map((task) => {
+      const resolved = resolve(task, node.key);
+      if (!('execution_contract' in resolved.spec))
+        throw new EvaluationBoundaryError(
+          'Checkpoint task requires explicit trusted execution contract.',
+        );
+      return { ...task, evaluationSpec: resolved.spec, evaluationDigest: resolved.digest };
+    });
+    const definition = { policyVersion: 1, durationSeconds: 5400, tasks };
+    const spec = {
+      ...tasks[0]!.evaluationSpec,
+      checkpoint_definition: definition,
+      subject_digest: node.subjectDigest,
+      configuration_digest: node.configurationDigest,
+    };
+    return { nodeKey: node.key, spec, digest: evaluationDigest(spec), checkpoint: definition };
   });
 }

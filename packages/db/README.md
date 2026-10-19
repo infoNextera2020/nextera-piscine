@@ -1,7 +1,7 @@
 # Database foundation
 
 The approved model is [DATABASE_SCHEMA_v0.1.md](../../docs/architecture/DATABASE_SCHEMA_v0.1.md).
-This package implements its 16 tables, six state/role enums, version/ownership
+This package implements its initial 16 tables plus four Foundation 006 checkpoint tables, six state/role enums, version/ownership
 foreign keys, uniqueness, row-local checks, and operational indexes. The schema
 entry can load without credentials. Runtime connections are exported separately
 through `@nextera/db/connection`, guarded by `server-only`.
@@ -19,7 +19,7 @@ through `@nextera/db/connection`, guarded by `server-only`.
 
 `pnpm db:generate` generates reviewed SQL and metadata; `pnpm db:migrate` applies
 the committed history. There is no database-push command or startup migration.
-The standard `drizzle.__drizzle_migrations` bookkeeping table is outside the 16
+The standard `drizzle.__drizzle_migrations` bookkeeping table is outside the 20
 domain tables. Production must already have the Supabase-managed `auth.users`
 table. Application migrations reference it and never create or change it.
 
@@ -187,6 +187,29 @@ See the root README for service/scheduler configuration.
 
 Storage credential issuance/rotation, retention and aged orphan cleanup remain
 future operational work. No referenced source or assessment history is deleted.
+
+## Trusted checkpoints (Foundation 006)
+
+Migrations 0006 and 0007 add immutable checkpoint definitions, timed attempts,
+outcome receipts and infrastructure replacement grants. The cohort-pinned
+snapshot freezes four checkpoint-specific evaluations and a trusted 90-minute
+deadline. Task submissions reuse the existing Judge and product-application
+pipeline. The product finalizer aggregates authoritative applied task results,
+then commits checkpoint mastery and satisfied AND-prerequisite unlocks atomically.
+
+The isolated NOLOGIN `nextera_checkpoint_owner` owns narrow checkpoint functions.
+Web and Runner have no direct checkpoint table access. Only the separate product
+role may invoke finalization and retake announcements; callers cannot supply a
+score, verdict, task credit or time. PUBLIC function execution and temporary
+migration ownership access are revoked within the migration transaction.
+
+Two normal attempts, a 24-hour retake cooldown, permanent passes, fair-quota
+infrastructure classification and scoped replacement grants follow the
+[accepted checkpoint policy](../../docs/product/FOUNDATION_006_CHECKPOINT_POLICY.md).
+Historical application preserves current access restrictions. The independent
+result reconciler also closes expired attempts and finalizes ready outcomes.
+See the [Foundation 006 report](../../docs/FOUNDATION_006_REPORT.md) for validation,
+privilege audits and the unapproved evaluation catalog identities.
 
 ## Tests
 

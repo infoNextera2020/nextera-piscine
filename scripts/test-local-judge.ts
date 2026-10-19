@@ -9,6 +9,7 @@ const { values } = parseArgs({
     artifacts: { type: 'string' },
     binary: { type: 'string' },
     grep: { type: 'string' },
+    checkpoints: { type: 'boolean' },
   },
 });
 if (!values.credentials || !values.artifacts || !values.binary)
@@ -23,6 +24,7 @@ const result = spawnSync('pnpm', options, {
     ...parse(readFileSync(join(credentials, 'web.env'))),
     ...parse(readFileSync(join(credentials, 'application.env'))),
     NEXTERA_JUDGE_E2E: '1',
+    JUDGE_CHECKPOINT_E2E: values.checkpoints ? '1' : '',
     JUDGE_CREDENTIALS: credentials,
     JUDGE_ARTIFACTS: realpathSync(values.artifacts),
     JUDGE_RUNNER_BINARY: realpathSync(values.binary),

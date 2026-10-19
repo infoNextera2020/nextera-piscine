@@ -51,7 +51,7 @@ func TestCatalogCompatibility(t *testing.T) {
 	if c.Validate(false) != nil {
 		t.Fatal("complete immutable metadata rejected")
 	}
-	c.Packs["unexpected"] = e
+	c.Packs["unexpected"] = e // Missing trusted execution contract must fail.
 	if c.Validate(false) == nil {
 		t.Fatal("extra catalog pack accepted")
 	}
@@ -69,7 +69,7 @@ func layout(t *testing.T, id string, e Entry) (string, Entry) {
 		}
 		return d
 	}
-	meta, _ := json.Marshal(Metadata{1, id, e.Environment})
+	meta, _ := json.Marshal(Metadata{Contract: e.Contract, Format: 1, ID: id, Environment: e.Environment})
 	var buffer bytes.Buffer
 	tw := tar.NewWriter(&buffer)
 	for _, name := range []string{"metadata.json", "cases/public.json", "cases/private.json", "harness/bridge.go", "feedback.json"} {
@@ -128,5 +128,36 @@ func TestVerifyArtifacts(t *testing.T) {
 	}
 	if Verify(p, "hello-go-v1", e) == nil {
 		t.Fatal("tampered manifest accepted")
+	}
+}
+
+func TestGenericTrustedContract(t *testing.T) {
+	e := testEntry()
+	e.Contract = &ExecutionContract{1, "normalize-label", "normalize.go", "NormalizeLabel", "string", "string"}
+	c := Catalog{1, map[string]Entry{"checkpoint-normalize-v1": e}}
+	if c.Validate(true) != nil {
+		t.Fatal("trusted declared contract rejected")
+	}
+	p, verified := layout(t, "checkpoint-normalize-v1", e)
+	if Verify(p, "checkpoint-normalize-v1", verified) != nil {
+		t.Fatal("verified generic pack rejected")
+	}
+	bad := *verified.Contract
+	bad.Function = "Injected();evil"
+	verified.Contract = &bad
+	if Verify(p, "checkpoint-normalize-v1", verified) == nil {
+		t.Fatal("contract mismatch accepted")
+	}
+	for _, mutate := range []func(*ExecutionContract){
+		func(c *ExecutionContract) { c.Function = "main" }, func(c *ExecutionContract) { c.File = "../source.go" }, func(c *ExecutionContract) { c.Input = "any" }, func(c *ExecutionContract) { c.Output = "bytes" }, func(c *ExecutionContract) { c.Version = 2 },
+	} {
+		v := *e.Contract
+		mutate(&v)
+		if _, err := ContractFor("checkpoint-normalize-v1", &v); err == nil {
+			t.Fatal("unsafe contract accepted")
+		}
+	}
+	if _, err := ContractFor("untrusted-pack", nil); err == nil {
+		t.Fatal("undeclared pack accepted")
 	}
 }

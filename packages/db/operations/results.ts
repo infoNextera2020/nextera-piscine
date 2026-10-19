@@ -62,13 +62,38 @@ export async function applyResult(db: OperationalDatabase, resultId: string) {
     const [projection] = await tx.execute(
       sql`SELECT n.kind,n.evaluation_spec_digest,c.curriculum_version_id,v.status FROM app.curriculum_nodes n JOIN app.cohorts c ON c.id=${submission.cohort_id}::uuid JOIN app.curriculum_versions v ON v.id=c.curriculum_version_id WHERE n.curriculum_version_id=${submission.curriculum_version_id}::uuid AND n.node_key=${submission.node_key}`,
     );
+    let checkpointTask: Record<string, unknown> | undefined;
+    if (submission.checkpoint_attempt_id) {
+      const [checkpoint] = await tx.execute(
+        sql`SELECT a.*,s.created_at<a.deadline_at AS accepted_in_time FROM app.checkpoint_attempts a JOIN app.submissions s ON s.id=${submission.id}::uuid WHERE a.id=${submission.checkpoint_attempt_id}::uuid`,
+      );
+      const frozen = checkpoint?.snapshot as
+        { definition?: { tasks?: Record<string, unknown>[] } } | undefined;
+      checkpointTask = frozen?.definition?.tasks?.find(
+        (t) => t.key === submission.checkpoint_task_key,
+      );
+      if (
+        !checkpoint ||
+        checkpoint.user_id !== submission.user_id ||
+        checkpoint.cohort_id !== submission.cohort_id ||
+        checkpoint.curriculum_version_id !== submission.curriculum_version_id ||
+        checkpoint.node_key !== submission.node_key ||
+        checkpoint.definition_digest !== projection?.evaluation_spec_digest ||
+        !checkpointTask ||
+        checkpointTask.evaluationDigest !== submission.evaluation_spec_digest ||
+        !checkpoint.accepted_in_time
+      )
+        throw new Error('CHECKPOINT_RESULT_IDENTITY_CONFLICT');
+    }
     const snapshot = job.evaluation_snapshot as Record<string, unknown>;
     if (
       !membership ||
       !projection ||
       projection.status !== 'published' ||
       projection.curriculum_version_id !== submission.curriculum_version_id ||
-      projection.evaluation_spec_digest !== submission.evaluation_spec_digest ||
+      (!checkpointTask &&
+        projection.evaluation_spec_digest !== submission.evaluation_spec_digest) ||
+      (!!checkpointTask && projection.kind !== 'checkpoint') ||
       snapshot.submission_id !== submission.id ||
       snapshot.learner_id !== submission.user_id ||
       snapshot.cohort_id !== submission.cohort_id ||
@@ -104,7 +129,9 @@ export async function applyResult(db: OperationalDatabase, resultId: string) {
         throw new Error('APPLICATION_RECEIPT_CONFLICT');
       return result;
     }
-    const [clock] = await tx.execute(sql`SELECT clock_timestamp() AS at`);
+    const [clock] = await tx.execute(
+      sql`SELECT greatest(clock_timestamp(),s.created_at,s.started_at,r.recorded_at) AS at FROM app.submissions s JOIN judge.results r ON r.id=${result.id}::uuid WHERE s.id=${submission.id}::uuid`,
+    );
     const at = clock!.at as Date;
     if (!authoritative) {
       if (
@@ -146,14 +173,16 @@ export async function applyResult(db: OperationalDatabase, resultId: string) {
       sql`SELECT prerequisite_node_key AS "from",dependent_node_key AS "to",rule FROM app.node_prerequisites WHERE curriculum_version_id=${submission.curriculum_version_id}::uuid`,
     );
     if (edges.some((e) => e.rule !== 'requires_pass')) throw new Error('UNSUPPORTED_PREREQUISITE');
-    if (projection.kind !== 'challenge' && result.verdict === 'passed')
+    if (!checkpointTask && projection.kind !== 'challenge' && result.verdict === 'passed')
       throw new Error('UNSUPPORTED_MASTERY_KIND');
-    const changes = resultProgression(
-      String(submission.node_key),
-      result.verdict,
-      new Map(progress.map((p) => [String(p.node_key), p.state as ProgressState])),
-      edges as unknown as Prerequisite[],
-    );
+    const changes = checkpointTask
+      ? []
+      : resultProgression(
+          String(submission.node_key),
+          result.verdict,
+          new Map(progress.map((p) => [String(p.node_key), p.state as ProgressState])),
+          edges as unknown as Prerequisite[],
+        );
     await tx.execute(
       sql`UPDATE app.submissions SET state=${result.verdict}::app.submission_state,finished_at=${at} WHERE id=${submission.id}::uuid`,
     );
@@ -194,6 +223,10 @@ export async function applyResult(db: OperationalDatabase, resultId: string) {
     const [receipt] = await tx.execute(
       sql`UPDATE judge.results SET application_status='applied',processed_at=${at},application_reason='terminal_result_applied' WHERE id=${result.id}::uuid RETURNING *`,
     );
+    if (submission.checkpoint_attempt_id)
+      await tx.execute(
+        sql`SELECT app.finalize_checkpoint(${submission.checkpoint_attempt_id}::uuid)`,
+      );
     return receipt as unknown as Identity;
   });
 }

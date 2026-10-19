@@ -12,7 +12,9 @@
     "./submissions": "./queries/submissions.ts",
     "./operations/curriculum": "./operations/curriculum.ts",
     "./operations/cohorts": "./operations/cohorts.ts",
-    "./operations/results": "./operations/results.ts"
+    "./operations/results": "./operations/results.ts",
+    "./operations/checkpoints": "./operations/checkpoints.ts",
+    "./checkpoints": "./queries/checkpoints.ts"
   },
   "scripts": {
     "build": "tsc -p tsconfig.json",

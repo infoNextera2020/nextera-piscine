@@ -29,7 +29,7 @@ jobs:
           go run ./cmd/runner verify-catalog --candidate ../../infra/runner/catalog/candidate.json
       - name: Validate public artifact tooling
         run: |
-          python3 -m py_compile infra/runner/artifacts.py infra/runner/sandbox_test.py
+          python3 -m py_compile infra/runner/artifacts.py infra/runner/checkpoint_artifacts.py infra/runner/sandbox_test.py
           python3 -m unittest discover -s infra/runner -p 'test_*.py'
       - name: Build public Runner control plane
         run: docker build -f infra/docker/runner.Dockerfile apps/runner
@@ -79,7 +79,7 @@ jobs:
           node-version-file: .node-version
           cache: pnpm
       - run: pnpm install --frozen-lockfile
-      - name: PostgreSQL constraints, result application, graph, reconciliation and privilege regressions
+      - name: PostgreSQL constraints, checkpoint timing/scoring/recovery, result application and privilege regressions
         run: pnpm test:db
 
   identity-e2e:

@@ -1,6 +1,10 @@
 import { describe, expect, it } from 'vitest';
 import { getTableConfig, PgDialect } from 'drizzle-orm/pg-core';
 import {
+  checkpointDefinitions,
+  checkpointAttempts,
+  checkpointOutcomes,
+  checkpointReplacementGrants,
   activityEvents,
   cohortMemberships,
   cohorts,
@@ -23,6 +27,10 @@ import {
 import { PROGRESS_STATES, SUBMISSION_STATES } from '@nextera/domain';
 
 const tables = [
+  checkpointDefinitions,
+  checkpointAttempts,
+  checkpointOutcomes,
+  checkpointReplacementGrants,
   activityEvents,
   cohortMemberships,
   cohorts,
@@ -42,7 +50,7 @@ const tables = [
 ];
 
 describe('database schema contract', () => {
-  it('loads exactly the sixteen application tables without owning Supabase Auth', () => {
+  it('loads exactly the twenty application tables without owning Supabase Auth', () => {
     expect(
       tables
         .map((table) => {
@@ -52,6 +60,10 @@ describe('database schema contract', () => {
         .sort(),
     ).toEqual([
       'app.activity_events',
+      'app.checkpoint_attempts',
+      'app.checkpoint_definitions',
+      'app.checkpoint_outcomes',
+      'app.checkpoint_replacement_grants',
       'app.cohort_memberships',
       'app.cohorts',
       'app.curriculum_nodes',

@@ -4,6 +4,7 @@ vi.mock('server-only', () => ({}));
 const mocks = vi.hoisted(() => ({
   apply: vi.fn(),
   reconcile: vi.fn(),
+  checkpoints: vi.fn(),
   close: vi.fn(),
   connect: vi.fn(),
 }));
@@ -12,6 +13,7 @@ vi.mock('@nextera/db/operations/results', () => ({
   applyResult: mocks.apply,
   reconcileResults: mocks.reconcile,
 }));
+vi.mock('@nextera/db/operations/checkpoints', () => ({ reconcileCheckpoints: mocks.checkpoints }));
 import { serviceApplication } from './application';
 const token = 'f'.repeat(64);
 const request = (body: unknown, authorized = true) =>
@@ -67,6 +69,7 @@ describe('dedicated result service authentication', () => {
     vi.stubEnv('RESULT_APPLICATION_DATABASE_URL', 'dedicated-test-connection');
     mocks.connect.mockReturnValue({ db: {}, close: mocks.close });
     mocks.reconcile.mockResolvedValue([{ id: randomUUID(), status: 'attention_required' }]);
+    mocks.checkpoints.mockResolvedValue([]);
     expect((await serviceApplication(request({}), true)).status).toBe(409);
   });
 });

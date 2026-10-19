@@ -40,9 +40,9 @@ class MetadataTests(unittest.TestCase):
                     "sandbox_image_digest", "toolchain_version", "target_platform",
                     "build_flags", "dependency_policy", "resource_profile", "resource_limits",
                     "protocol_version", "snapshot_format_version", "case_generation"}
-        self.assertEqual(set(candidate["catalog"]["test_packs"]), {"hello-go-v1", "even-or-odd-v1"})
-        for entry in candidate["catalog"]["test_packs"].values():
-            self.assertEqual(set(entry), expected)
+        self.assertEqual(set(candidate["catalog"]["test_packs"]), {"hello-go-v1", "even-or-odd-v1", "checkpoint-normalize-label-v1", "checkpoint-count-vowels-v1", "checkpoint-digit-sum-v1", "checkpoint-sign-label-v1"})
+        for pack_id, entry in candidate["catalog"]["test_packs"].items():
+            self.assertEqual(set(entry), expected | ({"execution_contract"} if pack_id.startswith("checkpoint-") else set()))
             self.assertIsNone(entry["test_pack_artifact"])
             self.assertRegex(entry["test_pack_digest"], r"^[0-9a-f]{64}$")
             self.assertEqual(entry["resource_limits"], resources())

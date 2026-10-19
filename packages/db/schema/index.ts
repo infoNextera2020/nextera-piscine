@@ -253,6 +253,8 @@ export const submissions = app.table(
     state: submissionState('state').notNull().default('queued'),
     evaluationSpecDigest: text('evaluation_spec_digest').notNull(),
     activeJudgeJobId: uuid('active_judge_job_id').notNull(),
+    checkpointAttemptId: uuid('checkpoint_attempt_id'),
+    checkpointTaskKey: text('checkpoint_task_key'),
     createdAt: time('created_at').notNull().defaultNow(),
     startedAt: time('started_at'),
     finishedAt: time('finished_at'),
@@ -301,6 +303,21 @@ export const submissions = app.table(
       'submissions_lifecycle_check',
       sql`(${t.state} = 'queued' AND ${t.finishedAt} IS NULL) OR (${t.state} = 'running' AND ${t.startedAt} IS NOT NULL AND ${t.finishedAt} IS NULL) OR (${t.state} NOT IN ('queued', 'running') AND ${t.finishedAt} IS NOT NULL)`,
     ),
+    check(
+      'submission_checkpoint_pair_check',
+      sql`(${t.checkpointAttemptId} IS NULL) = (${t.checkpointTaskKey} IS NULL)`,
+    ),
+    foreignKey({
+      name: 'submission_checkpoint_identity_fk',
+      columns: [t.checkpointAttemptId, t.cohortId, t.userId, t.curriculumVersionId, t.nodeKey],
+      foreignColumns: [
+        checkpointAttempts.id,
+        checkpointAttempts.cohortId,
+        checkpointAttempts.userId,
+        checkpointAttempts.curriculumVersionId,
+        checkpointAttempts.nodeKey,
+      ],
+    }).onDelete('restrict'),
     index('submissions_history_idx').on(t.cohortId, t.userId, t.nodeKey, t.createdAt, t.id),
     index('submissions_cohort_state_idx').on(t.cohortId, t.state, t.createdAt, t.id),
     index('submissions_node_idx').on(t.curriculumVersionId, t.nodeKey),
@@ -516,8 +533,9 @@ export const learnerNodeProgress = app.table(
     startedAt: time('started_at'),
     masteredAt: time('mastered_at'),
     firstPassingSubmissionId: uuid('first_passing_submission_id'),
+    firstPassingCheckpointOutcomeId: uuid('first_passing_checkpoint_outcome_id'),
   },
-  (t) => [
+  (t): PgTableExtraConfigValue[] => [
     primaryKey({
       name: 'learner_node_progress_pk',
       columns: [t.cohortId, t.userId, t.curriculumVersionId, t.nodeKey],
@@ -551,16 +569,33 @@ export const learnerNodeProgress = app.table(
     check(
       'progress_state_timestamps_check',
       sql`(
-    (${t.state} = 'locked' AND ${t.unlockedAt} IS NULL AND ${t.startedAt} IS NULL AND ${t.masteredAt} IS NULL AND ${t.firstPassingSubmissionId} IS NULL) OR
-    (${t.state} = 'available' AND ${t.unlockedAt} IS NOT NULL AND ${t.startedAt} IS NULL AND ${t.masteredAt} IS NULL AND ${t.firstPassingSubmissionId} IS NULL) OR
-    (${t.state} = 'in_progress' AND ${t.unlockedAt} IS NOT NULL AND ${t.startedAt} IS NOT NULL AND ${t.masteredAt} IS NULL AND ${t.firstPassingSubmissionId} IS NULL) OR
-    (${t.state} = 'mastered' AND ${t.unlockedAt} IS NOT NULL AND ${t.startedAt} IS NOT NULL AND ${t.masteredAt} IS NOT NULL AND ${t.firstPassingSubmissionId} IS NOT NULL)
+    (${t.state} = 'locked' AND ${t.unlockedAt} IS NULL AND ${t.startedAt} IS NULL AND ${t.masteredAt} IS NULL AND ${t.firstPassingSubmissionId} IS NULL AND ${t.firstPassingCheckpointOutcomeId} IS NULL) OR
+    (${t.state} = 'available' AND ${t.unlockedAt} IS NOT NULL AND ${t.startedAt} IS NULL AND ${t.masteredAt} IS NULL AND ${t.firstPassingSubmissionId} IS NULL AND ${t.firstPassingCheckpointOutcomeId} IS NULL) OR
+    (${t.state} = 'in_progress' AND ${t.unlockedAt} IS NOT NULL AND ${t.startedAt} IS NOT NULL AND ${t.masteredAt} IS NULL AND ${t.firstPassingSubmissionId} IS NULL AND ${t.firstPassingCheckpointOutcomeId} IS NULL) OR
+    (${t.state} = 'mastered' AND ${t.unlockedAt} IS NOT NULL AND ${t.startedAt} IS NOT NULL AND ${t.masteredAt} IS NOT NULL AND num_nonnulls(${t.firstPassingSubmissionId},${t.firstPassingCheckpointOutcomeId}) = 1)
   )`,
     ),
     check(
       'progress_timestamp_order_check',
       sql`(${t.startedAt} IS NULL OR ${t.startedAt} >= ${t.unlockedAt}) AND (${t.masteredAt} IS NULL OR ${t.masteredAt} >= ${t.startedAt})`,
     ),
+    foreignKey({
+      name: 'progress_checkpoint_outcome_fk',
+      columns: [
+        t.firstPassingCheckpointOutcomeId,
+        t.cohortId,
+        t.userId,
+        t.curriculumVersionId,
+        t.nodeKey,
+      ],
+      foreignColumns: [
+        checkpointOutcomes.id,
+        checkpointOutcomes.cohortId,
+        checkpointOutcomes.userId,
+        checkpointOutcomes.curriculumVersionId,
+        checkpointOutcomes.nodeKey,
+      ],
+    }).onDelete('restrict'),
     index('progress_dashboard_idx').on(t.cohortId, t.userId, t.state),
     index('progress_node_idx').on(t.curriculumVersionId, t.nodeKey),
     index('progress_passing_submission_idx').on(t.firstPassingSubmissionId),
@@ -571,9 +606,13 @@ export const stateEvents = app.table(
   'state_events',
   {
     id: uuid('id').defaultRandom().primaryKey(),
-    submissionId: uuid('submission_id')
-      .notNull()
-      .references(() => submissions.id, { onDelete: 'restrict' }),
+    submissionId: uuid('submission_id').references(() => submissions.id, { onDelete: 'restrict' }),
+    checkpointAttemptId: uuid('checkpoint_attempt_id').references(() => checkpointAttempts.id, {
+      onDelete: 'restrict',
+    }),
+    checkpointOutcomeId: uuid('checkpoint_outcome_id').references(() => checkpointOutcomes.id, {
+      onDelete: 'restrict',
+    }),
     jobId: uuid('job_id'),
     attemptId: uuid('attempt_id'),
     resultId: uuid('result_id'),
@@ -644,6 +683,12 @@ export const activityEvents = app.table(
     nodeKey: text('node_key'),
     submissionId: uuid('submission_id').references(() => submissions.id, { onDelete: 'restrict' }),
     resultId: uuid('result_id').references(() => judgeResults.id, { onDelete: 'restrict' }),
+    checkpointAttemptId: uuid('checkpoint_attempt_id').references(() => checkpointAttempts.id, {
+      onDelete: 'restrict',
+    }),
+    checkpointOutcomeId: uuid('checkpoint_outcome_id').references(() => checkpointOutcomes.id, {
+      onDelete: 'restrict',
+    }),
     correlationId: uuid('correlation_id').notNull(),
     payload: jsonb('payload').$type<JsonObject>().notNull(),
     occurredAt: time('occurred_at').notNull().defaultNow(),
@@ -670,5 +715,154 @@ export const activityEvents = app.table(
     index('activity_events_curriculum_node_idx').on(t.curriculumVersionId, t.nodeKey),
     index('activity_events_submission_idx').on(t.submissionId),
     index('activity_events_result_idx').on(t.resultId),
+  ],
+);
+
+export const checkpointDefinitions = app.table(
+  'checkpoint_definitions',
+  {
+    curriculumVersionId: uuid('curriculum_version_id').notNull(),
+    nodeKey: text('node_key').notNull(),
+    definitionDigest: text('definition_digest').notNull(),
+    definition: jsonb('definition').$type<JsonObject>().notNull(),
+  },
+  (t) => [
+    primaryKey({ columns: [t.curriculumVersionId, t.nodeKey] }),
+    foreignKey({
+      columns: [t.curriculumVersionId, t.nodeKey],
+      foreignColumns: [curriculumNodes.curriculumVersionId, curriculumNodes.nodeKey],
+    }).onDelete('restrict'),
+    check('checkpoint_definition_digest', digest(t.definitionDigest)),
+    check(
+      'checkpoint_definition_policy',
+      sql`${t.definition}->>'policyVersion'='1' AND ${t.definition}->>'durationSeconds'='5400' AND jsonb_array_length(${t.definition}->'tasks')=4`,
+    ),
+  ],
+);
+export const checkpointAttempts = app.table(
+  'checkpoint_attempts',
+  {
+    id: uuid('id').defaultRandom().primaryKey(),
+    cohortId: uuid('cohort_id').notNull(),
+    userId: uuid('user_id').notNull(),
+    curriculumVersionId: uuid('curriculum_version_id').notNull(),
+    nodeKey: text('node_key').notNull(),
+    requestId: uuid('request_id').notNull(),
+    definitionDigest: text('definition_digest').notNull(),
+    snapshot: jsonb('snapshot').$type<JsonObject>().notNull(),
+    snapshotDigest: text('snapshot_digest').notNull(),
+    normalSlot: integer('normal_slot').notNull(),
+    kind: text('kind').notNull(),
+    replacementFor: uuid('replacement_for'),
+    startedAt: time('started_at').notNull(),
+    deadlineAt: time('deadline_at').notNull(),
+    closedAt: time('closed_at'),
+    closureReason: text('closure_reason'),
+    status: text('status').notNull().default('active'),
+    completedAt: time('completed_at'),
+    retakeAnnouncedAt: time('retake_announced_at'),
+  },
+  (t): PgTableExtraConfigValue[] => [
+    unique('checkpoint_attempt_identity').on(
+      t.id,
+      t.cohortId,
+      t.userId,
+      t.curriculumVersionId,
+      t.nodeKey,
+    ),
+    unique('checkpoint_start_request').on(t.cohortId, t.userId, t.requestId),
+    foreignKey({
+      columns: [t.cohortId, t.userId],
+      foreignColumns: [cohortMemberships.cohortId, cohortMemberships.userId],
+    }).onDelete('restrict'),
+    foreignKey({
+      columns: [t.cohortId, t.curriculumVersionId],
+      foreignColumns: [cohorts.id, cohorts.curriculumVersionId],
+    }).onDelete('restrict'),
+    foreignKey({
+      columns: [t.curriculumVersionId, t.nodeKey],
+      foreignColumns: [checkpointDefinitions.curriculumVersionId, checkpointDefinitions.nodeKey],
+    }).onDelete('restrict'),
+    foreignKey({ columns: [t.replacementFor], foreignColumns: [t.id] }).onDelete('restrict'),
+    uniqueIndex('checkpoint_one_open')
+      .on(t.cohortId, t.userId, t.nodeKey)
+      .where(sql`${t.status} IN ('active','evaluating')`),
+    check(
+      'checkpoint_attempt_digest',
+      sql`${digest(t.definitionDigest)} AND ${digest(t.snapshotDigest)}`,
+    ),
+    check(
+      'checkpoint_attempt_policy',
+      sql`${t.normalSlot} IN (1,2) AND ((${t.kind}='normal' AND ${t.replacementFor} IS NULL) OR (${t.kind}='replacement' AND ${t.replacementFor} IS NOT NULL)) AND ${t.deadlineAt}=${t.startedAt}+interval '90 minutes'`,
+    ),
+    check(
+      'checkpoint_attempt_lifecycle',
+      sql`(${t.status}='active' AND ${t.closedAt} IS NULL AND ${t.closureReason} IS NULL AND ${t.completedAt} IS NULL) OR (${t.status}='evaluating' AND ${t.closedAt} IS NOT NULL AND ${t.closureReason} IN ('finished','expired') AND ${t.completedAt} IS NULL) OR (${t.status} IN ('passed','failed','infrastructure_blocked') AND ${t.closedAt} IS NOT NULL AND ${t.closureReason} IN ('finished','expired') AND ${t.completedAt} IS NOT NULL)`,
+    ),
+    check(
+      'checkpoint_attempt_time_order',
+      sql`(${t.closedAt} IS NULL OR ${t.closedAt}>=${t.startedAt}) AND (${t.completedAt} IS NULL OR ${t.completedAt}>=${t.closedAt})`,
+    ),
+  ],
+);
+export const checkpointOutcomes = app.table(
+  'checkpoint_outcomes',
+  {
+    id: uuid('id').defaultRandom().primaryKey(),
+    attemptId: uuid('attempt_id').notNull().unique(),
+    cohortId: uuid('cohort_id').notNull(),
+    userId: uuid('user_id').notNull(),
+    curriculumVersionId: uuid('curriculum_version_id').notNull(),
+    nodeKey: text('node_key').notNull(),
+    status: text('status').notNull(),
+    points: integer('points').notNull(),
+    evidence: jsonb('evidence').$type<JsonObject>().notNull(),
+    evidenceDigest: text('evidence_digest').notNull(),
+    appliedAt: time('applied_at').notNull(),
+  },
+  (t) => [
+    unique('checkpoint_outcome_identity').on(
+      t.id,
+      t.cohortId,
+      t.userId,
+      t.curriculumVersionId,
+      t.nodeKey,
+    ),
+    foreignKey({
+      columns: [t.attemptId, t.cohortId, t.userId, t.curriculumVersionId, t.nodeKey],
+      foreignColumns: [
+        checkpointAttempts.id,
+        checkpointAttempts.cohortId,
+        checkpointAttempts.userId,
+        checkpointAttempts.curriculumVersionId,
+        checkpointAttempts.nodeKey,
+      ],
+    }).onDelete('restrict'),
+    check(
+      'checkpoint_outcome_score',
+      sql`${t.points} BETWEEN 0 AND 4 AND ((${t.status}='passed' AND ${t.points}>=3) OR (${t.status} IN ('failed','infrastructure_blocked') AND ${t.points}<3))`,
+    ),
+    check('checkpoint_evidence_digest', digest(t.evidenceDigest)),
+  ],
+);
+export const checkpointReplacementGrants = app.table(
+  'checkpoint_replacement_grants',
+  {
+    id: uuid('id').defaultRandom().primaryKey(),
+    attemptId: uuid('attempt_id')
+      .notNull()
+      .unique()
+      .references(() => checkpointAttempts.id, { onDelete: 'restrict' }),
+    actorUserId: uuid('actor_user_id')
+      .notNull()
+      .references(() => users.id, { onDelete: 'restrict' }),
+    reason: text('reason').notNull(),
+    grantedAt: time('granted_at').notNull().defaultNow(),
+    replacementAttemptId: uuid('replacement_attempt_id')
+      .unique()
+      .references(() => checkpointAttempts.id, { onDelete: 'restrict' }),
+  },
+  (t) => [
+    check('checkpoint_replacement_reason', sql`${t.reason}='trusted_infrastructure_failure'`),
   ],
 );

@@ -42,6 +42,13 @@ type testCase struct {
 }
 
 func cases(files map[string][]byte, id string) ([]json.RawMessage, []string, error) {
+	c, err := artifact.ContractFor(id, nil)
+	if err != nil {
+		return nil, nil, err
+	}
+	return casesFor(files, c)
+}
+func casesFor(files map[string][]byte, contract artifact.ExecutionContract) ([]json.RawMessage, []string, error) {
 	var inputs []json.RawMessage
 	var expected []string
 	for _, name := range []string{"cases/public.json", "cases/private.json"} {
@@ -53,7 +60,7 @@ func cases(files map[string][]byte, id string) ([]json.RawMessage, []string, err
 			if r.Expected == nil || len(r.Input) == 0 {
 				return nil, nil, artifact.ErrInvalid
 			}
-			if id == "hello-go-v1" {
+			if contract.Input == "string" {
 				var v string
 				if r.Input[0] != '"' || json.Unmarshal(r.Input, &v) != nil {
 					return nil, nil, artifact.ErrInvalid
@@ -74,14 +81,21 @@ func cases(files map[string][]byte, id string) ([]json.RawMessage, []string, err
 // This is a public stdin/stdout adapter for the public challenge signatures.
 // The hidden pack's bridge/source is deliberately never copied into either container.
 func adapter(id string) []byte {
-	typ, call := "string", "Hello(v)"
-	if id == "even-or-odd-v1" {
+	c, err := artifact.ContractFor(id, nil)
+	if err != nil {
+		return nil
+	}
+	return adapterFor(c)
+}
+func adapterFor(c artifact.ExecutionContract) []byte {
+	typ := c.Input
+	// Existing EvenOrOdd uses Go int; its accepted platform is linux/amd64.
+	if c.Function == "EvenOrOdd" && c.Item == "even-or-odd" {
 		typ = "int"
-		call = "EvenOrOdd(v)"
 	}
 	return []byte(`package main
 import("encoding/json";"os")
-func main(){ var inputs []` + typ + `;if json.NewDecoder(os.Stdin).Decode(&inputs)!=nil{os.Exit(2)}; outputs:=make([]string,0,len(inputs));for _,v:=range inputs{outputs=append(outputs,` + call + `)};if json.NewEncoder(os.Stdout).Encode(outputs)!=nil{os.Exit(2)}}
+func main(){var inputs []` + typ + `;if json.NewDecoder(os.Stdin).Decode(&inputs)!=nil{os.Exit(2)};outputs:=make([]string,0,len(inputs));for _,v:=range inputs{outputs=append(outputs,` + c.Function + `(v))};if json.NewEncoder(os.Stdout).Encode(outputs)!=nil{os.Exit(2)}}
 `)
 }
 func (e Executor) source(ctx context.Context, s protocol.Source) ([]byte, error) {
@@ -127,6 +141,9 @@ func (e Executor) source(ctx context.Context, s protocol.Source) ([]byte, error)
 	return bytes, nil
 }
 func (e Executor) Evaluate(ctx context.Context, s protocol.Snapshot, layout string) Result {
+	if _, err := artifact.ContractFor(s.PackID, s.Contract); err != nil {
+		return infrastructure("INCOMPATIBLE_ENVIRONMENT")
+	}
 	source, err := e.source(ctx, s.Source)
 	if err != nil {
 		return infrastructure(err.Error())
@@ -135,7 +152,7 @@ func (e Executor) Evaluate(ctx context.Context, s protocol.Snapshot, layout stri
 	if err != nil {
 		return infrastructure("ARTIFACT_MISMATCH")
 	}
-	inputs, expected, err := cases(files, s.PackID)
+	inputs, expected, err := casesFor(files, func() artifact.ExecutionContract { c, _ := artifact.ContractFor(s.PackID, s.Contract); return c }())
 	if err != nil {
 		return infrastructure("INCOMPATIBLE_ENVIRONMENT")
 	}
@@ -162,7 +179,7 @@ func (e Executor) compile(ctx context.Context, s protocol.Snapshot, source []byt
 		return nil, "", err
 	}
 	defer c.Close()
-	if c.Import(ctx, map[string][]byte{"solution.go": source, "transport.go": adapter(s.PackID)}) != nil {
+	if c.Import(ctx, map[string][]byte{"solution.go": source, "transport.go": adapterFor(func() artifact.ExecutionContract { c, _ := artifact.ContractFor(s.PackID, s.Contract); return c }())}) != nil {
 		return nil, "", sandbox.ErrInfrastructure
 	}
 	phase, cancel := context.WithTimeout(ctx, time.Duration(s.Resources.Compilation.Timeout)*time.Millisecond)

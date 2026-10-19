@@ -8,6 +8,7 @@ export type EvaluationProjection = {
   nodeKey: string;
   spec: Record<string, unknown>;
   digest: string;
+  checkpoint?: Record<string, unknown>;
 };
 
 /** A draft is a validated source receipt, with no incomplete node projections. */
@@ -104,6 +105,12 @@ export async function importCurriculum(
         };
       }),
     );
+    for (const evaluation of evaluations) {
+      if (evaluation.checkpoint) {
+        await tx.execute(sql`INSERT INTO app.checkpoint_definitions(curriculum_version_id,node_key,definition_digest,definition)
+          VALUES(${version.id}::uuid,${evaluation.nodeKey},${evaluation.digest},${JSON.stringify(evaluation.checkpoint)}::jsonb)`);
+      }
+    }
     if (curriculum.prerequisites.length)
       await tx.insert(schema.nodePrerequisites).values(
         curriculum.prerequisites.map((e) => ({

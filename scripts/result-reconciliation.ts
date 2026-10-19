@@ -1,5 +1,6 @@
 import postgres from 'postgres';
 import { drizzle } from 'drizzle-orm/postgres-js';
+import { reconcileCheckpoints } from '../packages/db/operations/checkpoints';
 import { reconcileResults } from '../packages/db/operations/results';
 
 if (!process.env.RESULT_APPLICATION_DATABASE_URL)
@@ -13,6 +14,15 @@ try {
   do {
     if (maintenance) await maintenance`SELECT judge.recover_expired(100)`;
     const outcomes = await reconcileResults(drizzle(client));
+    const checkpoints = await reconcileCheckpoints(drizzle(client));
+    for (const outcome of checkpoints)
+      console.info(
+        JSON.stringify({
+          event: 'checkpoint_reconciliation',
+          attempt_id: outcome.id,
+          status: outcome.status,
+        }),
+      );
     for (const outcome of outcomes)
       console.info(
         JSON.stringify({
@@ -23,7 +33,8 @@ try {
         }),
       );
     if (process.argv.includes('--once')) {
-      if (outcomes.some((outcome) => outcome.status === 'attention_required')) process.exitCode = 1;
+      if ([...outcomes, ...checkpoints].some((outcome) => outcome.status === 'attention_required'))
+        process.exitCode = 1;
       break;
     }
     await new Promise((resolve) => setTimeout(resolve, 60000));

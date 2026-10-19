@@ -1,6 +1,7 @@
 import 'server-only';
 import { timingSafeEqual, createHash } from 'node:crypto';
 import { createDatabase } from '@nextera/db/connection';
+import { reconcileCheckpoints } from '@nextera/db/operations/checkpoints';
 import { applyResult, reconcileResults } from '@nextera/db/operations/results';
 
 export async function serviceApplication(request: Request, reconcile: boolean) {
@@ -34,9 +35,14 @@ export async function serviceApplication(request: Request, reconcile: boolean) {
   try {
     if (reconcile) {
       const outcomes = await reconcileResults(connection.db);
+      const checkpoints = await reconcileCheckpoints(connection.db);
       return Response.json(
-        { outcomes },
-        { status: outcomes.some((o) => o.status === 'attention_required') ? 409 : 200 },
+        { outcomes, checkpoints },
+        {
+          status: [...outcomes, ...checkpoints].some((o) => o.status === 'attention_required')
+            ? 409
+            : 200,
+        },
       );
     }
     const result = await applyResult(connection.db, String(input.result_id));

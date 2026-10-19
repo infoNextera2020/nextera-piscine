@@ -6,6 +6,7 @@ import {
   type Curriculum,
   type NodeKind,
   type SubmissionRules,
+  type CheckpointTask,
 } from '@nextera/domain';
 import { contentDigest, sha256, type SourceFile } from './digest';
 
@@ -113,6 +114,103 @@ export function parseCurriculum(
     if (!NODE_KINDS.some((kind) => kind === n.type)) fail(`${nodeKey}: invalid node kind.`);
     const kind = n.type as NodeKind;
     const folder = `${directory}/${kind === 'challenge' ? 'challenges' : `${kind}s`}/${nodeKey}`;
+    if (kind === 'checkpoint') {
+      const configPath = `${folder}/checkpoint.yaml`;
+      const config = yaml(configPath);
+      knownFields(
+        config,
+        ['id', 'title', 'policy_version', 'duration_seconds', 'tasks'],
+        configPath,
+      );
+      if (
+        config.id !== nodeKey ||
+        config.title !== n.title ||
+        config.policy_version !== 1 ||
+        config.duration_seconds !== 5400
+      )
+        fail('Checkpoint identity or accepted policy mismatch.');
+      const taskKeys = list(config.tasks, 'checkpoint.tasks').map((v) => key(v, 'task key'));
+      unique(taskKeys, 'checkpoint tasks');
+      if (taskKeys.length !== 4) fail('A checkpoint requires exactly four tasks.');
+      const tasks: CheckpointTask[] = taskKeys.map((taskKey) => {
+        const base = `${folder}/tasks/${taskKey}`;
+        const path = `${base}/task.yaml`;
+        const task = yaml(path);
+        knownFields(
+          task,
+          ['id', 'title', 'language', 'submission', 'limits', 'judge', 'skills'],
+          path,
+        );
+        if (task.id !== taskKey || task.language !== 'go')
+          fail('Checkpoint task identity mismatch.');
+        const submission = object(task.submission, 'task.submission');
+        knownFields(
+          submission,
+          ['required_files', 'allowed_extensions', 'max_size_kb'],
+          'submission',
+        );
+        const required = list(submission.required_files, 'required_files').map((v) =>
+          text(v, 'filename'),
+        );
+        const extensions = list(submission.allowed_extensions, 'allowed_extensions');
+        if (
+          required.length !== 1 ||
+          !/^[A-Za-z0-9_][A-Za-z0-9_]*[.]go$/.test(required[0]!) ||
+          required[0] === 'main.go' ||
+          extensions.length !== 1 ||
+          extensions[0] !== '.go'
+        )
+          fail('Checkpoint task requires one safe Go function file.');
+        const limits = object(task.limits, 'task.limits');
+        knownFields(limits, ['timeout_ms', 'memory_mb', 'output_kb'], 'limits');
+        const judge = object(task.judge, 'task.judge');
+        knownFields(judge, ['testpack'], 'judge');
+        const subject = read(`${base}/subject.md`);
+        if (!subject.trim()) fail('Empty checkpoint task subject.');
+        const skills = list(task.skills, 'skills').map((v) => key(v, 'skill'));
+        unique(skills, 'skills');
+        return {
+          key: taskKey,
+          title: text(task.title, 'task.title'),
+          subjectMarkdown: subject,
+          subjectDigest: sha256(sources.get(`${base}/subject.md`)!),
+          configurationDigest: sha256(sources.get(path)!),
+          submissionRules: {
+            required_files: required,
+            allowed_extensions: ['.go'],
+            max_size_kb: positive(submission.max_size_kb, 'max_size_kb'),
+          },
+          testPackId: key(judge.testpack, 'testpack'),
+          declaredLimits: {
+            timeout_ms: positive(limits.timeout_ms, 'timeout_ms'),
+            memory_mb: positive(limits.memory_mb, 'memory_mb'),
+            output_kb: positive(limits.output_kb, 'output_kb'),
+          },
+        };
+      });
+      unique(
+        tasks.map((t) => t.testPackId),
+        'checkpoint evaluation identities',
+      );
+      const subject = read(`${folder}/subject.md`);
+      if (!subject.trim()) fail('Empty checkpoint subject.');
+      return {
+        key: nodeKey,
+        questKey,
+        kind,
+        title: text(n.title, 'node.title'),
+        position: positive(n.order, 'node.order'),
+        difficulty: positive(n.difficulty, 'difficulty'),
+        subjectMarkdown: subject,
+        subjectDigest: sha256(sources.get(`${folder}/subject.md`)!),
+        configurationDigest: sha256(sources.get(configPath)!),
+        skills: [],
+        submissionRules: tasks[0]!.submissionRules,
+        testPackId: tasks[0]!.testPackId,
+        declaredLimits: tasks[0]!.declaredLimits,
+        checkpoint: { policyVersion: 1 as const, durationSeconds: 5400 as const, tasks },
+      };
+    }
     const configPath = `${folder}/${kind}.yaml`;
     const config = yaml(configPath);
     knownFields(
