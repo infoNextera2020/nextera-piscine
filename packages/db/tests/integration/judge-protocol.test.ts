@@ -163,8 +163,9 @@ describe('durable Judge protocol on real concurrent PostgreSQL connections', () 
     ).rejects.toThrow('immutable');
     const p =
       await admin`SELECT state,started_at FROM app.learner_node_progress WHERE cohort_id=${cohort} ORDER BY node_key`;
-    expect(p.map((x) => x.state)).toEqual(['locked', 'available']);
-    expect(p.every((x) => x.started_at === null)).toBe(true);
+    expect(p.map((x) => x.state)).toEqual(['locked', 'in_progress']);
+    expect(p[0]!.started_at).toBeNull();
+    expect(p[1]!.started_at).not.toBeNull();
   });
   it('gives one job to exactly one of eight simultaneous worker logins', async () => {
     const workers = await Promise.all(Array.from({ length: 8 }, () => connectWorker()));
@@ -375,13 +376,19 @@ describe('durable Judge protocol on real concurrent PostgreSQL connections', () 
     async (verdict) => {
       await accept();
       const w = await connectWorker();
-      const c = (await claim(w))!;
-      await start(w, c);
-      await finish(w, c, verdict);
+      let c: Claim | null = null;
+      await expect
+        .poll(async () => {
+          c = await claim(w);
+          return c;
+        })
+        .not.toBeNull();
+      await start(w, c!);
+      await finish(w, c!, verdict);
       const [row] =
         await admin`SELECT app.read_submissions(${authId}::uuid,${cohort}::uuid,'hello-go') AS history`;
       expect(row!.history.some((x: { state: string }) => x.state === verdict)).toBe(true);
-      await expect(finish(w, c, verdict, { secret: 42 })).rejects.toThrow('INVALID_RESULT');
+      await expect(finish(w, c!, verdict, { secret: 42 })).rejects.toThrow('INVALID_RESULT');
     },
   );
   it('enforces Runner operation-only grants, maintenance separation, and restricted definer owners', async () => {

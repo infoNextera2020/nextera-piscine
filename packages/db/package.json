@@ -11,7 +11,8 @@
     "./cohorts": "./queries/cohorts.ts",
     "./submissions": "./queries/submissions.ts",
     "./operations/curriculum": "./operations/curriculum.ts",
-    "./operations/cohorts": "./operations/cohorts.ts"
+    "./operations/cohorts": "./operations/cohorts.ts",
+    "./operations/results": "./operations/results.ts"
   },
   "scripts": {
     "build": "tsc -p tsconfig.json",

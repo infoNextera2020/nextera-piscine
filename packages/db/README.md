@@ -117,9 +117,9 @@ the exact protected layout mapping. Normal intake still requires a remote OCI
 reference; publisher/candidate gates remain intact and candidate references null.
 
 Authorized history returns the learner's latest 50 safe summaries. Terminal state
-comes from the active job's authoritative result. Stored submission state can stay
-queued/running and result receipts stay pending until later product application.
-ADR-008's combined verdict/progression/receipt transaction is deliberately deferred.
+comes from the active job's authoritative result. Foundation 005 atomically finalizes
+stored submission state, mastery/unlocks, events and the processing receipt through
+a separate trusted product application connection.
 
 ## Structured fields
 
@@ -145,21 +145,48 @@ and activity payloads are JSON objects bounded to 64 KiB each. Protocol code mus
 construct the approved safe projections before persistence; a size check does
 not prove hidden-test confidentiality.
 
-## Deferred product application
+## Trusted product application
 
-The protocol above is implemented; these product responsibilities remain deferred:
+Migration 0005 introduces the isolated NOLOGIN permission role
+`nextera_result_application`. A separate trusted product login inherits it; the
+web runtime, Runner and browser roles do not. Its SELECT rights cover stored
+submission/job/result identity, pinned curriculum/prerequisites, memberships and
+progress. Column UPDATE rights cover submission lifecycle, receipt fields and
+progress; UPDATE(id) on jobs and UPDATE(joined_at) on memberships permit row locks.
+Only INSERT is granted on state/activity events. There are no result-payload,
+execution-attempt, worker, curriculum, source or role-administration writes.
 
-- Verifying first-passing evidence is actually passed, authoritative, and the
-  first applied evidence; mastery never regresses and its timestamps stay fixed.
-- Transactional terminal submission/progress/receipt/event application and result
-  reconciliation, including superseded-result decisions.
-- Production storage credential issuance/rotation, retention policy and safe aged
-  orphan cleanup. This milestone retains objects and never deletes referenced work.
+`operations/results.ts` accepts only a durable result ID. One transaction locks
+job, submission, receipt, the intake-compatible learner/cohort advisory key,
+membership and all progress rows in node order. Stored immutable identities and
+terminal authority determine the outcome; TypeScript domain rules determine
+mastery and AND prerequisite unlocks. Existing result receipt columns and immutable
+events bind evidence through result/job/submission and membership/version/node
+foreign identities. A database trigger prevents changes to a processed receipt.
 
-No result-driven progression service is included. Only controlled enrollment
-initializes progress. Notification/result-application failures never consume the
-infrastructure retry budget. Provisioner worker revocation closes live claims
-atomically; re-enabling the worker cannot resurrect an old token.
+An AFTER INSERT submission trigger starts an available node at acceptance time.
+Its SECURITY DEFINER owner is the restricted product role; its search_path is
+pg_catalog and all objects are qualified. PUBLIC execution is revoked. It is a
+trigger-only operation with no caller-selectable state/node parameters; only a
+real accepted submission insert invokes it. Function ownership transfer uses
+same-transaction temporary migration membership and revokes CREATE/SET access.
+A migration backfill starts existing Foundation 004 submissions without changing
+Judge evidence, access status or immutable submission identity.
+
+Already accepted results apply historical progression after deactivation; current
+reads and intake remain authorized independently. This policy was explicitly
+selected by the user for Foundation 005. Cohort version pins remain authoritative;
+there is no mutable global-current version check or changed-environment workflow.
+
+`reconcileResults` scans bounded pending batches and invokes the same transaction.
+Concurrent scans may duplicate work selection; database locks converge on one
+receipt and event set. Failures stay pending and return attention_required.
+The dedicated reconciliation command can also invoke separately authorized lease
+recovery. Neither notifications nor application retries consume execution retries.
+See the root README for service/scheduler configuration.
+
+Storage credential issuance/rotation, retention and aged orphan cleanup remain
+future operational work. No referenced source or assessment history is deleted.
 
 ## Tests
 

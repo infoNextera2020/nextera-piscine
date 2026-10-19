@@ -252,7 +252,7 @@ describe('migrated PostgreSQL constraints', () => {
       WHERE table_schema IN ('app','judge') AND table_type='BASE TABLE'`;
     expect(rows[0]?.count).toBe('16');
     const history = await client`SELECT * FROM drizzle.__drizzle_migrations`;
-    expect(history).toHaveLength(5);
+    expect(history).toHaveLength(6);
   });
 
   it.each(['locked', 'available', 'in_progress', 'mastered'])(

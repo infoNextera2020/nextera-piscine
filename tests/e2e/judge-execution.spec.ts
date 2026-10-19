@@ -154,7 +154,7 @@ test.afterAll(async () => {
       string
     >;
     for (const principal of Object.values(runtime))
-      if (/^f004_(web|maintenance)_[0-9a-f]+$/.test(principal))
+      if (/^f00[45]_(web|maintenance|application)_[0-9a-f]+$/.test(principal))
         await admin.unsafe(`ALTER ROLE ${principal} NOLOGIN`);
     // Assessment history and source objects remain retained in isolated development storage.
   } finally {
@@ -248,6 +248,9 @@ async function execute(
   catalogPath?: string,
 ) {
   const accepted = await queued(page, pack, source);
+  initialProgress = JSON.stringify(
+    await admin`SELECT * FROM app.learner_node_progress WHERE user_id=${learner.userId} ORDER BY cohort_id,node_key`,
+  );
   const running = runWorker(catalogPath);
   try {
     let received: string | null = null;
@@ -422,6 +425,9 @@ test('killed Runner claim expires, maintenance recovers it, and a new fenced att
     'hello-go-v1',
     'package main\nfunc Hello(name string) string {return "Hello, "+name+"!"} // crash fixture',
   );
+  initialProgress = JSON.stringify(
+    await admin`SELECT * FROM app.learner_node_progress WHERE user_id=${learner.userId} ORDER BY cohort_id,node_key`,
+  );
   const dying = runWorker(undefined, true);
   const death = await dying.exited;
   expect(death.signal).toBe('SIGKILL');
@@ -462,4 +468,109 @@ test('killed Runner claim expires, maintenance recovers it, and a new fenced att
     recovered.child.kill('SIGTERM');
     await recovered.exited;
   }
+});
+
+test('Foundation 005: wrong then correct Hello, historical application, unlock and refresh', async ({
+  page,
+}) => {
+  const [original] =
+    await admin`SELECT curriculum_version_id FROM app.cohorts WHERE id=${helloCohort}`;
+  const cohort = await createCohort(db, {
+    slug: `foundation-test-005-${randomUUID()}`,
+    name: '005 COMPLETE LEARNING LOOP',
+    curriculumVersionId: String(original!.curriculum_version_id),
+    startsAt: new Date(),
+  });
+  cohorts.push(cohort.id);
+  await enrollLearner(db, cohort.id, learner.userId);
+  helloCohort = cohort.id;
+  await admin`UPDATE judge.workers SET capabilities=capabilities||${JSON.stringify({ fixture_cohort_ids: cohorts })}::jsonb WHERE id=${worker.worker_id}`;
+  await login(page);
+  await page.goto(`/app/cohorts/${cohort.id}`);
+  const hello = () =>
+    page
+      .getByRole('listitem')
+      .filter({ has: page.getByRole('heading', { name: 'Hello Go', exact: true }) });
+  const even = () =>
+    page
+      .getByRole('listitem')
+      .filter({ has: page.getByRole('heading', { name: 'Even or Odd', exact: true }) });
+  await expect(hello().getByText('AVAILABLE', { exact: true })).toBeVisible();
+  await expect(even().getByText('LOCKED', { exact: true })).toBeVisible();
+  const wrong = await execute(
+    page,
+    'hello-go-v1',
+    'package main\nfunc Hello(name string) string {return "wrong"}',
+    'failed',
+  );
+  const resultId = async (job: string) =>
+    String(
+      (await admin`SELECT terminal_result_id FROM judge.jobs WHERE id=${job}`)[0]!
+        .terminal_result_id,
+    );
+  const headers = { authorization: `Bearer ${process.env.RESULT_APPLICATION_SERVICE_TOKEN!}` };
+  const failedId = await resultId(wrong.job);
+  const unauthorized = await page.request.post('/api/internal/results', {
+    data: { result_id: failedId },
+  });
+  expect(unauthorized.status()).toBe(401);
+  const failed = await page.request.post('/api/internal/results', {
+    headers,
+    data: { result_id: failedId },
+  });
+  expect(failed.status()).toBe(200);
+  await page.goto(`/app/cohorts/${cohort.id}`);
+  await expect(hello().getByText('IN_PROGRESS', { exact: true })).toBeVisible();
+  await expect(even().getByText('LOCKED', { exact: true })).toBeVisible();
+  const correct = await execute(
+    page,
+    'hello-go-v1',
+    verdicts['hello-go-v1']!.correct![0],
+    'passed',
+  );
+  const passedId = await resultId(correct.job);
+  // No notification: independent scheduled service reconciles durable pending results.
+  const reconciled = await page.request.post('/api/internal/results/reconcile', {
+    headers,
+    data: {},
+  });
+  expect(reconciled.status()).toBe(200);
+  await page.goto(`/app/cohorts/${cohort.id}`);
+  await page.reload();
+  await expect(hello().getByText('MASTERED', { exact: true })).toBeVisible();
+  await expect(even().getByText('AVAILABLE', { exact: true })).toBeVisible();
+  const [before] = await admin`SELECT processed_at FROM judge.results WHERE id=${passedId}`;
+  const duplicate = await page.request.post('/api/internal/results', {
+    headers,
+    data: { result_id: passedId },
+  });
+  expect(duplicate.status()).toBe(200);
+  expect(
+    (await admin`SELECT processed_at FROM judge.results WHERE id=${passedId}`)[0]!.processed_at,
+  ).toEqual(before!.processed_at);
+  expect(await admin`SELECT id FROM app.activity_events WHERE result_id=${passedId}`).toHaveLength(
+    2,
+  );
+  await page.goto(`/app/cohorts/${cohort.id}/challenges/hello-go`);
+  await expect(
+    page.getByText('All required checks passed.', { exact: true }).first(),
+  ).toBeVisible();
+  // Even now uses the actual prerequisite graph instead of the separate root fixture.
+  evenCohort = cohort.id;
+  const evenPassed = await execute(
+    page,
+    'even-or-odd-v1',
+    verdicts['even-or-odd-v1']!.correct![0],
+    'passed',
+  );
+  expect(
+    (
+      await page.request.post('/api/internal/results', {
+        headers,
+        data: { result_id: await resultId(evenPassed.job) },
+      })
+    ).status(),
+  ).toBe(200);
+  await page.goto(`/app/cohorts/${cohort.id}`);
+  await expect(even().getByText('MASTERED', { exact: true })).toBeVisible();
 });

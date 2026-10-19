@@ -21,6 +21,7 @@ const result = spawnSync('pnpm', options, {
   env: {
     ...process.env,
     ...parse(readFileSync(join(credentials, 'web.env'))),
+    ...parse(readFileSync(join(credentials, 'application.env'))),
     NEXTERA_JUDGE_E2E: '1',
     JUDGE_CREDENTIALS: credentials,
     JUDGE_ARTIFACTS: realpathSync(values.artifacts),

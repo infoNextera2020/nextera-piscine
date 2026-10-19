@@ -218,7 +218,7 @@ test('private schemas are absent from the Data API', async () => {
 });
 
 test('all reviewed migrations and the real Supabase Auth foreign key are present', async () => {
-  expect(await sql`SELECT id FROM drizzle.__drizzle_migrations`).toHaveLength(5);
+  expect(await sql`SELECT id FROM drizzle.__drizzle_migrations`).toHaveLength(6);
   const references =
     await sql`SELECT 1 FROM pg_constraint WHERE conrelid = 'app.users'::regclass AND confrelid = 'auth.users'::regclass AND contype = 'f'`;
   expect(references).toHaveLength(1);

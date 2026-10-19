@@ -79,7 +79,8 @@ jobs:
           node-version-file: .node-version
           cache: pnpm
       - run: pnpm install --frozen-lockfile
-      - run: pnpm test:db
+      - name: PostgreSQL constraints, result application, graph, reconciliation and privilege regressions
+        run: pnpm test:db
 
   identity-e2e:
     runs-on: ubuntu-24.04

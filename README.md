@@ -25,13 +25,12 @@ The required first E2E starts with Hello Go available and Even or Odd locked.
 An incorrect Hello submission fails and leaves Even or Odd locked. A correct
 submission passes, Hello becomes mastered, and Even or Odd becomes available.
 
-Architecture V0.1 is approved. **Foundation 004** adds authenticated immutable
-source intake, the PostgreSQL lease/result protocol, and the isolated Go executor.
-Real curriculum remains a draft and its catalog remains CANDIDATE. Full execution
-verification uses explicitly isolated local fixtures. Results remain pending:
-there are no mastery, node-state, unlock, or result-application writes. See
-[the Foundation 004 report](docs/FOUNDATION_004_REPORT.md) and
-[acceptance criteria and testing](docs/product/VERTICAL_SLICE_001.md).
+Architecture V0.1 is approved. Foundation 005 adds the trusted product transaction
+for durable Judge results: terminal submission state, mastery, prerequisite unlocks,
+immutable processing receipts, safe events, and restartable reconciliation.
+Foundation 004's Runner remains unchanged and cannot write progression. The real
+curriculum remains draft and the catalog remains CANDIDATE. Execution verification
+uses only isolated local fixtures. See [the Foundation 005 report](docs/FOUNDATION_005_REPORT.md).
 
 ## Local setup
 
@@ -326,3 +325,35 @@ where they are outside the first slice.
 - [Pilot Runner security profile](docs/architecture/RUNNER_SECURITY_PROFILE.md)
 - [Workspace and file layout](docs/architecture/WORKSPACE_LAYOUT.md)
 - [Vertical Slice 001 acceptance and testing](docs/product/VERTICAL_SLICE_001.md)
+
+## Trusted result application (Foundation 005)
+
+A separate server-only connection inheriting `nextera_result_application` owns
+`applyResult(db, resultId)`. Never grant this role to the learner runtime or a
+Runner login. It receives only the SELECT, column UPDATE and event INSERT rights
+listed in migration 0005; it has no role/schema administration, source-object access,
+publication writes, or Judge-result payload writes. Trusted TypeScript reads and
+locks the stored projection, then uses the existing domain prerequisite rules.
+
+`POST /api/internal/results` accepts exactly `{"result_id":"<durable UUID>"}`.
+`POST /api/internal/results/reconcile` accepts `{}`. Both require a separate
+`Authorization: Bearer <RESULT_APPLICATION_SERVICE_TOKEN>` (at least 32 characters),
+not a Supabase session. The server also needs `RESULT_APPLICATION_DATABASE_URL`.
+Use distinct random credentials provisioned by the operator; never expose either
+value through NEXT_PUBLIC variables. The Runner image need not change: notifications
+are optional acceleration; the independently scheduled product reconciler supplies
+correctness without any browser.
+
+Run `pnpm results:reconcile --once` from an external scheduler at least every
+60 seconds, or supervise `pnpm results:reconcile` for its bounded repeated scans.
+Supply `RESULT_APPLICATION_DATABASE_URL` and `MAINTENANCE_DATABASE_URL` in that
+process environment. The latter keeps lease recovery on its existing separate role;
+continue the existing independent 10-second lease maintenance schedule. Reconciliation
+returns only opaque result IDs/statuses. `attention_required` leaves evidence intact
+and requires operator investigation. No scheduler or production deployment is installed.
+
+The accepted historical-result policy applies already accepted work even after
+user/membership/cohort deactivation. It never reactivates access or relaxes intake
+and read authorization. Migration 0005 starts progress on valid intake and backfills
+Foundation 004's already accepted work from its original acceptance timestamps.
+All browser refresh/history endpoints remain read-only.
