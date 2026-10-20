@@ -26,3 +26,11 @@ Loaded by `next/font/local`; builds and browser rendering require no Google Font
 | Poppins-SemiBold.ttf      | d3bf1bdaf0550e83da9ac0b1d1d9fe6db086835a83aa28578e609a394b9a0286 |
 | Poppins-Bold.ttf          | 983676516167748b74de6f4771fb384c664fd913acb8b471122ecacf5da5ea6c |
 | OFL.txt                   | 6be04893d770899a015649c7aa3b582f871b272f8747a92b78b17c3e5c8b2573 |
+
+## Hairline figures (UI 002)
+
+The user supplied `/home/anas/.agents/skills/hairline-create` and selected two original figures: a checkpoint latch gate and three linked receipt plates. Sources live in `piscine/hairline/gate.js` and `receipts.js`; their self-contained `hairline-*.html` outputs are assembled by the supplied `build.mjs`. They retain the supplied engine and bench unchanged. The engine header identifies SHA-256 `346b48bdef2cdfafd5343eba01494255cf75f9c078e6fcd1aafc62bab62980a1`.
+
+`HairlineFigure` adds the production palette and hides standalone bench controls from the embedding document, without editing the supplied engine/bench. The gate pose is selected from the displayed server status. Pointer movement nudges only the latch; the receipt figure lifts a selected plate. Neither figure computes score, quota, eligibility, verdict, mastery, unlocks or replacement access. Both are decorative, have adjacent semantic text and use the engine's reduced-motion and visibility handling. No autoplay tour runs in the product.
+
+These are user-supplied tooling assets; no additional third-party redistribution rights are asserted here. No remote scripts, fonts or image requests are required by the figures.

@@ -1,53 +1,44 @@
 'use client';
-import { useEffect, useState } from 'react';
-import type { SubmissionSummary } from '@nextera/db/submissions';
-
+import { useRef, useState } from 'react';
+import s from '../../components/learning/workspace.module.css';
 export function SubmissionForm({
   cohort,
   node,
   filename,
+  maxSizeKb = 256,
+  onAccepted,
 }: {
   cohort: string;
   node: string;
   filename: string;
+  maxSizeKb?: number;
+  onAccepted?: () => void;
 }) {
-  const [history, setHistory] = useState<SubmissionSummary[]>([]);
+  const [phase, setPhase] = useState<'ready' | 'uploading' | 'accepted' | 'error'>('ready');
   const [message, setMessage] = useState('');
-  const [busy, setBusy] = useState(false);
-  useEffect(() => {
-    let disposed = false;
-    const refresh = async () => {
-      const response = await fetch(`/api/submissions/history?cohort=${cohort}&node=${node}`, {
-        cache: 'no-store',
-      });
-      if (response.ok && !disposed) setHistory((await response.json()) as SubmissionSummary[]);
-    };
-    void refresh().catch(() => {});
-    const timer = setInterval(() => void refresh().catch(() => {}), 2000);
-    return () => {
-      disposed = true;
-      clearInterval(timer);
-    };
-  }, [cohort, node]);
+  const input = useRef<HTMLInputElement>(null);
+  const pending = useRef(false);
   return (
-    <section className="space-y-4">
-      <h2 className="text-xl font-semibold">Submit a local solution</h2>
+    <section aria-label="Submission">
+      <h2>Submission</h2>
+      <p className={s.muted}>
+        Write your solution locally. Accepted work enters trusted evaluation.
+      </p>
       <form
-        className="space-y-3"
         onSubmit={async (event) => {
           event.preventDefault();
-          setBusy(true);
-          setMessage('');
-          const file = new FormData(event.currentTarget).get('source');
+          if (pending.current) return;
+          const file = input.current?.files?.[0];
+          if (!file || file.size < 1 || file.size > maxSizeKb * 1024 || file.name !== filename) {
+            setPhase('error');
+            setMessage(`Choose ${filename}, between 1 byte and ${maxSizeKb} KiB.`);
+            input.current?.focus();
+            return;
+          }
+          pending.current = true;
+          setPhase('uploading');
+          setMessage('Uploading solution…');
           try {
-            if (
-              !(file instanceof File) ||
-              file.size < 1 ||
-              file.size > 262144 ||
-              file.name !== filename
-            )
-              throw new Error();
-            // Persist the request identity across reloads and transport retries for this exact file.
             const bytes = await file.arrayBuffer();
             const digest = Array.from(
               new Uint8Array(await crypto.subtle.digest('SHA-256', bytes)),
@@ -69,41 +60,54 @@ export function SubmissionForm({
             if (!response.ok) throw new Error();
             const receipt = (await response.json()) as { id?: unknown };
             if (typeof receipt.id !== 'string') throw new Error();
-            setMessage('Submission accepted.');
-            const result = await fetch(`/api/submissions/history?cohort=${cohort}&node=${node}`, {
-              cache: 'no-store',
-            });
-            if (result.ok) setHistory((await result.json()) as SubmissionSummary[]);
+            setPhase('accepted');
+            setMessage('Submission accepted. Evaluation is pending.');
+            if (input.current) input.current.value = '';
+            onAccepted?.();
           } catch {
-            setMessage('Submission could not be accepted. Check the required file and try again.');
+            setPhase('error');
+            setMessage(
+              'Submission could not be confirmed. Check access and the required file, then retry.',
+            );
           } finally {
-            setBusy(false);
+            pending.current = false;
           }
         }}
       >
-        <label className="block">
-          Solution file ({filename})
-          <input className="block py-2" type="file" name="source" required accept=".go" />
-        </label>
-        <button
-          className="rounded bg-teal-300 px-4 py-2 text-slate-950 disabled:opacity-50"
-          disabled={busy}
-          type="submit"
+        <fieldset disabled={phase === 'uploading'} style={{ border: 0, padding: 0, minWidth: 0 }}>
+          <div className={s.upload}>
+            <label>
+              Solution file ({filename})
+              <input
+                ref={input}
+                type="file"
+                name="source"
+                required
+                accept={filename.includes('.') ? '.' + filename.split('.').at(-1) : undefined}
+                aria-describedby="submission-help submission-message"
+                aria-invalid={phase === 'error' || undefined}
+                onChange={() => {
+                  setPhase('ready');
+                  setMessage('');
+                }}
+              />
+            </label>
+            <p id="submission-help" className={s.muted}>
+              Required filename · {maxSizeKb} KiB maximum
+            </p>
+          </div>
+          <button className={s.button + ' ' + s.primary} type="submit">
+            {phase === 'uploading' ? 'Uploading…' : 'Submit solution'}
+          </button>
+        </fieldset>
+        <p
+          id="submission-message"
+          className={s.feedback}
+          role={phase === 'error' ? 'alert' : 'status'}
         >
-          Submit solution
-        </button>
+          {message}
+        </p>
       </form>
-      <p role="status">{message}</p>
-      <h2 className="text-xl font-semibold">Attempt history</h2>
-      <ul className="space-y-2">
-        {history.map((item) => (
-          <li key={item.id} className="rounded border border-slate-700 p-3">
-            <p>{item.state.toUpperCase()}</p>
-            <p>{item.feedback?.message}</p>
-            <time>{item.created_at}</time>
-          </li>
-        ))}
-      </ul>
     </section>
   );
 }

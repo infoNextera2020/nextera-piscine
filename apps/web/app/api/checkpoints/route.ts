@@ -7,6 +7,7 @@ import {
 } from '@nextera/db/checkpoints';
 import { requireDomainUser, getDatabase } from '../../../lib/auth/server';
 import { sameOrigin } from '../../../lib/submissions/origin';
+import { checkpointPresentation } from '../../../lib/learning/checkpoint-presentation';
 export const runtime = 'nodejs';
 export async function GET(request: Request) {
   try {
@@ -16,9 +17,12 @@ export async function GET(request: Request) {
     const node = q.get('node') ?? '';
     if (!isRequestId(cohort) || !/^[a-z0-9-]{1,100}$/.test(node))
       return new Response(null, { status: 400 });
-    return Response.json(await readCheckpoint(getDatabase(), user.authUserId, cohort, node), {
-      headers: { 'Cache-Control': 'private, no-store' },
-    });
+    return Response.json(
+      checkpointPresentation(await readCheckpoint(getDatabase(), user.authUserId, cohort, node)),
+      {
+        headers: { 'Cache-Control': 'private, no-store' },
+      },
+    );
   } catch {
     return new Response(null, { status: 403 });
   }

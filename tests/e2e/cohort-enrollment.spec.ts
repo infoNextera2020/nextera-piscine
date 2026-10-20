@@ -126,7 +126,12 @@ test('enrolled learner sees real cohort and persistent available/locked state', 
   await expect(even.getByText('LOCKED', { exact: true })).toBeVisible();
   await hello.getByRole('link', { name: 'Read Hello Go' }).click();
   await expect(page.getByText('func Hello(name string) string', { exact: true })).toBeVisible();
-  await expect(page.getByText('Required files: hello.go', { exact: true })).toBeVisible();
+  await page.getByRole('tab', { name: 'Tasks', exact: true }).click();
+  await expect(
+    page
+      .getByRole('tabpanel', { name: 'Tasks', exact: true })
+      .getByText('hello.go', { exact: true }),
+  ).toBeVisible();
   await expect(page.getByRole('button', { name: /submit/i })).toHaveCount(0);
   const rows =
     await sql`SELECT node_key,state FROM app.learner_node_progress WHERE cohort_id=${own} AND user_id=${people.get('learner')!.userId} ORDER BY node_key`;

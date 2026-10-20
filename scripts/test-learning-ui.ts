@@ -4,13 +4,20 @@ import { mkdir, writeFile } from 'node:fs/promises';
 import { prepareLearningFixture, cleanupLearningFixture } from '../tests/fixtures/learning';
 config({ path: '.env', quiet: true });
 config({ path: 'apps/web/.env.local', quiet: true });
-const { path, fixture } = await prepareLearningFixture();
+const assessment = process.argv.includes('--assessment');
+const { path, fixture } = await prepareLearningFixture({ assessments: assessment });
 await mkdir('.tools', { recursive: true });
 await writeFile('.tools/ui001-current-fixture-path', path + '\n', { mode: 0o600 });
 try {
   const run = execFile(
     'pnpm',
-    ['exec', 'playwright', 'test', '--config', 'playwright.learning.config.ts'],
+    [
+      'exec',
+      'playwright',
+      'test',
+      '--config',
+      assessment ? 'playwright.assessment.config.ts' : 'playwright.learning.config.ts',
+    ],
     { env: { ...process.env, LEARNING_UI_FIXTURE: path }, maxBuffer: 4 << 20 },
   );
   run.stdout?.pipe(process.stdout);

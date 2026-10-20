@@ -14,3 +14,5 @@ content
 packages/db/migrations/meta
 # Deterministic generated metadata; Go/Python/catalog tests validate its format.
 infra/runner/catalog/candidate.json
+# Generated Hairline output retains the original engine and bench.
+apps/web/public/piscine/hairline/hairline-*.html

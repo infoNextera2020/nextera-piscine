@@ -366,6 +366,8 @@ The independent product command `pnpm results:reconcile` now closes expired chec
 
 ## Piscine UI review pass
 
-The first production UI pass implements the App Shell, Command Center and the approved V4 Roadmap. See [the A–J implementation report](docs/PISCINE_UI_001_REPORT.md) and [Design Freeze v1 handoff](docs/design/PISCINE_DESIGN_FREEZE_V1_HANDOFF.md). Challenge, Checkpoint, Result and Evidence redesigns await review of these first three surfaces.
+The first production UI pass implements the App Shell, Command Center and the approved V4 Roadmap. See [the A–J implementation report](docs/PISCINE_UI_001_REPORT.md) and [Design Freeze v1 handoff](docs/design/PISCINE_DESIGN_FREEZE_V1_HANDOFF.md). UI 002 continues with Challenge, Checkpoint, authoritative Result and Progress & Evidence inside the same shell; see [the UI 002 report](docs/PISCINE_UI_002_REPORT.md).
 
 Run `pnpm test:learning` after local Supabase setup and a production build. This suite creates an isolated disposable database, uses a restricted web login with real local Auth sessions, captures responsive screenshots, and verifies that reading the UI leaves assessment and progression unchanged. It never publishes the real curriculum or approves the catalog.
+
+Run `pnpm test:assessment-ui` after a production build for UI 002’s isolated Auth/database suite, authoritative result fixtures, keyboard checks, responsive screenshots and read-only navigation fingerprint. Its final test explicitly confirms an irreversible finish in the disposable fixture only. Hairline figures are decorative and do not decide assessment or progression.

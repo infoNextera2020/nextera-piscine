@@ -108,5 +108,6 @@ jobs:
       - run: pnpm test:auth
       - run: pnpm test:cohorts
       - run: pnpm test:learning
+      - run: pnpm test:assessment-ui
       - if: always()
         run: pnpm supabase:stop

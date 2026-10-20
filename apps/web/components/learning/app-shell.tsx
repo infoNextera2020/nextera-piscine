@@ -24,7 +24,7 @@ type ShellProps = {
   cohort?: { id: string; name: string; version: string } | null;
   nodes?: LearningNode[];
   updates?: LearningUpdate[];
-  active: 'command' | 'roadmap' | 'challenge' | 'checkpoint';
+  active: 'command' | 'roadmap' | 'challenge' | 'checkpoint' | 'evidence';
   children: ReactNode;
 };
 export function AppShell({
@@ -75,22 +75,29 @@ export function AppShell({
     { key: 'roadmap', title: 'Roadmap', icon: 'map', href: base },
     { key: 'challenge', title: 'Challenges', icon: 'code', href: base + '?kind=challenge' },
     { key: 'checkpoint', title: 'Checkpoints', icon: 'gate', href: base + '?kind=checkpoint' },
+    {
+      key: 'evidence',
+      title: 'Progress & Evidence',
+      icon: 'evidence',
+      href: cohort ? base + '/evidence' : '/app/evidence',
+    },
   ];
   const navigation = () => (
     <nav aria-label="Learner navigation" className={s.nav}>
-      {navItems.map((item) => (
-        <Link
-          key={item.key}
-          href={item.href}
-          aria-current={active === item.key ? 'page' : undefined}
-          onClick={() => drawer.current?.close()}
-        >
-          <Icon name={item.icon} />
-          <span>{item.title}</span>
-        </Link>
-      ))}
+      {navItems
+        .filter((item) => item.key !== 'evidence' || user.role === 'learner')
+        .map((item) => (
+          <Link
+            key={item.key}
+            href={item.href}
+            aria-current={active === item.key ? 'page' : undefined}
+            onClick={() => drawer.current?.close()}
+          >
+            <Icon name={item.icon} />
+            <span>{item.title}</span>
+          </Link>
+        ))}
       {[
-        ['evidence', 'Progress & Evidence'],
         ['community', 'Community'],
         ['resource', 'Resources'],
       ].map(([icon, title]) => (

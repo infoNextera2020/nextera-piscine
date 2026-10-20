@@ -8,7 +8,7 @@ import { drizzle } from 'drizzle-orm/postgres-js';
 import { migrate } from 'drizzle-orm/postgres-js/migrator';
 import postgres from 'postgres';
 import { parse, stringify } from 'yaml';
-import { checkpointFixture } from './checkpoints';
+import { checkpointFixture, checkpointTasks } from './checkpoints';
 import { parseCurriculum } from '../../scripts/curriculum/load';
 import { evaluationDigest } from '../../scripts/curriculum/digest';
 import { importCurriculum } from '../../packages/db/operations/curriculum';
@@ -30,6 +30,7 @@ export type LearningFixture = {
   emptyAuthId: string;
   roles: string[];
   authIds: string[];
+  assessments?: Record<string, { email: string; authId: string; attempt: string }>;
 };
 function curriculum() {
   const f = checkpointFixture({ prerequisites: true });
@@ -81,7 +82,7 @@ function curriculum() {
   });
   return { curriculum: c, evaluations, gitCommitSha: f.gitCommitSha };
 }
-export async function prepareLearningFixture() {
+export async function prepareLearningFixture(options: { assessments?: boolean } = {}) {
   const owner = new URL(process.env.MIGRATION_DATABASE_URL!);
   if (owner.hostname !== '127.0.0.1' || owner.port !== '54322' || owner.pathname !== '/postgres')
     throw new Error('Local Supabase owner required for isolated UI verification.');
@@ -180,18 +181,21 @@ export async function prepareLearningFixture() {
         }),
       ],
     );
-    async function submit(node: string) {
+    async function submit(node: string, authId = learner.authId) {
       const filename = f.curriculum.nodes.find((n) => n.key === node)!.submissionRules
         .required_files[0]!;
       const bytes = Buffer.from('package main\n');
       const hash = createHash('sha256').update(bytes).digest('hex');
       const [row] = await web.client.unsafe(
         'SELECT app.accept_submission($1::uuid,$2::uuid,$3,$4::uuid,$5,$6::bigint,$7) AS id',
-        [learner.authId, cohort.id, node, randomUUID(), filename, bytes.length, hash],
+        [authId, cohort.id, node, randomUUID(), filename, bytes.length, hash],
       );
       return String(row!.id);
     }
-    async function result(id: string, verdict: 'passed' | 'failed' | 'system_error') {
+    async function result(
+      id: string,
+      verdict: 'passed' | 'failed' | 'system_error' | 'compile_error' | 'runtime_error' | 'timeout',
+    ) {
       const [submission] = await admin.unsafe(
         'SELECT active_judge_job_id AS job FROM app.submissions WHERE id=$1',
         [id],
@@ -211,10 +215,7 @@ export async function prepareLearningFixture() {
         };
         if (claim?.job_id !== submission!.job) throw new Error('UI fixture worker claim mismatch.');
         const args = [claim.job_id, claim.attempt_id, claim.token, claim.generation];
-        await runner.client.unsafe(
-          'SELECT judge.record_execution_attempt($1::uuid,$2::uuid,$3::uuid,$4::bigint)',
-          args,
-        );
+        await recordExecution(args);
         const [record] = await runner.client.unsafe(
           verdict === 'system_error'
             ? "SELECT judge.record_infrastructure_failure($1::uuid,$2::uuid,$3::uuid,$4::bigint,'WORKER_FAILURE') AS id"
@@ -225,10 +226,92 @@ export async function prepareLearningFixture() {
       }
       await applyResult(drizzle(product.client), resultId);
     }
+    async function recordExecution(args: (string | number)[]) {
+      // A local host clock correction can briefly precede the accepted timestamp.
+      // Preserve the production guard; retry only its rolled-back fixture call.
+      for (let retry = 0; ; retry++) {
+        try {
+          await runner.client.unsafe(
+            'SELECT judge.record_execution_attempt($1::uuid,$2::uuid,$3::uuid,$4::bigint)',
+            args,
+          );
+          return;
+        } catch (error) {
+          if (
+            retry >= 20 ||
+            (error as { constraint_name?: string }).constraint_name !==
+              'submissions_timestamps_check'
+          )
+            throw error;
+          await admin.unsafe('SELECT pg_sleep(0.1)');
+        }
+      }
+    }
     await result(await submit('hello-go'), 'passed');
     await result(await submit('even-or-odd'), 'failed');
     await result(await submit('even-or-odd'), 'system_error');
-    await submit('even-or-odd');
+    const pendingId = await submit('even-or-odd');
+    const assessments: NonNullable<LearningFixture['assessments']> = {};
+    if (options.assessments) {
+      await result(pendingId, 'compile_error');
+      await result(await submit('even-or-odd'), 'runtime_error');
+      await result(await submit('even-or-odd'), 'timeout');
+      for (const scenario of ['pass', 'fail', 'infra', 'active', 'ready']) {
+        const personRow = await person('Assessment ' + scenario);
+        await enrollLearner(drizzle(admin, { schema }), cohort.id, personRow.id);
+        await result(await submit('hello-go', personRow.authId), 'passed');
+        await result(await submit('even-or-odd', personRow.authId), 'passed');
+        if (scenario === 'ready') {
+          assessments[scenario] = { email: personRow.email, authId: personRow.authId, attempt: '' };
+          continue;
+        }
+        const [started] = await web.client.unsafe(
+          'SELECT app.start_checkpoint($1::uuid,$2::uuid,$3,$4::uuid) AS id',
+          [personRow.authId, cohort.id, 'transfer-checkpoint', randomUUID()],
+        );
+        const attempt = String(started!.id);
+        assessments[scenario] = { email: personRow.email, authId: personRow.authId, attempt };
+        for (const [index, task] of checkpointTasks.entries()) {
+          const bytes = Buffer.from('package main\n');
+          const [accepted] = await web.client.unsafe(
+            'SELECT app.accept_checkpoint_submission($1::uuid,$2::uuid,$3,$4::uuid,$5,$6::bigint,$7) AS id',
+            [
+              personRow.authId,
+              attempt,
+              task.key,
+              randomUUID(),
+              task.file,
+              bytes.length,
+              createHash('sha256').update(bytes).digest('hex'),
+            ],
+          );
+          const verdict =
+            index < 2 || (scenario === 'pass' && index === 2)
+              ? 'passed'
+              : index === 3 && (scenario === 'infra' || scenario === 'active')
+                ? 'system_error'
+                : 'failed';
+          await result(String(accepted!.id), verdict);
+        }
+        if (scenario !== 'active') {
+          await web.client.unsafe('SELECT app.finish_checkpoint($1::uuid,$2::uuid)', [
+            personRow.authId,
+            attempt,
+          ]);
+          await product.client.unsafe('SELECT app.finalize_checkpoint($1::uuid)', [attempt]);
+        }
+      }
+      await submit('even-or-odd');
+      const [running] = await runner.client.unsafe('SELECT judge.claim_job() AS claim');
+      const claim = running!.claim as {
+        job_id: string;
+        attempt_id: string;
+        token: string;
+        generation: number;
+      };
+      await recordExecution([claim.job_id, claim.attempt_id, claim.token, claim.generation]);
+      await submit('even-or-odd');
+    }
     const fixture: LearningFixture = {
       database: target.toString(),
       webDatabase: web.url,
@@ -243,6 +326,7 @@ export async function prepareLearningFixture() {
       emptyAuthId: empty.authId,
       roles,
       authIds,
+      ...(options.assessments ? { assessments } : {}),
     };
     const directory = await mkdtemp(join(tmpdir(), 'nextera-ui001-'));
     await chmod(directory, 0o700);

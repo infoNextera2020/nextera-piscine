@@ -192,12 +192,15 @@ async function submit(page: Page, index: number, source = solutions[index]!, ver
     )
     .toBe(verdict);
   await applyResult(drizzle(product), result!);
-  await expect(page.locator('article li').filter({ hasText: verdict }).first()).toBeVisible();
+  await expect(page.locator(`[data-verdict="${verdict}"]`).first()).toBeVisible();
   return id;
 }
 async function close(page: Page) {
-  page.once('dialog', (d) => d.accept());
   await page.getByRole('button', { name: 'Finish checkpoint', exact: true }).click();
+  await page
+    .getByRole('dialog', { name: 'Finish checkpoint now?' })
+    .getByRole('button', { name: 'Confirm finish', exact: true })
+    .click();
   await expect(page.getByText('evaluating', { exact: true })).toBeVisible();
   await reconcileCheckpoints(drizzle(product));
 }
@@ -210,7 +213,9 @@ test('four private checkpoint evaluations pass, master once, unlock gate and ret
   try {
     for (let i = 0; i < 4; i++) await submit(page, i);
     await close(page);
-    await expect(page.getByText('passed', { exact: true })).toBeVisible();
+    await expect(
+      page.getByRole('status').first().getByText('passed', { exact: true }),
+    ).toBeVisible();
     await expect(page.getByText('normal attempt 1: passed · 4/4', { exact: true })).toBeVisible();
     const [p] =
       await admin`SELECT * FROM app.learner_node_progress WHERE cohort_id=${cohort} AND node_key='transfer-checkpoint'`;
@@ -326,14 +331,20 @@ test('finish is confirmed and irreversible; unanswered tasks score zero without 
 }) => {
   const cohort = await setup(page);
   await start(page);
-  page.once('dialog', (d) => d.dismiss());
   await page.getByRole('button', { name: 'Finish checkpoint' }).click();
+  await page
+    .getByRole('dialog', { name: 'Finish checkpoint now?' })
+    .getByRole('button', { name: 'Keep working', exact: true })
+    .click();
   await expect(page.getByRole('button', { name: 'Finish checkpoint' })).toBeVisible();
-  page.once('dialog', (d) => d.accept());
   const finished = page.waitForResponse(
     (r) => r.request().method() === 'POST' && new URL(r.url()).pathname === '/api/checkpoints',
   );
   await page.getByRole('button', { name: 'Finish checkpoint' }).click();
+  await page
+    .getByRole('dialog', { name: 'Finish checkpoint now?' })
+    .getByRole('button', { name: 'Confirm finish', exact: true })
+    .click();
   expect((await finished).status()).toBe(202);
   await page.close();
   await reconcileCheckpoints(drizzle(product));

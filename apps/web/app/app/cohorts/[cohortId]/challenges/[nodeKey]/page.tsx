@@ -1,57 +1,98 @@
-import Link from 'next/link';
+import { Suspense } from 'react';
 import { notFound } from 'next/navigation';
-import Markdown from 'react-markdown';
 import { readAccessibleSubject } from '@nextera/db/cohorts';
+import { readSubmissions, submissionContext } from '@nextera/db/submissions';
 import type { SubmissionRules } from '@nextera/domain';
 import { getDatabase } from '../../../../../../lib/auth/server';
 import { authorizeCohortPage } from '../../../../../../lib/cohorts/server';
-import { SubmissionForm } from '../../../../../../lib/submissions/form';
-import { submissionContext } from '@nextera/db/submissions';
-
+import { readLearningOverview } from '../../../../../../lib/learning/server';
+import { AppShell } from '../../../../../../components/learning/app-shell';
+import { Challenge } from '../../../../../../components/learning/challenge';
+import {
+  Breadcrumbs,
+  Subject,
+  WorkspaceHero,
+} from '../../../../../../components/learning/workspace-parts';
+import LearningLoading from '../../../../../../components/learning/loading';
+import s from '../../../../../../components/learning/workspace.module.css';
 export default async function SubjectPage({
   params,
+  searchParams,
 }: {
   params: Promise<{ cohortId: string; nodeKey: string }>;
+  searchParams: Promise<{ tab?: string }>;
 }) {
   const { cohortId, nodeKey } = await params;
   const { user, cohort } = await authorizeCohortPage(cohortId);
   const subject = await readAccessibleSubject(getDatabase(), user, cohort.id, nodeKey);
-  if (!subject) notFound();
-  const rules = subject.submissionRules as unknown as SubmissionRules;
-  let submittable = false;
-  if (user.role === 'learner') {
-    try {
-      await submissionContext(getDatabase(), user.authUserId, cohort.id, nodeKey);
-      submittable = true;
-    } catch {
-      // Unapproved/non-runnable fixtures remain readable but cannot accept work.
-    }
-  }
+  if (!subject || subject.kind === 'checkpoint') notFound();
   return (
-    <main className="mx-auto max-w-2xl space-y-6 px-6 py-16">
-      <Link className="text-teal-300" href={`/app/cohorts/${cohort.id}`}>
-        {cohort.name}
-      </Link>
-      <h1 className="text-3xl font-semibold">{subject.title}</h1>
-      {user.role !== 'learner' && (
-        <p>
-          {user.role === 'admin' ? 'Administrative' : 'Assigned operator'} read-only subject
-          preview.
-        </p>
-      )}
-      <article className="space-y-4 [&_pre]:overflow-x-auto [&_pre]:rounded [&_pre]:bg-slate-900 [&_pre]:p-4 [&_h1]:text-2xl [&_ul]:list-inside [&_ul]:list-disc">
-        <Markdown skipHtml>{subject.subjectMarkdown}</Markdown>
-      </article>
-      <section className="space-y-2">
-        <h2 className="text-xl font-semibold">Submission requirements</h2>
-        <p>Required files: {rules.required_files.join(', ')}</p>
-        <p>Allowed extensions: {rules.allowed_extensions.join(', ')}</p>
-        <p>Maximum size: {rules.max_size_kb} KiB</p>
-        <p>Write your solution locally.</p>
-      </section>
-      {submittable && (
-        <SubmissionForm cohort={cohort.id} node={nodeKey} filename={rules.required_files[0]!} />
-      )}
-    </main>
+    <Suspense fallback={<LearningLoading />}>
+      <Content />
+    </Suspense>
   );
+  async function Content() {
+    const [view, history, query] = await Promise.all([
+      readLearningOverview(user, cohort),
+      user.role === 'learner'
+        ? readSubmissions(getDatabase(), user.authUserId, cohort.id, nodeKey)
+        : Promise.resolve([]),
+      searchParams,
+    ]);
+    const current = view.nodes.find((n) => n.key === nodeKey);
+    if (!current) notFound();
+    let submittable = false;
+    if (user.role === 'learner') {
+      try {
+        await submissionContext(getDatabase(), user.authUserId, cohort.id, nodeKey);
+        submittable = true;
+      } catch {
+        /* Readable drafts do not imply runnable intake. */
+      }
+    }
+    const rules = subject!.submissionRules as unknown as SubmissionRules;
+    return (
+      <AppShell
+        user={user}
+        cohort={cohort}
+        active="challenge"
+        nodes={view.nodes}
+        updates={view.updates}
+      >
+        <main className={s.page}>
+          <Breadcrumbs cohort={cohort} title={subject!.title} />
+          <WorkspaceHero
+            context={current.questTitle}
+            title={subject!.title}
+            state={current.state}
+            description="Understand the brief, build locally, and submit your solution for trusted evaluation."
+            facts={[
+              {
+                label: 'Type',
+                value: current.kind === 'project' ? 'Project' : 'Individual challenge',
+              },
+              { label: 'Required file', value: rules.required_files.join(', ') },
+              { label: 'Curriculum', value: cohort.version },
+            ]}
+          />
+          {user.role !== 'learner' && (
+            <p className={s.notice}>
+              {user.role === 'admin' ? 'Administrative' : 'Assigned operator'} read-only subject
+              preview.
+            </p>
+          )}
+          <Challenge
+            cohort={cohort.id}
+            node={nodeKey}
+            rules={rules}
+            submittable={submittable}
+            initialHistory={history}
+            initialTab={query.tab}
+            subject={<Subject>{subject!.subjectMarkdown}</Subject>}
+            context={view.nodes.filter((n) => n.questKey === current.questKey)}
+          />
+        </main>
+      </AppShell>
+    );
+  }
 }

@@ -266,11 +266,11 @@ async function execute(
       )
       .not.toBeNull();
     expect(received).toBe(expected);
-    await expect(page.getByText(expected.toUpperCase(), { exact: true }).first()).toBeVisible({
+    await expect(page.locator(`[data-verdict="${expected}"]`).first()).toBeVisible({
       timeout: 10000,
     });
     await page.reload();
-    await expect(page.getByText(expected.toUpperCase(), { exact: true }).first()).toBeVisible();
+    await expect(page.locator(`[data-verdict="${expected}"]`).first()).toBeVisible();
     const [result] =
       await admin`SELECT r.application_status,r.learner_feedback,r.safe_operator_diagnostics FROM judge.jobs j JOIN judge.results r ON r.id=j.terminal_result_id WHERE j.id=${accepted.job}`;
     expect(result!.application_status).toBe('pending');
@@ -552,6 +552,7 @@ test('Foundation 005: wrong then correct Hello, historical application, unlock a
     2,
   );
   await page.goto(`/app/cohorts/${cohort.id}/challenges/hello-go`);
+  await page.getByRole('tab', { name: 'Submissions', exact: true }).click();
   await expect(
     page.getByText('All required checks passed.', { exact: true }).first(),
   ).toBeVisible();

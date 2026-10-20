@@ -21,13 +21,23 @@ export type CheckpointView = {
     subject: string;
     rules: { required_files: string[]; max_size_kb: number };
   }[];
-  submissions: { id: string; task_key: string; state: string; feedback?: { message?: string } }[];
+  submissions: {
+    id: string;
+    task_key: string;
+    state: string;
+    created_at: string;
+    feedback?: { message?: string };
+  }[];
   history: {
     id: string;
     status: string;
     points: number | null;
     normal_slot: number;
     kind: string;
+    started_at: string;
+    deadline_at: string;
+    completed_at: string | null;
+    outcome_id: string | null;
   }[];
   replacement_available: boolean;
 };
