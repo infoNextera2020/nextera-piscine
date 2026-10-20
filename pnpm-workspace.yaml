@@ -21,3 +21,6 @@ minimumReleaseAgeExclude:
   - '@next/swc-win32-x64-msvc@16.4.2'
   - next@16.4.2
   - eslint@10.13.0
+
+patchedDependencies:
+  postgres@3.4.9: patches/postgres@3.4.9.patch

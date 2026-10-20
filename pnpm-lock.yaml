@@ -4,6 +4,9 @@ settings:
   autoInstallPeers: true
   excludeLinksFromLockfile: false
 
+patchedDependencies:
+  postgres@3.4.9: f95ef9e7ff3a00e287cd9f69d0a7995a95389740f3b6491c89471f5ddc679114
+
 importers:
 
   .:
@@ -34,13 +37,13 @@ importers:
         version: 18.0.8
       drizzle-orm:
         specifier: 0.45.4
-        version: 0.45.4(postgres@3.4.9)
+        version: 0.45.4(postgres@3.4.9(patch_hash=f95ef9e7ff3a00e287cd9f69d0a7995a95389740f3b6491c89471f5ddc679114))
       eslint:
         specifier: 10.13.0
         version: 10.13.0(jiti@2.7.0)(supports-color@7.2.0)
       postgres:
         specifier: 3.4.9
-        version: 3.4.9
+        version: 3.4.9(patch_hash=f95ef9e7ff3a00e287cd9f69d0a7995a95389740f3b6491c89471f5ddc679114)
       prettier:
         specifier: 3.9.10
         version: 3.9.10
@@ -113,10 +116,10 @@ importers:
         version: link:../domain
       drizzle-orm:
         specifier: 0.45.4
-        version: 0.45.4(postgres@3.4.9)
+        version: 0.45.4(postgres@3.4.9(patch_hash=f95ef9e7ff3a00e287cd9f69d0a7995a95389740f3b6491c89471f5ddc679114))
       postgres:
         specifier: 3.4.9
-        version: 3.4.9
+        version: 3.4.9(patch_hash=f95ef9e7ff3a00e287cd9f69d0a7995a95389740f3b6491c89471f5ddc679114)
       server-only:
         specifier: 0.0.1
         version: 0.0.1
@@ -3670,9 +3673,9 @@ snapshots:
       esbuild: 0.25.12
       tsx: 4.23.15
 
-  drizzle-orm@0.45.4(postgres@3.4.9):
+  drizzle-orm@0.45.4(postgres@3.4.9(patch_hash=f95ef9e7ff3a00e287cd9f69d0a7995a95389740f3b6491c89471f5ddc679114)):
     optionalDependencies:
-      postgres: 3.4.9
+      postgres: 3.4.9(patch_hash=f95ef9e7ff3a00e287cd9f69d0a7995a95389740f3b6491c89471f5ddc679114)
 
   eciesjs@0.5.0:
     dependencies:
@@ -4464,7 +4467,7 @@ snapshots:
       picocolors: 1.1.1
       source-map-js: 1.2.2
 
-  postgres@3.4.9: {}
+  postgres@3.4.9(patch_hash=f95ef9e7ff3a00e287cd9f69d0a7995a95389740f3b6491c89471f5ddc679114): {}
 
   prelude-ls@1.2.1: {}
 
