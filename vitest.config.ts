@@ -10,6 +10,7 @@ export default defineConfig({
       'packages/db/tests/schema.test.ts',
       'apps/web/app/api/health/route.test.ts',
       'apps/web/lib/submissions/*.test.ts',
+      'apps/web/lib/learning/*.test.ts',
     ],
   },
 });

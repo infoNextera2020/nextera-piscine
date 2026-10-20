@@ -35,7 +35,8 @@
     "format:check": "prettier --check .",
     "db:generate": "pnpm --filter @nextera/db db:generate",
     "db:migrate": "pnpm --filter @nextera/db db:migrate",
-    "results:reconcile": "tsx scripts/result-reconciliation.ts"
+    "results:reconcile": "tsx scripts/result-reconciliation.ts",
+    "test:learning": "tsx scripts/test-learning-ui.ts"
   },
   "devDependencies": {
     "@nextera/db": "workspace:*",

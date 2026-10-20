@@ -16,6 +16,7 @@ assertLocalUrl(process.env.MIGRATION_DATABASE_URL, '54322');
 
 export default defineConfig({
   testDir: './tests/e2e',
+  testIgnore: 'learning-surfaces.spec.ts',
   workers: 1,
   fullyParallel: false,
   use: { baseURL: 'http://127.0.0.1:3100', browserName: 'chromium', trace: 'off' },

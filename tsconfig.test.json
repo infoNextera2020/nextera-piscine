@@ -1,6 +1,10 @@
 {
   "extends": "./tsconfig.base.json",
-  "compilerOptions": { "noEmit": true, "types": ["node"], "lib": ["ES2022", "DOM"] },
+  "compilerOptions": {
+    "noEmit": true,
+    "types": ["node"],
+    "lib": ["ES2022", "DOM"]
+  },
   "include": [
     "vitest.config.ts",
     "playwright.config.ts",
@@ -8,6 +12,8 @@
     "tests/e2e/**/*.ts",
     "packages/*/tests/**/*.ts",
     "packages/db/vitest.integration.config.ts",
-    "apps/web/app/api/health/route.test.ts"
+    "apps/web/app/api/health/route.test.ts",
+    "playwright.learning.config.ts",
+    "tests/fixtures/learning.ts"
   ]
 }

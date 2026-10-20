@@ -1,44 +1,71 @@
-import Link from 'next/link';
+import { Suspense } from 'react';
+import LearningLoading from '../../components/learning/loading';
+import { notFound } from 'next/navigation';
 import { listCohorts } from '@nextera/db/cohorts';
 import { authorizePage, getDatabase } from '../../lib/auth/server';
-import { logout } from '../login/actions';
+import { readLearningOverview } from '../../lib/learning/server';
+import { AppShell } from '../../components/learning/app-shell';
+import { CohortLinks, CommandCenter } from '../../components/learning/command-center';
+import { EmptyState } from '../../components/learning/primitives';
+import s from '../../components/learning/learning.module.css';
 
-export default async function AppPage() {
+export default async function AppPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ cohort?: string }>;
+}) {
   const user = await authorizePage();
-  const cohorts = await listCohorts(getDatabase(), user);
+  const [cohorts, query] = await Promise.all([listCohorts(getDatabase(), user), searchParams]);
+  const cohort = query.cohort ? cohorts.find((c) => c.id === query.cohort) : cohorts[0];
+  if (query.cohort && !cohort) notFound();
   return (
-    <main className="mx-auto max-w-xl space-y-6 px-6 py-16">
-      <h1 className="text-3xl font-semibold">NextEra Piscine</h1>
-      <p>Foundation 002B: curriculum and cohort access online</p>
-      <dl>
-        <dt>Display name</dt>
-        <dd>{user.displayName}</dd>
-        <dt>Role</dt>
-        <dd>{user.role}</dd>
-      </dl>
-      <section className="space-y-3">
-        <h2 className="text-xl font-semibold">Your cohorts</h2>
-        {user.role === 'admin' && <p>Administrative read-only cohort access.</p>}
-        {!cohorts.length && (
-          <p>No active cohorts assigned. Enrollment is controlled by your operator.</p>
-        )}
-        <ul className="space-y-2">
-          {cohorts.map((cohort) => (
-            <li key={cohort.id}>
-              <Link className="text-teal-300" href={`/app/cohorts/${cohort.id}`}>
-                {cohort.name}
-              </Link>
-              <p className="text-sm text-slate-400">Curriculum {cohort.version}</p>
-            </li>
-          ))}
-        </ul>
-      </section>
-      <Link href="/operator" className="block text-teal-300">
-        Operator access
-      </Link>
-      <form action={logout}>
-        <button className="rounded border px-4 py-2">Sign out</button>
-      </form>
-    </main>
+    <Suspense fallback={<LearningLoading />}>
+      <Content />
+    </Suspense>
   );
+
+  async function Content() {
+    const view =
+      cohort && user.role === 'learner' ? await readLearningOverview(user, cohort) : null;
+    return (
+      <AppShell
+        user={user}
+        cohort={cohort ?? null}
+        active="command"
+        nodes={view?.nodes ?? []}
+        updates={view?.updates ?? []}
+      >
+        {cohort && view ? (
+          <CommandCenter name={user.displayName} cohort={cohort} view={view} />
+        ) : (
+          <main>
+            <section className={s.hero + ' ' + s.homeHero}>
+              <div className={s.heroCopy}>
+                <p className={s.eyebrow}>NEXTERA PISCINE</p>
+                <h1>Welcome, {user.displayName.trim().split(/\s+/)[0]}.</h1>
+                <p className={s.heroSub}>
+                  {user.role === 'learner'
+                    ? 'Your next chapter starts here.'
+                    : 'Your cohort overview.'}
+                </p>
+              </div>
+            </section>
+            {user.role !== 'learner' && (
+              <p className={s.notice}>
+                Read-only curriculum preview. No learner progress is implied.
+              </p>
+            )}
+            {!cohorts.length && (
+              <div className={s.card + ' ' + s.panel}>
+                <EmptyState title="Your learning space is ready">
+                  No active cohorts assigned. Enrollment is controlled by your operator.
+                </EmptyState>
+              </div>
+            )}
+          </main>
+        )}
+        {!!cohorts.length && <CohortLinks cohorts={cohorts} selected={cohort?.id} />}
+      </AppShell>
+    );
+  }
 }

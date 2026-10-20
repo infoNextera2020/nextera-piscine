@@ -363,3 +363,9 @@ All browser refresh/history endpoints remain read-only.
 Foundation 006 adds trusted 90-minute checkpoint attempts, four frozen checkpoint tasks, 3-of-4 aggregation, immutable outcome evidence, gated progression, bounded retakes and infrastructure replacement grants. See [the implementation report](docs/FOUNDATION_006_REPORT.md) and [accepted checkpoint policy](docs/product/FOUNDATION_006_CHECKPOINT_POLICY.md). The evaluation catalog remains CANDIDATE and real curriculum publication remains blocked.
 
 The independent product command `pnpm results:reconcile` now closes expired checkpoints, applies ready outcomes and announces eligible retakes, in addition to existing result reconciliation. It requires the separate product database connection; it does not depend on an open browser. Protected local checkpoint Judge verification uses `pnpm test:submissions --checkpoints` with the same private fixture/artifact/binary options as ordinary Judge verification.
+
+## Piscine UI review pass
+
+The first production UI pass implements the App Shell, Command Center and the approved V4 Roadmap. See [the A–J implementation report](docs/PISCINE_UI_001_REPORT.md) and [Design Freeze v1 handoff](docs/design/PISCINE_DESIGN_FREEZE_V1_HANDOFF.md). Challenge, Checkpoint, Result and Evidence redesigns await review of these first three surfaces.
+
+Run `pnpm test:learning` after local Supabase setup and a production build. This suite creates an isolated disposable database, uses a restricted web login with real local Auth sessions, captures responsive screenshots, and verifies that reading the UI leaves assessment and progression unchanged. It never publishes the real curriculum or approves the catalog.

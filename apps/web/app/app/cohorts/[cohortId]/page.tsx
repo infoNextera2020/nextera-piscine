@@ -1,60 +1,83 @@
-import Link from 'next/link';
-import { readCohortNodes, readPrerequisites } from '@nextera/db/cohorts';
-import { presentNode } from '@nextera/domain';
-import { getDatabase } from '../../../../lib/auth/server';
+import { Suspense } from 'react';
+import LearningLoading from '../../../../components/learning/loading';
 import { authorizeCohortPage } from '../../../../lib/cohorts/server';
-
-export default async function CohortPage({ params }: { params: Promise<{ cohortId: string }> }) {
+import { readLearningOverview } from '../../../../lib/learning/server';
+import { AppShell } from '../../../../components/learning/app-shell';
+import { Roadmap } from '../../../../components/learning/roadmap';
+import { Icon } from '../../../../components/learning/icon';
+import Link from 'next/link';
+import s from '../../../../components/learning/learning.module.css';
+export default async function CohortPage({
+  params,
+  searchParams,
+}: {
+  params: Promise<{ cohortId: string }>;
+  searchParams: Promise<{ node?: string; quest?: string; kind?: string }>;
+}) {
   const { cohortId } = await params;
   const { user, cohort } = await authorizeCohortPage(cohortId);
-  const [nodes, edges] = await Promise.all([
-    readCohortNodes(getDatabase(), user, cohort.id),
-    readPrerequisites(getDatabase(), user, cohort.id),
-  ]);
   return (
-    <main className="mx-auto max-w-2xl space-y-6 px-6 py-16">
-      <Link href="/app" className="text-teal-300">
-        Your cohorts
-      </Link>
-      <h1 className="text-3xl font-semibold">{cohort.name}</h1>
-      <p>
-        Curriculum {cohort.curriculumKey} · {cohort.version}
-      </p>
-      {user.role !== 'learner' && (
-        <p>Read-only curriculum preview. No learner progress is implied.</p>
-      )}
-      <ul className="space-y-4">
-        {nodes.map((node) => {
-          if (!node.state && user.role === 'learner')
-            throw new Error('Enrolled learner has incomplete progress.');
-          const prerequisiteKeys = edges
-            .filter((edge) => edge.to === node.nodeKey)
-            .map((edge) => edge.from);
-          const view = node.state
-            ? presentNode(
-                node.state,
-                prerequisiteKeys.map((key) => nodes.find((n) => n.nodeKey === key)?.title ?? key),
-              )
-            : null;
-          const accessible = view?.accessible || user.role !== 'learner';
-          return (
-            <li key={node.nodeKey} className="space-y-2 rounded border border-slate-700 p-4">
-              <h2 className="text-xl">{node.title}</h2>
-              <p className="font-mono text-sm">{view?.label ?? 'PREVIEW'}</p>
-              <p className="text-sm text-slate-400">{node.questTitle}</p>
-              {view?.lockedReason && <p>{view.lockedReason}</p>}
-              {accessible && (
-                <Link
-                  className="text-teal-300"
-                  href={`/app/cohorts/${cohort.id}/${node.kind === 'checkpoint' && user.role === 'learner' ? 'checkpoints' : 'challenges'}/${node.nodeKey}`}
-                >
-                  Read {node.title}
-                </Link>
-              )}
-            </li>
-          );
-        })}
-      </ul>
-    </main>
+    <Suspense fallback={<LearningLoading />}>
+      <Content />
+    </Suspense>
   );
+
+  async function Content() {
+    const [view, query] = await Promise.all([readLearningOverview(user, cohort), searchParams]);
+    const kind =
+      query.kind === 'challenge' || query.kind === 'checkpoint' || query.kind === 'project'
+        ? query.kind
+        : null;
+    const selectedNode = view.nodes.find((n) => n.key === query.node);
+    const selectedModule =
+      view.modules.find((m) => m.key === (selectedNode?.questKey ?? query.quest)) ??
+      view.modules.find((m) => m.state === 'in_progress' || m.state === 'available') ??
+      view.modules[0];
+    return (
+      <AppShell
+        user={user}
+        cohort={cohort}
+        active={
+          kind === 'challenge' ? 'challenge' : kind === 'checkpoint' ? 'checkpoint' : 'roadmap'
+        }
+        nodes={view.nodes}
+        updates={view.updates}
+      >
+        <main>
+          <section className={s.hero + ' ' + s.roadmapHero}>
+            <div className={s.heroCopy}>
+              <p className={s.eyebrow}>PROGRAM ROADMAP</p>
+              <h1>From fundamentals to real-world engineering.</h1>
+              <p className={s.heroSub}>
+                Complete challenges, produce evidence, pass checkpoints, and unlock your next step.
+              </p>
+              <div className={s.roadmapContext}>
+                <span>{cohort.name}</span>
+                <span>Curriculum {cohort.version}</span>
+                <Link href="/app">
+                  Your cohorts <Icon name="arrow" size={13} />
+                </Link>
+              </div>
+            </div>
+          </section>
+          {user.role !== 'learner' && (
+            <p className={s.notice}>
+              Read-only curriculum preview. No learner progress is implied.
+            </p>
+          )}
+          <Roadmap
+            key={
+              (kind ?? 'all') + ':' + (selectedModule?.key ?? '') + ':' + (selectedNode?.key ?? '')
+            }
+            view={{ nodes: view.nodes, modules: view.modules, counts: view.counts }}
+            initialModule={selectedModule?.key ?? null}
+            initialNode={selectedNode?.key ?? null}
+            kind={kind}
+            base={'/app/cohorts/' + cohort.id}
+            preview={user.role !== 'learner'}
+          />
+        </main>
+      </AppShell>
+    );
+  }
 }

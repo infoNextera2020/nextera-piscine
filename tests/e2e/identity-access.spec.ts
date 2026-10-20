@@ -203,6 +203,7 @@ test('Proxy renews an expired session envelope through real Supabase Auth', asyn
 test('logout clears session cookies and protected access', async ({ page, context }) => {
   await signIn(page, 'learner');
   await expect(page).toHaveURL(/\/app$/);
+  await page.getByLabel('Open account menu', { exact: true }).click();
   await page.getByRole('button', { name: 'Sign out', exact: true }).click();
   await expect(page).toHaveURL(/\/login$/);
   expect((await context.cookies()).filter((c) => /^sb-.*-auth-token/.test(c.name))).toHaveLength(0);

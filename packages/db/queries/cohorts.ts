@@ -27,6 +27,8 @@ const cohortColumns = {
   curriculumVersionId: cohorts.curriculumVersionId,
   version: curriculumVersions.version,
   curriculumKey: curriculumVersions.curriculumKey,
+  startsAt: cohorts.startsAt,
+  endsAt: cohorts.endsAt,
 };
 
 export function listCohorts(db: OperationalDatabase, user: DomainUser) {
@@ -86,8 +88,13 @@ export function readCohortNodes(db: OperationalDatabase, user: DomainUser, cohor
       nodeKey: curriculumNodes.nodeKey,
       title: curriculumNodes.title,
       kind: curriculumNodes.kind,
+      questKey: quests.questKey,
       questTitle: quests.title,
+      skills: curriculumNodes.skills,
       state: learnerNodeProgress.state,
+      startedAt: learnerNodeProgress.startedAt,
+      unlockedAt: learnerNodeProgress.unlockedAt,
+      masteredAt: learnerNodeProgress.masteredAt,
     })
     .from(cohorts)
     .innerJoin(
