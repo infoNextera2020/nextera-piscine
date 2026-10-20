@@ -5,7 +5,7 @@ import type { EvidenceCategory, EvidenceRecord } from '../../lib/learning/eviden
 import type { LearningNode } from '../../lib/learning/types';
 import { StatusBadge } from './primitives';
 import { HairlineFigure } from './hairline-figure';
-import { WorkspaceEmpty } from './workspace-parts';
+import { RecordDetails, WorkspaceEmpty } from './workspace-parts';
 import { formatMoment } from '../../lib/learning/display';
 import s from './workspace.module.css';
 const categories: { value: EvidenceCategory | 'all'; label: string }[] = [
@@ -82,13 +82,15 @@ export function Evidence({
                 <Link href={r.href}>
                   <strong>{r.title}</strong>
                 </Link>
-                <p className={s.muted}>{r.source}</p>
-                <code className={s.identity}>{r.identity}</code>
                 {r.at && <time dateTime={r.at}>{formatMoment(r.at)}</time>}
+                <RecordDetails>
+                  <p className={s.muted}>{r.source}</p>
+                  <code className={s.identity}>{r.identity}</code>
+                </RecordDetails>
                 {r.category === 'system' && (
                   <p className={s.notice} data-tone="system">
-                    Infrastructure evidence is not learner failure and does not declare replacement
-                    eligibility.
+                    An infrastructure issue, separate from learner failure. Any replacement requires
+                    authorization.
                   </p>
                 )}
               </li>
@@ -144,18 +146,19 @@ export function Evidence({
               <strong>Submission identity</strong>Safe history identifies accepted work.
             </li>
             <li>
-              <strong>Applied outcome</strong>Checkpoint outcome identities are shown when exposed
-              by the authorized projection.
+              <strong>Recorded outcome</strong>Checkpoint results retain their outcome records.
             </li>
             <li>
               <strong>Stored progression</strong>Mastery and unlock timestamps reflect durable
               progress.
             </li>
           </ol>
-          <p className={s.muted} style={{ marginTop: 16 }}>
-            The figure is a visual metaphor. It does not verify links between records. Private Judge
-            details and unrestricted receipt/event payloads are not available to this view.
-          </p>
+          <RecordDetails title="About this evidence">
+            <p className={s.muted}>
+              The figure is a visual metaphor. It does not verify links between records. Private
+              Judge details and unrestricted receipt/event payloads are not available to this view.
+            </p>
+          </RecordDetails>
         </section>
       </aside>
     </div>

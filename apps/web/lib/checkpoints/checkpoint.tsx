@@ -3,9 +3,14 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
 import type { CheckpointPresentation } from '../learning/checkpoint-presentation';
 import { StatusBadge } from '../../components/learning/primitives';
-import { SafeHistory, Subject, WorkspaceEmpty } from '../../components/learning/workspace-parts';
+import {
+  RecordDetails,
+  SafeHistory,
+  Subject,
+  WorkspaceEmpty,
+} from '../../components/learning/workspace-parts';
 import { HairlineFigure } from '../../components/learning/hairline-figure';
-import { formatMoment } from '../learning/display';
+import { displayState, formatMoment } from '../learning/display';
 import s from '../../components/learning/workspace.module.css';
 export function Checkpoint({
   cohort,
@@ -194,7 +199,7 @@ export function Checkpoint({
       <div className={s.notice} role="status">
         <div className={s.recordHead}>
           <span>
-            Checkpoint status: <strong>{state}</strong>
+            Checkpoint status: <strong>{displayState(state)}</strong>
           </span>
           <StatusBadge state={state} />
         </div>
@@ -221,8 +226,8 @@ export function Checkpoint({
       <div className={s.columns}>
         <div className={s.stack}>
           {!view.tasks.length ? (
-            <section className={s.card}>
-              <HairlineFigure kind="gate" state={state} />
+            <section className={s.card + ' ' + s.gateIntro}>
+              <HairlineFigure kind="gate" state={state} prominent />
               <WorkspaceEmpty
                 title={view.eligible ? 'A focused test of transfer' : 'This gate is locked'}
               >
@@ -231,7 +236,7 @@ export function Checkpoint({
               </WorkspaceEmpty>
               {view.display.startAvailable && (
                 <button
-                  className={s.button + ' ' + s.primary}
+                  className={s.button + ' ' + s.navigation}
                   disabled={busy || !!readError}
                   onClick={() => void mutate('start')}
                 >
@@ -268,13 +273,19 @@ export function Checkpoint({
                           label={
                             view.display.tasks[i]?.state === 'available'
                               ? 'Open'
-                              : (view.display.tasks[i]?.state ?? 'Closed')
+                              : view.display.tasks[i]?.state === 'system_error'
+                                ? 'System retry'
+                                : view.display.tasks[i]?.state === 'closed'
+                                  ? 'Closed'
+                                  : displayState(view.display.tasks[i]?.state ?? 'closed')
                           }
                         />
                       </span>
                       <small>{t.reserved} of 3 submission slots used or pending</small>
                       {view.display.tasks[i]?.state === 'system_error' && (
-                        <small>System retry · no learner quota consumed by system_error</small>
+                        <small>
+                          System retry · infrastructure errors do not use one of your attempts
+                        </small>
                       )}
                     </button>
                   ))}
@@ -318,7 +329,7 @@ export function Checkpoint({
                             {item.rules.max_size_kb} KiB maximum · exact filename required
                           </p>
                         </div>
-                        <button className={s.button + ' ' + s.primary} type="submit">
+                        <button className={s.button + ' ' + s.navigation} type="submit">
                           {busy ? 'Submitting…' : 'Submit checkpoint task'}
                         </button>
                       </fieldset>
@@ -369,7 +380,8 @@ export function Checkpoint({
                 <strong>Pass 3 of 4 tasks</strong>Up to 3 learner-result submissions per task.
               </li>
               <li>
-                <strong>Infrastructure is separate</strong>system_error consumes no learner quota.
+                <strong>Infrastructure is separate</strong>Infrastructure errors do not use one of
+                your attempts.
               </li>
               <li>
                 <strong>Accepted work remains valid</strong>Pre-deadline submissions count even when
@@ -398,7 +410,7 @@ export function Checkpoint({
           )}
           {view.attempt && view.display.startAvailable && (
             <button
-              className={s.button + ' ' + s.primary}
+              className={s.button + ' ' + s.navigation}
               disabled={busy || !!readError}
               onClick={() => void mutate('start')}
             >
@@ -428,11 +440,14 @@ export function Checkpoint({
             {view.history.map((h) => (
               <li key={h.id} className={s.record}>
                 <span>
-                  {h.kind} attempt {h.normal_slot}: {h.status}
+                  {h.kind === 'normal' ? 'Standard' : 'Replacement'} attempt {h.normal_slot}
                   {h.points !== null ? ` · ${h.points}/4` : ''}
                 </span>
-                <code className={s.identity}>{h.id}</code>
                 <StatusBadge state={h.status} />
+                <RecordDetails>
+                  <span className={s.muted}>Attempt ID</span>
+                  <code className={s.identity}>{h.id}</code>
+                </RecordDetails>
               </li>
             ))}
           </ol>

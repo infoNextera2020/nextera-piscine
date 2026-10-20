@@ -23,12 +23,14 @@ export function WorkspaceHero({
   state,
   description,
   facts,
+  details,
 }: {
   context: string;
   title: string;
   state: string | null;
   description: string;
   facts: { label: string; value: string }[];
+  details?: ReactNode;
 }) {
   return (
     <header className={s.hero}>
@@ -44,7 +46,22 @@ export function WorkspaceHero({
           </div>
         ))}
       </dl>
+      {details && <RecordDetails title="Technical details">{details}</RecordDetails>}
     </header>
+  );
+}
+export function RecordDetails({
+  children,
+  title = 'Record details',
+}: {
+  children: ReactNode;
+  title?: string;
+}) {
+  return (
+    <details className={s.details}>
+      <summary>{title}</summary>
+      <div>{children}</div>
+    </details>
   );
 }
 export function WorkspaceEmpty({ title, children }: { title: string; children: ReactNode }) {
@@ -85,7 +102,10 @@ export function SafeHistory({
             </p>
           )}
           {item.feedback?.message && <p>{item.feedback.message}</p>}
-          <code className={s.identity}>{item.id}</code>
+          <RecordDetails>
+            <span className={s.muted}>Submission ID</span>
+            <code className={s.identity}>{item.id}</code>
+          </RecordDetails>
           {item.created_at && (
             <time dateTime={item.created_at}>{formatMoment(item.created_at)}</time>
           )}

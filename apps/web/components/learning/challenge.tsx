@@ -69,6 +69,11 @@ export function Challenge({
   }, [refresh, submittable]);
   function select(next: (typeof tabs)[number]) {
     setTab(next);
+    tabButtons.current[tabs.indexOf(next)]?.scrollIntoView({
+      block: 'nearest',
+      inline: 'nearest',
+      behavior: 'instant',
+    });
     const url = new URL(window.location.href);
     url.searchParams.set('tab', next.toLowerCase());
     window.history.replaceState(null, '', url);
@@ -86,6 +91,7 @@ export function Challenge({
   return (
     <div className={s.columns}>
       <section className={s.card} aria-label="Challenge workspace">
+        <p className={s.tabHint}>Five sections · swipe to explore</p>
         <div className={s.tabs} role="tablist" aria-label="Challenge sections">
           {tabs.map((name, i) => (
             <button
@@ -156,7 +162,7 @@ export function Challenge({
             {name === 'Submissions' && (
               <>
                 <div className={s.sectionHead}>
-                  <h2>Safe submission history</h2>
+                  <h2>Submission history</h2>
                   {submittable && (
                     <button className={s.button} onClick={() => void refresh()}>
                       Refresh history
@@ -173,8 +179,8 @@ export function Challenge({
             )}
             {name === 'Resources' && (
               <WorkspaceEmpty title="Start with the challenge brief">
-                No separate resources are attached in the published challenge metadata. The Overview
-                contains the authorized subject.
+                No separate resources are attached to this challenge. You’ll find the brief in
+                Overview.
               </WorkspaceEmpty>
             )}
             {name === 'Discussion' && (

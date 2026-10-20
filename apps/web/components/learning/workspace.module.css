@@ -97,8 +97,16 @@
   border-bottom: 1px solid var(--line);
   margin: -8px -4px 24px;
   padding-bottom: 8px;
+  overscroll-behavior-x: contain;
+  scrollbar-width: thin;
+  scrollbar-color: #547b88 #0b1d28;
+  scroll-padding-inline: 4px;
+}
+.tabHint {
+  display: none;
 }
 .tabs button {
+  flex: 0 0 auto;
   border: 0;
   border-radius: 6px;
   background: transparent;
@@ -120,7 +128,33 @@
   overflow-wrap: anywhere;
 }
 .prose > * + * {
-  margin-top: 16px;
+  margin-top: 20px;
+}
+.prose > :first-child {
+  margin-top: 0;
+}
+.prose :is(h2, h3, h4) {
+  line-height: 1.45;
+  margin-bottom: 12px;
+}
+.prose > :is(h2, h3, h4):not(:first-child) {
+  margin-top: 32px;
+}
+.prose li + li {
+  margin-top: 8px;
+}
+.prose li > p + p {
+  margin-top: 12px;
+}
+.prose blockquote {
+  border-left: 2px solid var(--teal);
+  padding-left: 18px;
+  color: var(--muted);
+}
+.prose hr {
+  margin-block: 28px;
+  border: 0;
+  border-top: 1px solid var(--line);
 }
 .prose h1,
 .prose h2 {
@@ -135,6 +169,15 @@
   border: 1px solid var(--line);
   border-radius: 8px;
   background: #071019;
+  margin-block: 24px;
+  line-height: 1.7;
+  font-size: 12px;
+  tab-size: 2;
+}
+.prose :not(pre) > code {
+  background: #102a36;
+  padding: 2px 5px;
+  border-radius: 4px;
 }
 .prose ul,
 .prose ol {
@@ -179,6 +222,43 @@
 }
 .primary:hover {
   background: #6ccb8b;
+}
+.navigation {
+  background: #123641;
+  border-color: #517d87;
+  color: #c5e9ec;
+}
+.navigation:hover {
+  background: #194652;
+}
+.details {
+  color: var(--muted);
+  margin-top: 16px;
+  font-size: 11px;
+}
+.details summary {
+  cursor: pointer;
+  min-height: 44px;
+  padding-block: 12px;
+  color: #a9c8d2;
+}
+.details[open] > div {
+  border-left: 1px solid var(--line);
+  padding: 4px 0 4px 14px;
+}
+.details summary:focus-visible {
+  outline: 2px solid var(--teal);
+  outline-offset: 2px;
+}
+.record > .details {
+  margin-top: 0;
+}
+.gateIntro {
+  text-align: center;
+}
+.gateIntro .empty {
+  padding-top: 12px;
+  padding-bottom: 24px;
 }
 .danger {
   color: #ff9696 !important;
@@ -540,6 +620,16 @@
   }
   .tabs {
     margin-inline: -10px;
+    padding-inline: 4px;
+  }
+  .tabHint {
+    display: block;
+    color: var(--muted);
+    font-size: 10px;
+    margin-bottom: 14px;
+  }
+  .tabHint + .tabs {
+    margin-top: 0;
   }
   .tabs button {
     padding-inline: 10px;

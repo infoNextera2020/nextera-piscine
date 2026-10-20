@@ -9,6 +9,7 @@ if (!f.assessments) throw new Error('Assessment fixtures required.');
 const db = postgres(f.database, { max: 1, prepare: false, onnotice: () => {} });
 const base = '/app/cohorts/' + f.cohort;
 const cp = base + '/checkpoints/transfer-checkpoint';
+const screenshotDirectory = process.env.UI_SCREENSHOT_DIR ?? 'docs/design/review/ui002';
 let before: string;
 async function fingerprint() {
   const rows = await db.unsafe(
@@ -35,14 +36,14 @@ async function shot(page: Page, name: string) {
   for (const figure of await page.locator('iframe[title^="Decorative"]').all())
     await expect(figure).toHaveAttribute('data-ready', 'true');
   await page.screenshot({
-    path: 'docs/design/review/ui002/' + name + '.png',
+    path: screenshotDirectory + '/' + name + '.png',
     fullPage: true,
     animations: 'disabled',
   });
 }
 test.beforeAll(async () => {
   before = await fingerprint();
-  await mkdir('docs/design/review/ui002', { recursive: true });
+  await mkdir(screenshotDirectory, { recursive: true });
 });
 test.afterAll(async () => {
   await db.end();
@@ -77,7 +78,7 @@ test('Challenge preserves all safe verdicts, metadata, five keyboard tabs and re
   await expect(page.getByRole('tab', { name: 'Tasks', exact: true })).toBeFocused();
   await expect(page.getByRole('heading', { name: 'Submission requirements' })).toBeVisible();
   await page.keyboard.press('ArrowRight');
-  await expect(page.getByRole('heading', { name: 'Safe submission history' })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Submission history' })).toBeVisible();
   for (const state of [
     'failed',
     'compile_error',
@@ -88,6 +89,11 @@ test('Challenge preserves all safe verdicts, metadata, five keyboard tabs and re
     'queued',
   ])
     await expect(page.locator(`[data-verdict="${state}"]`)).toBeVisible();
+  const firstRecord = page.locator('[data-verdict]').first();
+  await expect(firstRecord.locator('code')).not.toBeVisible();
+  await firstRecord.getByText('Record details', { exact: true }).click();
+  await expect(firstRecord.locator('code')).toBeVisible();
+  await firstRecord.getByText('Record details', { exact: true }).click();
   expect(await page.content()).not.toMatch(
     /evaluation_snapshot|test_pack_digest|runner_image_digest/,
   );
@@ -107,6 +113,22 @@ test('Challenge preserves all safe verdicts, metadata, five keyboard tabs and re
       true,
     );
     await shot(page, 'challenge-' + device);
+    if (device === 'mobile') {
+      const overview = page.getByRole('tab', { name: 'Overview', exact: true });
+      await overview.focus();
+      await page.keyboard.press('End');
+      const discussion = page.getByRole('tab', { name: 'Discussion', exact: true });
+      await expect(discussion).toBeFocused();
+      expect(
+        await discussion.evaluate((el) => {
+          const bounds = el.getBoundingClientRect();
+          const strip = el.parentElement!.getBoundingClientRect();
+          return bounds.left >= strip.left && bounds.right <= strip.right;
+        }),
+      ).toBe(true);
+      await page.keyboard.press('Home');
+      await expect(overview).toBeFocused();
+    }
   }
 });
 test('Checkpoint renders four trusted tasks and a display-only timer without figure decisions', async ({
@@ -119,6 +141,8 @@ test('Checkpoint renders four trusted tasks and a display-only timer without fig
   await expect(nav.getByRole('button')).toHaveCount(4);
   await expect(page.getByLabel('Time remaining')).not.toHaveText('Syncing…');
   await expect(nav.getByRole('button').nth(3)).toContainText('System retry');
+  await expect(nav.getByText('system_error', { exact: true })).toHaveCount(0);
+  await expect(nav.getByText('passed', { exact: true })).toHaveCount(0);
   await nav.getByRole('button').nth(3).click();
   await expect(
     page.getByRole('button', { name: 'Submit checkpoint task', exact: true }),
@@ -160,6 +184,12 @@ test('PASS, LEARNER FAIL and INFRASTRUCTURE BLOCKED use actual stored outcomes a
     await page.goto(cp + '/result');
     const region = page.getByRole('region', { name: 'Authoritative checkpoint result' });
     await expect(region.getByText(label, { exact: true })).toBeVisible();
+    const roadmapAction = region.getByRole('link', { name: 'See updated Roadmap' });
+    await expect(roadmapAction).toHaveCSS(
+      'background-color',
+      scenario === 'pass' ? 'rgb(74, 188, 112)' : 'rgb(18, 54, 65)',
+    );
+    await expect(page.locator('main code').first()).not.toBeVisible();
     if (scenario === 'pass')
       await expect(page.getByRole('link', { name: 'After checkpoint', exact: true })).toBeVisible();
     else
@@ -199,6 +229,10 @@ test('Evidence separates stored mastery, checkpoint, learner, unlock and system 
     for (const el of await records.all()) await expect(el).toHaveAttribute('data-category', value);
   }
   await filter.selectOption('all');
+  await expect(page.getByText('History coverage:', { exact: false })).not.toBeVisible();
+  await page.getByText('History coverage', { exact: true }).click();
+  await expect(page.getByText('History coverage:', { exact: false })).toBeVisible();
+  await page.getByText('History coverage', { exact: true }).click();
   await shot(page, 'evidence-desktop');
   for (const [device, width, height] of [
     ['tablet', 1024, 900],
@@ -223,6 +257,16 @@ test('Gate, pending result and empty evidence are honest; foreign and locked rou
   await expect(page.getByRole('button', { name: 'Start checkpoint', exact: true })).toBeVisible();
   await expect(page.getByRole('navigation', { name: 'Checkpoint tasks' })).toHaveCount(0);
   await shot(page, 'checkpoint-gate-desktop');
+  for (const [device, width, height] of [
+    ['tablet', 1024, 900],
+    ['mobile', 390, 844],
+  ] as const) {
+    await page.setViewportSize({ width, height });
+    expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(
+      true,
+    );
+    await shot(page, 'checkpoint-gate-' + device);
+  }
   await page.goto(cp + '/result');
   await expect(page.getByRole('heading', { name: 'No checkpoint result yet' })).toBeVisible();
   await page.goto(base + '/evidence?filter=system');
@@ -333,7 +377,7 @@ test('early finish requires explicit confirmation and closes trusted intake irre
   await page.goto(cp);
   await page.getByRole('button', { name: 'Finish checkpoint', exact: true }).click();
   await page.getByRole('button', { name: 'Confirm finish', exact: true }).click();
-  await expect(page.getByText('evaluating', { exact: true })).toBeVisible();
+  await expect(page.getByText('Evaluating', { exact: true }).first()).toBeVisible();
   await expect(
     page.getByRole('button', { name: 'Submit checkpoint task', exact: true }),
   ).toHaveCount(0);

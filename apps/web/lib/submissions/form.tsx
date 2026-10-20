@@ -96,7 +96,7 @@ export function SubmissionForm({
               Required filename · {maxSizeKb} KiB maximum
             </p>
           </div>
-          <button className={s.button + ' ' + s.primary} type="submit">
+          <button className={s.button + ' ' + s.navigation} type="submit">
             {phase === 'uploading' ? 'Uploading…' : 'Submit solution'}
           </button>
         </fieldset>

@@ -7,7 +7,11 @@ import { readLearningOverview } from '../../../../../lib/learning/server';
 import { projectEvidence } from '../../../../../lib/learning/evidence';
 import { AppShell } from '../../../../../components/learning/app-shell';
 import { Evidence } from '../../../../../components/learning/evidence';
-import { Breadcrumbs, WorkspaceHero } from '../../../../../components/learning/workspace-parts';
+import {
+  Breadcrumbs,
+  RecordDetails,
+  WorkspaceHero,
+} from '../../../../../components/learning/workspace-parts';
 import LearningLoading from '../../../../../components/learning/loading';
 import s from '../../../../../components/learning/workspace.module.css';
 export default async function EvidencePage({
@@ -68,11 +72,13 @@ export default async function EvidencePage({
               },
             ]}
           />
-          <p className={s.notice}>
-            History coverage: up to 50 ordinary submissions per node, retained checkpoint outcomes,
-            and up to 100 task submissions for each latest checkpoint attempt. Older private task
-            details and unrestricted event payloads are not included.
-          </p>
+          <RecordDetails title="History coverage">
+            <p className={s.muted}>
+              History coverage: up to 50 ordinary submissions per node, retained checkpoint
+              outcomes, and up to 100 task submissions for each latest checkpoint attempt. Older
+              private task details and unrestricted event payloads are not included.
+            </p>
+          </RecordDetails>
           <Evidence records={records} nodes={view.nodes} initialFilter={query.filter ?? 'all'} />
         </main>
       </AppShell>

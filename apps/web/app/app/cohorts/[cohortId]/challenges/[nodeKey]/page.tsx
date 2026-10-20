@@ -72,8 +72,13 @@ export default async function SubjectPage({
                 value: current.kind === 'project' ? 'Project' : 'Individual challenge',
               },
               { label: 'Required file', value: rules.required_files.join(', ') },
-              { label: 'Curriculum', value: cohort.version },
             ]}
+            details={
+              <>
+                <span>Curriculum version</span>
+                <code className={s.identity}>{cohort.version}</code>
+              </>
+            }
           />
           {user.role !== 'learner' && (
             <p className={s.notice}>

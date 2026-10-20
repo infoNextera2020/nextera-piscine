@@ -31,6 +31,8 @@
     "supabase:stop": "supabase stop",
     "local:env": "tsx scripts/local-env.ts",
     "local:provision": "tsx scripts/provision-user.ts",
+    "local:demo:prepare": "tsx scripts/local-demo.ts prepare",
+    "local:demo": "tsx scripts/local-demo.ts start",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "db:generate": "pnpm --filter @nextera/db db:generate",

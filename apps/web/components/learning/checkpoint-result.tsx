@@ -4,7 +4,7 @@ import type { LearningOverview } from '../../lib/learning/types';
 import { StatusBadge } from './primitives';
 import { HairlineFigure } from './hairline-figure';
 import { RefreshLearning } from './refresh-learning';
-import { SafeHistory, WorkspaceEmpty } from './workspace-parts';
+import { RecordDetails, SafeHistory, WorkspaceEmpty } from './workspace-parts';
 import { formatMoment } from '../../lib/learning/display';
 import s from './workspace.module.css';
 const copy = {
@@ -95,7 +95,10 @@ export function CheckpointResult({
             </p>
           )}
           <div className={s.actions}>
-            <Link className={s.button + ' ' + s.primary} href={'/app/cohorts/' + cohort}>
+            <Link
+              className={s.button + ' ' + (attempt.status === 'passed' ? s.primary : s.navigation)}
+              href={'/app/cohorts/' + cohort}
+            >
               See updated Roadmap
             </Link>
             <Link className={s.button} href={'/app/cohorts/' + cohort + '/evidence'}>
@@ -200,13 +203,15 @@ export function CheckpointResult({
           </section>
           <section className={s.card}>
             <h2>Durable outcome record</h2>
-            <p className={s.muted}>Checkpoint outcome</p>
-            <code className={s.identity}>{attempt.outcome_id}</code>
-            <p className={s.muted}>Attempt identity</p>
-            <code className={s.identity}>{attempt.id}</code>
             {attempt.completed_at && (
               <time dateTime={attempt.completed_at}>{formatMoment(attempt.completed_at)}</time>
             )}
+            <RecordDetails>
+              <p className={s.muted}>Checkpoint outcome</p>
+              <code className={s.identity}>{attempt.outcome_id}</code>
+              <p className={s.muted}>Attempt identity</p>
+              <code className={s.identity}>{attempt.id}</code>
+            </RecordDetails>
           </section>
         </div>
       </div>
