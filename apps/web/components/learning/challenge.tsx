@@ -5,6 +5,7 @@ import type { SubmissionSummary } from '@nextera/db/submissions';
 import type { SubmissionRules } from '@nextera/domain';
 import type { LearningNode } from '../../lib/learning/types';
 import { displayState, formatMoment } from '../../lib/learning/display';
+import { historyFailureMessage } from '../../lib/submissions/messages';
 import { SubmissionForm } from '../../lib/submissions/form';
 import { Icon } from './icon';
 import { EditorHairline } from './editor-hairline';
@@ -37,36 +38,45 @@ export function Challenge({
   const [error, setError] = useState('');
   const tabButtons = useRef<(HTMLButtonElement | null)[]>([]);
   const historyRegion = useRef<HTMLElement>(null);
+  const historyRequest = useRef<AbortController | null>(null);
   const refresh = useCallback(
-    async (signal?: AbortSignal) => {
+    async (mode: 'replace' | 'if-idle' = 'replace') => {
+      if (mode === 'if-idle' && historyRequest.current) return;
+      historyRequest.current?.abort();
+      const controller = new AbortController();
+      historyRequest.current = controller;
+      let status: number | undefined;
       try {
         const response = await fetch(`/api/submissions/history?cohort=${cohort}&node=${node}`, {
           cache: 'no-store',
-          signal: signal ?? null,
+          signal: controller.signal,
         });
+        status = response.status;
         if (!response.ok) throw new Error();
         const data = (await response.json()) as SubmissionSummary[];
-        if (!signal?.aborted) {
+        if (!Array.isArray(data)) throw new Error();
+        if (!controller.signal.aborted && historyRequest.current === controller) {
           setHistory(data);
           setError('');
         }
       } catch {
-        if (!signal?.aborted)
-          setError(
-            'History could not be refreshed. The last confirmed record is shown. Check access and retry.',
-          );
+        if (!controller.signal.aborted && historyRequest.current === controller)
+          setError(historyFailureMessage(status));
+      } finally {
+        if (historyRequest.current === controller) historyRequest.current = null;
       }
     },
     [cohort, node],
   );
   useEffect(() => {
-    if (!submittable) return;
-    const controller = new AbortController();
-    const timer = setInterval(() => {
-      if (document.visibilityState === 'visible') void refresh(controller.signal);
-    }, 4000);
+    const timer = submittable
+      ? setInterval(() => {
+          if (document.visibilityState === 'visible') void refresh('if-idle');
+        }, 4000)
+      : undefined;
     return () => {
-      controller.abort();
+      historyRequest.current?.abort();
+      historyRequest.current = null;
       clearInterval(timer);
     };
   }, [refresh, submittable]);

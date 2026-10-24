@@ -1,5 +1,7 @@
 'use client';
 import { useRef, useState } from 'react';
+import { SubmissionIntents } from './retry-intent';
+import { uploadFailureMessage } from './messages';
 import { Icon } from '../../components/learning/icon';
 import s from '../../components/learning/challenge.module.css';
 
@@ -20,6 +22,8 @@ export function SubmissionForm({
   const [message, setMessage] = useState('');
   const input = useRef<HTMLInputElement>(null);
   const pending = useRef(false);
+  const intents = useRef<SubmissionIntents | null>(null);
+  if (!intents.current) intents.current = new SubmissionIntents(() => sessionStorage);
   return (
     <section aria-label="Submission">
       <h2>Submit your solution</h2>
@@ -45,8 +49,7 @@ export function SubmissionForm({
               (b) => b.toString(16).padStart(2, '0'),
             ).join('');
             const key = `submission:${cohort}:${node}:${file.name}:${digest}`;
-            const requestId = sessionStorage.getItem(key) ?? crypto.randomUUID();
-            sessionStorage.setItem(key, requestId);
+            const requestId = intents.current!.requestId(key);
             const response = await fetch('/api/submissions', {
               method: 'POST',
               body: file,
@@ -57,9 +60,14 @@ export function SubmissionForm({
                 'idempotency-key': requestId,
               },
             });
-            if (!response.ok) throw new Error();
+            if (!response.ok) {
+              setPhase('error');
+              setMessage(uploadFailureMessage(response.status));
+              return;
+            }
             const receipt = (await response.json()) as { id?: unknown };
-            if (typeof receipt.id !== 'string') throw new Error();
+            if (typeof receipt.id !== 'string' || !receipt.id) throw new Error();
+            intents.current!.confirm(key);
             setPhase('accepted');
             setMessage('Submission accepted. Evaluation is pending.');
             if (input.current) input.current.value = '';
@@ -67,7 +75,7 @@ export function SubmissionForm({
           } catch {
             setPhase('error');
             setMessage(
-              'Submission could not be confirmed. Check access and the required file, then retry.',
+              'Submission could not be confirmed. Keep your source file and retry. The same upload request will be checked again.',
             );
           } finally {
             pending.current = false;
