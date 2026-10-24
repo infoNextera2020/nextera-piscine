@@ -1,479 +1,540 @@
 'use client';
-import { useId, useState, type ReactNode, type KeyboardEvent } from 'react';
+
 import Link from 'next/link';
-import type { NodeKind } from '@nextera/domain';
-import type { LearningNode, LearningModule, LearningOverview } from '../../lib/learning/types';
-import { displayState, formatMoment } from '../../lib/learning/display';
-import { EmptyState, Panel, ProgressBar, ProgressRing, StatusBadge } from './primitives';
-import { Icon } from './icon';
-import s from './learning.module.css';
-type RoadmapView = Pick<LearningOverview, 'nodes' | 'modules' | 'counts'>;
-export function Roadmap({
+import { useEffect, useRef, useState } from 'react';
+import type { LearningModule, LearningNode, LearningOverview } from '../../lib/learning/types';
+import { displayState } from '../../lib/learning/display';
+import s from './journey.module.css';
+import { HeartJourney } from './heart-journey';
+
+type Kind = 'challenge' | 'checkpoint' | 'project';
+type Layout = 'list' | 'tree';
+const kinds: Kind[] = ['challenge', 'checkpoint', 'project'];
+const kindNames = { challenge: 'Challenges', checkpoint: 'Checkpoints', project: 'Projects' };
+function Status({ state }: { state: string | null }) {
+  return (
+    <span className={s.status} data-state={state}>
+      {displayState(state)}
+    </span>
+  );
+}
+
+export function JourneyEntry({ empty }: { empty: boolean }) {
+  return (
+    <header className={s.entry}>
+      <p className={s.eyebrow}>NEXTERA PISCINE / JOURNEY</p>
+      <h1>Your journey.</h1>
+      <p>
+        {empty
+          ? 'No active cohort assigned'
+          : 'Choose a cohort to explore your curriculum and next steps.'}
+      </p>
+      {empty && (
+        <>
+          <p>Enrollment is controlled by your operator.</p>
+          <Link className={s.textLink} href="/app">
+            Return to Home ↗
+          </Link>
+        </>
+      )}
+    </header>
+  );
+}
+
+export function Roadmap(props: Parameters<typeof QuestRoadmap>[0]) {
+  if (!props.questDetail)
+    return (
+      <HeartJourney
+        view={props.view}
+        initialModule={props.initialModule}
+        initialNode={props.initialNode}
+        kind={props.kind}
+        base={props.base}
+        preview={props.preview}
+        cohortName={props.cohortName ?? 'Your cohort'}
+        {...(props.version ? { version: props.version } : {})}
+      />
+    );
+  return <QuestRoadmap {...props} />;
+}
+
+function QuestRoadmap({
   view,
   initialModule,
   initialNode,
+  initialLayout = 'list',
+  questDetail = false,
   kind,
   base,
   preview,
+  cohortName = 'Your cohort',
+  version,
 }: {
-  view: RoadmapView;
+  view: Pick<LearningOverview, 'nodes' | 'modules' | 'counts'> & {
+    current?: LearningNode | null;
+    submissions?: LearningOverview['submissions'];
+  };
   initialModule: string | null;
   initialNode: string | null;
-  kind: NodeKind | null;
+  initialLayout?: Layout;
+  questDetail?: boolean;
+  kind: Kind | null;
   base: string;
   preview: boolean;
+  cohortName?: string;
+  version?: string;
 }) {
-  const [selected, setSelected] = useState(initialModule);
-  const [nodeKey, setNodeKey] = useState(initialNode);
-  const [tab, setTab] = useState('overview');
-  const id = useId();
-  const selectedQuest = view.modules.find((m) => m.key === selected) ?? view.modules[0];
-  const selectedNode = selectedQuest?.nodes.find((n) => n.key === nodeKey) ?? null;
-  const c = view.counts;
-  function select(m: LearningModule, node: LearningNode | null = null) {
-    setSelected(m.key);
-    setNodeKey(node?.key ?? null);
-    setTab('overview');
-  }
-  function nodeCard(node: LearningNode, m: LearningModule) {
-    return (
-      <li key={node.key} className={s.branchCard} data-state={node.assessmentState ?? node.state}>
-        <div className={s.branchTitle}>
-          <Icon name={node.kind === 'project' ? 'folder' : 'code'} size={19} />
-          <h3>
-            <button aria-pressed={nodeKey === node.key} onClick={() => select(m, node)}>
-              {node.title}
-            </button>
-          </h3>
-        </div>
-        <StatusBadge
-          state={node.assessmentState ?? node.state}
-          label={node.assessmentState ? displayState(node.assessmentState) : node.label}
-        />
-        {node.lockedReason && <p className={s.lockReason}>{node.lockedReason}</p>}
-        {node.href && (
-          <Link className={s.textLink} href={node.href}>
-            Read {node.title}
-            <Icon name="arrow" size={13} />
-          </Link>
-        )}
-      </li>
-    );
-  }
-  function inOrder(m: LearningModule) {
-    const parts: ReactNode[] = [];
-    let chunk: LearningNode[] = [];
-    let ordinal = 0;
-    function flush() {
-      if (chunk.length) {
-        parts.push(
-          <ul key={'branches-' + ordinal++} className={s.branchRow}>
-            {chunk.map((n) => nodeCard(n, m))}
-          </ul>,
-        );
-        chunk = [];
-      }
+  const detailsRef = useRef<HTMLElement>(null);
+  const [selection, setSelection] = useState({
+    quest: initialModule,
+    node: initialNode,
+    detail: questDetail,
+    layout: initialLayout,
+    kind,
+  });
+  useEffect(() => {
+    const restore = () => {
+      const q = new URLSearchParams(window.location.search);
+      const n = view.nodes.find((n) => n.key === q.get('node'));
+      const k = q.get('kind');
+      setSelection({
+        quest: n?.questKey ?? q.get('quest') ?? initialModule,
+        node: n?.key ?? null,
+        detail: q.has('quest'),
+        layout: q.get('layout') === 'tree' ? 'tree' : 'list',
+        kind: kinds.includes(k as Kind) ? (k as Kind) : null,
+      });
+    };
+    window.addEventListener('popstate', restore);
+    return () => window.removeEventListener('popstate', restore);
+  }, [view.nodes, initialModule]);
+  const quest = view.modules.find((q) => q.key === selection.quest) ?? view.modules[0];
+  const node = quest?.nodes.find((n) => n.key === selection.node) ?? null;
+  const selected = node ?? quest?.next ?? quest?.nodes[0] ?? null;
+  const modules = view.modules
+    .map((q) => ({
+      ...q,
+      nodes: q.nodes.filter((n) => !selection.kind || n.kind === selection.kind),
+    }))
+    .filter((q) => q.nodes.length);
+  function update(patch: Partial<typeof selection>) {
+    const next = { ...selection, ...patch };
+    if (Object.hasOwn(patch, 'kind')) {
+      const candidates = next.detail ? (quest?.nodes ?? []) : view.nodes;
+      const target =
+        candidates.find((n) => n.key === next.node && (!next.kind || n.kind === next.kind)) ??
+        candidates.find((n) => !next.kind || n.kind === next.kind);
+      next.node = target?.key ?? null;
+      if (!next.detail && target) next.quest = target.questKey;
     }
-    for (const node of m.nodes.filter((n) => !kind || n.kind === kind)) {
-      if (node.kind !== 'checkpoint') {
-        chunk.push(node);
-        continue;
-      }
-      flush();
-      parts.push(
-        <article
-          className={s.gateCard}
-          key={node.key}
-          data-state={node.assessmentState ?? node.state}
-        >
-          <span className={s.nodeIcon}>
-            <Icon name="gate" size={23} />
-          </span>
-          <div>
-            <p className={s.micro}>CHECKPOINT GATE</p>
-            <h3>
-              <button onClick={() => select(m, node)} aria-pressed={nodeKey === node.key}>
-                {node.title}
-              </button>
-            </h3>
-            <p>Four tasks · 90 minutes · pass 3 of 4</p>
-            {node.lockedReason && <p>{node.lockedReason}</p>}
-            {node.href && (
-              <Link className={s.textLink} href={node.href}>
-                Read {node.title}
-                <Icon name="arrow" size={13} />
-              </Link>
-            )}
-          </div>
-          <StatusBadge
-            state={node.assessmentState ?? node.state}
-            label={node.assessmentState ? displayState(node.assessmentState) : node.label}
-          />
-        </article>,
-      );
+    setSelection(next);
+    const q = new URLSearchParams(window.location.search);
+    for (const key of ['quest', 'node', 'layout', 'kind']) q.delete(key);
+    if (next.detail && next.quest) q.set('quest', next.quest);
+    if (next.node) q.set('node', next.node);
+    if (next.layout === 'tree') q.set('layout', 'tree');
+    if (next.kind) q.set('kind', next.kind);
+    window.history.pushState(null, '', base + (q.size ? '?' + q.toString() : ''));
+  }
+  function selectNode(item: LearningNode) {
+    update({ quest: item.questKey, node: item.key });
+    if (
+      window.matchMedia(selection.detail ? '(max-width: 1250px)' : '(max-width: 1000px)').matches
+    ) {
+      requestAnimationFrame(() => {
+        detailsRef.current?.focus({ preventScroll: true });
+        detailsRef.current?.scrollIntoView({ block: 'start' });
+      });
     }
-    flush();
-    return parts;
   }
-  const tabs = [
-    { key: 'overview', title: 'Overview' },
-    ...(['challenge', 'project', 'checkpoint'] as const)
-      .filter((k) => selectedQuest?.nodes.some((n) => n.kind === k))
-      .map((k) => ({
-        key: k,
-        title: k === 'challenge' ? 'Challenges' : k === 'project' ? 'Projects' : 'Checkpoints',
-      })),
-  ];
-  const shown = selectedQuest?.nodes.filter((n) => tab === 'overview' || n.kind === tab) ?? [];
-  function tabsKey(e: KeyboardEvent<HTMLDivElement>) {
-    if (!['ArrowLeft', 'ArrowRight', 'Home', 'End'].includes(e.key)) return;
-    e.preventDefault();
-    const current = tabs.findIndex((t) => t.key === tab);
-    const next =
-      e.key === 'Home'
-        ? 0
-        : e.key === 'End'
-          ? tabs.length - 1
-          : (current + (e.key === 'ArrowRight' ? 1 : -1) + tabs.length) % tabs.length;
-    setTab(tabs[next]!.key);
-    e.currentTarget.querySelectorAll<HTMLButtonElement>('[role=tab]')[next]?.focus();
-  }
-  const next = selectedNode ?? selectedQuest?.next;
-  const skills = [
-    ...new Set(
-      (selectedNode ? [selectedNode] : (selectedQuest?.nodes ?? [])).flatMap((n) => n.skills),
-    ),
-  ];
+  const detailHref = (key: string) => base + '?quest=' + encodeURIComponent(key);
   return (
-    <div className={s.roadmapLayout}>
-      <aside className={s.roadmapSummary} aria-label="Roadmap summary">
-        {!preview && (
-          <Panel title="Overall Progress">
-            <ProgressRing done={c.mastered} total={c.total} />
-            <div className={s.summaryMetrics}>
-              <div>
-                <span className={s.metricIcon}>
-                  <Icon name="map" />
-                </span>
-                <span>
-                  <b>
-                    {c.mastered} / {c.total}
-                  </b>
-                  <small>Nodes mastered</small>
-                </span>
-              </div>
-              <div>
-                <span className={s.metricIcon + ' ' + s.goldIcon}>
-                  <Icon name="gate" />
-                </span>
-                <span>
-                  <b>
-                    {c.checkpointsPassed} / {c.checkpoints}
-                  </b>
-                  <small>Checkpoint passes</small>
-                </span>
-              </div>
-              <div>
-                <span className={s.metricIcon}>
-                  <Icon name="folder" />
-                </span>
-                <span>
-                  <b>{c.projectsActive}</b>
-                  <small>Projects in progress</small>
-                </span>
-              </div>
-            </div>
-          </Panel>
-        )}
-        <Panel title="Program Structure">
-          <div className={s.summaryMetrics}>
-            <div>
-              <span className={s.metricIcon}>
-                <Icon name="map" />
-              </span>
-              <span>
-                <b>{view.modules.length} Quests</b>
-                <small>Build strong foundations</small>
-              </span>
-            </div>
-            <div>
-              <span className={s.metricIcon}>
-                <Icon name="code" />
-              </span>
-              <span>
-                <b>{c.challenges} Challenges</b>
-                <small>Practice through building</small>
-              </span>
-            </div>
-            {c.projects > 0 && (
-              <div>
-                <span className={s.metricIcon}>
-                  <Icon name="folder" />
-                </span>
-                <span>
-                  <b>{c.projects} Projects</b>
-                  <small>Apply your skills</small>
-                </span>
-              </div>
-            )}
-            <div>
-              <span className={s.metricIcon + ' ' + s.goldIcon}>
-                <Icon name="gate" />
-              </span>
-              <span>
-                <b>{c.checkpoints} Checkpoints</b>
-                <small>Transfer gates</small>
-              </span>
-            </div>
-          </div>
-        </Panel>
-        <Panel title="Milestones">
-          <ul className={s.milestones}>
-            {view.nodes
-              .filter((n) => n.kind === 'checkpoint')
-              .map((n) => (
-                <li key={n.key}>
-                  <Icon name="gate" size={15} />
-                  <button
-                    onClick={() =>
-                      select(
-                        view.modules.find((m) => m.key === n.questKey)!,
-                        n,
-                      )
-                    }
-                  >
-                    {n.title}
-                  </button>
-                  <StatusBadge state={n.assessmentState ?? n.state} />
-                </li>
-              ))}
-          </ul>
-          {!c.checkpoints && <p className={s.muted}>No checkpoints in this curriculum.</p>}
-        </Panel>
-        <div className={s.legend} aria-label="Roadmap state legend">
-          <span>
-            <i data-state="mastered" />
-            Mastered
-          </span>
-          <span>
-            <i data-state="in_progress" />
-            In progress
-          </span>
-          <span>
-            <i data-state="available" />
-            Available
-          </span>
-          <span>
-            <i data-state="locked" />
-            Locked
-          </span>
-        </div>
-      </aside>
-      <section className={s.roadmapCenter} aria-label="Curriculum progression">
-        <div className={s.filterBar}>
-          <h2>Program Roadmap</h2>
-          <div aria-label="Filter node type">
-            {[
-              ['', 'All'],
-              ['challenge', 'Challenges'],
-              ['project', 'Projects'],
-              ['checkpoint', 'Checkpoints'],
-            ].map(([value, label]) => (
-              <Link
-                key={label}
-                href={base + (value ? '?kind=' + value : '')}
-                aria-current={(kind ?? '') === value ? 'true' : undefined}
-              >
-                {label}
-              </Link>
-            ))}
-          </div>
-        </div>
-        <div className={s.roadmapScroll}>
-          <div className={s.spine} aria-hidden="true" />
-          <p className={s.journeyStart}>
-            <Icon name="map" size={13} />
-            YOUR LEARNING JOURNEY
-          </p>
-          {view.modules
-            .filter((m) => !kind || m.nodes.some((n) => n.kind === kind))
-            .map((m, i) => (
-              <section key={m.key} className={s.moduleSection} aria-label={m.title}>
-                <button
-                  className={s.moduleCard}
-                  data-state={m.state}
-                  aria-pressed={selected === m.key && !selectedNode}
-                  onClick={() => select(m)}
-                >
-                  <span className={s.nodeIcon}>
-                    <Icon
-                      name={
-                        m.state === 'mastered' ? 'check' : m.state === 'locked' ? 'lock' : 'map'
-                      }
-                      size={23}
-                    />
-                  </span>
-                  <span className={s.moduleCopy}>
-                    <span className={s.micro}>QUEST {String(i + 1).padStart(2, '0')}</span>
-                    <strong>{m.title}</strong>
-                    <small>{m.nodes.length} curriculum nodes</small>
-                    {!preview && (
-                      <ProgressBar
-                        done={m.mastered}
-                        total={m.nodes.length}
-                        label={m.title + ' nodes mastered'}
-                      />
-                    )}
-                  </span>
-                  <span className={s.moduleMeta}>
-                    <StatusBadge state={m.state} />
-                    {!preview && (
-                      <small>
-                        {m.mastered} / {m.nodes.length} mastered
-                      </small>
-                    )}
-                  </span>
-                </button>
-                {inOrder(m)}
-              </section>
-            ))}
-          {kind && !view.nodes.some((n) => n.kind === kind) && (
-            <div className={s.card + ' ' + s.panel}>
-              <EmptyState title="No matching nodes">
-                This curriculum has no nodes of this type.
-              </EmptyState>
-            </div>
-          )}
-        </div>
-      </section>
-      <aside
-        className={s.card + ' ' + s.roadmapDetail}
-        aria-label="Selected roadmap details"
-        aria-live="polite"
-      >
-        {selectedQuest ? (
+    <main className={s.page}>
+      <nav className={s.breadcrumb} aria-label="Breadcrumb">
+        <Link href="/app">Home</Link>
+        <span aria-hidden="true">/</span>
+        {selection.detail ? (
           <>
-            <div className={s.detailTop}>
-              <StatusBadge
-                state={selectedNode?.assessmentState ?? selectedNode?.state ?? selectedQuest.state}
-              />
-              <p className={s.micro}>
-                {selectedNode ? selectedNode.kind.toUpperCase() : 'SELECTED QUEST'}
-              </p>
-              <h2>{selectedNode?.title ?? selectedQuest.title}</h2>
-              <p className={s.description}>
-                {selectedNode
-                  ? selectedNode.questTitle
-                  : selectedQuest.nodes.length + ' nodes to explore, practice, and master.'}
-              </p>
-              {!preview && (
-                <ProgressBar
-                  done={selectedQuest.mastered}
-                  total={selectedQuest.nodes.length}
-                  label="Selected quest nodes mastered"
-                />
-              )}
-            </div>
-            <div
-              role="tablist"
-              aria-label="Quest details"
-              className={s.detailTabs}
-              onKeyDown={tabsKey}
-            >
-              {tabs.map((t) => (
-                <button
-                  key={t.key}
-                  role="tab"
-                  id={id + '-' + t.key}
-                  aria-selected={tab === t.key}
-                  aria-controls={id + '-panel'}
-                  tabIndex={tab === t.key ? 0 : -1}
-                  onClick={() => setTab(t.key)}
-                >
-                  {t.title}
-                </button>
-              ))}
-            </div>
-            <div role="tabpanel" id={id + '-panel'} aria-labelledby={id + '-' + tab} tabIndex={0}>
-              {selectedNode?.lockedReason && (
-                <p className={s.detailLock}>
-                  <Icon name="lock" size={16} />
-                  {selectedNode.lockedReason}
-                </p>
-              )}
-              {selectedNode?.kind === 'checkpoint' && (
-                <div className={s.policyNote}>
-                  <Icon name="gate" />
-                  <span>
-                    4 tasks · 90 minutes
-                    <br />
-                    <strong>Pass 3 of 4 tasks</strong>
-                  </span>
-                </div>
-              )}
-              <ul className={s.detailList}>
-                {shown.map((n) => (
-                  <li key={n.key}>
-                    <button aria-pressed={nodeKey === n.key} onClick={() => setNodeKey(n.key)}>
-                      <span className={s.statusDot} data-state={n.assessmentState ?? n.state} />
-                      <span>{n.title}</span>
-                      <span className={s.muted}>{displayState(n.assessmentState ?? n.state)}</span>
-                    </button>
-                  </li>
-                ))}
-              </ul>
-              {!!skills.length && (
-                <div className={s.skills} aria-label="Curriculum skills">
-                  {skills.map((skill) => (
-                    <span key={skill}>{skill}</span>
-                  ))}
-                </div>
-              )}
-            </div>
-            <div className={s.miniVisual} aria-hidden="true">
-              <span />
-            </div>
-            {next?.href ? (
-              <Link className={s.primaryButton} href={next.href}>
-                {preview
-                  ? 'Preview node'
-                  : next.kind === 'checkpoint'
-                    ? 'Open checkpoint'
-                    : 'Continue learning'}
-                <Icon name="arrow" size={15} />
-              </Link>
-            ) : (
-              <p className={s.detailLock}>Complete the required prerequisites to open this node.</p>
-            )}
-            <div className={s.nextUp}>
-              <h3>Quest Progress</h3>
-              <div>
-                {preview ? (
-                  <p>Read-only preview. No learner progress is implied.</p>
-                ) : (
-                  <>
-                    <strong>
-                      {selectedQuest.mastered} of {selectedQuest.nodes.length} nodes mastered
-                    </strong>
-                    <p>
-                      {selectedQuest.nodes.filter((n) => n.state === 'in_progress').length} in
-                      progress · {selectedQuest.nodes.filter((n) => n.state === 'available').length}{' '}
-                      available
-                    </p>
-                  </>
-                )}
-                {selectedNode?.masteredAt && (
-                  <small>Mastered {formatMoment(selectedNode.masteredAt)}</small>
-                )}
-              </div>
-            </div>
+            <Link href={base}>Journey</Link>
+            <span aria-hidden="true">/</span>
+            <span aria-current="page">{quest?.title ?? 'Quest'}</span>
           </>
         ) : (
-          <EmptyState title="No curriculum nodes">
-            Your roadmap will appear here when available.
-          </EmptyState>
+          <span aria-current="page">Journey</span>
         )}
-      </aside>
-    </div>
+      </nav>
+      <header className={s.heading}>
+        <div>
+          <p className={s.eyebrow}>
+            {selection.detail ? 'QUEST / ' + cohortName : 'NEXTERA PISCINE / ' + cohortName}
+          </p>
+          <h1>{selection.detail ? (quest?.title ?? 'Quest unavailable') : 'Your journey.'}</h1>
+          <p>
+            {selection.detail
+              ? 'Explore the brief, requirements, and work inside this quest.'
+              : 'Find your place. Understand the next step. Build something that lasts.'}
+          </p>
+        </div>
+        {!preview && (
+          <div className={s.total}>
+            <strong>
+              {view.counts.mastered}
+              <span> / {view.counts.total}</span>
+            </strong>
+            <span>nodes mastered</span>
+          </div>
+        )}
+      </header>
+      {preview && (
+        <p className={s.notice}>Read-only curriculum preview. No learner progress is implied.</p>
+      )}
+      {!view.nodes.length ? (
+        <section className={s.empty}>
+          <h2>No published curriculum</h2>
+          <p>There is no published work in this cohort to explore right now.</p>
+        </section>
+      ) : (
+        <>
+          <div className={s.toolbar}>
+            <div className={s.filters} aria-label="Filter curriculum">
+              {[null, ...kinds].map((k) => (
+                <button
+                  key={k ?? 'all'}
+                  type="button"
+                  aria-pressed={selection.kind === k}
+                  onClick={() => update({ kind: k })}
+                >
+                  {k ? kindNames[k] : 'All work'}
+                </button>
+              ))}
+            </div>
+            {!selection.detail && (
+              <div className={s.layout} role="group" aria-label="Journey view">
+                <button
+                  type="button"
+                  aria-pressed={selection.layout === 'list'}
+                  onClick={() => update({ layout: 'list' })}
+                >
+                  <span aria-hidden="true">☷</span> List
+                </button>
+                <button
+                  type="button"
+                  aria-pressed={selection.layout === 'tree'}
+                  onClick={() => update({ layout: 'tree' })}
+                >
+                  <span aria-hidden="true">⌘</span> Tree
+                </button>
+              </div>
+            )}
+          </div>
+          <div className={s.workspace} data-detail={selection.detail}>
+            {selection.detail && quest && (
+              <aside className={s.siblings} aria-label="Quest exercises">
+                <p className={s.eyebrow}>IN THIS QUEST</p>
+                <ol>
+                  {quest.nodes.map((item, index) => (
+                    <li key={item.key}>
+                      <button
+                        type="button"
+                        aria-pressed={selected?.key === item.key}
+                        onClick={() => selectNode(item)}
+                      >
+                        <span
+                          className={s.nodeShape}
+                          data-kind={item.kind}
+                          data-state={item.state}
+                          aria-hidden="true"
+                        >
+                          {item.state === 'mastered' ? '✓' : String(index + 1).padStart(2, '0')}
+                        </span>
+                        <span>
+                          {item.title}
+                          <small>{displayState(item.state)}</small>
+                        </span>
+                      </button>
+                    </li>
+                  ))}
+                </ol>
+                <Link className={s.textLink} href={base}>
+                  ← All quests
+                </Link>
+              </aside>
+            )}
+            <section
+              className={s.curriculum}
+              aria-label="Curriculum progression"
+              data-layout={selection.layout}
+            >
+              {selection.detail && quest ? (
+                <QuestOverview quest={quest} preview={preview} />
+              ) : (
+                <>
+                  <div className={s.legend}>
+                    <span>
+                      <i data-state="in_progress" />
+                      Current work
+                    </span>
+                    <span>
+                      <i data-state="available" />
+                      Available
+                    </span>
+                    <span>
+                      <i data-state="mastered" />
+                      Mastered
+                    </span>
+                    <span>
+                      <i data-state="locked" />
+                      Locked
+                    </span>
+                  </div>
+                  <p className={s.hierarchyNote}>
+                    {selection.layout === 'tree'
+                      ? 'Quest → work hierarchy. Access requirements appear in the details.'
+                      : 'Quests group the published challenges, projects, and checkpoints.'}
+                  </p>
+                </>
+              )}
+              {selection.detail ? (
+                quest && (
+                  <NodeList
+                    nodes={quest.nodes.filter((n) => !selection.kind || n.kind === selection.kind)}
+                    selected={selected?.key ?? null}
+                    current={view.current?.key ?? null}
+                    onSelect={selectNode}
+                  />
+                )
+              ) : modules.length ? (
+                <ol className={s.questList}>
+                  {modules.map((item, index) => (
+                    <li key={item.key} className={s.questGroup}>
+                      <header>
+                        <span className={s.questIndex}>{String(index + 1).padStart(2, '0')}</span>
+                        <div>
+                          <Link href={detailHref(item.key)}>
+                            <h2>{item.title}</h2>
+                          </Link>
+                          <p>
+                            {item.nodes.length} {item.nodes.length === 1 ? 'item' : 'items'}
+                            {!preview && (
+                              <>
+                                {' '}
+                                · {view.modules.find((q) => q.key === item.key)?.mastered ?? 0}{' '}
+                                mastered in quest
+                              </>
+                            )}
+                          </p>
+                        </div>
+                        <Link
+                          className={s.questLink}
+                          href={detailHref(item.key)}
+                          aria-label={'Open quest: ' + item.title}
+                        >
+                          ↗
+                        </Link>
+                      </header>
+                      <NodeList
+                        nodes={item.nodes}
+                        selected={selected?.key ?? null}
+                        current={view.current?.key ?? null}
+                        onSelect={selectNode}
+                      />
+                    </li>
+                  ))}
+                </ol>
+              ) : (
+                <div className={s.empty}>
+                  <h2>
+                    No {selection.kind ? kindNames[selection.kind].toLowerCase() : 'work'} here
+                  </h2>
+                  <p>This cohort has no published work matching the filter.</p>
+                  <button type="button" onClick={() => update({ kind: null })}>
+                    Show all work
+                  </button>
+                </div>
+              )}
+            </section>
+            <aside
+              className={s.details}
+              aria-label="Selected roadmap details"
+              id="journey-details"
+              ref={detailsRef}
+              tabIndex={-1}
+            >
+              <p className={s.eyebrow}>SELECTED WORK</p>
+              {selected ? (
+                <>
+                  <div className={s.detailMeta}>
+                    <span>{selected.kind}</span>
+                    <Status state={selected.state} />
+                  </div>
+                  <h2>{selected.title}</h2>
+                  <p className={s.questContext}>{selected.questTitle}</p>
+                  <dl>
+                    <div>
+                      <dt>Access</dt>
+                      <dd>
+                        {selected.lockedReason ??
+                          (preview
+                            ? 'Authorized curriculum preview.'
+                            : selected.state === 'mastered'
+                              ? 'Mastery is recorded for this work.'
+                              : selected.href
+                                ? 'This work is available to open.'
+                                : 'No workspace is available for this item.')}
+                      </dd>
+                    </div>
+                    {selected.prerequisites.length > 0 && (
+                      <div>
+                        <dt>Prerequisites</dt>
+                        <dd>
+                          <ul>
+                            {selected.prerequisites.map((p) => (
+                              <li key={p}>{p}</li>
+                            ))}
+                          </ul>
+                        </dd>
+                      </div>
+                    )}
+                    {selected.skills.length > 0 && (
+                      <div>
+                        <dt>Skills</dt>
+                        <dd className={s.skills}>
+                          {selected.skills.map((skill) => (
+                            <span key={skill}>{skill}</span>
+                          ))}
+                        </dd>
+                      </div>
+                    )}
+                  </dl>
+                  {selected.assessmentState && (
+                    <p className={s.notice}>Assessment: {displayState(selected.assessmentState)}</p>
+                  )}
+                  {selected.href && (
+                    <Link className={s.primary} href={selected.href}>
+                      {preview
+                        ? 'Preview'
+                        : selected.state === 'mastered'
+                          ? 'Review'
+                          : selected.state === 'in_progress'
+                            ? 'Continue'
+                            : 'Open'}{' '}
+                      {selected.kind}
+                      <span aria-hidden="true">↗</span>
+                    </Link>
+                  )}
+                  {!selection.detail && (
+                    <Link className={s.textLink} href={detailHref(selected.questKey)}>
+                      Explore quest ↗
+                    </Link>
+                  )}
+                  <p className={s.detailNote}>
+                    {selected.kind === 'checkpoint'
+                      ? 'Checkpoint rules and attempt status are shown in its workspace.'
+                      : 'Read the brief, work in your own editor, then upload your file from the workspace.'}
+                  </p>
+                </>
+              ) : (
+                <p className={s.detailNote}>
+                  Select published work to see its access requirements.
+                </p>
+              )}
+            </aside>
+          </div>
+          <footer className={s.footer}>
+            <span>
+              {cohortName}
+              {version && <> / Curriculum {version}</>}
+            </span>
+            <span>Progress reflects recorded server state.</span>
+          </footer>
+        </>
+      )}
+    </main>
+  );
+}
+
+function NodeList({
+  nodes,
+  selected,
+  current,
+  onSelect,
+}: {
+  nodes: LearningNode[];
+  selected: string | null;
+  current: string | null;
+  onSelect: (n: LearningNode) => void;
+}) {
+  return (
+    <ol className={s.nodes}>
+      {nodes.length ? (
+        nodes.map((n) => (
+          <li key={n.key} data-selected={n.key === selected} data-state={n.state}>
+            <span
+              className={s.nodeShape}
+              data-kind={n.kind}
+              data-state={n.state}
+              aria-hidden="true"
+            >
+              {n.state === 'mastered'
+                ? '✓'
+                : n.kind === 'checkpoint'
+                  ? '◇'
+                  : n.kind === 'project'
+                    ? '□'
+                    : '·'}
+            </span>
+            <div className={s.nodeSelect}>
+              <h3>
+                <button
+                  type="button"
+                  aria-pressed={n.key === selected}
+                  aria-controls="journey-details"
+                  onClick={() => onSelect(n)}
+                >
+                  {n.title}
+                </button>
+              </h3>
+              <span>
+                {n.kind}
+                {n.key === current && <em>Current work</em>}
+                {n.key === selected && <em className={s.selectedLabel}>Selected</em>}
+              </span>
+            </div>
+            <Status state={n.state} />
+            {n.href && (
+              <Link
+                className={s.openNode}
+                href={n.href}
+                aria-label={'Open ' + n.kind + ': ' + n.title}
+              >
+                ↗
+              </Link>
+            )}
+          </li>
+        ))
+      ) : (
+        <li className={s.emptyCopy}>No work in this quest matches the filter.</li>
+      )}
+    </ol>
+  );
+}
+
+function QuestOverview({ quest, preview }: { quest: LearningModule; preview: boolean }) {
+  const skills = [...new Set(quest.nodes.flatMap((n) => n.skills))];
+  return (
+    <section className={s.questOverview} aria-label="Quest overview">
+      <p className={s.eyebrow}>QUEST OVERVIEW</p>
+      <h2>The work inside.</h2>
+      <p>
+        {quest.nodes.length} published {quest.nodes.length === 1 ? 'item' : 'items'}
+        {!preview && <> · {quest.mastered} mastered</>}. Select an item to see its requirements, or
+        open its workspace when access is available.
+      </p>
+      <div className={s.skills}>
+        {skills.map((skill) => (
+          <span key={skill}>{skill}</span>
+        ))}
+      </div>
+    </section>
   );
 }

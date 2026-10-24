@@ -42,5 +42,10 @@ export default defineConfig([
       ],
     },
   },
+  {
+    files: ['apps/web/public/piscine/hairline/nextera-terminal.js'],
+    // The unchanged figure runs inside the supplied Hairline/browser bench.
+    languageOptions: { globals: { HL: 'readonly', hairline: 'readonly', performance: 'readonly' } },
+  },
   globalIgnores(['**/.next/**', '**/dist/**', '.tools/**', '.pnpm-store/**', '**/next-env.d.ts']),
 ]);

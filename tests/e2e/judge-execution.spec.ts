@@ -552,7 +552,7 @@ test('Foundation 005: wrong then correct Hello, historical application, unlock a
     2,
   );
   await page.goto(`/app/cohorts/${cohort.id}/challenges/hello-go`);
-  await page.getByRole('tab', { name: 'Submissions', exact: true }).click();
+  await expect(page.getByRole('region', { name: 'Submission history', exact: true })).toBeVisible();
   await expect(
     page.getByText('All required checks passed.', { exact: true }).first(),
   ).toBeVisible();

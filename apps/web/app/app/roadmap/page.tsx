@@ -1,11 +1,9 @@
-import Link from 'next/link';
 import { redirect } from 'next/navigation';
 import { listCohorts } from '@nextera/db/cohorts';
 import { authorizePage, getDatabase } from '../../../lib/auth/server';
 import { AppShell } from '../../../components/learning/app-shell';
 import { CohortLinks } from '../../../components/learning/command-center';
-import { EmptyState } from '../../../components/learning/primitives';
-import s from '../../../components/learning/learning.module.css';
+import { JourneyEntry } from '../../../components/learning/roadmap';
 export default async function RoadmapEntry({
   searchParams,
 }: {
@@ -19,25 +17,8 @@ export default async function RoadmapEntry({
   return (
     <AppShell user={user} active="roadmap">
       <main>
-        <section className={s.hero + ' ' + s.roadmapHero}>
-          <div className={s.heroCopy}>
-            <p className={s.eyebrow}>PROGRAM ROADMAP</p>
-            <h1>Your path forward.</h1>
-            <p className={s.heroSub}>Choose a cohort to explore your curriculum and next steps.</p>
-          </div>
-        </section>
-        {cohorts.length ? (
-          <CohortLinks cohorts={cohorts} kind={kind} />
-        ) : (
-          <div className={s.card + ' ' + s.panel}>
-            <EmptyState title="No active cohort assigned">
-              Enrollment is controlled by your operator.
-            </EmptyState>
-            <Link className={s.textLink} href="/app">
-              Return to Command Center
-            </Link>
-          </div>
-        )}
+        <JourneyEntry empty={!cohorts.length} />
+        {!!cohorts.length && <CohortLinks cohorts={cohorts} kind={kind} />}
       </main>
     </AppShell>
   );

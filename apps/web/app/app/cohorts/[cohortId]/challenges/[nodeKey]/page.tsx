@@ -8,13 +8,11 @@ import { authorizeCohortPage } from '../../../../../../lib/cohorts/server';
 import { readLearningOverview } from '../../../../../../lib/learning/server';
 import { AppShell } from '../../../../../../components/learning/app-shell';
 import { Challenge } from '../../../../../../components/learning/challenge';
-import {
-  Breadcrumbs,
-  Subject,
-  WorkspaceHero,
-} from '../../../../../../components/learning/workspace-parts';
+import { Subject } from '../../../../../../components/learning/workspace-parts';
+import { ChallengeHeading } from '../../../../../../components/learning/challenge-heading';
 import LearningLoading from '../../../../../../components/learning/loading';
-import s from '../../../../../../components/learning/workspace.module.css';
+import s from '../../../../../../components/learning/challenge.module.css';
+
 export default async function SubjectPage({
   params,
   searchParams,
@@ -31,6 +29,7 @@ export default async function SubjectPage({
       <Content />
     </Suspense>
   );
+
   async function Content() {
     const [view, history, query] = await Promise.all([
       readLearningOverview(user, cohort),
@@ -60,25 +59,10 @@ export default async function SubjectPage({
         updates={view.updates}
       >
         <main className={s.page}>
-          <Breadcrumbs cohort={cohort} title={subject!.title} />
-          <WorkspaceHero
-            context={current.questTitle}
-            title={subject!.title}
-            state={current.state}
-            description="Understand the brief, build locally, and submit your solution for trusted evaluation."
-            facts={[
-              {
-                label: 'Type',
-                value: current.kind === 'project' ? 'Project' : 'Individual challenge',
-              },
-              { label: 'Required file', value: rules.required_files.join(', ') },
-            ]}
-            details={
-              <>
-                <span>Curriculum version</span>
-                <code className={s.identity}>{cohort.version}</code>
-              </>
-            }
+          <ChallengeHeading
+            cohort={cohort}
+            current={{ ...current, title: subject!.title }}
+            rules={rules}
           />
           {user.role !== 'learner' && (
             <p className={s.notice}>
@@ -87,6 +71,7 @@ export default async function SubjectPage({
             </p>
           )}
           <Challenge
+            key={cohort.id + ':' + nodeKey}
             cohort={cohort.id}
             node={nodeKey}
             rules={rules}

@@ -4,11 +4,13 @@ import Link from 'next/link';
 import type { SubmissionSummary } from '@nextera/db/submissions';
 import type { SubmissionRules } from '@nextera/domain';
 import type { LearningNode } from '../../lib/learning/types';
+import { displayState, formatMoment } from '../../lib/learning/display';
 import { SubmissionForm } from '../../lib/submissions/form';
-import { StatusBadge } from './primitives';
-import { SafeHistory, WorkspaceEmpty } from './workspace-parts';
-import s from './workspace.module.css';
-const tabs = ['Overview', 'Tasks', 'Submissions', 'Resources', 'Discussion'] as const;
+import { Icon } from './icon';
+import { EditorHairline } from './editor-hairline';
+import s from './challenge.module.css';
+
+const tabs = ['Brief', 'Resources'] as const;
 export function Challenge({
   cohort,
   node,
@@ -28,12 +30,13 @@ export function Challenge({
   context: LearningNode[];
   initialTab?: string | undefined;
 }) {
-  const [tab, setTab] = useState(
-    tabs.find((t) => t.toLowerCase() === initialTab.toLowerCase()) ?? 'Overview',
+  const [tab, setTab] = useState<(typeof tabs)[number]>(
+    initialTab.toLowerCase() === 'resources' ? 'Resources' : 'Brief',
   );
   const [history, setHistory] = useState(initialHistory);
   const [error, setError] = useState('');
   const tabButtons = useRef<(HTMLButtonElement | null)[]>([]);
+  const historyRegion = useRef<HTMLElement>(null);
   const refresh = useCallback(
     async (signal?: AbortSignal) => {
       try {
@@ -67,31 +70,30 @@ export function Challenge({
       clearInterval(timer);
     };
   }, [refresh, submittable]);
-  function select(next: (typeof tabs)[number]) {
-    setTab(next);
-    tabButtons.current[tabs.indexOf(next)]?.scrollIntoView({
-      block: 'nearest',
-      inline: 'nearest',
-      behavior: 'instant',
-    });
-    const url = new URL(window.location.href);
-    url.searchParams.set('tab', next.toLowerCase());
-    window.history.replaceState(null, '', url);
-  }
   useEffect(() => {
     const sync = () =>
       setTab(
-        tabs.find(
-          (t) => t.toLowerCase() === new URL(window.location.href).searchParams.get('tab'),
-        ) ?? 'Overview',
+        new URL(window.location.href).searchParams.get('tab')?.toLowerCase() === 'resources'
+          ? 'Resources'
+          : 'Brief',
       );
     window.addEventListener('popstate', sync);
     return () => window.removeEventListener('popstate', sync);
   }, []);
+  useEffect(() => {
+    if (initialTab.toLowerCase() === 'submissions')
+      historyRegion.current?.focus({ preventScroll: true });
+  }, [initialTab]);
+  function select(next: (typeof tabs)[number]) {
+    setTab(next);
+    const url = new URL(window.location.href);
+    url.searchParams.set('tab', next === 'Brief' ? 'overview' : 'resources');
+    window.history.replaceState(null, '', url);
+  }
+
   return (
     <div className={s.columns}>
-      <section className={s.card} aria-label="Challenge workspace">
-        <p className={s.tabHint}>Five sections · swipe to explore</p>
+      <section className={s.briefCard} aria-label="Challenge workspace">
         <div className={s.tabs} role="tablist" aria-label="Challenge sections">
           {tabs.map((name, i) => (
             <button
@@ -127,73 +129,108 @@ export function Challenge({
             </button>
           ))}
         </div>
-        {tabs.map((name) => (
-          <div
-            key={name}
-            id={'challenge-panel-' + name}
-            role="tabpanel"
-            aria-labelledby={'challenge-tab-' + name}
-            hidden={tab !== name}
-            tabIndex={0}
-          >
-            {name === 'Overview' && subject}
-            {name === 'Tasks' && (
-              <>
-                <h2>Submission requirements</h2>
-                <p className={s.muted}>
-                  The challenge brief defines the work. There are no separate scored subtasks.
-                </p>
-                <dl className={s.requirements}>
-                  <div>
-                    <dt>Required files</dt>
-                    <dd>{rules.required_files.join(', ')}</dd>
-                  </div>
-                  <div>
-                    <dt>Allowed extensions</dt>
-                    <dd>{rules.allowed_extensions.join(', ')}</dd>
-                  </div>
-                  <div>
-                    <dt>Maximum size</dt>
-                    <dd>{rules.max_size_kb} KiB</dd>
-                  </div>
-                </dl>
-              </>
-            )}
-            {name === 'Submissions' && (
-              <>
-                <div className={s.sectionHead}>
-                  <h2>Submission history</h2>
-                  {submittable && (
-                    <button className={s.button} onClick={() => void refresh()}>
-                      Refresh history
-                    </button>
-                  )}
+        <div
+          id="challenge-panel-Brief"
+          role="tabpanel"
+          aria-labelledby="challenge-tab-Brief"
+          hidden={tab !== 'Brief'}
+          tabIndex={0}
+        >
+          <div className={s.briefBody}>
+            <div className={s.subject}>{subject}</div>
+            <section className={s.requirements} aria-labelledby="requirements-heading">
+              <h2 id="requirements-heading">Submission requirements</h2>
+              <dl>
+                <div>
+                  <dt>Required files</dt>
+                  <dd>{rules.required_files.join(', ')}</dd>
                 </div>
-                {error && (
-                  <p className={s.notice} role="alert">
-                    {error}
-                  </p>
-                )}
-                <SafeHistory items={history} />
-              </>
-            )}
-            {name === 'Resources' && (
-              <WorkspaceEmpty title="Start with the challenge brief">
-                No separate resources are attached to this challenge. You’ll find the brief in
-                Overview.
-              </WorkspaceEmpty>
-            )}
-            {name === 'Discussion' && (
-              <WorkspaceEmpty title="Discussion is not available yet">
-                Keep your work local and use the challenge brief. No discussion service is connected
-                to this challenge.
-              </WorkspaceEmpty>
-            )}
+                <div>
+                  <dt>Allowed extensions</dt>
+                  <dd>{rules.allowed_extensions.join(', ')}</dd>
+                </div>
+                <div>
+                  <dt>Maximum size</dt>
+                  <dd>{rules.max_size_kb} KiB</dd>
+                </div>
+              </dl>
+            </section>
+            <section className={s.beforeSubmit}>
+              <h2>Before you submit</h2>
+              <ul>
+                <li>Run and test your solution in your own terminal.</li>
+                <li>Check your file and output against the published brief.</li>
+              </ul>
+            </section>
           </div>
-        ))}
+          <div className={s.resourceNote}>
+            <Icon name="resource" size={25} />
+            <div>
+              <strong>Resources</strong>
+              <p>No separate resources are attached. Start with the brief above.</p>
+            </div>
+          </div>
+        </div>
+        <div
+          id="challenge-panel-Resources"
+          role="tabpanel"
+          aria-labelledby="challenge-tab-Resources"
+          hidden={tab !== 'Resources'}
+          tabIndex={0}
+          className={s.resourcesPanel}
+        >
+          <Icon name="resource" size={28} />
+          <h2>Everything starts with the brief.</h2>
+          <p>
+            No separate resources are attached to this challenge. Read the published instructions
+            and test your work locally.
+          </p>
+          <button
+            type="button"
+            className={s.textButton}
+            onClick={() => {
+              select('Brief');
+              tabButtons.current[0]?.focus();
+            }}
+          >
+            Back to the brief <Icon name="arrow" size={17} />
+          </button>
+        </div>
+        <details className={s.questContext}>
+          <summary>
+            In this quest{' '}
+            <span>
+              {context.length} {context.length === 1 ? 'node' : 'nodes'}
+            </span>
+          </summary>
+          <ul>
+            {context.map((n) => (
+              <li key={n.key}>
+                {n.href ? (
+                  <Link href={n.href} aria-current={n.key === node ? 'page' : undefined}>
+                    {n.title}
+                  </Link>
+                ) : (
+                  <span>{n.title}</span>
+                )}
+                <span>{n.label}</span>
+              </li>
+            ))}
+          </ul>
+          <Link href={'/app/cohorts/' + cohort}>
+            Back to Journey <Icon name="arrow" size={16} />
+          </Link>
+        </details>
       </section>
-      <aside className={s.stack} aria-label="Challenge tools">
-        <div className={s.card}>
+      <aside className={s.tools} aria-label="Challenge tools">
+        <section className={s.editorCard}>
+          <div>
+            <h2>Work in your editor</h2>
+            <p>Use your own editor and terminal to write and test your solution.</p>
+          </div>
+          <EditorHairline />
+        </section>
+        <div className={s.uploadCard}>
           {submittable ? (
             <SubmissionForm
               cohort={cohort}
@@ -201,37 +238,99 @@ export function Challenge({
               filename={rules.required_files[0]!}
               maxSizeKb={rules.max_size_kb}
               onAccepted={() => {
-                select('Submissions');
                 void refresh();
+                historyRegion.current?.focus({ preventScroll: true });
               }}
             />
           ) : (
-            <>
+            <section>
+              <p className={s.eyebrow}>Read-only brief</p>
               <h2>Submission unavailable</h2>
               <p className={s.muted}>
-                This is a read-only subject. Current access and an approved runnable evaluation are
-                required for intake.
+                Current access and an approved runnable evaluation are required for intake. You can
+                continue reading this brief.
               </p>
-            </>
+            </section>
           )}
         </div>
-        <section className={s.card} aria-label="Roadmap context">
-          <h2>Roadmap context</h2>
-          <ol className={s.context}>
-            {context.map((n) => (
-              <li key={n.key}>
-                {n.href ? <Link href={n.href}>{n.title}</Link> : <span>{n.title}</span>}
-                <StatusBadge state={n.state} />
-              </li>
-            ))}
-          </ol>
-          <div className={s.actions}>
-            <Link className={s.button} href={'/app/cohorts/' + cohort}>
-              Open Roadmap
-            </Link>
+        <section
+          ref={historyRegion}
+          className={s.historyCard}
+          aria-labelledby="history-heading"
+          tabIndex={-1}
+        >
+          <div className={s.historyHeading}>
+            <h2 id="history-heading">Submission history</h2>
+            {submittable && (
+              <button
+                type="button"
+                className={s.refreshButton}
+                onClick={() => void refresh()}
+                aria-label="Refresh history"
+              >
+                <svg
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="1.5"
+                  aria-hidden="true"
+                >
+                  <path d="M20 7v5h-5M4 17v-5h5" />
+                  <path d="M6 7a7 7 0 0 1 12-1l2 3M4 15l2 3a7 7 0 0 0 12-1" />
+                </svg>
+              </button>
+            )}
           </div>
+          {error && (
+            <p className={s.error} role="alert">
+              {error}
+            </p>
+          )}
+          <ChallengeHistory items={history} />
         </section>
       </aside>
     </div>
+  );
+}
+
+export function ChallengeHistory({ items }: { items: SubmissionSummary[] }) {
+  if (!items.length)
+    return (
+      <div className={s.emptyHistory}>
+        <Icon name="clock" size={34} />
+        <h3>No submissions yet</h3>
+        <p>Evaluation feedback appears here after you submit.</p>
+      </div>
+    );
+  return (
+    <ol className={s.history}>
+      {items.map((item, i) => (
+        <li key={item.id} data-verdict={item.state}>
+          <div className={s.recordHeading}>
+            <strong>{i === 0 ? 'Latest submission' : 'Submission'}</strong>
+            <span className={s.verdict} data-state={item.state}>
+              {displayState(item.state)}
+            </span>
+          </div>
+          {item.feedback?.message && <p>{item.feedback.message}</p>}
+          {(item.state === 'queued' || item.state === 'running') && (
+            <p className={s.muted}>
+              Your result is pending. This record will update when evaluation is available.
+            </p>
+          )}
+          {item.state === 'system_error' && (
+            <p className={s.systemNotice}>Infrastructure issue. This is not a learner failure.</p>
+          )}
+          <div className={s.recordMeta}>
+            <time dateTime={item.created_at}>{formatMoment(item.created_at)}</time>
+            <details>
+              <summary>Details</summary>
+              <span>Submission ID</span>
+              <code>{item.id}</code>
+            </details>
+          </div>
+        </li>
+      ))}
+    </ol>
   );
 }

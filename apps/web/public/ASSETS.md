@@ -34,3 +34,24 @@ The user supplied `/home/anas/.agents/skills/hairline-create` and selected two o
 `HairlineFigure` adds the production palette and hides standalone bench controls from the embedding document, without editing the supplied engine/bench. The gate pose is selected from the displayed server status. Pointer movement nudges only the latch; the receipt figure lifts a selected plate. Neither figure computes score, quota, eligibility, verdict, mastery, unlocks or replacement access. Both are decorative, have adjacent semantic text and use the engine's reduced-motion and visibility handling. No autoplay tour runs in the product.
 
 These are user-supplied tooling assets; no additional third-party redistribution rights are asserted here. No remote scripts, fonts or image requests are required by the figures.
+
+## Challenge identity slice (24 October 2026)
+
+`piscine/official-coding-logo.svg` is the user-supplied official vector, retained byte-for-byte from Library `libfile_6da34a99f9448191be31c59aba291dd7`. It is displayed intact on a light field; no geometry, gradients or mark were modified. The earlier Home v2 logo and pilot are preserved.
+
+The first Challenge slice used an original inline engineering line illustration authored for this interface; the supplied Hairline scene below now replaces it. It is not a bundled or adapted `@lucasmarkes/hairline` figure. Its decorative SVG is hidden from assistive technology and remains static under reduced motion.
+
+The user-selected visual reference is Library `libfile_7edaf0cb40788191a12fea99c600f4c0`, inspected as pixels before implementation. All brief text, file requirements, availability and history remain supplied by the existing server-authorized route.
+
+## Supplied Hairline terminal (24 October 2026)
+
+- `nextera-terminal.js` — user-supplied custom figure, Library `libfile_6f57a81f1c3081918687ffe81d66d3f7` (6,237 bytes).
+- `hairline-nextera-terminal.html` — user-supplied self-contained preview, Library `libfile_f33643b22c9881919c6e8251640ab192` (42,393 bytes).
+
+Both originals are retained byte-for-byte under `piscine/hairline/`. The embedded drawing matches the separate JavaScript. The embedded kernel matches the installed `hairline-create` kernel (marker `346b48bdef2cdfafd5343eba01494255cf75f9c078e6fcd1aafc62bab62980a1`), and the installed validator confirmed the kernel and bench are intact. This is the user's custom Hairline-format figure, not a stock figure or the earlier original SVG. No separate license declaration was included in these two supplied files.
+
+`nextera-terminal-rest.svg` preserves the actual rendered rest-pose geometry, captured from the supplied scene. It has a scoped neutral/emerald stroke palette and no scripts. The application wrapper applies the same public Hairline theme variables to the unchanged animated page. Mobile/coarse-pointer, reduced-motion, Save-Data and unhydrated states retain the static drawing. The iframe mounts only while visible in an active tab and unmounts offscreen or when motion becomes ineligible. It is decorative and hidden from assistive technology and keyboard navigation. On eligible desktop pointers, the unchanged figure selects and spreads its three working plates from pointer proximity/X/Y and returns to its deliberate rest pose on leave. It does not autoplay, and contains no code input or evaluation data.
+
+## Journey transparent wordmark
+
+`piscine/official-nextera-mark.svg` is the original NextEra vector viewport supplied inside `NextEra-Piscine-Map-Concept-v2.svg` (source SHA256 `c1807de999688e4c50e079d7d441763905ca857acdb462070645d7da747b5edd`). It retains the supplied geometry and transparency; no background was added. The existing shell and Coding logo assets are preserved. Used at the approved heart-map START cleft.

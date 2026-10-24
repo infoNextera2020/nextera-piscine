@@ -1,24 +1,15 @@
 'use client';
 import { useEffect, useRef, useState, type ReactNode } from 'react';
+import Image from 'next/image';
 import Link from 'next/link';
-import localFont from 'next/font/local';
 import type { UserRole } from '@nextera/domain';
 import { logout } from '../../app/login/actions';
 import { formatMoment } from '../../lib/learning/display';
 import type { LearningNode, LearningUpdate } from '../../lib/learning/types';
 import { StatusBadge } from './primitives';
 import { Icon } from './icon';
-import s from './learning.module.css';
-const poppins = localFont({
-  src: [
-    { path: '../../public/fonts/poppins/Poppins-Regular.ttf', weight: '400', style: 'normal' },
-    { path: '../../public/fonts/poppins/Poppins-Medium.ttf', weight: '500', style: 'normal' },
-    { path: '../../public/fonts/poppins/Poppins-SemiBold.ttf', weight: '600', style: 'normal' },
-    { path: '../../public/fonts/poppins/Poppins-Bold.ttf', weight: '700', style: 'normal' },
-  ],
-  variable: '--font-poppins',
-  display: 'swap',
-});
+import s from './app-shell.module.css';
+
 type ShellProps = {
   user: { displayName: string; role: UserRole };
   cohort?: { id: string; name: string; version: string } | null;
@@ -27,6 +18,7 @@ type ShellProps = {
   active: 'command' | 'roadmap' | 'challenge' | 'checkpoint' | 'evidence';
   children: ReactNode;
 };
+
 export function AppShell({
   user,
   cohort = null,
@@ -35,9 +27,11 @@ export function AppShell({
   active,
   children,
 }: ShellProps) {
-  const search = useRef<HTMLDialogElement>(null),
-    drawer = useRef<HTMLDialogElement>(null),
-    input = useRef<HTMLInputElement>(null);
+  const search = useRef<HTMLDialogElement>(null);
+  const drawer = useRef<HTMLDialogElement>(null);
+  const input = useRef<HTMLInputElement>(null);
+  const searchTrigger = useRef<HTMLButtonElement>(null);
+  const menuTrigger = useRef<HTMLButtonElement>(null);
   const [query, setQuery] = useState('');
   const base = cohort ? '/app/cohorts/' + cohort.id : '/app/roadmap';
   const initials = user.displayName
@@ -47,15 +41,16 @@ export function AppShell({
     .map((n) => n[0])
     .join('')
     .toUpperCase();
+
   function openSearch() {
     setQuery('');
     search.current?.showModal();
     requestAnimationFrame(() => input.current?.focus());
   }
   useEffect(() => {
-    const handler = (e: KeyboardEvent) => {
-      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k') {
-        e.preventDefault();
+    const handler = (event: KeyboardEvent) => {
+      if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === 'k') {
+        event.preventDefault();
         if (!search.current?.open) {
           search.current?.showModal();
           input.current?.focus();
@@ -65,21 +60,23 @@ export function AppShell({
     window.addEventListener('keydown', handler);
     return () => window.removeEventListener('keydown', handler);
   }, []);
+
+  const journeyActive = active === 'roadmap' || active === 'challenge' || active === 'checkpoint';
   const navItems = [
     {
       key: 'command',
-      title: 'Command Center',
+      title: 'Home',
       icon: 'home',
       href: cohort ? '/app?cohort=' + cohort.id : '/app',
+      current: active === 'command',
     },
-    { key: 'roadmap', title: 'Roadmap', icon: 'map', href: base },
-    { key: 'challenge', title: 'Challenges', icon: 'code', href: base + '?kind=challenge' },
-    { key: 'checkpoint', title: 'Checkpoints', icon: 'gate', href: base + '?kind=checkpoint' },
+    { key: 'roadmap', title: 'Journey', icon: 'map', href: base, current: journeyActive },
     {
       key: 'evidence',
-      title: 'Progress & Evidence',
+      title: 'Evidence',
       icon: 'evidence',
       href: cohort ? base + '/evidence' : '/app/evidence',
+      current: active === 'evidence',
     },
   ];
   const navigation = () => (
@@ -90,23 +87,13 @@ export function AppShell({
           <Link
             key={item.key}
             href={item.href}
-            aria-current={active === item.key ? 'page' : undefined}
+            aria-current={item.current ? 'page' : undefined}
             onClick={() => drawer.current?.close()}
           >
-            <Icon name={item.icon} />
+            <Icon name={item.icon} size={25} />
             <span>{item.title}</span>
           </Link>
         ))}
-      {[
-        ['community', 'Community'],
-        ['resource', 'Resources'],
-      ].map(([icon, title]) => (
-        <span className={s.navDisabled} key={title} aria-disabled="true">
-          <Icon name={icon!} />
-          <span>{title}</span>
-          <small>Soon</small>
-        </span>
-      ))}
     </nav>
   );
   const brand = (
@@ -116,10 +103,12 @@ export function AppShell({
       aria-label="NextEra Piscine home"
       onClick={() => drawer.current?.close()}
     >
-      <span className={s.brandMark} aria-hidden="true" />
+      <span className={s.brandMark}>
+        <Image src="/piscine/official-coding-logo.svg" alt="" width={52} height={52} unoptimized />
+      </span>
       <span>
         <strong>NextEra</strong>
-        <small>Piscine</small>
+        <small>PISCINE</small>
       </span>
     </Link>
   );
@@ -130,27 +119,34 @@ export function AppShell({
         n.skills.some((skill) => skill.toLowerCase().includes(query.toLowerCase())),
     )
     .slice(0, 12);
+
   return (
-    <div className={poppins.variable + ' ' + s.shell}>
+    <div className={s.shell}>
       <a className={s.skip} href="#learning-main">
         Skip to main content
       </a>
       <aside className={s.sidebar}>
         {brand}
         {navigation()}
-        <div className={s.sidebarArt} aria-hidden="true" />
-        <div className={s.sidebarNote}>
-          <strong>Build what’s next.</strong>
-          <p>
-            Real skills. Real projects.
-            <br />
-            Real opportunities.
-          </p>
+        <div className={s.sidebarBottom}>
+          <button
+            ref={searchTrigger}
+            type="button"
+            className={s.searchTrigger}
+            onClick={openSearch}
+            aria-keyshortcuts="Control+K Meta+K"
+          >
+            <Icon name="search" size={17} />
+            <span>Search journey</span>
+            <kbd>Ctrl K</kbd>
+          </button>
+          <p>Learn by doing.</p>
         </div>
       </aside>
       <div className={s.main}>
         <header className={s.topbar}>
           <button
+            ref={menuTrigger}
             type="button"
             className={s.mobileMenu}
             aria-label="Open navigation"
@@ -158,28 +154,18 @@ export function AppShell({
           >
             <Icon name="menu" />
           </button>
-          <button
-            type="button"
-            className={s.searchTrigger}
-            aria-label="Search your roadmap"
-            aria-keyshortcuts="Control+K Meta+K"
-            onClick={openSearch}
-          >
-            <Icon name="search" size={17} />
-            <span>Search your roadmap…</span>
-            <kbd>Ctrl K</kbd>
-          </button>
+          <span className={s.mobileBrand}>
+            NextEra <small>PISCINE</small>
+          </span>
           <div className={s.userActions}>
-            <details className={s.popover}>
-              <summary className={s.bell} aria-label="Recent updates">
-                <Icon name="bell" />
-                {updates.length > 0 && <span className={s.updateDot} aria-hidden="true" />}
-              </summary>
-              <div className={s.popoverContent}>
-                <h2>Recent updates</h2>
-                {!updates.length ? (
-                  <p>No recent learning updates.</p>
-                ) : (
+            {!!updates.length && (
+              <details className={s.popover}>
+                <summary className={s.bell} aria-label="Recent updates">
+                  <Icon name="bell" />
+                  <span className={s.updateDot} />
+                </summary>
+                <div className={s.popoverContent}>
+                  <h2>Recent updates</h2>
                   <ul>
                     {updates.slice(0, 4).map((u) => (
                       <li key={u.id}>
@@ -189,25 +175,19 @@ export function AppShell({
                       </li>
                     ))}
                   </ul>
-                )}
-              </div>
-            </details>
+                </div>
+              </details>
+            )}
             <details className={s.popover}>
-              <summary className={s.userChip} aria-label="Open account menu">
-                <span className={s.avatar}>{initials}</span>
-                <span>
-                  <strong>{user.displayName}</strong>
-                  <small>{user.role}</small>
-                </span>
-                <Icon name="chevron" size={14} />
+              <summary className={s.avatar} aria-label="Open account menu">
+                {initials || 'N'}
               </summary>
               <div className={s.popoverContent}>
-                <h2>Your account</h2>
-                <p>Signed in as {user.displayName}</p>
-                <p>Role: {user.role}</p>
+                <h2>{user.displayName}</h2>
+                <p>{user.role}</p>
                 {cohort && <p>{cohort.name}</p>}
                 {user.role !== 'learner' && (
-                  <Link className={s.textLink} href="/operator">
+                  <Link href="/operator">
                     Operator access <Icon name="arrow" size={15} />
                   </Link>
                 )}
@@ -229,6 +209,7 @@ export function AppShell({
         ref={drawer}
         className={s.drawer}
         aria-labelledby="navigation-title"
+        onClose={() => menuTrigger.current?.focus()}
         onClick={(e) => {
           if (e.target === e.currentTarget) drawer.current?.close();
         }}
@@ -241,17 +222,34 @@ export function AppShell({
         </header>
         {brand}
         {navigation()}
+        <button
+          className={s.outlineButton}
+          onClick={() => {
+            drawer.current?.close();
+            openSearch();
+          }}
+        >
+          <Icon name="search" />
+          Search journey
+        </button>
+        <p className={s.drawerNote}>Learn by doing.</p>
       </dialog>
       <dialog
         ref={search}
         className={s.searchDialog}
         aria-labelledby="search-title"
+        onClose={() =>
+          (searchTrigger.current?.offsetParent
+            ? searchTrigger.current
+            : menuTrigger.current
+          )?.focus()
+        }
         onClick={(e) => {
           if (e.target === e.currentTarget) search.current?.close();
         }}
       >
         <header>
-          <h2 id="search-title">Search your roadmap</h2>
+          <h2 id="search-title">Search your journey</h2>
           <button aria-label="Close search" onClick={() => search.current?.close()}>
             <Icon name="close" />
           </button>
@@ -267,7 +265,7 @@ export function AppShell({
             aria-label="Search curriculum"
           />
         </label>
-        <p className={s.muted}>{cohort?.name ?? 'Choose a cohort to explore its roadmap.'}</p>
+        <p className={s.muted}>{cohort?.name ?? 'Choose a cohort to explore its journey.'}</p>
         <ul className={s.searchResults}>
           {results.map((n) => (
             <li key={n.key}>
@@ -282,7 +280,13 @@ export function AppShell({
             </li>
           ))}
         </ul>
-        {!results.length && <p className={s.empty}>No matching curriculum nodes.</p>}
+        {!results.length && (
+          <p className={s.empty}>
+            {query
+              ? `No matches for “${query}”. Try a title or skill.`
+              : 'No curriculum nodes are available in this view.'}
+          </p>
+        )}
         <footer>Search by title or skill · Escape to close</footer>
       </dialog>
     </div>

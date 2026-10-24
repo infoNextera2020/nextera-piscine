@@ -62,7 +62,7 @@ test.afterEach(async ({ page }) => {
   expect(browserErrors.get(page) ?? []).toEqual([]);
 });
 
-test('Challenge preserves all safe verdicts, metadata, five keyboard tabs and responsive layout', async ({
+test('Challenge preserves all safe verdicts, metadata, brief/resources keyboard tabs and responsive layout', async ({
   page,
 }) => {
   await login(page);
@@ -71,13 +71,19 @@ test('Challenge preserves all safe verdicts, metadata, five keyboard tabs and re
   await expect(
     page.getByRole('heading', { name: 'Even or Odd', exact: true, level: 1 }),
   ).toBeVisible();
-  await expect(page.getByRole('tab')).toHaveCount(5);
+  await expect(page.getByRole('tab')).toHaveCount(2);
   await shot(page, 'challenge-desktop');
-  await page.getByRole('tab', { name: 'Overview', exact: true }).focus();
-  await page.keyboard.press('ArrowRight');
-  await expect(page.getByRole('tab', { name: 'Tasks', exact: true })).toBeFocused();
   await expect(page.getByRole('heading', { name: 'Submission requirements' })).toBeVisible();
+  await page.getByRole('tab', { name: 'Brief', exact: true }).focus();
   await page.keyboard.press('ArrowRight');
+  await expect(page.getByRole('tab', { name: 'Resources', exact: true })).toBeFocused();
+  await expect(page.getByRole('tab', { name: 'Resources', exact: true })).toHaveAttribute(
+    'aria-selected',
+    'true',
+  );
+  await expect(
+    page.getByRole('heading', { name: 'Everything starts with the brief.' }),
+  ).toBeVisible();
   await expect(page.getByRole('heading', { name: 'Submission history' })).toBeVisible();
   for (const state of [
     'failed',
@@ -91,14 +97,14 @@ test('Challenge preserves all safe verdicts, metadata, five keyboard tabs and re
     await expect(page.locator(`[data-verdict="${state}"]`)).toBeVisible();
   const firstRecord = page.locator('[data-verdict]').first();
   await expect(firstRecord.locator('code')).not.toBeVisible();
-  await firstRecord.getByText('Record details', { exact: true }).click();
+  await firstRecord.getByText('Details', { exact: true }).click();
   await expect(firstRecord.locator('code')).toBeVisible();
-  await firstRecord.getByText('Record details', { exact: true }).click();
+  await firstRecord.getByText('Details', { exact: true }).click();
   expect(await page.content()).not.toMatch(
     /evaluation_snapshot|test_pack_digest|runner_image_digest/,
   );
   await page.reload();
-  await expect(page.getByRole('tab', { name: 'Submissions', exact: true })).toHaveAttribute(
+  await expect(page.getByRole('tab', { name: 'Resources', exact: true })).toHaveAttribute(
     'aria-selected',
     'true',
   );
@@ -108,19 +114,19 @@ test('Challenge preserves all safe verdicts, metadata, five keyboard tabs and re
     ['mobile', 390, 844],
   ] as const) {
     await page.setViewportSize({ width, height });
-    await page.getByRole('tab', { name: 'Overview', exact: true }).click();
+    await page.getByRole('tab', { name: 'Brief', exact: true }).click();
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(
       true,
     );
     await shot(page, 'challenge-' + device);
     if (device === 'mobile') {
-      const overview = page.getByRole('tab', { name: 'Overview', exact: true });
+      const overview = page.getByRole('tab', { name: 'Brief', exact: true });
       await overview.focus();
       await page.keyboard.press('End');
-      const discussion = page.getByRole('tab', { name: 'Discussion', exact: true });
-      await expect(discussion).toBeFocused();
+      const resources = page.getByRole('tab', { name: 'Resources', exact: true });
+      await expect(resources).toBeFocused();
       expect(
-        await discussion.evaluate((el) => {
+        await resources.evaluate((el) => {
           const bounds = el.getBoundingClientRect();
           const strip = el.parentElement!.getBoundingClientRect();
           return bounds.left >= strip.left && bounds.right <= strip.right;
@@ -343,10 +349,7 @@ test('submission forms validate local files and await receipts without inventing
     'Submission accepted. Evaluation is pending.',
   );
   expect(calls).toBe(1);
-  await expect(page.getByRole('tab', { name: 'Submissions', exact: true })).toHaveAttribute(
-    'aria-selected',
-    'true',
-  );
+  await expect(page.getByRole('region', { name: 'Submission history', exact: true })).toBeFocused();
 });
 test('current membership revocation denies each new protected surface', async ({ page }) => {
   await login(page, 'infra');

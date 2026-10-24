@@ -57,30 +57,29 @@ test('Command Center renders only real cohort progress and separates infrastruct
     /test_pack_digest|evaluation_snapshot|runner_image_digest/,
   );
 });
-test('Roadmap uses the existing route, real prerequisites and selectable details without unlocked subjects', async ({
+test('Heart Journey uses published order and locked metadata without exposing restricted subjects', async ({
   page,
 }) => {
   await login(page);
   await page.getByRole('link', { name: 'Piscine · UI review fixture', exact: true }).click();
   await expect(page).toHaveURL('/app/cohorts/' + f.cohort);
-  const center = page.getByRole('region', { name: 'Curriculum progression' });
-  const hello = center
-    .getByRole('listitem')
-    .filter({ has: page.getByRole('heading', { name: 'Hello Go', exact: true }) });
-  await expect(hello.getByText('MASTERED', { exact: true })).toBeVisible();
-  const locked = center
-    .getByRole('listitem')
-    .filter({ has: page.getByRole('heading', { name: 'After checkpoint', exact: true }) });
-  await expect(locked.getByText('LOCKED', { exact: true })).toBeVisible();
-  await expect(locked.getByRole('link')).toHaveCount(0);
-  await center.getByRole('button', { name: 'After checkpoint', exact: true }).click();
-  const details = page.getByRole('complementary', { name: 'Selected roadmap details' });
+  const map = page.getByRole('region', { name: 'Piscine journey map', exact: true });
+  await expect(
+    map.getByRole('link', { name: /Quest 1: First Steps in Go.*Mastered/ }),
+  ).toBeVisible();
+  await expect(page.getByRole('group', { name: 'Journey view' })).toHaveCount(0);
+  await map.getByRole('link', { name: /Quest 3: Problem Solving.*Locked/ }).click();
+  const details = page.getByRole('complementary', {
+    name: 'Selected roadmap details',
+    exact: true,
+  });
   await expect(
     details.getByRole('heading', { name: 'After checkpoint', exact: true }),
   ).toBeVisible();
   await expect(
     details.getByText('Requires passing all prerequisites: Transfer checkpoint.', { exact: true }),
   ).toBeVisible();
+  await expect(page.locator('a[href*="challenges/after-checkpoint"]')).toHaveCount(0);
   expect(
     (await page.goto('/app/cohorts/' + f.cohort + '/challenges/after-checkpoint'))?.status(),
   ).toBe(404);
@@ -90,9 +89,9 @@ test('keyboard search and filters navigate authorized metadata; dialogs restore 
   page,
 }) => {
   await login(page);
-  const search = page.getByRole('dialog', { name: 'Search your roadmap', exact: true });
+  const search = page.getByRole('dialog', { name: 'Search your journey', exact: true });
   // Establish an interactive shell before testing the global keyboard shortcut.
-  await page.getByRole('button', { name: 'Search your roadmap', exact: true }).click();
+  await page.getByRole('button', { name: 'Search journey Ctrl K', exact: true }).click();
   await expect(search).toBeVisible();
   await page.keyboard.press('Escape');
   await expect(search).not.toBeVisible();
@@ -105,21 +104,16 @@ test('keyboard search and filters navigate authorized metadata; dialogs restore 
   await expect(search).not.toBeVisible();
   const details = page.getByRole('complementary', { name: 'Selected roadmap details' });
   await expect(details.getByRole('heading', { name: 'Even or Odd', exact: true })).toBeVisible();
-  const tabs = details.getByRole('tablist');
-  await tabs.getByRole('tab', { name: 'Overview', exact: true }).focus();
-  await page.keyboard.press('ArrowRight');
-  await expect(tabs.getByRole('tab', { name: 'Challenges', exact: true })).toHaveAttribute(
-    'aria-selected',
-    'true',
-  );
-  await page.getByRole('button', { name: 'Search your roadmap', exact: true }).click();
+  const map = page.getByRole('region', { name: 'Piscine journey map', exact: true });
+  const quest = map.getByRole('link', { name: /Quest 2: Conditions/ });
+  await quest.focus();
+  await page.keyboard.press('Enter');
+  await expect(page).toHaveURL(/quest=control-flow/);
+  await page.goBack();
+  await expect(details.getByRole('heading', { name: 'Even or Odd', exact: true })).toBeVisible();
+  await page.getByRole('button', { name: 'Search journey Ctrl K', exact: true }).click();
   await page.keyboard.press('Escape');
   await expect(search).not.toBeVisible();
-  await page.getByRole('link', { name: 'Checkpoints', exact: true }).first().click();
-  await expect(page).toHaveURL(/kind=checkpoint/);
-  await expect(
-    page.getByRole('heading', { name: 'Transfer checkpoint', exact: true }),
-  ).toBeVisible();
 });
 test('forged role and foreign cohort selection remain denied, with current membership restrictions', async ({
   page,
@@ -158,33 +152,27 @@ test('unassigned learner sees genuine empty states instead of sample metrics', a
   await page.goto('/app/roadmap');
   await expect(page.getByText('No active cohort assigned', { exact: true })).toBeVisible();
 });
-test('desktop, tablet and mobile preserve the V4 structure, real controls and reduced motion', async ({
+test('desktop, tablet and mobile preserve a legible heart map and equivalent ordered navigation', async ({
   page,
 }) => {
   await page.emulateMedia({ reducedMotion: 'reduce' });
-  await page.setViewportSize({ width: 1600, height: 1000 });
+  await page.setViewportSize({ width: 1440, height: 1100 });
   await login(page);
-  await page.evaluate(() => document.fonts.ready);
-  await page.screenshot({ path: '.tools/ui001-review/command-center-desktop.png', fullPage: true });
   await page.goto('/app/cohorts/' + f.cohort);
-  const summary = page.getByRole('complementary', { name: 'Roadmap summary' });
-  const center = page.getByRole('region', { name: 'Curriculum progression' });
-  const detail = page.getByRole('complementary', { name: 'Selected roadmap details' });
-  const a = await summary.boundingBox(),
-    b = await center.boundingBox(),
-    c = await detail.boundingBox();
-  expect(a!.x).toBeLessThan(b!.x);
-  expect(b!.x).toBeLessThan(c!.x);
-  await page.screenshot({ path: '.tools/ui001-review/roadmap-desktop.png', fullPage: true });
-  await page.setViewportSize({ width: 1024, height: 900 });
-  await expect(page.getByRole('button', { name: 'Open navigation', exact: true })).toBeVisible();
-  expect((await detail.boundingBox())!.y).toBeGreaterThan((await center.boundingBox())!.y);
-  await page.screenshot({ path: '.tools/ui001-review/roadmap-tablet.png', fullPage: true });
-  await page.setViewportSize({ width: 390, height: 844 });
-  expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(
-    true,
-  );
-  await page.screenshot({ path: '.tools/ui001-review/roadmap-mobile.png', fullPage: true });
+  const map = page.getByRole('region', { name: 'Piscine journey map', exact: true });
+  await expect(map).toBeVisible();
+  await expect(map.locator('svg>polyline')).toHaveCount(1);
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+  await page.screenshot({ path: '.tools/ui001-review/heart-desktop.png', fullPage: true });
+  for (const width of [768, 390, 320]) {
+    await page.setViewportSize({ width, height: 1000 });
+    expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(
+      true,
+    );
+    await expect(page.getByText('Ordered journey', { exact: true })).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Center map', exact: true })).toBeVisible();
+    await page.screenshot({ path: '.tools/ui001-review/heart-' + width + '.png', fullPage: true });
+  }
   await page.getByRole('button', { name: 'Open navigation', exact: true }).click();
   const drawer = page.getByRole('dialog', { name: 'Navigation', exact: true });
   await expect(drawer).toBeVisible();
@@ -194,10 +182,6 @@ test('desktop, tablet and mobile preserve the V4 structure, real controls and re
   );
   await page.keyboard.press('Escape');
   await expect(drawer).not.toBeVisible();
-  await page.goto('/app');
-  await expect(page.getByRole('heading', { name: /^Welcome/ })).toBeVisible();
-  await page.evaluate(() => document.fonts.ready);
-  await page.screenshot({ path: '.tools/ui001-review/command-center-mobile.png', fullPage: true });
 });
 test('all dashboard, search, filter and selection reads leave assessment and progression unchanged', async () => {
   expect(await actualFingerprint()).toBe(before);

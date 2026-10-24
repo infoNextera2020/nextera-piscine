@@ -1,6 +1,8 @@
 'use client';
 import { useRef, useState } from 'react';
-import s from '../../components/learning/workspace.module.css';
+import { Icon } from '../../components/learning/icon';
+import s from '../../components/learning/challenge.module.css';
+
 export function SubmissionForm({
   cohort,
   node,
@@ -20,10 +22,8 @@ export function SubmissionForm({
   const pending = useRef(false);
   return (
     <section aria-label="Submission">
-      <h2>Submission</h2>
-      <p className={s.muted}>
-        Write your solution locally. Accepted work enters trusted evaluation.
-      </p>
+      <h2>Submit your solution</h2>
+      <p className={s.muted}>Upload your source file when you are ready.</p>
       <form
         onSubmit={async (event) => {
           event.preventDefault();
@@ -74,38 +74,39 @@ export function SubmissionForm({
           }
         }}
       >
-        <fieldset disabled={phase === 'uploading'} style={{ border: 0, padding: 0, minWidth: 0 }}>
-          <div className={s.upload}>
-            <label>
-              Solution file ({filename})
-              <input
-                ref={input}
-                type="file"
-                name="source"
-                required
-                accept={filename.includes('.') ? '.' + filename.split('.').at(-1) : undefined}
-                aria-describedby="submission-help submission-message"
-                aria-invalid={phase === 'error' || undefined}
-                onChange={() => {
-                  setPhase('ready');
-                  setMessage('');
-                }}
-              />
-            </label>
-            <p id="submission-help" className={s.muted}>
-              Required filename · {maxSizeKb} KiB maximum
-            </p>
-          </div>
-          <button className={s.button + ' ' + s.navigation} type="submit">
+        <fieldset disabled={phase === 'uploading'}>
+          <label>
+            <span className={s.fieldLabel}>Solution file ({filename})</span>
+            <input
+              ref={input}
+              className={s.fileInput}
+              type="file"
+              name="source"
+              required
+              accept={filename.includes('.') ? '.' + filename.split('.').at(-1) : undefined}
+              aria-describedby="submission-help submission-message"
+              aria-invalid={phase === 'error' || undefined}
+              onChange={() => {
+                setPhase('ready');
+                setMessage('');
+              }}
+            />
+          </label>
+          <p id="submission-help" className={s.fileHelp}>
+            Required filename: {filename} · {maxSizeKb} KiB maximum
+          </p>
+          <button className={s.submitButton} type="submit">
             {phase === 'uploading' ? 'Uploading…' : 'Submit solution'}
+            <Icon name="arrow" size={20} />
           </button>
         </fieldset>
         <p
           id="submission-message"
           className={s.feedback}
           role={phase === 'error' ? 'alert' : 'status'}
+          data-phase={phase}
         >
-          {message}
+          {message || 'Your result comes from server evaluation.'}
         </p>
       </form>
     </section>

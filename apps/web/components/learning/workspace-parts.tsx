@@ -3,14 +3,56 @@ import Markdown from 'react-markdown';
 import type { ReactNode } from 'react';
 import { StatusBadge } from './primitives';
 import { formatMoment } from '../../lib/learning/display';
+import { briefPresentation } from '../../lib/learning/subject-markdown';
+import subject from './subject.module.css';
 import s from './workspace.module.css';
 
 export function Subject({ children }: { children: string }) {
   return (
-    <article className={s.prose}>
+    <article className={subject.prose}>
       <Markdown
         skipHtml
-        components={{ h1: ({ children }) => <h2>{children}</h2>, img: () => null }}
+        remarkPlugins={[briefPresentation]}
+        components={{
+          h1: ({ children }) => <h2>{children}</h2>,
+          img: () => null,
+          pre: ({ children, node }) => {
+            const code = node?.children.find(
+              (child) => child.type === 'element' && child.tagName === 'code',
+            );
+            const classes = code?.type === 'element' ? code.properties.className : null;
+            const language = Array.isArray(classes)
+              ? String(
+                  classes.find((value) => String(value).startsWith('language-')) ?? '',
+                ).replace('language-', '')
+              : '';
+            return (
+              <div className={subject.codeFrame}>
+                <div className={subject.codeMeta}>
+                  <span>{language || 'Code'}</span>
+                </div>
+                <pre tabIndex={0} aria-label={language ? language + ' code block' : 'Code block'}>
+                  {children}
+                </pre>
+              </div>
+            );
+          },
+          code: ({ children, className }) => (
+            <code className={className}>
+              {typeof children === 'string'
+                ? children.split(/(?<=\n)/).map((line, index) =>
+                    /^\s*\/\//.test(line) ? (
+                      <span key={index} data-code-comment>
+                        {line}
+                      </span>
+                    ) : (
+                      line
+                    ),
+                  )
+                : children}
+            </code>
+          ),
+        }}
       >
         {children}
       </Markdown>
