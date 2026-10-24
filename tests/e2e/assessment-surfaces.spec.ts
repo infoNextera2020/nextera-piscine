@@ -351,6 +351,44 @@ test('submission forms validate local files and await receipts without inventing
   expect(calls).toBe(1);
   await expect(page.getByRole('region', { name: 'Submission history', exact: true })).toBeFocused();
 });
+test('history access denial hides cached results and pauses intake until access is rechecked', async ({
+  page,
+}) => {
+  await login(page);
+  await page.goto(base + '/challenges/even-or-odd');
+  const input = page.getByLabel('Solution file (even_or_odd.go)', { exact: true });
+  await expect(input).toBeVisible();
+  let status = 403;
+  let reads = 0;
+  await page.route('**/api/submissions/history?*', async (route) => {
+    reads++;
+    if (status === 200) {
+      await route.continue();
+      return;
+    }
+    await route.fulfill({
+      status,
+      contentType: 'application/json',
+      body: JSON.stringify({ error: 'ACCESS_DENIED' }),
+    });
+  });
+  const refresh = page.getByRole('button', { name: 'Refresh history', exact: true });
+  await refresh.click();
+  await expect(
+    page.getByText('History is hidden until access can be confirmed.', { exact: true }),
+  ).toBeVisible();
+  await expect(input).toHaveCount(0);
+  await expect(page.locator('[data-verdict]')).toHaveCount(0);
+  const deniedReads = reads;
+  await page.waitForTimeout(4200);
+  expect(reads).toBe(deniedReads);
+  status = 200;
+  await refresh.click();
+  await expect(input).toBeVisible();
+  await expect(
+    page.getByText('History is hidden until access can be confirmed.', { exact: true }),
+  ).toHaveCount(0);
+});
 test('current membership revocation denies each new protected surface', async ({ page }) => {
   await login(page, 'infra');
   const authId = f.assessments!.infra!.authId;

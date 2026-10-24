@@ -17,9 +17,13 @@ export async function GET(request: Request) {
       headers,
     });
   } catch (error) {
-    const denied =
-      error instanceof AccessDenied ||
-      (typeof error === 'object' && error !== null && 'code' in error && error.code === '42501');
+    let denied = error instanceof AccessDenied;
+    let cause: unknown = error;
+    // The database adapter wraps PostgreSQL errors; preserve its permission denial.
+    for (let depth = 0; depth < 5 && cause && typeof cause === 'object'; depth++) {
+      if ('code' in cause && cause.code === '42501') denied = true;
+      cause = 'cause' in cause ? cause.cause : undefined;
+    }
     return Response.json(
       { error: denied ? 'ACCESS_DENIED' : 'SUBMISSION_UNAVAILABLE' },
       {

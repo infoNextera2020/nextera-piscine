@@ -83,6 +83,8 @@ describe('safe integration feedback', () => {
     expect(uploadFailureMessage(500)).toContain('not be confirmed');
     expect(historyFailureMessage(401)).toContain('Sign in again');
     expect(historyFailureMessage(403)).toContain('access');
+    expect(historyFailureMessage(401)).not.toContain('last confirmed record');
+    expect(historyFailureMessage(403)).not.toContain('last confirmed record');
     expect(historyFailureMessage(400)).toContain('Reopen the challenge');
     expect(historyFailureMessage(503)).toContain('temporarily unavailable');
     expect(historyFailureMessage()).toContain('last confirmed record');

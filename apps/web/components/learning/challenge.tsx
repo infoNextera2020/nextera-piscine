@@ -36,6 +36,7 @@ export function Challenge({
   );
   const [history, setHistory] = useState(initialHistory);
   const [error, setError] = useState('');
+  const [accessUnavailable, setAccessUnavailable] = useState(false);
   const tabButtons = useRef<(HTMLButtonElement | null)[]>([]);
   const historyRegion = useRef<HTMLElement>(null);
   const historyRequest = useRef<AbortController | null>(null);
@@ -57,11 +58,14 @@ export function Challenge({
         if (!Array.isArray(data)) throw new Error();
         if (!controller.signal.aborted && historyRequest.current === controller) {
           setHistory(data);
+          setAccessUnavailable(false);
           setError('');
         }
       } catch {
-        if (!controller.signal.aborted && historyRequest.current === controller)
+        if (!controller.signal.aborted && historyRequest.current === controller) {
+          if (status === 401 || status === 403) setAccessUnavailable(true);
           setError(historyFailureMessage(status));
+        }
       } finally {
         if (historyRequest.current === controller) historyRequest.current = null;
       }
@@ -69,17 +73,18 @@ export function Challenge({
     [cohort, node],
   );
   useEffect(() => {
-    const timer = submittable
-      ? setInterval(() => {
-          if (document.visibilityState === 'visible') void refresh('if-idle');
-        }, 4000)
-      : undefined;
+    const timer =
+      submittable && !accessUnavailable
+        ? setInterval(() => {
+            if (document.visibilityState === 'visible') void refresh('if-idle');
+          }, 4000)
+        : undefined;
     return () => {
       historyRequest.current?.abort();
       historyRequest.current = null;
       clearInterval(timer);
     };
-  }, [refresh, submittable]);
+  }, [refresh, submittable, accessUnavailable]);
   useEffect(() => {
     const sync = () =>
       setTab(
@@ -241,7 +246,7 @@ export function Challenge({
           <EditorHairline />
         </section>
         <div className={s.uploadCard}>
-          {submittable ? (
+          {submittable && !accessUnavailable ? (
             <SubmissionForm
               cohort={cohort}
               node={node}
@@ -257,8 +262,9 @@ export function Challenge({
               <p className={s.eyebrow}>Read-only brief</p>
               <h2>Submission unavailable</h2>
               <p className={s.muted}>
-                Current access and an approved runnable evaluation are required for intake. You can
-                continue reading this brief.
+                {accessUnavailable
+                  ? 'Your session or challenge access has changed. Recheck access below before submitting.'
+                  : 'Current access and an approved runnable evaluation are required for intake. You can continue reading this brief.'}
               </p>
             </section>
           )}
@@ -296,7 +302,11 @@ export function Challenge({
               {error}
             </p>
           )}
-          <ChallengeHistory items={history} />
+          {accessUnavailable ? (
+            <p className={s.muted}>History is hidden until access can be confirmed.</p>
+          ) : (
+            <ChallengeHistory items={history} />
+          )}
         </section>
       </aside>
     </div>

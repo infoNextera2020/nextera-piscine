@@ -20,5 +20,7 @@ export function historyFailureMessage(status?: number): string {
         : status === 400
           ? 'This history request is invalid. Reopen the challenge from Journey.'
           : 'History is temporarily unavailable. Retry shortly.';
-  return `${reason} The last confirmed record is shown.`;
+  return status === 401 || status === 403
+    ? reason
+    : `${reason} The last confirmed record is shown.`;
 }

@@ -60,3 +60,23 @@ it('reports a history infrastructure failure as unavailable without leaking its 
   expect(response.headers.get('Cache-Control')).toBe('private, no-store');
   expect(await response.json()).toEqual({ error: 'SUBMISSION_UNAVAILABLE' });
 });
+
+it('preserves PostgreSQL access denial wrapped by the database adapter', async () => {
+  mocks.read.mockRejectedValue(
+    new Error('query failed', {
+      cause: new Error('driver failed', { cause: { code: '42501', message: 'private denial' } }),
+    }),
+  );
+  const response = await GET(request());
+  expect(response.status).toBe(403);
+  expect(response.headers.get('Cache-Control')).toBe('private, no-store');
+  expect(await response.json()).toEqual({ error: 'ACCESS_DENIED' });
+});
+it('keeps wrapped infrastructure failures unavailable without exposing the driver cause', async () => {
+  mocks.read.mockRejectedValue(
+    new Error('query failed', { cause: { code: '08006', message: 'private connection' } }),
+  );
+  const response = await GET(request());
+  expect(response.status).toBe(503);
+  expect(await response.json()).toEqual({ error: 'SUBMISSION_UNAVAILABLE' });
+});
