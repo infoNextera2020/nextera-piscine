@@ -486,17 +486,38 @@ test('Foundation 005: wrong then correct Hello, historical application, unlock a
   helloCohort = cohort.id;
   await admin`UPDATE judge.workers SET capabilities=capabilities||${JSON.stringify({ fixture_cohort_ids: cohorts })}::jsonb WHERE id=${worker.worker_id}`;
   await login(page);
-  await page.goto(`/app/cohorts/${cohort.id}`);
+  const openProgress = async () => {
+    await page.goto(`/app/cohorts/${cohort.id}`);
+    await page
+      .getByRole('region', { name: 'Piscine journey map', exact: true })
+      .getByRole('link', { name: /^Quest 1:/ })
+      .click();
+    await expect(page.getByRole('complementary', { name: 'Quest exercises' })).toBeVisible();
+  };
+  const snapshot = async (name: string) => {
+    if (process.env.JUDGE_EVIDENCE_DIR)
+      await page.screenshot({
+        path: join(process.env.JUDGE_EVIDENCE_DIR, name + '.png'),
+        fullPage: true,
+      });
+  };
+  const work = () => page.getByRole('region', { name: 'Curriculum progression', exact: true });
   const hello = () =>
-    page
+    work()
       .getByRole('listitem')
-      .filter({ has: page.getByRole('heading', { name: 'Hello Go', exact: true }) });
+      .filter({
+        has: page.getByRole('heading', { name: 'Hello Go', exact: true }),
+      });
   const even = () =>
-    page
+    work()
       .getByRole('listitem')
-      .filter({ has: page.getByRole('heading', { name: 'Even or Odd', exact: true }) });
-  await expect(hello().getByText('AVAILABLE', { exact: true })).toBeVisible();
-  await expect(even().getByText('LOCKED', { exact: true })).toBeVisible();
+      .filter({
+        has: page.getByRole('heading', { name: 'Even or Odd', exact: true }),
+      });
+  await openProgress();
+  await expect(hello()).toHaveAttribute('data-state', 'available');
+  await expect(even()).toHaveAttribute('data-state', 'locked');
+  await snapshot('real-initial-quest');
   const wrong = await execute(
     page,
     'hello-go-v1',
@@ -519,9 +540,10 @@ test('Foundation 005: wrong then correct Hello, historical application, unlock a
     data: { result_id: failedId },
   });
   expect(failed.status()).toBe(200);
-  await page.goto(`/app/cohorts/${cohort.id}`);
-  await expect(hello().getByText('IN_PROGRESS', { exact: true })).toBeVisible();
-  await expect(even().getByText('LOCKED', { exact: true })).toBeVisible();
+  await openProgress();
+  await expect(hello()).toHaveAttribute('data-state', 'in_progress');
+  await expect(even()).toHaveAttribute('data-state', 'locked');
+  await snapshot('real-after-failed-result');
   const correct = await execute(
     page,
     'hello-go-v1',
@@ -535,10 +557,11 @@ test('Foundation 005: wrong then correct Hello, historical application, unlock a
     data: {},
   });
   expect(reconciled.status()).toBe(200);
-  await page.goto(`/app/cohorts/${cohort.id}`);
+  await openProgress();
   await page.reload();
-  await expect(hello().getByText('MASTERED', { exact: true })).toBeVisible();
-  await expect(even().getByText('AVAILABLE', { exact: true })).toBeVisible();
+  await expect(hello()).toHaveAttribute('data-state', 'mastered');
+  await expect(even()).toHaveAttribute('data-state', 'available');
+  await snapshot('real-mastery-and-unlock');
   const [before] = await admin`SELECT processed_at FROM judge.results WHERE id=${passedId}`;
   const duplicate = await page.request.post('/api/internal/results', {
     headers,
@@ -556,6 +579,7 @@ test('Foundation 005: wrong then correct Hello, historical application, unlock a
   await expect(
     page.getByText('All required checks passed.', { exact: true }).first(),
   ).toBeVisible();
+  await snapshot('real-confirmed-history');
   // Even now uses the actual prerequisite graph instead of the separate root fixture.
   evenCohort = cohort.id;
   const evenPassed = await execute(
@@ -572,6 +596,7 @@ test('Foundation 005: wrong then correct Hello, historical application, unlock a
       })
     ).status(),
   ).toBe(200);
-  await page.goto(`/app/cohorts/${cohort.id}`);
-  await expect(even().getByText('MASTERED', { exact: true })).toBeVisible();
+  await openProgress();
+  await expect(even()).toHaveAttribute('data-state', 'mastered');
+  await snapshot('real-next-challenge-mastered');
 });
