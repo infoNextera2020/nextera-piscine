@@ -1,6 +1,15 @@
 import { describe, expect, it } from 'vitest';
 import { getTableConfig, PgDialect } from 'drizzle-orm/pg-core';
 import {
+  raidTeams,
+  raidTeamMembers,
+  raidAttempts,
+  raidAttemptMembers,
+  raidAutomatedReceipts,
+  raidReviews,
+  raidOutcomes,
+  raidMemberReceipts,
+  raidOwnerHolds,
   checkpointDefinitions,
   checkpointAttempts,
   checkpointOutcomes,
@@ -27,6 +36,15 @@ import {
 import { PROGRESS_STATES, SUBMISSION_STATES } from '@nextera/domain';
 
 const tables = [
+  raidTeams,
+  raidTeamMembers,
+  raidAttempts,
+  raidAttemptMembers,
+  raidAutomatedReceipts,
+  raidReviews,
+  raidOutcomes,
+  raidMemberReceipts,
+  raidOwnerHolds,
   checkpointDefinitions,
   checkpointAttempts,
   checkpointOutcomes,
@@ -50,7 +68,7 @@ const tables = [
 ];
 
 describe('database schema contract', () => {
-  it('loads exactly the twenty application tables without owning Supabase Auth', () => {
+  it('loads exactly the twenty-nine application tables without owning Supabase Auth', () => {
     expect(
       tables
         .map((table) => {
@@ -71,6 +89,16 @@ describe('database schema contract', () => {
       'app.learner_node_progress',
       'app.node_prerequisites',
       'app.quests',
+      'app.raid_attempt_members',
+      'app.raid_attempts',
+      'app.raid_automated_receipts',
+      'app.raid_member_receipts',
+      'app.raid_outcomes',
+      'app.raid_owner_holds',
+      'app.raid_reviews',
+      'app.raid_team_members',
+      'app.raid_teams',
+
       'app.state_events',
       'app.submission_artifacts',
       'app.submissions',

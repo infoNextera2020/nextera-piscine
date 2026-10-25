@@ -57,6 +57,27 @@
       "when": 1792480000001,
       "tag": "0007_checkpoint_operations",
       "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "7",
+      "when": 1792920000008,
+      "tag": "0008_raid_domain",
+      "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "7",
+      "when": 1792920000009,
+      "tag": "0009_raid_operations",
+      "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "7",
+      "when": 1792920000010,
+      "tag": "0010_raid_artifact_read",
+      "breakpoints": true
     }
   ]
 }

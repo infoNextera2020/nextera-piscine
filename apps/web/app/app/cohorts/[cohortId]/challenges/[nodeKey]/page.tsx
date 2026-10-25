@@ -1,8 +1,10 @@
+import { readRaid } from '@nextera/db/raids';
+import { RaidPanel } from '../../../../../../lib/raids/panel';
 import { Suspense } from 'react';
 import { notFound } from 'next/navigation';
 import { readAccessibleSubject } from '@nextera/db/cohorts';
 import { readSubmissions, submissionContext } from '@nextera/db/submissions';
-import type { SubmissionRules } from '@nextera/domain';
+import { isRequestId, type SubmissionRules } from '@nextera/domain';
 import { getDatabase } from '../../../../../../lib/auth/server';
 import { authorizeCohortPage } from '../../../../../../lib/cohorts/server';
 import { readLearningOverview } from '../../../../../../lib/learning/server';
@@ -18,7 +20,7 @@ export default async function SubjectPage({
   searchParams,
 }: {
   params: Promise<{ cohortId: string; nodeKey: string }>;
-  searchParams: Promise<{ tab?: string }>;
+  searchParams: Promise<{ tab?: string; team?: string }>;
 }) {
   const { cohortId, nodeKey } = await params;
   const { user, cohort } = await authorizeCohortPage(cohortId);
@@ -33,7 +35,7 @@ export default async function SubjectPage({
   async function Content() {
     const [view, history, query] = await Promise.all([
       readLearningOverview(user, cohort),
-      user.role === 'learner'
+      user.role === 'learner' && subject!.kind !== 'project'
         ? readSubmissions(getDatabase(), user.authUserId, cohort.id, nodeKey)
         : Promise.resolve([]),
       searchParams,
@@ -49,6 +51,20 @@ export default async function SubjectPage({
         /* Readable drafts do not imply runnable intake. */
       }
     }
+    if (query.team && !isRequestId(query.team)) notFound();
+    const raid =
+      subject!.kind === 'project'
+        ? await readRaid(getDatabase(), user.authUserId, cohort.id, nodeKey, query.team).catch(
+            (error) => {
+              if (
+                user.role === 'operator' ||
+                (error instanceof Error && error.message === 'RAID_MIGRATION_REQUIRED')
+              )
+                return null;
+              throw error;
+            },
+          )
+        : null;
     const rules = subject!.submissionRules as unknown as SubmissionRules;
     return (
       <AppShell
@@ -64,23 +80,61 @@ export default async function SubjectPage({
             current={{ ...current, title: subject!.title }}
             rules={rules}
           />
-          {user.role !== 'learner' && (
+          {user.role !== 'learner' && subject!.kind !== 'project' && (
             <p className={s.notice}>
               {user.role === 'admin' ? 'Administrative' : 'Assigned operator'} read-only subject
               preview.
             </p>
           )}
-          <Challenge
-            key={cohort.id + ':' + nodeKey}
-            cohort={cohort.id}
-            node={nodeKey}
-            rules={rules}
-            submittable={submittable}
-            initialHistory={history}
-            initialTab={query.tab}
-            subject={<Subject>{subject!.subjectMarkdown}</Subject>}
-            context={view.nodes.filter((n) => n.questKey === current.questKey)}
-          />
+          {subject!.kind === 'project' && !raid && (
+            <p className={s.notice}>
+              Shared team workflow is unavailable in this environment. The brief remains read-only.
+            </p>
+          )}
+          {raid ? (
+            <div className={s.columns}>
+              <section className={s.briefCard}>
+                <div className={s.briefBody}>
+                  <div className={s.subject}>
+                    <Subject>{subject!.subjectMarkdown}</Subject>
+                  </div>
+                  <section className={s.requirements}>
+                    <h2>Shared submission requirements</h2>
+                    <dl>
+                      <div>
+                        <dt>Required file</dt>
+                        <dd>{rules.required_files.join(', ')}</dd>
+                      </div>
+                      <div>
+                        <dt>Maximum size</dt>
+                        <dd>{rules.max_size_kb} KiB</dd>
+                      </div>
+                    </dl>
+                  </section>
+                </div>
+              </section>
+              <RaidPanel
+                key={cohort.id + ':' + nodeKey + ':' + (query.team ?? '')}
+                cohort={cohort.id}
+                node={nodeKey}
+                team={query.team}
+                initial={raid}
+                rules={rules}
+              />
+            </div>
+          ) : (
+            <Challenge
+              key={cohort.id + ':' + nodeKey}
+              cohort={cohort.id}
+              node={nodeKey}
+              rules={rules}
+              submittable={submittable && subject!.kind !== 'project'}
+              initialHistory={history}
+              initialTab={query.tab}
+              subject={<Subject>{subject!.subjectMarkdown}</Subject>}
+              context={view.nodes.filter((n) => n.questKey === current.questKey)}
+            />
+          )}
         </main>
       </AppShell>
     );

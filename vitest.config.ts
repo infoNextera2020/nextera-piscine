@@ -11,6 +11,7 @@ export default defineConfig({
       'apps/web/app/api/health/route.test.ts',
       'apps/web/lib/submissions/*.test.ts',
       'apps/web/lib/learning/*.test.ts',
+      'apps/web/lib/raids/*.test.ts',
     ],
   },
 });

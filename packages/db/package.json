@@ -14,7 +14,8 @@
     "./operations/cohorts": "./operations/cohorts.ts",
     "./operations/results": "./operations/results.ts",
     "./operations/checkpoints": "./operations/checkpoints.ts",
-    "./checkpoints": "./queries/checkpoints.ts"
+    "./checkpoints": "./queries/checkpoints.ts",
+    "./raids": "./queries/raids.ts"
   },
   "scripts": {
     "build": "tsc -p tsconfig.json",

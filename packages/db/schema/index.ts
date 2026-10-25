@@ -534,6 +534,7 @@ export const learnerNodeProgress = app.table(
     masteredAt: time('mastered_at'),
     firstPassingSubmissionId: uuid('first_passing_submission_id'),
     firstPassingCheckpointOutcomeId: uuid('first_passing_checkpoint_outcome_id'),
+    firstPassingRaidOutcomeId: uuid('first_passing_raid_outcome_id'),
   },
   (t): PgTableExtraConfigValue[] => [
     primaryKey({
@@ -569,10 +570,10 @@ export const learnerNodeProgress = app.table(
     check(
       'progress_state_timestamps_check',
       sql`(
-    (${t.state} = 'locked' AND ${t.unlockedAt} IS NULL AND ${t.startedAt} IS NULL AND ${t.masteredAt} IS NULL AND ${t.firstPassingSubmissionId} IS NULL AND ${t.firstPassingCheckpointOutcomeId} IS NULL) OR
-    (${t.state} = 'available' AND ${t.unlockedAt} IS NOT NULL AND ${t.startedAt} IS NULL AND ${t.masteredAt} IS NULL AND ${t.firstPassingSubmissionId} IS NULL AND ${t.firstPassingCheckpointOutcomeId} IS NULL) OR
-    (${t.state} = 'in_progress' AND ${t.unlockedAt} IS NOT NULL AND ${t.startedAt} IS NOT NULL AND ${t.masteredAt} IS NULL AND ${t.firstPassingSubmissionId} IS NULL AND ${t.firstPassingCheckpointOutcomeId} IS NULL) OR
-    (${t.state} = 'mastered' AND ${t.unlockedAt} IS NOT NULL AND ${t.startedAt} IS NOT NULL AND ${t.masteredAt} IS NOT NULL AND num_nonnulls(${t.firstPassingSubmissionId},${t.firstPassingCheckpointOutcomeId}) = 1)
+    (${t.state} = 'locked' AND ${t.unlockedAt} IS NULL AND ${t.startedAt} IS NULL AND ${t.masteredAt} IS NULL AND ${t.firstPassingSubmissionId} IS NULL AND ${t.firstPassingCheckpointOutcomeId} IS NULL AND ${t.firstPassingRaidOutcomeId} IS NULL) OR
+    (${t.state} = 'available' AND ${t.unlockedAt} IS NOT NULL AND ${t.startedAt} IS NULL AND ${t.masteredAt} IS NULL AND ${t.firstPassingSubmissionId} IS NULL AND ${t.firstPassingCheckpointOutcomeId} IS NULL AND ${t.firstPassingRaidOutcomeId} IS NULL) OR
+    (${t.state} = 'in_progress' AND ${t.unlockedAt} IS NOT NULL AND ${t.startedAt} IS NOT NULL AND ${t.masteredAt} IS NULL AND ${t.firstPassingSubmissionId} IS NULL AND ${t.firstPassingCheckpointOutcomeId} IS NULL AND ${t.firstPassingRaidOutcomeId} IS NULL) OR
+    (${t.state} = 'mastered' AND ${t.unlockedAt} IS NOT NULL AND ${t.startedAt} IS NOT NULL AND ${t.masteredAt} IS NOT NULL AND num_nonnulls(${t.firstPassingSubmissionId},${t.firstPassingCheckpointOutcomeId},${t.firstPassingRaidOutcomeId}) = 1)
   )`,
     ),
     check(
@@ -596,6 +597,23 @@ export const learnerNodeProgress = app.table(
         checkpointOutcomes.nodeKey,
       ],
     }).onDelete('restrict'),
+    foreignKey({
+      name: 'progress_raid_outcome_fk',
+      columns: [
+        t.firstPassingRaidOutcomeId,
+        t.userId,
+        t.cohortId,
+        t.curriculumVersionId,
+        t.nodeKey,
+      ],
+      foreignColumns: [
+        raidMemberReceipts.outcomeId,
+        raidMemberReceipts.userId,
+        raidMemberReceipts.cohortId,
+        raidMemberReceipts.curriculumVersionId,
+        raidMemberReceipts.nodeKey,
+      ],
+    }),
     index('progress_dashboard_idx').on(t.cohortId, t.userId, t.state),
     index('progress_node_idx').on(t.curriculumVersionId, t.nodeKey),
     index('progress_passing_submission_idx').on(t.firstPassingSubmissionId),
@@ -865,4 +883,205 @@ export const checkpointReplacementGrants = app.table(
   (t) => [
     check('checkpoint_replacement_reason', sql`${t.reason}='trusted_infrastructure_failure'`),
   ],
+);
+
+// Shared Raid evidence. SQL migrations own privilege boundaries, immutable-history and roster triggers.
+export const raidTeams = app.table(
+  'raid_teams',
+  {
+    id: uuid('id').defaultRandom().primaryKey(),
+    cohortId: uuid('cohort_id').notNull(),
+    curriculumVersionId: uuid('curriculum_version_id').notNull(),
+    nodeKey: text('node_key').notNull(),
+    name: text('name').notNull(),
+    mentorUserId: uuid('mentor_user_id')
+      .notNull()
+      .references(() => users.id),
+    assignedBy: uuid('assigned_by')
+      .notNull()
+      .references(() => users.id),
+    requestId: uuid('request_id').notNull(),
+    active: boolean('active').notNull().default(true),
+    createdAt: time('created_at').notNull().defaultNow(),
+  },
+  (t) => [
+    foreignKey({
+      columns: [t.cohortId, t.curriculumVersionId],
+      foreignColumns: [cohorts.id, cohorts.curriculumVersionId],
+    }),
+    foreignKey({
+      columns: [t.curriculumVersionId, t.nodeKey],
+      foreignColumns: [curriculumNodes.curriculumVersionId, curriculumNodes.nodeKey],
+    }),
+    unique().on(t.assignedBy, t.requestId),
+    check('raid_team_name_check', sql`length(trim(${t.name})) BETWEEN 1 AND 100`),
+    index('raid_teams_context_idx')
+      .on(t.cohortId, t.nodeKey)
+      .where(sql`${t.active}`),
+  ],
+);
+export const raidTeamMembers = app.table(
+  'raid_team_members',
+  {
+    teamId: uuid('team_id')
+      .notNull()
+      .references(() => raidTeams.id),
+    userId: uuid('user_id')
+      .notNull()
+      .references(() => users.id),
+  },
+  (t) => [
+    primaryKey({ columns: [t.teamId, t.userId] }),
+    index('raid_members_user_idx').on(t.userId),
+  ],
+);
+export const raidAttempts = app.table(
+  'raid_attempts',
+  {
+    id: uuid('id').defaultRandom().primaryKey(),
+    teamId: uuid('team_id')
+      .notNull()
+      .references(() => raidTeams.id),
+    submissionId: uuid('submission_id')
+      .notNull()
+      .unique()
+      .references(() => submissions.id),
+    ordinal: integer('ordinal').notNull(),
+    definitionDigest: text('definition_digest').notNull(),
+    createdAt: time('created_at').notNull().defaultNow(),
+  },
+  (t) => [
+    unique().on(t.teamId, t.ordinal),
+    check('raid_ordinal_check', sql`${t.ordinal}>0`),
+    check('raid_definition_digest_check', digest(t.definitionDigest)),
+    index('raid_attempt_history_idx').on(t.teamId, t.ordinal),
+  ],
+);
+export const raidAttemptMembers = app.table(
+  'raid_attempt_members',
+  {
+    attemptId: uuid('attempt_id')
+      .notNull()
+      .references(() => raidAttempts.id),
+    userId: uuid('user_id').notNull(),
+    cohortId: uuid('cohort_id').notNull(),
+    curriculumVersionId: uuid('curriculum_version_id').notNull(),
+    nodeKey: text('node_key').notNull(),
+  },
+  (t) => [
+    primaryKey({ columns: [t.attemptId, t.userId] }),
+    unique().on(t.attemptId, t.userId, t.cohortId, t.curriculumVersionId, t.nodeKey),
+    foreignKey({
+      columns: [t.cohortId, t.userId],
+      foreignColumns: [cohortMemberships.cohortId, cohortMemberships.userId],
+    }),
+    foreignKey({
+      columns: [t.cohortId, t.curriculumVersionId],
+      foreignColumns: [cohorts.id, cohorts.curriculumVersionId],
+    }),
+    foreignKey({
+      columns: [t.curriculumVersionId, t.nodeKey],
+      foreignColumns: [curriculumNodes.curriculumVersionId, curriculumNodes.nodeKey],
+    }),
+  ],
+);
+export const raidAutomatedReceipts = app.table(
+  'raid_automated_receipts',
+  {
+    attemptId: uuid('attempt_id')
+      .primaryKey()
+      .references(() => raidAttempts.id),
+    resultId: uuid('result_id')
+      .notNull()
+      .unique()
+      .references(() => judgeResults.id),
+    verdict: submissionState('verdict').notNull(),
+    createdAt: time('created_at').notNull().defaultNow(),
+  },
+  (t) => [
+    check('raid_terminal_verdict_check', sql`${t.verdict} NOT IN ('queued','running','cancelled')`),
+  ],
+);
+export const raidReviews = app.table(
+  'raid_reviews',
+  {
+    id: uuid('id').defaultRandom().primaryKey(),
+    attemptId: uuid('attempt_id')
+      .notNull()
+      .unique()
+      .references(() => raidAttempts.id),
+    reviewerId: uuid('reviewer_id')
+      .notNull()
+      .references(() => users.id),
+    requestId: uuid('request_id').notNull(),
+    decision: text('decision').notNull(),
+    feedback: text('feedback').notNull(),
+    createdAt: time('created_at').notNull().defaultNow(),
+  },
+  (t) => [
+    unique().on(t.reviewerId, t.requestId),
+    unique().on(t.id, t.attemptId),
+    check('raid_review_decision_check', sql`${t.decision} IN ('approved','changes_requested')`),
+    check('raid_review_feedback_check', sql`length(trim(${t.feedback})) BETWEEN 1 AND 2000`),
+  ],
+);
+export const raidOutcomes = app.table(
+  'raid_outcomes',
+  {
+    id: uuid('id').defaultRandom().primaryKey(),
+    attemptId: uuid('attempt_id')
+      .notNull()
+      .unique()
+      .references(() => raidAttempts.id),
+    reviewId: uuid('review_id').notNull().unique(),
+    createdAt: time('created_at').notNull().defaultNow(),
+  },
+  (t) => [
+    unique().on(t.id, t.attemptId),
+    foreignKey({
+      columns: [t.reviewId, t.attemptId],
+      foreignColumns: [raidReviews.id, raidReviews.attemptId],
+    }),
+  ],
+);
+export const raidMemberReceipts = app.table(
+  'raid_member_receipts',
+  {
+    outcomeId: uuid('outcome_id').notNull(),
+    attemptId: uuid('attempt_id').notNull(),
+    userId: uuid('user_id').notNull(),
+    cohortId: uuid('cohort_id').notNull(),
+    curriculumVersionId: uuid('curriculum_version_id').notNull(),
+    nodeKey: text('node_key').notNull(),
+    createdAt: time('created_at').notNull().defaultNow(),
+  },
+  (t) => [
+    primaryKey({ columns: [t.outcomeId, t.userId] }),
+    unique().on(t.outcomeId, t.userId, t.cohortId, t.curriculumVersionId, t.nodeKey),
+    foreignKey({
+      columns: [t.outcomeId, t.attemptId],
+      foreignColumns: [raidOutcomes.id, raidOutcomes.attemptId],
+    }),
+    foreignKey({
+      columns: [t.attemptId, t.userId, t.cohortId, t.curriculumVersionId, t.nodeKey],
+      foreignColumns: [
+        raidAttemptMembers.attemptId,
+        raidAttemptMembers.userId,
+        raidAttemptMembers.cohortId,
+        raidAttemptMembers.curriculumVersionId,
+        raidAttemptMembers.nodeKey,
+      ],
+    }),
+  ],
+);
+export const raidOwnerHolds = app.table(
+  'raid_owner_holds',
+  {
+    attemptId: uuid('attempt_id')
+      .primaryKey()
+      .references(() => raidAttempts.id),
+    reason: text('reason').notNull(),
+    createdAt: time('created_at').notNull().defaultNow(),
+  },
+  (t) => [check('raid_owner_hold_reason_check', sql`${t.reason}='member_access_removed'`)],
 );

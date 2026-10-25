@@ -27,6 +27,16 @@ export async function applyResult(db: OperationalDatabase, resultId: string) {
       sql`SELECT pg_has_role(session_user,'nextera_result_application','USAGE') AS allowed`,
     );
     if (!auth?.allowed) throw new Error('RESULT_APPLICATION_UNAUTHORIZED');
+    // Dedicated shared-project registrar: records automated evidence only, never mastery.
+    const [raidInstalled] = await tx.execute(
+      sql`SELECT to_regprocedure('app.apply_raid_automated_result(uuid)') IS NOT NULL AS available`,
+    );
+    if (raidInstalled?.available) {
+      const [raid] = await tx.execute(
+        sql`SELECT app.apply_raid_automated_result(${resultId}::uuid) AS receipt`,
+      );
+      if (raid?.receipt) return raid.receipt as unknown as Identity;
+    }
     const [lookup] = await tx.execute(
       sql`SELECT job_id FROM judge.results WHERE id=${resultId}::uuid`,
     );

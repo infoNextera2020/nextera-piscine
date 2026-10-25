@@ -4,3 +4,4 @@ export * from './access.ts';
 export * from './curriculum.ts';
 export * from './progression.ts';
 export * from './checkpoints.ts';
+export * from './raids.ts';

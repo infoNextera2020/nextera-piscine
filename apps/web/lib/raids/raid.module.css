@@ -1,0 +1,47 @@
+.controls input:not([type='file']),
+.controls textarea,
+.controls select {
+  display: block;
+  box-sizing: border-box;
+  width: 100%;
+  max-width: 100%;
+  min-height: 44px;
+  color: #edf3ef;
+  background: #0e1511;
+  border: 1px solid #35423a;
+  border-radius: 6px;
+  padding: 10px 12px;
+  margin-block: 8px 16px;
+  font: inherit;
+}
+.controls textarea {
+  resize: vertical;
+}
+.controls fieldset {
+  border: 0;
+  padding: 0;
+  min-width: 0;
+}
+.controls fieldset:disabled {
+  opacity: 0.65;
+}
+.controls legend {
+  font-weight: 600;
+  margin-block: 12px;
+}
+.controls :is(input, textarea, select, button, a):focus-visible {
+  outline: 2px solid #57e6ad;
+  outline-offset: 3px;
+}
+.controls label {
+  display: block;
+}
+.controls code {
+  overflow-wrap: anywhere;
+}
+.controls button {
+  min-height: 44px;
+}
+.controls > * {
+  min-width: 0;
+}

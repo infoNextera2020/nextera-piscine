@@ -9,7 +9,7 @@ export default async function OperatorPage() {
       <p>
         {user.displayName} · {user.role}
       </p>
-      <p>Foundation 002A authorization verified.</p>
+      <Link href="/operator/raids">Raid teams and mentor reviews</Link>
       <Link href="/app" className="text-teal-300">
         Return to app
       </Link>

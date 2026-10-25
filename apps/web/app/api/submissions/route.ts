@@ -1,3 +1,4 @@
+import { acceptRaidSubmission, readRaid } from '@nextera/db/raids';
 import {
   AccessDenied,
   assertLearnerSubmission,
@@ -23,6 +24,12 @@ export async function POST(request: Request) {
     if (!isRequestId(cohort) || !isRequestId(requestId) || !/^[a-z0-9-]{1,100}$/.test(node))
       return Response.json({ error: 'INVALID_REQUEST' }, { status: 400 });
     const ctx = await submissionContext(getDatabase(), user.authUserId, cohort, node);
+    // Check shared eligibility before storing bytes; intake rechecks under locks.
+    if (
+      ctx.kind === 'project' &&
+      !(await readRaid(getDatabase(), user.authUserId, cohort, node)).can_submit
+    )
+      throw new AccessDenied('FORBIDDEN');
     const chunks: Uint8Array[] = [];
     let size = 0;
     const reader = request.body?.getReader();
@@ -44,15 +51,18 @@ export async function POST(request: Request) {
     }
     validateSubmissionFile(filename, size, ctx.rules);
     const digest = await storeSource(user.authUserId, cohort, requestId, Buffer.concat(chunks));
-    const id = await acceptSubmission(getDatabase(), {
-      authId: user.authUserId,
-      cohort,
-      node,
-      requestId,
-      filename,
-      size,
-      digest,
-    });
+    const id = await (ctx.kind === 'project' ? acceptRaidSubmission : acceptSubmission)(
+      getDatabase(),
+      {
+        authId: user.authUserId,
+        cohort,
+        node,
+        requestId,
+        filename,
+        size,
+        digest,
+      },
+    );
     console.info(
       JSON.stringify({ event: 'submission_accepted', submission_id: id, artifact_digest: digest }),
     );
