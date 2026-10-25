@@ -58,7 +58,7 @@ export default async function SubjectPage({
             (error) => {
               if (
                 user.role === 'operator' ||
-                (error instanceof Error && error.message === 'RAID_MIGRATION_REQUIRED')
+                (error instanceof Error && error.message === 'RAID_NOT_READY')
               )
                 return null;
               throw error;

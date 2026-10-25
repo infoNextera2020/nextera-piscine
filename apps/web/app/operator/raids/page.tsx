@@ -14,8 +14,8 @@ export default async function RaidReviewQueue() {
         <h2>Assigned teams</h2>
         {queue === null ? (
           <p>
-            Raid workflow is not installed in this environment. Local migration review and
-            application are required before assignment or review.
+            Team submission and mentor review are unavailable in this environment. Ask the owner to
+            complete the approved setup.
           </p>
         ) : !queue.length ? (
           <p>No team assignments are available for your current access.</p>

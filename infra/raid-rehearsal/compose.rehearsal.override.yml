@@ -1,0 +1,73 @@
+# PREPARED, NOT STARTED. Layer only over the reviewed upstream self-hosted/v0.8.3
+# Docker bundle in a fresh private working directory outside this checkout.
+# Requires Docker Compose >=2.24.4: !override replaces inherited host ports.
+name: nextera-raid-rehearsal
+services:
+  studio:
+    container_name: nextera-raid-rehearsal-studio
+    restart: 'no'
+    environment:
+      POSTGRES_DB: foundation_test_raid_rehearsal_20261025
+  api-gw:
+    container_name: nextera-raid-rehearsal-gateway
+    restart: 'no'
+    ports: !override
+      - '127.0.0.1:56521:8000'
+  auth:
+    container_name: nextera-raid-rehearsal-auth
+    restart: 'no'
+    environment:
+      GOTRUE_DB_DATABASE_URL: 'postgres://supabase_auth_admin:${POSTGRES_PASSWORD:?Fresh fixture credentials require approval}@db:5432/foundation_test_raid_rehearsal_20261025'
+      GOTRUE_JWT_SECRET: '${JWT_SECRET:?Fresh fixture keys require approval}'
+      GOTRUE_DISABLE_SIGNUP: 'true'
+      GOTRUE_EXTERNAL_ANONYMOUS_USERS_ENABLED: 'false'
+      GOTRUE_EXTERNAL_PHONE_ENABLED: 'false'
+  rest:
+    container_name: nextera-raid-rehearsal-rest
+    restart: 'no'
+    environment:
+      PGRST_DB_URI: 'postgres://authenticator:${POSTGRES_PASSWORD:?Fresh fixture credentials require approval}@db:5432/foundation_test_raid_rehearsal_20261025'
+  realtime:
+    # Preserve upstream's tenant prefix while avoiding its fixed container name.
+    container_name: realtime-dev.nextera-raid-rehearsal-realtime
+    restart: 'no'
+    environment:
+      DB_NAME: foundation_test_raid_rehearsal_20261025
+  storage:
+    container_name: nextera-raid-rehearsal-storage
+    restart: 'no'
+    environment:
+      DATABASE_URL: 'postgres://supabase_storage_admin:${POSTGRES_PASSWORD:?Fresh fixture credentials require approval}@db:5432/foundation_test_raid_rehearsal_20261025'
+      AUTH_JWT_SECRET: '${JWT_SECRET:?Fresh fixture keys require approval}'
+      FILE_SIZE_LIMIT: '262144'
+  imgproxy:
+    container_name: nextera-raid-rehearsal-imgproxy
+    restart: 'no'
+  meta:
+    container_name: nextera-raid-rehearsal-meta
+    restart: 'no'
+    environment:
+      PG_META_DB_NAME: foundation_test_raid_rehearsal_20261025
+  functions:
+    container_name: nextera-raid-rehearsal-functions
+    restart: 'no'
+    environment:
+      SUPABASE_DB_URL: 'postgresql://postgres:${POSTGRES_PASSWORD:?Fresh fixture credentials require approval}@db:5432/foundation_test_raid_rehearsal_20261025'
+  db:
+    container_name: nextera-raid-rehearsal-db
+    restart: 'no'
+    ports: !override
+      - '127.0.0.1:56522:5432'
+    environment:
+      POSTGRES_DB: foundation_test_raid_rehearsal_20261025
+      PGDATABASE: foundation_test_raid_rehearsal_20261025
+      POSTGRES_PASSWORD: '${POSTGRES_PASSWORD:?Fresh fixture credentials require approval}'
+    volumes:
+      # Replace only the upstream JWT setting script at the same mount target.
+      - ./raid-jwt.sql:/docker-entrypoint-initdb.d/init-scripts/99-jwt.sql:ro
+  supavisor:
+    container_name: nextera-raid-rehearsal-pooler
+    restart: 'no'
+    ports: !override []
+    environment:
+      POSTGRES_DB: foundation_test_raid_rehearsal_20261025

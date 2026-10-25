@@ -1,3 +1,4 @@
+import { requireRaidReady, readRaidReadiness } from './raid-readiness';
 import { sql } from 'drizzle-orm';
 import type { OperationalDatabase } from '../operations/curriculum';
 import type { RaidView, RaidReviewDecision } from '@nextera/domain';
@@ -9,10 +10,7 @@ export async function readRaid(
   node: string,
   team?: string,
 ) {
-  const [installed] = await db.execute(
-    sql`SELECT to_regprocedure('app.read_raid(uuid,uuid,text,uuid)') IS NOT NULL AS available`,
-  );
-  if (!installed?.available) throw new Error('RAID_MIGRATION_REQUIRED');
+  await requireRaidReady(db);
   const [row] = await db.execute(
     sql`SELECT app.read_raid(${authId}::uuid,${cohort}::uuid,${node},${team ?? null}::uuid) AS data`,
   );
@@ -30,6 +28,7 @@ export async function acceptRaidSubmission(
     digest: string;
   },
 ) {
+  await requireRaidReady(db);
   const [row] = await db.execute(
     sql`SELECT app.accept_raid_submission(${input.authId}::uuid,${input.cohort}::uuid,${input.node},${input.requestId}::uuid,${input.filename},${input.size}::bigint,${input.digest}) AS id`,
   );
@@ -47,6 +46,7 @@ export async function assignRaidTeam(
     members: string[];
   },
 ) {
+  await requireRaidReady(db);
   const [row] = await db.execute(
     sql`SELECT app.assign_raid_team(${authId}::uuid,${input.cohort}::uuid,${input.node},${input.requestId}::uuid,${input.name},${input.mentor}::uuid,${input.members}::uuid[]) AS id`,
   );
@@ -57,6 +57,7 @@ export async function reviewRaid(
   authId: string,
   input: { attempt: string; requestId: string; decision: RaidReviewDecision; feedback: string },
 ) {
+  await requireRaidReady(db);
   const [row] = await db.execute(
     sql`SELECT app.review_raid(${authId}::uuid,${input.attempt}::uuid,${input.requestId}::uuid,${input.decision},${input.feedback}) AS data`,
   );
@@ -77,10 +78,7 @@ export type RaidQueueItem = {
   can_review: boolean;
 };
 export async function readRaidQueue(db: OperationalDatabase, authId: string) {
-  const [installed] = await db.execute(
-    sql`SELECT to_regprocedure('app.raid_review_queue(uuid)') IS NOT NULL AS available`,
-  );
-  if (!installed?.available) return null;
+  if (!(await readRaidReadiness(db)).ready) return null;
   const [row] = await db.execute(sql`SELECT app.raid_review_queue(${authId}::uuid) AS data`);
   return row!.data as RaidQueueItem[];
 }
@@ -89,6 +87,7 @@ export async function raidArtifactContext(
   authId: string,
   attempt: string,
 ) {
+  await requireRaidReady(db);
   const [row] = await db.execute(
     sql`SELECT app.raid_artifact_context(${authId}::uuid,${attempt}::uuid) AS data`,
   );

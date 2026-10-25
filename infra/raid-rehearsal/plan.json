@@ -1,0 +1,23 @@
+{
+  "status": "PREPARED_NOT_STARTED",
+  "execution_authorized": false,
+  "project": "nextera-raid-rehearsal",
+  "database": "foundation_test_raid_rehearsal_20261025",
+  "database_host": "127.0.0.1",
+  "database_port": 56522,
+  "api_url": "http://127.0.0.1:56521",
+  "application_url": "http://127.0.0.1:3150",
+  "upstream_release": "self-hosted/v0.8.3",
+  "upstream_compose": "https://raw.githubusercontent.com/supabase/supabase/self-hosted/v0.8.3/docker/docker-compose.yml",
+  "team_size": 3,
+  "test_auth_identities": { "learners": 3, "mentor": 1, "owner": 1 },
+  "worker_token_max_seconds": 3600,
+  "retained_database_access": false,
+  "catalog_publication": false,
+  "required_future_approvals": [
+    "isolated_service_bootstrap",
+    "isolated_migrations",
+    "temporary_access",
+    "live_rehearsal"
+  ]
+}

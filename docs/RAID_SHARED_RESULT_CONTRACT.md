@@ -16,8 +16,17 @@ database or production** by this work. Deployment/migration application, real te
 assignments, fresh live test access, and curriculum publication remain separate
 gates. No new dependency or login credential is required by the feature code.
 
-Missing migrations keep project intake unavailable, owner assignment hidden and
-project briefs read-only. Ordinary challenge/checkpoint result reconciliation
+Missing migrations, managed Auth/Storage, mentor read policies, or an explicit
+matching database/API binding keep project intake unavailable, owner assignment
+hidden and project briefs read-only. The server checks catalogs before every Raid
+read/action; errors fail closed. `RAID_STORAGE_DATABASE_NAME` must match the actual
+application database, and `RAID_STORAGE_API_URL` must match
+`NEXT_PUBLIC_SUPABASE_URL`. These are configuration/catalog gates, not evidence
+of a real authenticated Storage request. `liveStorageVerified` remains false.
+See [disposable rehearsal preparation](../infra/raid-rehearsal/README.md) for
+non-executing validation, isolated targets and the remaining execution approvals.
+
+Ordinary challenge/checkpoint result reconciliation
 checks for the optional Raid registrar before using its unchanged ordinary path.
 An unlinked project PASS still fails the existing `UNSUPPORTED_MASTERY_KIND` guard.
 
