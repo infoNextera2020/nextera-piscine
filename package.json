@@ -39,7 +39,8 @@
     "db:migrate": "pnpm --filter @nextera/db db:migrate",
     "results:reconcile": "tsx scripts/result-reconciliation.ts",
     "test:learning": "tsx scripts/test-learning-ui.ts",
-    "test:assessment-ui": "tsx scripts/test-learning-ui.ts --assessment"
+    "test:assessment-ui": "tsx scripts/test-learning-ui.ts --assessment",
+    "local:status": "tsx scripts/local-status.ts"
   },
   "devDependencies": {
     "@nextera/db": "workspace:*",

@@ -42,3 +42,15 @@ owner-only permissions on Linux.
 - `pnpm cohort:list` still lists the normal database, not this isolated demo.
 
 Use the repository's pinned Node version (24.19.0) for these commands.
+
+## Check before starting
+
+Run `pnpm local:status` with the pinned runtime for read-only loopback diagnostics.
+It reports existing Auth, app/sample portal and optional component-preview HTTP
+status, the isolated test PostgreSQL port, source curriculum counts and candidate
+catalog reference gaps. It does not read credentials, sign in, start services,
+prepare/reset a database, issue a token, enable test access or approve content.
+TCP/HTTP availability is not proof of authenticated access or working evaluation.
+Follow the reviewed service startup plan for missing dependencies; obtain fresh
+bounded approval before creating any new fixture credentials. Cleaned test roles
+must remain disabled unless explicitly authorized for a new setup.
