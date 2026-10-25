@@ -425,3 +425,26 @@ test('early finish requires explicit confirmation and closes trusted intake irre
   await page.reload();
   await expect(page.getByRole('button', { name: 'Finish checkpoint', exact: true })).toHaveCount(0);
 });
+
+test('Checkpoint hides stale protected details after denied reads and recovers only from a fresh read', async ({
+  page,
+}) => {
+  await login(page, 'active');
+  await page.goto(cp);
+  await expect(
+    page.getByRole('navigation', { name: 'Checkpoint tasks' }).getByRole('button'),
+  ).toHaveCount(4);
+  await page.route('**/api/checkpoints?*', (route) => route.fulfill({ status: 403, body: '' }));
+  const denied = page.getByRole('region', { name: 'Checkpoint access unavailable', exact: true });
+  await expect(denied).toBeVisible();
+  await expect(page.getByRole('navigation', { name: 'Checkpoint tasks' })).toHaveCount(0);
+  await expect(page.getByRole('region', { name: 'Selected checkpoint task' })).toHaveCount(0);
+  await expect(page.getByRole('heading', { name: 'Attempt history', exact: true })).toHaveCount(0);
+  await expect(page.getByRole('button', { name: 'Finish checkpoint', exact: true })).toHaveCount(0);
+  await page.unroute('**/api/checkpoints?*');
+  await denied.getByRole('button', { name: 'Retry checkpoint read', exact: true }).click();
+  await expect(
+    page.getByRole('navigation', { name: 'Checkpoint tasks' }).getByRole('button'),
+  ).toHaveCount(4);
+  await expect(denied).toHaveCount(0);
+});

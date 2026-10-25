@@ -11,6 +11,8 @@ import {
 } from '../../components/learning/workspace-parts';
 import { HairlineFigure } from '../../components/learning/hairline-figure';
 import { displayState, formatMoment } from '../learning/display';
+import { checkpointResultHref } from '../learning/checkpoint-result-link';
+import { SubmissionIntents } from '../submissions/retry-intent';
 import s from '../../components/learning/workspace.module.css';
 export function Checkpoint({
   cohort,
@@ -26,37 +28,48 @@ export function Checkpoint({
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState('');
   const [readError, setReadError] = useState('');
+  const [accessUnavailable, setAccessUnavailable] = useState(false);
   const [seconds, setSeconds] = useState<number | null>(null);
   const clock = useRef({ at: 0, remaining: 0 });
   const source = useRef<HTMLInputElement>(null);
   const finishDialog = useRef<HTMLDialogElement>(null);
   const finishButton = useRef<HTMLButtonElement>(null);
-  const uploadId = useRef('');
+  const intents = useRef<SubmissionIntents | null>(null);
+  if (!intents.current) intents.current = new SubmissionIntents(() => sessionStorage);
   const startId = useRef('');
   const inFlight = useRef(false);
-  const reading = useRef(false);
+  const readRequest = useRef<AbortController | null>(null);
   const refresh = useCallback(
-    async (signal?: AbortSignal) => {
-      if (reading.current) return;
-      reading.current = true;
+    async (mode: 'replace' | 'if-idle' = 'replace') => {
+      if (mode === 'if-idle' && readRequest.current) return;
+      readRequest.current?.abort();
+      const controller = new AbortController();
+      readRequest.current = controller;
+      let status: number | undefined;
       try {
         const response = await fetch(`/api/checkpoints?cohort=${cohort}&node=${node}`, {
           cache: 'no-store',
-          signal: signal ?? null,
+          signal: controller.signal,
         });
+        status = response.status;
         if (!response.ok) throw new Error();
         const data = (await response.json()) as CheckpointPresentation;
-        if (!signal?.aborted) {
+        if (!controller.signal.aborted && readRequest.current === controller) {
           setView(data);
+          setAccessUnavailable(false);
           setReadError('');
         }
       } catch {
-        if (!signal?.aborted)
+        if (!controller.signal.aborted && readRequest.current === controller) {
+          if (status === 401 || status === 403) setAccessUnavailable(true);
           setReadError(
-            'Checkpoint could not be refreshed. Check your connection and access, then retry. Actions are paused until a fresh server read succeeds.',
+            status === 401 || status === 403
+              ? 'Checkpoint access could not be confirmed. Task details and history are hidden. Check your session or enrollment, then retry.'
+              : 'Checkpoint could not be refreshed. Check your connection and access, then retry. Actions are paused until a fresh server read succeeds.',
           );
+        }
       } finally {
-        reading.current = false;
+        if (readRequest.current === controller) readRequest.current = null;
       }
     },
     [cohort, node],
@@ -82,20 +95,22 @@ export function Checkpoint({
     return () => clearInterval(timer);
   }, [view]);
   useEffect(() => {
-    const controller = new AbortController();
-    const timer = setInterval(() => {
-      if (document.visibilityState === 'visible') void refresh(controller.signal);
-    }, 3000);
+    const timer = !accessUnavailable
+      ? setInterval(() => {
+          if (document.visibilityState === 'visible') void refresh('if-idle');
+        }, 3000)
+      : undefined;
     const visible = () => {
-      if (document.visibilityState === 'visible') void refresh(controller.signal);
+      if (!accessUnavailable && document.visibilityState === 'visible') void refresh('if-idle');
     };
     document.addEventListener('visibilitychange', visible);
     return () => {
-      controller.abort();
+      readRequest.current?.abort();
+      readRequest.current = null;
       clearInterval(timer);
       document.removeEventListener('visibilitychange', visible);
     };
-  }, [refresh]);
+  }, [refresh, accessUnavailable]);
   function closeFinish() {
     finishDialog.current?.close();
     finishButton.current?.focus();
@@ -155,20 +170,26 @@ export function Checkpoint({
     setBusy(true);
     setMessage('Uploading checkpoint task…');
     try {
-      uploadId.current ||= crypto.randomUUID();
+      const bytes = await file.arrayBuffer();
+      const digest = Array.from(new Uint8Array(await crypto.subtle.digest('SHA-256', bytes)), (b) =>
+        b.toString(16).padStart(2, '0'),
+      ).join('');
+      const intent = `checkpoint-submission:${cohort}:${node}:${view.attempt.id}:${item.key}:${file.name}:${digest}`;
+      const requestId = intents.current!.requestId(intent);
       const response = await fetch('/api/checkpoints/submissions', {
         method: 'POST',
         headers: {
           'x-attempt-id': view.attempt.id,
           'x-task-key': item.key,
           'x-filename': file.name,
-          'idempotency-key': uploadId.current,
+          'idempotency-key': requestId,
         },
         body: file,
       });
       if (!response.ok) throw new Error();
-      await response.json();
-      uploadId.current = '';
+      const receipt = (await response.json()) as { id?: unknown };
+      if (typeof receipt.id !== 'string' || !receipt.id) throw new Error();
+      intents.current!.confirm(intent);
       if (source.current) source.current.value = '';
       setMessage('Submission accepted. Awaiting trusted evaluation.');
       await refresh();
@@ -182,6 +203,23 @@ export function Checkpoint({
       setBusy(false);
     }
   }
+  if (accessUnavailable)
+    return (
+      <section className={s.card} aria-label="Checkpoint access unavailable">
+        <div className={s.notice} role="alert">
+          <h2>Recheck checkpoint access</h2>
+          <p>{readError}</p>
+        </div>
+        <div className={s.actions}>
+          <button className={s.button} onClick={() => void refresh()}>
+            Retry checkpoint read
+          </button>
+          <Link className={s.button} href={'/app/cohorts/' + cohort}>
+            Return to Journey
+          </Link>
+        </div>
+      </section>
+    );
   const item = view.tasks[task];
   const taskDisplay = view.display.tasks[task];
   const resultHref = `/app/cohorts/${cohort}/checkpoints/${node}/result`;
@@ -258,9 +296,9 @@ export function Checkpoint({
                       className={s.task}
                       data-state={view.display.tasks[i]?.state}
                       aria-pressed={task === i}
+                      disabled={busy}
                       onClick={() => {
                         setTask(i);
-                        uploadId.current = '';
                         if (source.current) source.current.value = '';
                       }}
                     >
@@ -320,9 +358,6 @@ export function Checkpoint({
                               required
                               accept={'.' + item.rules.required_files[0]?.split('.').at(-1)}
                               aria-describedby="checkpoint-file-help"
-                              onChange={() => {
-                                uploadId.current = '';
-                              }}
                             />
                           </label>
                           <p id="checkpoint-file-help" className={s.muted}>
@@ -444,6 +479,15 @@ export function Checkpoint({
                   {h.points !== null ? ` · ${h.points}/4` : ''}
                 </span>
                 <StatusBadge state={h.status} />
+                {checkpointResultHref(cohort, node, h) && (
+                  <Link
+                    className={s.button}
+                    href={checkpointResultHref(cohort, node, h)!}
+                    aria-label={'View result for attempt ' + h.id}
+                  >
+                    View result
+                  </Link>
+                )}
                 <RecordDetails>
                   <span className={s.muted}>Attempt ID</span>
                   <code className={s.identity}>{h.id}</code>

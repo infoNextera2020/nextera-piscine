@@ -279,11 +279,15 @@
   margin: 16px 0;
 }
 .upload label {
+  min-width: 0;
+  grid-template-columns: minmax(0, 1fr);
   display: grid;
   gap: 12px;
   font-weight: 500;
 }
 .upload input {
+  width: 100%;
+  min-width: 0;
   max-width: 100%;
   min-height: 44px;
   font-size: 11px;
