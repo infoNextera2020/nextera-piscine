@@ -11,6 +11,7 @@ export const stateText: Record<string, string> = {
   runtime_error: 'Runtime error',
   timeout: 'Time limit',
   system_error: 'Infrastructure issue',
+  cancelled: 'Cancelled',
   infrastructure_blocked: 'Recovery required',
   active: 'Active',
   evaluating: 'Evaluating',

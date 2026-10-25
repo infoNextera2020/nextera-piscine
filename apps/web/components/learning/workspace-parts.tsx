@@ -3,6 +3,7 @@ import Markdown from 'react-markdown';
 import type { ReactNode } from 'react';
 import { StatusBadge } from './primitives';
 import { formatMoment } from '../../lib/learning/display';
+import { submissionNotices } from '../../lib/learning/submission-presentation';
 import { briefPresentation } from '../../lib/learning/subject-markdown';
 import subject from './subject.module.css';
 import s from './workspace.module.css';
@@ -144,6 +145,9 @@ export function SafeHistory({
             </p>
           )}
           {item.feedback?.message && <p>{item.feedback.message}</p>}
+          {submissionNotices(item.state).map((notice) => (
+            <p key={notice}>{notice}</p>
+          ))}
           <RecordDetails>
             <span className={s.muted}>Submission ID</span>
             <code className={s.identity}>{item.id}</code>

@@ -2,6 +2,7 @@ import Link from 'next/link';
 import type { AuthorizedCohort } from '@nextera/db/cohorts';
 import type { LearningOverview, LearningSubmission } from '../../lib/learning/types';
 import { displayState, formatMoment } from '../../lib/learning/display';
+import { submissionKind, submissionNotices } from '../../lib/learning/submission-presentation';
 import { HomeNextAction } from './home-next-action';
 import { HairlineIcon } from './hairline-icon';
 import s from './home.module.css';
@@ -73,11 +74,13 @@ function recordDestination(record: LearningSubmission) {
 }
 function resultHeading(state: LearningSubmission['state']) {
   if (state === 'queued' || state === 'running') return 'Your evaluation is pending.';
+  if (state === 'cancelled') return 'This submission was cancelled.';
   if (state === 'passed') return 'Your latest submission passed.';
   if (state === 'system_error') return 'Evaluation needs attention.';
   return 'Your solution needs review.';
 }
 function resultFallback(state: LearningSubmission['state']) {
+  if (state === 'cancelled') return 'Review history for the recorded state.';
   if (state === 'queued' || state === 'running')
     return 'Open history to check the latest recorded state.';
   if (state === 'system_error') return 'Infrastructure issue. This is not a learner failure.';
@@ -128,12 +131,19 @@ export function CommandCenter({
                 </div>
                 <h4>{resultHeading(latest.state)}</h4>
                 <p>{latest.feedback || resultFallback(latest.state)}</p>
+                {submissionNotices(latest.state, submissionKind(latest, view.nodes)).map(
+                  (notice) => (
+                    <p key={notice}>{notice}</p>
+                  ),
+                )}
                 {latest.state === 'system_error' && latest.feedback && (
                   <p>Infrastructure issue. This is not a learner failure.</p>
                 )}
                 <time dateTime={latest.at}>{formatMoment(latest.at)}</time>
                 <Link className={s.textLink} href={recordDestination(latest)}>
-                  {latest.state === 'queued' || latest.state === 'running'
+                  {latest.state === 'queued' ||
+                  latest.state === 'running' ||
+                  latest.state === 'cancelled'
                     ? 'Check history'
                     : 'Review feedback'}
                   <HairlineIcon name="arrow" size={23} />

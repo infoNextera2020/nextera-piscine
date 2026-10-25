@@ -131,3 +131,13 @@ it('deduplicates task submissions shared by overview and checkpoint history', ()
   expect(records).toHaveLength(1);
   expect(records[0]?.source).toBe('Safe checkpoint task history');
 });
+
+it('does not classify cancelled submissions as learner failure or infrastructure', () => {
+  const v = overview();
+  v.submissions = [
+    { id: 'cancelled-practice', title: 'Work', state: 'cancelled', at, href: '/work' },
+  ];
+  const cp = checkpoint();
+  cp.submissions = [{ id: 'cancelled-task', task_key: 'task', state: 'cancelled', created_at: at }];
+  expect(projectEvidence(v, [{ key: 'gate', title: 'Gate', view: cp }], 'cohort')).toEqual([]);
+});

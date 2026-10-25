@@ -5,6 +5,7 @@ import type { SubmissionSummary } from '@nextera/db/submissions';
 import type { SubmissionRules } from '@nextera/domain';
 import type { LearningNode } from '../../lib/learning/types';
 import { displayState, formatMoment } from '../../lib/learning/display';
+import { submissionNotices } from '../../lib/learning/submission-presentation';
 import { historyFailureMessage } from '../../lib/submissions/messages';
 import { SubmissionForm } from '../../lib/submissions/form';
 import { Icon } from './icon';
@@ -309,7 +310,7 @@ export function Challenge({
           {accessUnavailable ? (
             <p className={s.muted}>History is hidden until access can be confirmed.</p>
           ) : (
-            <ChallengeHistory items={history} />
+            <ChallengeHistory items={history} kind={context.find((n) => n.key === node)?.kind} />
           )}
         </section>
       </aside>
@@ -317,7 +318,13 @@ export function Challenge({
   );
 }
 
-export function ChallengeHistory({ items }: { items: SubmissionSummary[] }) {
+export function ChallengeHistory({
+  items,
+  kind,
+}: {
+  items: SubmissionSummary[];
+  kind?: LearningNode['kind'] | undefined;
+}) {
   if (!items.length)
     return (
       <div className={s.emptyHistory}>
@@ -337,6 +344,9 @@ export function ChallengeHistory({ items }: { items: SubmissionSummary[] }) {
             </span>
           </div>
           {item.feedback?.message && <p>{item.feedback.message}</p>}
+          {submissionNotices(item.state, kind).map((notice) => (
+            <p key={notice}>{notice}</p>
+          ))}
           {(item.state === 'queued' || item.state === 'running') && (
             <p className={s.muted}>
               Your result is pending. This record will update when evaluation is available.

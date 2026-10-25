@@ -28,14 +28,16 @@ export function checkpointPresentation(view: CheckpointView) {
             ? 'system_error'
             : latest === 'queued' || latest === 'running'
               ? latest
-              : latest === 'failed' ||
-                  latest === 'compile_error' ||
-                  latest === 'runtime_error' ||
-                  latest === 'timeout'
-                ? latest
-                : !intakeOpen
-                  ? 'closed'
-                  : 'available';
+              : latest === 'cancelled'
+                ? 'cancelled'
+                : latest === 'failed' ||
+                    latest === 'compile_error' ||
+                    latest === 'runtime_error' ||
+                    latest === 'timeout'
+                  ? latest
+                  : !intakeOpen
+                    ? 'closed'
+                    : 'available';
         return {
           key: task.key,
           state,

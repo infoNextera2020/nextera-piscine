@@ -226,3 +226,51 @@ describe('Functional Home preserves authoritative facts and conditional actions'
     }
   });
 });
+
+describe('Home cancellation and project result copy', () => {
+  it('does not describe cancellation as a solution failure or infer a progress change', () => {
+    const html = render({ submissions: [{ ...receipt, state: 'cancelled', feedback: null }] });
+    expect(html).toContain('Cancelled');
+    expect(html).toContain('This submission was cancelled.');
+    expect(html).toContain('Cancellation is not a learner failure.');
+    expect(html).not.toContain('Your solution needs review.');
+    expect(html).toContain('0 of 1 curriculum nodes mastered');
+  });
+  it.each(['queued', 'running', 'passed'] as const)(
+    'keeps project %s separate from completion and stored progression',
+    (state) => {
+      const project = { ...node, kind: 'project' as const };
+      const html = render({
+        current: project,
+        nodes: [project],
+        submissions: [{ ...receipt, state, feedback: null }],
+      });
+      expect(html).toContain(
+        state === 'passed'
+          ? 'does not by itself confirm project completion'
+          : 'Project completion is not confirmed',
+      );
+      expect(html).toContain('0 of 1 curriculum nodes mastered');
+      expect(html).not.toMatch(
+        /Your project passed|project mastered|UNSUPPORTED_MASTERY_KIND|has been unlocked/,
+      );
+    },
+  );
+  it('does not guess project identity from a matching title', () => {
+    const project = { ...node, kind: 'project' as const };
+    const html = render({
+      current: project,
+      nodes: [project],
+      submissions: [
+        {
+          ...receipt,
+          title: project.title,
+          state: 'passed',
+          href: '/another-authorized-destination',
+          feedback: null,
+        },
+      ],
+    });
+    expect(html).not.toContain('does not by itself confirm project completion');
+  });
+});

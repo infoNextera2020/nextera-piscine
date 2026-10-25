@@ -310,9 +310,13 @@ export function Checkpoint({
                           state={view.display.tasks[i]?.state ?? 'locked'}
                           label={
                             view.display.tasks[i]?.state === 'available'
-                              ? 'Open'
+                              ? view.display.tasks[i]?.submitAvailable
+                                ? 'Open'
+                                : 'No slots available'
                               : view.display.tasks[i]?.state === 'system_error'
-                                ? 'System retry'
+                                ? view.display.tasks[i]?.submitAvailable
+                                  ? 'System retry'
+                                  : 'Infrastructure issue'
                                 : view.display.tasks[i]?.state === 'closed'
                                   ? 'Closed'
                                   : displayState(view.display.tasks[i]?.state ?? 'closed')
@@ -321,9 +325,7 @@ export function Checkpoint({
                       </span>
                       <small>{t.reserved} of 3 submission slots used or pending</small>
                       {view.display.tasks[i]?.state === 'system_error' && (
-                        <small>
-                          System retry · infrastructure errors do not use one of your attempts
-                        </small>
+                        <small>Infrastructure errors do not use one of your attempts</small>
                       )}
                     </button>
                   ))}
