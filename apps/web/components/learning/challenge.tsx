@@ -96,8 +96,12 @@ export function Challenge({
     return () => window.removeEventListener('popstate', sync);
   }, []);
   useEffect(() => {
-    if (initialTab.toLowerCase() === 'submissions')
-      historyRegion.current?.focus({ preventScroll: true });
+    if (initialTab.toLowerCase() === 'submissions') {
+      const history = historyRegion.current;
+      history?.focus({ preventScroll: true });
+      // A feedback deep link must reveal its destination, including below the brief on mobile.
+      history?.scrollIntoView({ block: 'start', behavior: 'instant' });
+    }
   }, [initialTab]);
   function select(next: (typeof tabs)[number]) {
     setTab(next);

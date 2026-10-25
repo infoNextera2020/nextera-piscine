@@ -55,6 +55,25 @@ test('Home renders authorized next work and the latest receipt without sample pr
     /test_pack_digest|evaluation_snapshot|runner_image_digest/,
   );
 });
+test('Home feedback links reveal and focus history at desktop, tablet and mobile widths', async ({
+  page,
+}) => {
+  await page.emulateMedia({ reducedMotion: 'reduce' });
+  await login(page);
+  for (const width of [1440, 768, 390, 320]) {
+    await page.setViewportSize({ width, height: 850 });
+    await page.goto('/app');
+    const latest = page.getByRole('region', { name: 'Latest submission', exact: true });
+    await latest.getByRole('link', { name: 'View history', exact: true }).click();
+    const history = page.getByRole('region', { name: 'Submission history', exact: true });
+    await expect(history).toBeFocused();
+    const heading = history.getByRole('heading', { name: 'Submission history', exact: true });
+    await expect(heading).toBeInViewport();
+    expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(
+      true,
+    );
+  }
+});
 test('Heart Journey uses published order and locked metadata without exposing restricted subjects', async ({
   page,
 }) => {

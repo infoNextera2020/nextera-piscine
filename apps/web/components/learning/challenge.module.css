@@ -773,3 +773,7 @@
 .subject article :where(h1, h2, h3, h4) {
   font-weight: 650;
 }
+
+.historyCard {
+  scroll-margin-block-start: 6rem;
+}
