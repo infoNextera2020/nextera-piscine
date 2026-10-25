@@ -39,6 +39,7 @@ export async function readLearningOverview(user: DomainUser, cohort: AuthorizedC
         id: s.id,
         title: node.title,
         state: s.state,
+        feedback: s.feedback?.message ?? null,
         at: new Date(s.created_at).toISOString(),
         href: node.href ?? node.roadmapHref,
       };

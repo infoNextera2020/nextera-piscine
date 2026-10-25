@@ -55,3 +55,13 @@ Both originals are retained byte-for-byte under `piscine/hairline/`. The embedde
 ## Journey transparent wordmark
 
 `piscine/official-nextera-mark.svg` is the original NextEra vector viewport supplied inside `NextEra-Piscine-Map-Concept-v2.svg` (source SHA256 `c1807de999688e4c50e079d7d441763905ca857acdb462070645d7da747b5edd`). It retains the supplied geometry and transparency; no background was added. The existing shell and Coding logo assets are preserved. Used at the approved heart-map START cleft.
+
+## Functional Home Hairline drawings (25 October 2026)
+
+The functional Home follows the user-approved desktop/mobile references `libfile_d5224bf6780c8191bb4773d9994c6297` and `libfile_878004cd987c8191aba1429591357de9`, inspected locally as pixels. Their sample titles and outcomes are not curriculum or learner data.
+
+All Home/shared navigation and control icons are original object drawings made with the installed `hairline-create` skill, its public HL geometry/lifecycle API and unchanged kernel/bench. Sources are under `piscine/hairline/home-icons/`: cabin, atlas, receipts, console, checkpoint, archive, advance, loupe, deskbell, slats, crossbar and exitdoor. Each has a meaningful local mechanism, a deliberate rest pose and no autoplay. The fixed kernel hash and source/output digests are recorded in `provenance.json`.
+
+The twelve self-contained figure pages passed the skill validator. The documented eight poses (rest/answer/240px/240px answer/intensity extremes/light/dark) were checked in installed Chrome without installing the look tool's separate runtime. All settled; no console errors or frame overflow were observed. `hairline-icons.generated.json` contains their actual rendered rest paths. Small UI controls use these static paths with non-scaling thin strokes, no animation/iframe/event loop. This preserves legibility and reduced-motion/offscreen behavior. They are custom Hairline Create figures, not stock icons from a vendor pack.
+
+The current-work card reuses the accepted supplied interactive terminal with its existing pointer, reduced-motion, touch and visibility handling. Official logos remain unmodified brand assets. All personalized titles, feedback, states, counters and links still come from the authorized overview; these drawings contain no business state.

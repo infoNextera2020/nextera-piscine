@@ -1,0 +1,22 @@
+.drawing {
+  display: inline-block;
+  flex-shrink: 0;
+  vertical-align: middle;
+  overflow: visible;
+}
+.drawing path {
+  fill: var(--hairline-ui-ground, #0a0e0b);
+  stroke: currentColor;
+  stroke-width: 1.05px;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+.drawing path[data-layer~='nf'] {
+  fill: none;
+}
+.drawing path[data-layer~='lo'] {
+  stroke: var(--hairline-ui-detail, #65796b);
+}
+.drawing path[data-layer~='hi'] {
+  stroke: var(--hairline-ui-highlight, #57e6ad);
+}

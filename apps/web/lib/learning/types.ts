@@ -39,6 +39,7 @@ export type LearningSubmission = {
   state: SubmissionState;
   at: string;
   href: string;
+  feedback?: string | null;
 };
 export type LearningOverview = {
   nodes: LearningNode[];

@@ -7,7 +7,7 @@ import { logout } from '../../app/login/actions';
 import { formatMoment } from '../../lib/learning/display';
 import type { LearningNode, LearningUpdate } from '../../lib/learning/types';
 import { StatusBadge } from './primitives';
-import { Icon } from './icon';
+import { HairlineIcon as Icon } from './hairline-icon';
 import s from './app-shell.module.css';
 
 type ShellProps = {

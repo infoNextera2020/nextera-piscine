@@ -43,7 +43,10 @@ export default defineConfig([
     },
   },
   {
-    files: ['apps/web/public/piscine/hairline/nextera-terminal.js'],
+    files: [
+      'apps/web/public/piscine/hairline/nextera-terminal.js',
+      'apps/web/public/piscine/hairline/home-icons/*.js',
+    ],
     // The unchanged figure runs inside the supplied Hairline/browser bench.
     languageOptions: { globals: { HL: 'readonly', hairline: 'readonly', performance: 'readonly' } },
   },

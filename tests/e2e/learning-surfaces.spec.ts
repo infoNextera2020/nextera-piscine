@@ -28,29 +28,27 @@ async function login(page: Page, email = f.learner) {
   await page.getByLabel('Password', { exact: true }).fill(f.password);
   await page.getByRole('button', { name: 'Sign in', exact: true }).click();
   await expect(page).toHaveURL(/\/app$/, { timeout: 15000 });
-  await expect(page.getByRole('heading', { name: /^Welcome/ })).toBeVisible();
+  await expect(page.locator('h1')).toBeVisible();
 }
-test('Command Center renders only real cohort progress and separates infrastructure from learner failure', async ({
+test('Home renders authorized next work and the latest receipt without sample progress', async ({
   page,
 }) => {
   await login(page);
-  await expect(page.getByRole('heading', { name: /Welcome back, Review/ })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Your Piscine', exact: true })).toBeVisible();
   await expect(page.getByLabel('1 of 5 curriculum nodes mastered')).toBeVisible();
-  await expect(page.getByRole('heading', { name: 'Current Challenge', exact: true })).toBeVisible();
-  await expect(page.getByRole('link', { name: 'Continue Challenge', exact: true })).toHaveAttribute(
+  await expect(
+    page.locator('[data-home-next]').getByRole('heading', { name: 'Even or Odd', exact: true }),
+  ).toBeVisible();
+  await expect(page.getByRole('link', { name: 'Continue challenge', exact: true })).toHaveAttribute(
     'href',
     '/app/cohorts/' + f.cohort + '/challenges/even-or-odd',
   );
-  await expect(
-    page
-      .getByRole('region', { name: 'Recent Activity', exact: true })
-      .getByText('Infrastructure issue', { exact: true }),
-  ).toBeVisible();
-  await expect(
-    page
-      .getByRole('region', { name: 'Recent Activity', exact: true })
-      .getByText('Not passed', { exact: true }),
-  ).toBeVisible();
+  const latest = page.getByRole('region', { name: 'Latest submission', exact: true });
+  await expect(latest).toBeVisible();
+  await expect(latest.getByRole('link', { name: 'View history', exact: true })).toHaveAttribute(
+    'href',
+    /tab=submissions/,
+  );
   await expect(page.getByText('Current Streak', { exact: true })).toHaveCount(0);
   await expect(page.getByText('146h', { exact: true })).toHaveCount(0);
   expect(await page.content()).not.toMatch(

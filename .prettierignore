@@ -19,3 +19,6 @@ apps/web/public/piscine/hairline/hairline-*.html
 
 # User-supplied Hairline source is retained byte-for-byte with its preview.
 apps/web/public/piscine/hairline/nextera-terminal.js
+
+# Generated Hairline figure sources retain their validated builder format.
+apps/web/public/piscine/hairline/home-icons/*.js

@@ -1,0 +1,90 @@
+{
+  "kernel_sha256": "346b48bdef2cdfafd5343eba01494255cf75f9c078e6fcd1aafc62bab62980a1",
+  "workflow": "Hairline Create build.mjs + validate.mjs; documented eight-pose manual Chrome look; static rest geometry exported to React.",
+  "figures": [
+    {
+      "icon": "home",
+      "figure": "cabin",
+      "source": "apps/web/public/piscine/hairline/home-icons/cabin.js",
+      "source_sha256": "f24662825044060fa2ccdb727c00ce2b1cb10bca3f256fcf7c9ddd70d44071c0",
+      "standalone_html_sha256": "ebf34a9d1e12d0f1623da815521e6cd80c9f29ec1f62637a173fe7bbfb4910fa"
+    },
+    {
+      "icon": "map",
+      "figure": "atlas",
+      "source": "apps/web/public/piscine/hairline/home-icons/atlas.js",
+      "source_sha256": "172f948c2240eb3153976dbacda35ef829aa9e54f4f5f5f24cb704231fe0faae",
+      "standalone_html_sha256": "24648f71302c55dd32af91820fda79e2049c5a4f709c018204fe0dd6776f50b1"
+    },
+    {
+      "icon": "evidence",
+      "figure": "receipts",
+      "source": "apps/web/public/piscine/hairline/home-icons/receipts.js",
+      "source_sha256": "dc2fc65c7c13ac0d7d63ad6cca5c9fa8230723fae88324efda527d04f66806ff",
+      "standalone_html_sha256": "8e6665245196538757fb4100d367faf2164bdf8d4c36af310b13af152e13f29d"
+    },
+    {
+      "icon": "code",
+      "figure": "console",
+      "source": "apps/web/public/piscine/hairline/home-icons/console.js",
+      "source_sha256": "ae53692cec0669a95dca42218f50e8dfd56f45a43369ac8ab3beaedba7039d3a",
+      "standalone_html_sha256": "1593aa1eab1cd4983a295c637f02e2b3ccc2706cd8565ae0a2ce248aaa48704f"
+    },
+    {
+      "icon": "gate",
+      "figure": "checkpoint",
+      "source": "apps/web/public/piscine/hairline/home-icons/checkpoint.js",
+      "source_sha256": "f2e9d37b884f8f6caec7f5cd3aace450a6648ef94453df1256ec0fdc32811320",
+      "standalone_html_sha256": "6f6070c3e88af6916cf752d6385d8484ab36b9a2f1936c9c8db755ee4a0bd01f"
+    },
+    {
+      "icon": "folder",
+      "figure": "archive",
+      "source": "apps/web/public/piscine/hairline/home-icons/archive.js",
+      "source_sha256": "cab553eb28173f0f6a333415cbb907e6a53b7632742f2cf4c995c3b4fc16101f",
+      "standalone_html_sha256": "5931803c63f9b765233ba75957def67bca615ccd34b2da82af544545d18436b1"
+    },
+    {
+      "icon": "arrow",
+      "figure": "advance",
+      "source": "apps/web/public/piscine/hairline/home-icons/advance.js",
+      "source_sha256": "acbcf726d9a4d904d6c13e22cc923c3366fd32a9e9a3172c25cafee3a71de0e7",
+      "standalone_html_sha256": "c5f201e5698f7b48f32840edb09609314f1c4220dab624b5aff14718f6a876a4"
+    },
+    {
+      "icon": "search",
+      "figure": "loupe",
+      "source": "apps/web/public/piscine/hairline/home-icons/loupe.js",
+      "source_sha256": "2cef49f7688a242ad9b68778df374af80cf6e6263779e4640ed3b9156629fb0b",
+      "standalone_html_sha256": "4c93a56256c5ef88cd5a5b54d61d27b579d3e725877f5f73775d47ed4275fc19"
+    },
+    {
+      "icon": "bell",
+      "figure": "deskbell",
+      "source": "apps/web/public/piscine/hairline/home-icons/deskbell.js",
+      "source_sha256": "21930784e8185ff7be80abf813bfa4523df94a3595957493e39d004841c5c934",
+      "standalone_html_sha256": "75d78c93f0f36bb35aea5f0884c8ac4ed62f396dc3fca9b8450503fb7f59982b"
+    },
+    {
+      "icon": "menu",
+      "figure": "slats",
+      "source": "apps/web/public/piscine/hairline/home-icons/slats.js",
+      "source_sha256": "f72a09c4581e496c28575ced107a4d9b21cff19bda94835ad3c82246c59da260",
+      "standalone_html_sha256": "92c71e1c29f9c7040aad401049052afad1da9f9d7dd4e9ff486a1212c0631e98"
+    },
+    {
+      "icon": "close",
+      "figure": "crossbar",
+      "source": "apps/web/public/piscine/hairline/home-icons/crossbar.js",
+      "source_sha256": "65d90937dd3614af4dd327d2ad750ad739cda9fd344cd344d09ea68f0ba4061d",
+      "standalone_html_sha256": "4e3925df6542a2921019f49c70543af3f885530656e177efcc24b872fa3fd0c6"
+    },
+    {
+      "icon": "logout",
+      "figure": "exitdoor",
+      "source": "apps/web/public/piscine/hairline/home-icons/exitdoor.js",
+      "source_sha256": "ead24ee4f4eacbf0f2f575aaa386fc090192071fb248695cc0fed50521840b91",
+      "standalone_html_sha256": "ac99efaf65b1974e6d6bca8b5e6b9dd229a9b4e4be7cdd0238e6370562251a5c"
+    }
+  ]
+}

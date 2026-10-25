@@ -1,10 +1,10 @@
 import Link from 'next/link';
 import type { AuthorizedCohort } from '@nextera/db/cohorts';
-import type { LearningOverview } from '../../lib/learning/types';
+import type { LearningOverview, LearningSubmission } from '../../lib/learning/types';
 import { displayState, formatMoment } from '../../lib/learning/display';
-import { EmptyState, Panel, ProgressBar, ProgressRing, StatusBadge } from './primitives';
-import { Icon } from './icon';
-import s from './learning.module.css';
+import { HomeNextAction } from './home-next-action';
+import { HairlineIcon } from './hairline-icon';
+import s from './home.module.css';
 
 export function CohortLinks({
   cohorts,
@@ -13,10 +13,10 @@ export function CohortLinks({
 }: {
   cohorts: AuthorizedCohort[];
   selected?: string | undefined;
-  kind?: 'challenge' | 'checkpoint' | null;
+  kind?: 'challenge' | 'checkpoint' | 'project' | null;
 }) {
   return (
-    <section className={s.cohortStrip}>
+    <section className={s.cohorts}>
       <h2>Your cohorts</h2>
       <nav aria-label="Your cohorts">
         {cohorts.map((c) => (
@@ -25,13 +25,63 @@ export function CohortLinks({
             href={'/app/cohorts/' + c.id + (kind ? '?kind=' + kind : '')}
             aria-current={c.id === selected ? 'true' : undefined}
           >
-            {c.name}
-            <Icon name="arrow" size={13} />
+            <span>{c.name}</span>
+            <HairlineIcon name="arrow" size={20} />
           </Link>
         ))}
       </nav>
     </section>
   );
+}
+
+export function HomeWelcome({
+  name,
+  preview,
+  empty,
+}: {
+  name: string;
+  preview: boolean;
+  empty: boolean;
+}) {
+  return (
+    <main className={s.page}>
+      <header className={s.heading}>
+        <p className={s.eyebrow}>Home</p>
+        <h1>Your Piscine</h1>
+        <p>Welcome, {name.trim().split(/\s+/)[0] || name}.</p>
+      </header>
+      <section className={s.welcome}>
+        <HairlineIcon name={empty ? 'folder' : 'map'} size={44} />
+        <h2>{empty ? 'Your learning space is ready' : 'Explore your cohort'}</h2>
+        <p>
+          {empty
+            ? 'No active cohorts assigned. Enrollment is controlled by your operator.'
+            : 'Choose a cohort below to explore its published curriculum.'}
+        </p>
+        {preview && (
+          <p className={s.preview}>Read-only curriculum preview. No learner progress is implied.</p>
+        )}
+      </section>
+    </main>
+  );
+}
+
+function recordDestination(record: LearningSubmission) {
+  if (!record.href.includes('/challenges/')) return record.href;
+  if (/[?&]tab=/.test(record.href)) return record.href.replace(/([?&]tab=)[^&#]*/, '$1submissions');
+  return record.href + (record.href.includes('?') ? '&' : '?') + 'tab=submissions';
+}
+function resultHeading(state: LearningSubmission['state']) {
+  if (state === 'queued' || state === 'running') return 'Your evaluation is pending.';
+  if (state === 'passed') return 'Your latest submission passed.';
+  if (state === 'system_error') return 'Evaluation needs attention.';
+  return 'Your solution needs review.';
+}
+function resultFallback(state: LearningSubmission['state']) {
+  if (state === 'queued' || state === 'running')
+    return 'Open history to check the latest recorded state.';
+  if (state === 'system_error') return 'Infrastructure issue. This is not a learner failure.';
+  return 'Open the feedback before your next step.';
 }
 export function CommandCenter({
   name,
@@ -42,344 +92,126 @@ export function CommandCenter({
   cohort: AuthorizedCohort;
   view: LearningOverview;
 }) {
-  const c = view.counts;
-  const roadmap = '/app/cohorts/' + cohort.id;
-  const active = view.submissions
-    .filter((item) => item.state === 'queued' || item.state === 'running')
-    .slice(0, 4);
-  const latestMastery = view.nodes
-    .filter((n) => n.masteredAt)
-    .sort((a, b) => b.masteredAt!.localeCompare(a.masteredAt!))[0];
+  const base = '/app/cohorts/' + cohort.id;
+  const current = view.nodes.length ? view.current : null;
+  const latest = view.submissions[0] ?? null;
+  const milestone = view.checkpoint;
   return (
-    <main className={s.dashboard}>
-      <section className={s.hero + ' ' + s.homeHero}>
-        <div className={s.heroCopy}>
-          <p className={s.eyebrow}>NEXTERA PISCINE</p>
-          <h1>Welcome back, {name.trim().split(/\s+/)[0]}.</h1>
-          <p className={s.heroSub}>
-            Keep building. Every step forward starts with your next challenge.
-          </p>
-          <div className={s.heroMeta}>
-            <div>
-              <Icon name="map" />
-              <span>
-                <b>{cohort.name}</b>
-                <small>Your Piscine</small>
-              </span>
-            </div>
-            <div>
-              <Icon name="folder" />
-              <span>
-                <b>Curriculum {cohort.version}</b>
-                <small>
-                  {view.modules.length} quests · {c.total} nodes
-                </small>
-              </span>
-            </div>
-            <div>
-              <Icon name="clock" />
-              <span>
-                <b>
-                  {new Intl.DateTimeFormat('en-GB', {
-                    day: 'numeric',
-                    month: 'short',
-                    year: 'numeric',
-                    timeZone: 'Africa/Cairo',
-                  }).format(cohort.startsAt)}
-                </b>
-                <small>Cohort start date</small>
-              </span>
-            </div>
-          </div>
-        </div>
-      </section>
-      <section className={s.kpis} aria-label="Piscine progress">
-        <article className={s.card + ' ' + s.kpi}>
-          <h2>Piscine Progress</h2>
-          <div className={s.ringLayout}>
-            <ProgressRing done={c.mastered} total={c.total} />
-            <div>
-              <strong>
-                {view.modules.filter((m) => m.state === 'mastered').length} / {view.modules.length}
-              </strong>
-              <small>Quests complete</small>
-              <Link className={s.textLink} href={roadmap}>
-                Your roadmap <Icon name="arrow" size={13} />
-              </Link>
-            </div>
-          </div>
-        </article>
-        <article className={s.card + ' ' + s.kpi}>
-          <h2>Challenges Completed</h2>
-          <div className={s.kpiValue}>
-            {c.challengesPassed}
-            <small> / {c.challenges}</small>
-          </div>
-          <p>Mastered challenge nodes</p>
-          <ProgressBar done={c.challengesPassed} total={c.challenges} label="Challenges mastered" />
-        </article>
-        <article className={s.card + ' ' + s.kpi}>
-          <h2>Checkpoints Passed</h2>
-          <div className={s.kpiValue}>
-            {c.checkpointsPassed}
-            <small> / {c.checkpoints}</small>
-          </div>
-          <p>
-            {c.checkpoints ? 'Permanent checkpoint passes' : 'No checkpoints in this curriculum'}
-          </p>
-          {c.checkpoints > 0 && (
-            <ProgressBar
-              done={c.checkpointsPassed}
-              total={c.checkpoints}
-              label="Checkpoint nodes mastered"
-            />
-          )}
-        </article>
-        <article className={s.card + ' ' + s.kpi}>
-          <h2>Current Work</h2>
-          <div className={s.kpiValue}>
-            {c.started}
-            <small> in progress</small>
-          </div>
-          <p>{c.projects ? c.projectsActive + ' active projects' : 'Keep your momentum'}</p>
-          <div className={s.kpiSymbol}>
-            <Icon name="code" size={26} />
-          </div>
-        </article>
-        <article className={s.card + ' ' + s.kpi}>
-          <h2>Ready to Start</h2>
-          <div className={s.kpiValue}>
-            {c.available}
-            <small> nodes</small>
-          </div>
-          <p>Available on your roadmap</p>
-          <Link className={s.textLink} href={roadmap}>
-            Find your next step <Icon name="arrow" size={13} />
-          </Link>
-        </article>
-      </section>
-      <section className={s.homeMid}>
-        <Panel
-          title={view.current?.kind === 'project' ? 'Current Project' : 'Current Challenge'}
-          action={
-            <Link className={s.textLink} href={view.current?.href ?? roadmap}>
-              Open <Icon name="arrow" size={13} />
-            </Link>
-          }
-        >
-          {view.current ? (
-            <>
-              <div className={s.summaryRow}>
-                <span className={s.iconBox}>
-                  <Icon name={view.current.kind === 'project' ? 'folder' : 'code'} size={26} />
-                </span>
-                <div>
-                  <h3>{view.current.title}</h3>
-                  <StatusBadge state={view.current.state} />
+    <main className={s.page}>
+      <header className={s.heading}>
+        <p className={s.eyebrow}>Home</p>
+        <h1>Your Piscine</h1>
+        <p>Pick up your challenge, review your feedback, and see what comes next.</p>
+      </header>
+      <div className={s.layout}>
+        <div className={s.workColumn}>
+          <HomeNextAction name={name} cohort={cohort} view={view} />
+          <section className={s.latest} aria-labelledby="home-latest-title" data-home-latest>
+            <header className={s.sectionHeader}>
+              <h2 id="home-latest-title" className={s.eyebrow}>
+                Latest submission
+              </h2>
+              {latest && (
+                <Link href={recordDestination(latest)}>
+                  View history
+                  <HairlineIcon name="arrow" size={23} />
+                </Link>
+              )}
+            </header>
+            {latest ? (
+              <div className={s.result} data-state={latest.state}>
+                <div className={s.recordTitle}>
+                  <span className={s.state} data-state={latest.state}>
+                    {displayState(latest.state)}
+                  </span>
+                  <h3>{latest.title}</h3>
                 </div>
+                <h4>{resultHeading(latest.state)}</h4>
+                <p>{latest.feedback || resultFallback(latest.state)}</p>
+                {latest.state === 'system_error' && latest.feedback && (
+                  <p>Infrastructure issue. This is not a learner failure.</p>
+                )}
+                <time dateTime={latest.at}>{formatMoment(latest.at)}</time>
+                <Link className={s.textLink} href={recordDestination(latest)}>
+                  {latest.state === 'queued' || latest.state === 'running'
+                    ? 'Check history'
+                    : 'Review feedback'}
+                  <HairlineIcon name="arrow" size={23} />
+                </Link>
               </div>
-              <p className={s.description}>
-                {view.currentDescription ??
-                  'Explore the requirements, write your solution locally, and submit your work.'}
-              </p>
-              <ul className={s.checklist}>
-                <li>
-                  <Icon name="map" size={15} />
-                  {view.current.questTitle}
-                </li>
-                <li>
-                  <Icon name="evidence" size={15} />
-                  {view.current.prerequisites.length
-                    ? 'Requires: ' + view.current.prerequisites.join(', ')
-                    : 'Foundation challenge — no prerequisites'}
-                </li>
-                <li>
-                  <Icon name="code" size={15} />
-                  {view.current.skills.join(' · ') || 'Practice through building'}
-                </li>
-              </ul>
-              <Link className={s.primaryButton} href={view.current.href!}>
-                Continue {view.current.kind === 'project' ? 'Project' : 'Challenge'}{' '}
-                <Icon name="arrow" size={15} />
-              </Link>
-            </>
-          ) : (
-            <EmptyState title="No challenge ready right now">
-              Explore your roadmap for your next step.
-            </EmptyState>
-          )}
-        </Panel>
-        <Panel
-          title="Upcoming Checkpoint"
-          action={
-            <Link className={s.textLink} href={view.checkpoint?.roadmapHref ?? roadmap}>
-              View <Icon name="arrow" size={13} />
-            </Link>
-          }
-        >
-          {view.checkpoint ? (
-            <>
-              <div className={s.summaryRow}>
-                <span className={s.iconBox + ' ' + s.goldIcon}>
-                  <Icon name="gate" size={26} />
-                </span>
-                <div>
-                  <h3>{view.checkpoint.title}</h3>
-                  <StatusBadge state={view.checkpointStatus} />
-                </div>
-              </div>
-              <p className={s.description}>
-                A transfer gate. Four checkpoint-specific tasks, 90 minutes, and three task passes
-                to continue.
-              </p>
-              <ul className={s.checklist}>
-                <li>
-                  <Icon name="gate" size={15} />
-                  Pass 3 of 4 tasks
-                </li>
-                <li>
-                  <Icon name="clock" size={15} />
-                  90-minute attempt
-                </li>
-                <li>
-                  <Icon name="evidence" size={15} />
-                  {view.checkpoint.lockedReason ??
-                    'Open your checkpoint to view attempt availability.'}
-                </li>
-              </ul>
-              <Link
-                className={s.primaryButton + ' ' + s.outlineGold}
-                href={view.checkpoint.href ?? view.checkpoint.roadmapHref}
-              >
-                View Checkpoint <Icon name="arrow" size={15} />
-              </Link>
-            </>
-          ) : (
-            <EmptyState
-              title={c.checkpoints ? 'All checkpoints passed' : 'No checkpoint scheduled'}
-            >
-              {c.checkpoints
-                ? 'Your recorded passes are permanent.'
-                : 'Checkpoint gates appear when included in your curriculum.'}
-            </EmptyState>
-          )}
-        </Panel>
-        <Panel
-          title="Roadmap Preview"
-          action={
-            <Link className={s.textLink} href={roadmap}>
-              Full Roadmap <Icon name="arrow" size={13} />
-            </Link>
-          }
-        >
-          <div className={s.routePreview}>
-            {view.modules.slice(0, 4).map((m, i) => (
-              <Link
-                key={m.key}
-                href={roadmap + '?quest=' + encodeURIComponent(m.key)}
-                data-state={m.state}
-              >
-                <span>
-                  {m.state === 'mastered' ? (
-                    <Icon name="check" size={17} />
-                  ) : (
-                    String(i + 1).padStart(2, '0')
-                  )}
-                </span>
-                <strong>{m.title}</strong>
-                <small>{displayState(m.state)}</small>
-              </Link>
-            ))}
-          </div>
-          <ul className={s.checklist}>
-            {view.modules.slice(0, 4).map((m) => (
-              <li key={m.key}>
-                <span className={s.statusDot} data-state={m.state} />
-                <span>{m.title}</span>
-                <small>
-                  {m.mastered} / {m.nodes.length}
-                </small>
-              </li>
-            ))}
-          </ul>
-        </Panel>
-      </section>
-      <section className={s.homeBottom}>
-        <Panel
-          title="Recent Activity"
-          action={
-            <Link className={s.textLink} href={roadmap}>
-              Roadmap <Icon name="arrow" size={13} />
-            </Link>
-          }
-        >
-          {view.updates.length ? (
-            <ul className={s.feed}>
-              {view.updates.slice(0, 4).map((u) => (
-                <li key={u.id}>
-                  <span className={s.statusDot} data-state={u.state} />
-                  <div>
-                    <Link href={u.href}>{u.title}</Link>
-                    <small>{formatMoment(u.at)}</small>
-                  </div>
-                  <StatusBadge state={u.state} />
-                </li>
-              ))}
-            </ul>
-          ) : (
-            <EmptyState title="Your activity starts here">
-              Accepted work and progression will appear here.
-            </EmptyState>
-          )}
-        </Panel>
-        <Panel title="Active Submissions">
-          {active.length ? (
-            <ul className={s.feed}>
-              {active.map((item) => (
-                <li key={item.id}>
-                  <Icon name="code" size={15} />
-                  <div>
-                    <Link href={item.href}>{item.title}</Link>
-                    <small>Submitted {formatMoment(item.at)}</small>
-                  </div>
-                  <StatusBadge state={item.state} />
-                </li>
-              ))}
-            </ul>
-          ) : (
-            <EmptyState title="Nothing currently evaluating">
-              No queued or running submissions in your recent history.
-            </EmptyState>
-          )}
-        </Panel>
-        <Panel title="Evidence Snapshot">
-          <ul className={s.feed}>
-            <li>
-              <Icon name="evidence" size={16} />
-              <span>{c.mastered} mastered nodes</span>
-              <small>PROOF</small>
-            </li>
-            <li>
-              <Icon name="gate" size={16} />
-              <span>{c.checkpointsPassed} checkpoint passes</span>
-              <small>GATE</small>
-            </li>
-            {latestMastery ? (
-              <li>
-                <span className={s.statusDot} data-state="mastered" />
-                <div>
-                  <Link href={latestMastery.roadmapHref}>{latestMastery.title}</Link>
-                  <small>Mastered {formatMoment(latestMastery.masteredAt!)}</small>
-                </div>
-              </li>
             ) : (
-              <li>
-                <span className={s.muted}>Your first mastery will appear here.</span>
-              </li>
+              <div className={s.result}>
+                <h3>No submission records available.</h3>
+                <p>Your recorded receipts and safe feedback will appear here.</p>
+              </div>
             )}
-          </ul>
-        </Panel>
-      </section>
+          </section>
+        </div>
+        <aside className={s.contextColumn} aria-label="Your Piscine context">
+          <section className={s.location} aria-labelledby="home-location-title">
+            <h2 id="home-location-title" className={s.eyebrow}>
+              Where you are
+            </h2>
+            <div className={s.position}>
+              <HairlineIcon name="map" size={32} />
+              <div>
+                <p>{cohort.name}</p>
+                {current ? (
+                  <>
+                    <h3>{current.questTitle}</h3>
+                    <p>{current.title}</p>
+                  </>
+                ) : (
+                  <h3>No current work selected</h3>
+                )}
+              </div>
+            </div>
+            {view.counts.total > 0 && (
+              <p
+                className={s.recorded}
+                aria-label={`${view.counts.mastered} of ${view.counts.total} curriculum nodes mastered`}
+              >
+                {view.counts.mastered} / {view.counts.total} nodes mastered
+              </p>
+            )}
+            <Link className={s.journeyLink} href={base}>
+              <span>
+                Explore the full journey<small>Quests, projects and checkpoints</small>
+              </span>
+              <HairlineIcon name="arrow" size={26} />
+            </Link>
+          </section>
+          {milestone && (
+            <section
+              className={s.milestone}
+              aria-labelledby="home-milestone-title"
+              data-home-milestone
+            >
+              <p className={s.eyebrow}>Next milestone</p>
+              <div className={s.milestoneTitle}>
+                <HairlineIcon name="gate" size={38} />
+                <h2 id="home-milestone-title">{milestone.title}</h2>
+              </div>
+              <span className={s.state} data-state={view.checkpointStatus ?? milestone.state}>
+                {displayState(view.checkpointStatus ?? milestone.state)}
+              </span>
+              <h3>Readiness &amp; prerequisites</h3>
+              <p>
+                {milestone.lockedReason ??
+                  'See the checkpoint’s recorded requirements and attempt status.'}
+              </p>
+              <Link className={s.textLink} href={milestone.href ?? milestone.roadmapHref}>
+                View milestone details
+                <HairlineIcon name="arrow" size={24} />
+              </Link>
+            </section>
+          )}
+        </aside>
+      </div>
+      <footer className={s.footer}>
+        <span>{cohort.name}</span>
+        <span>Curriculum {cohort.version}</span>
+      </footer>
     </main>
   );
 }

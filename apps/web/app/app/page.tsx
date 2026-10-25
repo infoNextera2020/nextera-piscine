@@ -5,9 +5,7 @@ import { listCohorts } from '@nextera/db/cohorts';
 import { authorizePage, getDatabase } from '../../lib/auth/server';
 import { readLearningOverview } from '../../lib/learning/server';
 import { AppShell } from '../../components/learning/app-shell';
-import { CohortLinks, CommandCenter } from '../../components/learning/command-center';
-import { EmptyState } from '../../components/learning/primitives';
-import s from '../../components/learning/learning.module.css';
+import { CohortLinks, CommandCenter, HomeWelcome } from '../../components/learning/command-center';
 
 export default async function AppPage({
   searchParams,
@@ -38,31 +36,11 @@ export default async function AppPage({
         {cohort && view ? (
           <CommandCenter name={user.displayName} cohort={cohort} view={view} />
         ) : (
-          <main>
-            <section className={s.hero + ' ' + s.homeHero}>
-              <div className={s.heroCopy}>
-                <p className={s.eyebrow}>NEXTERA PISCINE</p>
-                <h1>Welcome, {user.displayName.trim().split(/\s+/)[0]}.</h1>
-                <p className={s.heroSub}>
-                  {user.role === 'learner'
-                    ? 'Your next chapter starts here.'
-                    : 'Your cohort overview.'}
-                </p>
-              </div>
-            </section>
-            {user.role !== 'learner' && (
-              <p className={s.notice}>
-                Read-only curriculum preview. No learner progress is implied.
-              </p>
-            )}
-            {!cohorts.length && (
-              <div className={s.card + ' ' + s.panel}>
-                <EmptyState title="Your learning space is ready">
-                  No active cohorts assigned. Enrollment is controlled by your operator.
-                </EmptyState>
-              </div>
-            )}
-          </main>
+          <HomeWelcome
+            name={user.displayName}
+            preview={user.role !== 'learner'}
+            empty={!cohorts.length}
+          />
         )}
         {!!cohorts.length && <CohortLinks cohorts={cohorts} selected={cohort?.id} />}
       </AppShell>
