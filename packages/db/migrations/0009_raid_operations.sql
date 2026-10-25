@@ -180,7 +180,7 @@ DECLARE data jsonb; BEGIN
  FROM app.raid_attempts a JOIN app.raid_teams t ON t.id=a.team_id JOIN app.submissions s ON s.id=a.submission_id JOIN app.submission_artifacts ar ON ar.id=s.artifact_id
  JOIN app.users u ON u.id=t.mentor_user_id JOIN app.cohorts c ON c.id=t.cohort_id
  JOIN app.raid_automated_receipts ac ON ac.attempt_id=a.id AND ac.verdict='passed'
- WHERE a.id=aid AND u.auth_user_id=auth_id AND u.active AND u.role IN ('operator','admin') AND c.status='active'
+ WHERE a.id=aid AND t.active AND u.auth_user_id=auth_id AND u.active AND u.role IN ('operator','admin') AND c.status='active'
  AND (u.role='admin' OR EXISTS(SELECT FROM app.cohort_memberships m WHERE m.cohort_id=c.id AND m.user_id=u.id AND m.status='active'))
  AND NOT EXISTS(SELECT FROM app.raid_attempt_members m WHERE m.attempt_id=aid AND m.user_id=u.id);
  IF data IS NULL THEN RAISE EXCEPTION 'RAID_REVIEW_FORBIDDEN' USING ERRCODE='42501'; END IF; RETURN data;

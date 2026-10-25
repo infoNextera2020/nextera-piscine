@@ -417,6 +417,8 @@ describe.runIf(isolated)('shared Raid contract / credential-free real PostgreSQL
     expect((await browser`SELECT * FROM storage.objects`).length).toBe(0);
     await expect(browser`SELECT * FROM app.raid_reviews`).rejects.toThrow('permission denied');
     await browser`SELECT set_config('request.jwt.claims',${JSON.stringify({ sub: t.mentor.auth })},false)`;
+    await web`SELECT app.assign_raid_team(${t.owner.auth},${t.cohort},'hello-go',${randomUUID()},'Reassigned fixture',${t.mentor.id},${t.members.map((p) => p.id)}::uuid[])`;
+    expect((await browser`SELECT * FROM storage.objects`).length).toBe(0);
     await admin`UPDATE app.users SET active=false WHERE id=${t.mentor.id}`;
     expect((await browser`SELECT * FROM storage.objects`).length).toBe(0);
   });
