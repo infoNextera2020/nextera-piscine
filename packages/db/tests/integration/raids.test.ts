@@ -424,18 +424,40 @@ describe.runIf(isolated)('shared Raid contract / credential-free real PostgreSQL
   });
   it('holds a simultaneous deactivation after intake commits and blocks review', async () => {
     const t = await team();
+    let pending: Promise<unknown> | undefined;
     await web.unsafe('BEGIN');
-    const a = await accept(t);
-    let settled = false;
-    const pending = admin`UPDATE app.users SET active=false WHERE id=${t.members[1]!.id}`.then(
-      () => {
+    try {
+      const [accepted] =
+        await web`SELECT app.accept_raid_submission(${t.members[0]!.auth},${t.cohort},'hello-go',${randomUUID()},'hello.go',10,${'a'.repeat(64)}) AS id`;
+      // Read our uncommitted attempt through the same transaction's authorized view.
+      // A second connection must not see this row until intake commits.
+      const [view] =
+        await web`SELECT app.read_raid(${t.members[0]!.auth},${t.cohort},'hello-go',NULL) AS data`;
+      expect(view!.data.attempts).toHaveLength(1);
+      const attempt = String(view!.data.attempts[0].id);
+      let settled = false;
+      pending = admin`UPDATE app.users SET active=false WHERE id=${t.members[1]!.id}`.then(() => {
         settled = true;
-      },
-    );
-    await new Promise((resolve) => setTimeout(resolve, 60));
-    expect(settled).toBe(false);
-    await web.unsafe('COMMIT');
-    await pending;
-    expect((await review(t, a.attempt))[0]!.data.status).toBe('owner_decision_required');
+      });
+      await new Promise((resolve) => setTimeout(resolve, 60));
+      expect(settled).toBe(false);
+      await web.unsafe('COMMIT');
+      await pending;
+      expect(
+        (
+          await admin`SELECT id FROM app.raid_attempts WHERE submission_id=${String(accepted!.id)}`
+        )[0]!.id,
+      ).toBe(attempt);
+      expect(
+        (await admin`SELECT reason FROM app.raid_owner_holds WHERE attempt_id=${attempt}`)[0]!
+          .reason,
+      ).toBe('member_access_removed');
+      await admin`UPDATE app.users SET active=true WHERE id=${t.members[1]!.id}`;
+      expect((await review(t, attempt))[0]!.data.status).toBe('owner_decision_required');
+    } finally {
+      // Never leave the intake transaction holding locks after a failed assertion.
+      await web.unsafe('ROLLBACK');
+      await pending;
+    }
   });
 });
