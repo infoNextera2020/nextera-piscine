@@ -21,3 +21,10 @@
 - Fixed clipped tablet labels and a clipped desktop map label; heart geometry/server data unchanged.
 - Final actual Chrome pass: 78 checks, zero failures or page/console errors at 1440/768/390/320 with reduced motion.
 - See [browser evidence and manual review](frontend/HOME_B_JOURNEY_BROWSER_001.md). This is fixture verification, not live Auth/DB/Judge E2E.
+
+## Checkpoint draft/Run HTTP boundary — slice 001
+
+- Added separate authenticated draft and visible-example Run route wiring, bounded exact-source intake and explicit backend interfaces.
+- Production adapters remain unavailable; no fake save/Run success and no fallback to official grading.
+- No migration, retained database, credential, Judge or catalog changes; current manual preview untouched.
+- See [API boundary and remaining backend gates](frontend/CHECKPOINT_EDITOR_API_001.md). Injected-port HTTP tests are not live integration.
