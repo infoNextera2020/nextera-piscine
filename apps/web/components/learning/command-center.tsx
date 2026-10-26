@@ -100,27 +100,19 @@ export function CommandCenter({
   const latest = view.submissions[0] ?? null;
   const milestone = view.checkpoint;
   return (
-    <main className={s.page}>
+    <main className={s.page} data-home-layout="desk">
       <header className={s.heading}>
         <p className={s.eyebrow}>Home</p>
-        <h1>Your Piscine</h1>
-        <p>Pick up your challenge, review your feedback, and see what comes next.</p>
+        <h1>Your workspace</h1>
+        <p>One next step, with your latest feedback close by.</p>
       </header>
       <div className={s.layout}>
-        <div className={s.workColumn}>
-          <HomeNextAction name={name} cohort={cohort} view={view} />
+        <HomeNextAction name={name} cohort={cohort} view={view} />
+        <aside className={s.contextColumn} aria-label="Your Piscine context">
           <section className={s.latest} aria-labelledby="home-latest-title" data-home-latest>
-            <header className={s.sectionHeader}>
-              <h2 id="home-latest-title" className={s.eyebrow}>
-                Latest submission
-              </h2>
-              {latest && (
-                <Link href={recordDestination(latest)}>
-                  View history
-                  <HairlineIcon name="arrow" size={23} />
-                </Link>
-              )}
-            </header>
+            <h2 id="home-latest-title" className={s.eyebrow}>
+              Latest submission
+            </h2>
             {latest ? (
               <div className={s.result} data-state={latest.state}>
                 <div className={s.recordTitle}>
@@ -129,7 +121,7 @@ export function CommandCenter({
                   </span>
                   <h3>{latest.title}</h3>
                 </div>
-                <h4>{resultHeading(latest.state)}</h4>
+                <h4 className={s.srOnly}>{resultHeading(latest.state)}</h4>
                 <p>{latest.feedback || resultFallback(latest.state)}</p>
                 {submissionNotices(latest.state, submissionKind(latest, view.nodes)).map(
                   (notice) => (
@@ -140,7 +132,7 @@ export function CommandCenter({
                   <p>Infrastructure issue. This is not a learner failure.</p>
                 )}
                 <time dateTime={latest.at}>{formatMoment(latest.at)}</time>
-                <Link className={s.textLink} href={recordDestination(latest)}>
+                <Link className={s.feedbackLink} href={recordDestination(latest)}>
                   {latest.state === 'queued' ||
                   latest.state === 'running' ||
                   latest.state === 'cancelled'
@@ -156,72 +148,57 @@ export function CommandCenter({
               </div>
             )}
           </section>
-        </div>
-        <aside className={s.contextColumn} aria-label="Your Piscine context">
           <section className={s.location} aria-labelledby="home-location-title">
             <h2 id="home-location-title" className={s.eyebrow}>
               Where you are
             </h2>
             <div className={s.position}>
-              <HairlineIcon name="map" size={32} />
+              <HairlineIcon name="map" size={30} />
               <div>
                 <p>{cohort.name}</p>
-                {current ? (
-                  <>
-                    <h3>{current.questTitle}</h3>
-                    <p>{current.title}</p>
-                  </>
-                ) : (
-                  <h3>No current work selected</h3>
-                )}
+                <h3>{current?.questTitle ?? 'No current work selected'}</h3>
+                <Link className={s.journeyLink} href={base}>
+                  Open Journey
+                  <HairlineIcon name="arrow" size={23} />
+                </Link>
               </div>
             </div>
             {view.counts.total > 0 && (
               <p
-                className={s.recorded}
+                className={s.srOnly}
                 aria-label={`${view.counts.mastered} of ${view.counts.total} curriculum nodes mastered`}
               >
                 {view.counts.mastered} / {view.counts.total} nodes mastered
               </p>
             )}
-            <Link className={s.journeyLink} href={base}>
-              <span>
-                Explore the full journey<small>Quests, projects and checkpoints</small>
-              </span>
-              <HairlineIcon name="arrow" size={26} />
-            </Link>
           </section>
-          {milestone && (
-            <section
-              className={s.milestone}
-              aria-labelledby="home-milestone-title"
-              data-home-milestone
-            >
-              <p className={s.eyebrow}>Next milestone</p>
-              <div className={s.milestoneTitle}>
-                <HairlineIcon name="gate" size={38} />
-                <h2 id="home-milestone-title">{milestone.title}</h2>
-              </div>
-              <span className={s.state} data-state={view.checkpointStatus ?? milestone.state}>
-                {displayState(view.checkpointStatus ?? milestone.state)}
-              </span>
-              <h3>Readiness &amp; prerequisites</h3>
+        </aside>
+      </div>
+      {milestone && (
+        <section className={s.milestone} aria-labelledby="home-milestone-title" data-home-milestone>
+          <p className={s.eyebrow}>Next milestone</p>
+          <div className={s.milestoneBody}>
+            <HairlineIcon name="gate" size={34} />
+            <div>
+              <h2 id="home-milestone-title">{milestone.title}</h2>
+              <h3 className={s.srOnly}>Readiness &amp; prerequisites</h3>
               <p>
                 {milestone.lockedReason ??
                   'See the checkpoint’s recorded requirements and attempt status.'}
               </p>
+            </div>
+            <div className={s.milestoneAction}>
+              <span className={s.state} data-state={view.checkpointStatus ?? milestone.state}>
+                {displayState(view.checkpointStatus ?? milestone.state)}
+              </span>
               <Link className={s.textLink} href={milestone.href ?? milestone.roadmapHref}>
                 View milestone details
-                <HairlineIcon name="arrow" size={24} />
+                <HairlineIcon name="arrow" size={22} />
               </Link>
-            </section>
-          )}
-        </aside>
-      </div>
-      <footer className={s.footer}>
-        <span>{cohort.name}</span>
-        <span>Curriculum {cohort.version}</span>
-      </footer>
+            </div>
+          </div>
+        </section>
+      )}
     </main>
   );
 }

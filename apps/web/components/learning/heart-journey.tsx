@@ -15,6 +15,8 @@ import {
   type HeartStep,
   type HeartView,
 } from '../../lib/learning/heart-map';
+import { HairlineIcon } from './hairline-icon';
+import { fitHeartViewport } from '../../lib/learning/heart-viewport';
 import s from './heart-journey.module.css';
 
 type Selection = { id: string | null; node: string | null };
@@ -65,6 +67,10 @@ export function HeartJourney({
   const [detailsOpen, setDetailsOpen] = useState(!!initialNode || !!kind);
   const viewport = useRef<HTMLDivElement>(null);
   const canvas = useRef<HTMLDivElement>(null);
+  const frame = useRef<HTMLDivElement>(null);
+  const ordered = useRef<HTMLDialogElement>(null);
+  const orderedTrigger = useRef<HTMLButtonElement>(null);
+  const orderedId = useId();
   const details = useRef<HTMLElement>(null);
   const detailId = useId();
   const helpId = useId();
@@ -92,17 +98,21 @@ export function HeartJourney({
   }, [steps, initial, view.nodes]); // Restore only from supplied facts and URL metadata.
   useEffect(() => {
     const box = viewport.current,
-      map = canvas.current;
-    if (!box || !map) return;
-    let previousWidth = 0;
-    const center = () => {
-      if (box.clientWidth === previousWidth) return;
-      previousWidth = box.clientWidth;
-      if (box.clientWidth < map.clientWidth)
-        box.scrollLeft = (map.clientWidth * 1340) / HEART_WIDTH - box.clientWidth / 2;
+      map = canvas.current,
+      crop = frame.current;
+    if (!box || !map || !crop) return;
+    const fit = () => {
+      const size = fitHeartViewport(box.clientWidth, box.clientHeight);
+      if (!size) return;
+      crop.style.width = size.frameWidth + 'px';
+      crop.style.height = size.frameHeight + 'px';
+      map.style.width = size.canvasWidth + 'px';
+      map.style.height = size.canvasHeight + 'px';
+      map.style.left = size.left + 'px';
+      map.style.top = size.top + 'px';
     };
-    center();
-    const observer = new ResizeObserver(center);
+    fit();
+    const observer = new ResizeObserver(fit);
     observer.observe(box);
     return () => observer.disconnect();
   }, []);
@@ -118,31 +128,12 @@ export function HeartJourney({
     if (reveal && window.matchMedia('(max-width: 1100px)').matches)
       requestAnimationFrame(() => {
         details.current?.focus({ preventScroll: true });
-        details.current?.scrollIntoView({ block: 'nearest' });
-      });
-  }
-  function centerMap() {
-    const box = viewport.current,
-      map = canvas.current;
-    if (box && map)
-      box.scrollTo({
-        left: (map.clientWidth * 1340) / HEART_WIDTH - box.clientWidth / 2,
-        top: Math.max(0, (map.clientHeight * 330) / HEART_HEIGHT - box.clientHeight / 4),
       });
   }
   function findCurrent() {
     const current = steps.find((step) => step.current);
     if (!current) return;
     choose(current, view.current?.key ?? null, false);
-    const index = steps.indexOf(current),
-      point = heartPosition(index, steps.length),
-      box = viewport.current,
-      map = canvas.current;
-    if (box && map)
-      box.scrollTo({
-        left: (map.clientWidth * point.x) / HEART_WIDTH - box.clientWidth / 2,
-        top: (map.clientHeight * point.y) / HEART_HEIGHT - box.clientHeight / 2,
-      });
     requestAnimationFrame(() =>
       canvas.current
         ?.querySelector<HTMLElement>('[data-current="true"] [data-step-action]')
@@ -150,8 +141,8 @@ export function HeartJourney({
     );
   }
   return (
-    <main className={s.page}>
-      <header className={s.heading}>
+    <main className={s.page} data-journey-fit aria-label={cohortName + ' Journey'}>
+      <header className={s.srOnly}>
         <div>
           <p className={s.eyebrow}>WORKSPACE / JOURNEY</p>
           <h1>Piscine</h1>
@@ -170,20 +161,28 @@ export function HeartJourney({
         </section>
       ) : (
         <>
-          <div className={s.mobileControls}>
-            <p>Pan to explore</p>
-            <button type="button" onClick={centerMap}>
-              Center map
+          <div className={s.mapControls}>
+            <button
+              ref={orderedTrigger}
+              type="button"
+              aria-label="Browse published journey steps"
+              aria-haspopup="dialog"
+              aria-controls={orderedId}
+              onClick={() => ordered.current?.showModal()}
+            >
+              <HairlineIcon name="search" size={24} />
             </button>
             {!preview && view.current && (
-              <button type="button" onClick={findCurrent}>
-                Find current work
+              <button type="button" aria-label="Find current work" onClick={findCurrent}>
+                <HairlineIcon name="map" size={24} />
               </button>
             )}
           </div>
           <p id={helpId} className={s.srOnly}>
-            The line follows published reading order. Pan with arrow keys or use the ordered journey
-            below. Open a quest or an available workspace; locked work shows its requirements.
+            The whole heart fits the available viewport. The line follows published reading order.
+            It does not imply prerequisites. Open a quest or an authorized workspace, inspect locked
+            requirements, or use Browse published journey steps for full titles and larger
+            navigation targets.
           </p>
           <div
             ref={viewport}
@@ -193,90 +192,95 @@ export function HeartJourney({
             aria-describedby={helpId}
             tabIndex={0}
           >
-            <div ref={canvas} className={s.mapCanvas}>
-              <svg
-                className={s.route}
-                viewBox={`0 0 ${HEART_WIDTH} ${HEART_HEIGHT}`}
-                fill="none"
-                aria-hidden="true"
-                focusable="false"
-              >
-                <polyline
-                  points={HEART_ROUTE.map((p) => p.x + ',' + p.y).join(' ')}
-                  stroke="#446454"
-                  strokeWidth="1.25"
-                  vectorEffect="non-scaling-stroke"
-                  strokeLinejoin="miter"
-                />
-                {HEART_ARROWS.map((arrow, index) => (
-                  <path
-                    key={index}
-                    d="M-7 -4 0 0-7 4"
-                    transform={`translate(${arrow.x} ${arrow.y}) rotate(${arrow.angle})`}
-                    stroke="#57e6ad"
-                    strokeWidth="1"
+            <div ref={frame} className={s.mapFrame}>
+              <div ref={canvas} className={s.mapCanvas}>
+                <svg
+                  className={s.route}
+                  viewBox={`0 0 ${HEART_WIDTH} ${HEART_HEIGHT}`}
+                  fill="none"
+                  aria-hidden="true"
+                  focusable="false"
+                >
+                  <polyline
+                    points={HEART_ROUTE.map((p) => p.x + ',' + p.y).join(' ')}
+                    stroke="#446454"
+                    strokeWidth="1.25"
                     vectorEffect="non-scaling-stroke"
+                    strokeLinejoin="miter"
                   />
-                ))}
-              </svg>
-              <div className={s.start}>
-                <Image
-                  src="/piscine/official-nextera-mark.svg"
-                  alt="NextEra"
-                  width={220}
-                  height={89}
-                  unoptimized
-                />
-                <span>START</span>
-              </div>
-              <ol className={s.mapNodes} aria-label="Published journey steps">
-                {steps.map((step, index) => {
-                  const point = heartPosition(index, steps.length);
-                  return (
-                    <li
-                      key={step.id}
-                      style={{
-                        left: (point.x / HEART_WIDTH) * 100 + '%',
-                        top: (point.y / HEART_HEIGHT) * 100 + '%',
-                      }}
-                      data-side={point.side}
-                      data-kind={step.kind}
-                      data-state={step.state}
-                      data-current={step.current}
-                      data-selected={
-                        selected?.id === step.id && (!preview || interacted || !!initialNode)
-                      }
-                      data-pending={step.pending}
-                    >
-                      <StepAction
-                        step={step}
-                        base={base}
-                        preview={preview}
-                        selected={
+                  {HEART_ARROWS.map((arrow, index) => (
+                    <path
+                      key={index}
+                      d="M-7 -4 0 0-7 4"
+                      transform={`translate(${arrow.x} ${arrow.y}) rotate(${arrow.angle})`}
+                      stroke="#57e6ad"
+                      strokeWidth="1"
+                      vectorEffect="non-scaling-stroke"
+                    />
+                  ))}
+                </svg>
+                <div className={s.start}>
+                  <Image
+                    src="/piscine/official-nextera-mark.svg"
+                    alt="NextEra"
+                    width={220}
+                    height={89}
+                    unoptimized
+                  />
+                  <span>START</span>
+                </div>
+                <ol className={s.mapNodes} aria-label="Published journey steps">
+                  {steps.map((step, index) => {
+                    const point = heartPosition(index, steps.length);
+                    return (
+                      <li
+                        key={step.id}
+                        style={{
+                          left: (point.x / HEART_WIDTH) * 100 + '%',
+                          top: (point.y / HEART_HEIGHT) * 100 + '%',
+                        }}
+                        data-side={point.side}
+                        data-kind={step.kind}
+                        data-state={step.state}
+                        data-current={step.current}
+                        data-selected={
                           selected?.id === step.id && (!preview || interacted || !!initialNode)
                         }
-                        detailId={detailId}
-                        onInspect={() => choose(step)}
+                        data-pending={step.pending}
                       >
-                        <Marker step={step} />
-                        <span className={s.mapLabel} aria-hidden="true">
-                          <strong>
-                            {kindName(step)} {step.ordinal}
-                          </strong>
-                          <span>{step.title}</span>
-                          {!preview && (
-                            <small>
-                              {step.current ? 'Current · ' : ''}
-                              {displayState(step.state)}
-                              {step.pending ? ' · Pending' : ''}
-                            </small>
-                          )}
-                        </span>
-                      </StepAction>
-                    </li>
-                  );
-                })}
-              </ol>
+                        <StepAction
+                          step={step}
+                          base={base}
+                          preview={preview}
+                          selected={
+                            selected?.id === step.id && (!preview || interacted || !!initialNode)
+                          }
+                          detailId={detailId}
+                          onInspect={() => {
+                            ordered.current?.close();
+                            choose(step);
+                          }}
+                        >
+                          <Marker step={step} />
+                          <span className={s.mapLabel} aria-hidden="true">
+                            <strong>
+                              {kindName(step)} {step.ordinal}
+                            </strong>
+                            <span>{step.title}</span>
+                            {!preview && (
+                              <small>
+                                {step.current ? 'Current · ' : ''}
+                                {displayState(step.state)}
+                                {step.pending ? ' · Pending' : ''}
+                              </small>
+                            )}
+                          </span>
+                        </StepAction>
+                      </li>
+                    );
+                  })}
+                </ol>
+              </div>
             </div>
           </div>
           <details
@@ -381,10 +385,23 @@ export function HeartJourney({
               )}
             </aside>
           </details>
-          <details className={s.ordered} open>
-            <summary>
-              Ordered journey <span>{steps.length} published steps</span>
-            </summary>
+          <dialog
+            ref={ordered}
+            id={orderedId}
+            className={`${s.ordered} ${s.orderedDialog}`}
+            aria-labelledby={orderedId + '-title'}
+            onClose={() => orderedTrigger.current?.focus({ preventScroll: true })}
+          >
+            <header>
+              <h2 id={orderedId + '-title'}>Published journey steps</h2>
+              <button
+                type="button"
+                aria-label="Close journey steps"
+                onClick={() => ordered.current?.close()}
+              >
+                <HairlineIcon name="close" size={23} />
+              </button>
+            </header>
             <ol>
               {steps.map((step) => (
                 <li key={step.id}>
@@ -394,7 +411,10 @@ export function HeartJourney({
                     preview={preview}
                     selected={selected?.id === step.id && (!preview || interacted || !!initialNode)}
                     detailId={detailId}
-                    onInspect={() => choose(step)}
+                    onInspect={() => {
+                      ordered.current?.close();
+                      choose(step);
+                    }}
                   >
                     <Marker step={step} />
                     <span>
@@ -415,26 +435,26 @@ export function HeartJourney({
                 </li>
               ))}
             </ol>
-          </details>
-          <footer className={s.footer}>
-            <div className={s.key}>
-              <span>MAP KEY</span>
-              <span>
-                <i className={s.questKey} />
-                Quest
-              </span>
-              <span>
-                <i className={s.checkpointKey} />
-                Checkpoint
-              </span>
-              <span>
-                <svg className={s.projectKey} viewBox="0 0 24 20" fill="none" aria-hidden="true">
-                  <path d="M6 1h12l5 9-5 9H6L1 10Z" />
-                </svg>
-                Project
-              </span>
-            </div>
-          </footer>
+            <footer className={s.footer}>
+              <div className={s.key}>
+                <span>MAP KEY</span>
+                <span>
+                  <i className={s.questKey} />
+                  Quest
+                </span>
+                <span>
+                  <i className={s.checkpointKey} />
+                  Checkpoint
+                </span>
+                <span>
+                  <svg className={s.projectKey} viewBox="0 0 24 20" fill="none" aria-hidden="true">
+                    <path d="M6 1h12l5 9-5 9H6L1 10Z" />
+                  </svg>
+                  Project
+                </span>
+              </div>
+            </footer>
+          </dialog>
         </>
       )}
     </main>
@@ -466,6 +486,7 @@ function StepAction({
       data-step-action
       href={href}
       aria-label={label}
+      title={label}
       aria-current={step.current ? 'step' : undefined}
     >
       {children}

@@ -1,0 +1,573 @@
+{
+  "status": "DESIGN_BASELINE_FROZEN_LOCAL_IMPLEMENTATION_AUTHORIZED",
+  "implementation_authorized": true,
+  "package_goal": "Reviewable design handoff for 27 October 2026 Cairo; not a promise that the pilot is released.",
+  "repository": "/home/anas/nextera-piscine",
+  "head": "07677f4c81e624a23b2415d45b332aeb07bc85a0",
+  "branch": "main",
+  "preserved_dirty_files": [
+    "apps/web/public/ASSETS.md",
+    "apps/web/components/learning/home-next-action.module.css",
+    "apps/web/public/piscine/official-logo.svg",
+    "docs/RELEASE_CANDIDATE_001_REPORT.md"
+  ],
+  "accepted_existing": [
+    "Angular heart Journey geometry and transparent START logo",
+    "Challenge split brief/resources + local-editor raw-file upload + safe history",
+    "Meaningful supplied Hairline terminal response; static touch/reduced-motion fallback",
+    "Server-owned authentication, eligibility, quotas, clocks, verdicts, mastery and unlocks",
+    "Approved shared Raid rules: exactly three; frozen roster; automated PASS then assigned-mentor exact-attempt approval; one shared outcome with separate member receipts"
+  ],
+  "approval_needed": [
+    "No repeated approval needed for delivered Home B, heart Journey, Checkpoint editor, Raid and login/access compositions.",
+    "Exact per-exam pass counts remain deferred until publication; no global pass-three fallback.",
+    "Engineering configuration for Run limits/deadline/cancellation and draft retention/conflicts must be documented conservatively before their implementation. Consequential policy choices need review."
+  ],
+  "home": {
+    "route": "/app",
+    "components": [
+      "apps/web/components/learning/command-center.tsx",
+      "apps/web/components/learning/home-next-action.tsx",
+      "apps/web/components/learning/home.module.css",
+      "apps/web/lib/learning/server.ts"
+    ],
+    "A": "UNSELECTED / historical comparison only; do not implement A.",
+    "B": "APPROVED CURRENT BASELINE / use the shown Home-B-Desktop.png and Home-B-Mobile.png, with existing authorized data. Do not reopen cosmetic changes.",
+    "data": "Sample Hello Go / First Steps in Go / failed receipt are existing fixture examples, not live records or approved full curriculum.",
+    "states": [
+      "available",
+      "queued",
+      "running",
+      "passed",
+      "failed",
+      "compile_error",
+      "runtime_error",
+      "timeout",
+      "system_error",
+      "cancelled",
+      "project_pending",
+      "project_passed",
+      "locked_current",
+      "no_action",
+      "all_mastered",
+      "empty",
+      "no_milestone",
+      "no_history",
+      "unassigned",
+      "preview",
+      "network_failure",
+      "access_removed"
+    ],
+    "rules": [
+      "Only supplied authorized destinations receive action links. Preserve existing feedback/history deep link.",
+      "Never turn a passed receipt into mastery or team completion.",
+      "Omit unavailable optional data rather than fill it with invented metrics.",
+      "Initial-load failure uses the current app error surface; do not add fictional cache behavior.",
+      "The shown mobile dock in selected B is placement of the same single action; never cover content or show it when action is unavailable.",
+      "Information completeness is not claimed. Defer the unspecified extra-information concern; add no invented data."
+    ]
+  },
+  "journey": {
+    "route": "/app/cohorts/[cohortId]",
+    "entry_alias": "/app/roadmap",
+    "components": [
+      "apps/web/components/learning/heart-journey.tsx",
+      "apps/web/components/learning/heart-journey.module.css",
+      "apps/web/lib/learning/heart-map.ts"
+    ],
+    "geometry": "Coordinates read directly from the existing HEART_ROUTE/rawRoute and slot indices. No new silhouette or topology. See geometry-check.json.",
+    "framing": "No page title, introduction, center slogan, description or footer below the map. Retain essential application navigation and accessible map controls.",
+    "fit": "Fit the same aspect-ratio-preserved geometry inside the available viewport after shell/safe-area space. No vertical page scroll is needed to see the whole heart. Do not stretch, rotate, reshape or substitute another map.",
+    "mobile_tradeoff": "PENDING INTERACTION DETAIL: compact node IDs and full titles on selection were not explicitly approved. General acceptance of the shown heart/framing does not approve this behavior. Keep the question separate; do not stall other designs or silently ship that interaction.",
+    "states": [
+      "selected",
+      "current",
+      "available",
+      "mastered",
+      "pending",
+      "locked",
+      "preview_unknown",
+      "empty",
+      "access_removed"
+    ],
+    "rules": [
+      "Keep server row grouping/order and supplied prerequisite/access facts. Lines show reading order, not invented prerequisite edges.",
+      "Retain existing destination behavior, query/Back restoration, current-node semantics and unauthorized-link suppression.",
+      "Keep semantic names, visible focus, 44px target intent and an accessible ordered-step navigator in an on-demand sheet. Do not make tiny labels the only way to navigate.",
+      "Full titles and explanations remain accessible on demand. Preview is not learner progress.",
+      "Nineteen pictured reference nodes are illustrative source order only, not published curriculum. Q11/Q12 content remains pending."
+    ],
+    "approval": "Shown heart and viewport framing accepted. Existing geometry, official START mark, node meaning and navigation remain authoritative."
+  },
+  "checkpoint_followup": {
+    "priority": "INTERNAL EDITOR EXAM DIRECTION APPROVED / FIVE STATIC DESIGNS PROPOSED / NO IMPLEMENTATION",
+    "mapping": [
+      "apps/web/lib/checkpoints/checkpoint.tsx",
+      "apps/web/components/learning/checkpoint-result.tsx",
+      "apps/web/lib/learning/checkpoint-presentation.ts",
+      "apps/web/app/app/cohorts/[cohortId]/checkpoints/[nodeKey]/page.tsx"
+    ],
+    "scope": "The editor is exclusive to Checkpoint exams. Ordinary challenges, quests and Raids continue their accepted external-editor and raw-file-upload flow.",
+    "source_policy": "docs/product/FOUNDATION_006_CHECKPOINT_POLICY.md still specifies exactly four tasks, 90 minutes, pass three of four, three learner-result submissions per task, and unrestricted task navigation. This source was read on 26 October. No repo policy or implementation was changed.",
+    "policy_mismatch": "LATEST PRODUCT DIRECTION: each exam gets its own configured passing count later. The existing fixed-four/pass-three source is historical for that future configuration, but has not been edited. Before actual exam publication freeze its question count and required passed count. Do not extrapolate three-of-four, invent a percentage, or change quota/duration/retakes. No numeric decision is needed to continue design.",
+    "sample_values": "Ten question rows, Question 03, 30:00 remaining, Go comments and demonstration statuses are layout-only samples. The statement/signature/example placeholders deliberately define no exercise or curriculum. No real learner results or ten-question scoring are shown.",
+    "approved_design_direction": [
+      "Internal source editor inside Checkpoint only.",
+      "Free question selection without passing previous questions.",
+      "Configure the passing count separately for each exam later; there is no fixed global four/pass-three rule for the future design.",
+      "Per-question drafts survive question navigation. Autosave to server with truthful Saving/Saved/Save failed states.",
+      "Temporary same-device offline drafts resync only while time and access allow. Saving is not Submit; later edits remain drafts until explicit resubmission.",
+      "Keep global Journey eligibility, authorization, accepted Judge verdicts, quota and deadline rules server-owned.",
+      "APPROVED: Run visible examples only, ungraded, no graded-attempt consumption. Submit is official evaluation; hidden tests remain private.",
+      "APPROVED: Run visible examples only, ungraded, no graded-attempt consumption. Submit is official evaluation; hidden tests remain private."
+    ],
+    "proposed_visual_spec": [
+      "Desktop: persistent question rail, authored-statement pane and internal editor pane. Selected question and its draft/result remain separate.",
+      "Mobile: near-top timer/review controls, wrapping dynamic question choices, Statement/Editor/History tabs and legible editor. Preserve per-question state when changing tabs/questions.",
+      "Question count is data-driven; do not implement ten hardcoded records or a prerequisite chain between questions.",
+      "At 320/390/768/1440 widths allow editor-local horizontal code scrolling, readable statement text and adequate touch targets; no page overflow. Long question lists scroll within their region without hiding the selected item.",
+      "Timer and primary controls remain reachable with virtual keyboard/safe areas; exact sticky behavior requires actual device/browser validation.",
+      "History shows exact accepted source and safe verdicts, independently of a newer draft.",
+      "Review lists each supplied question with its draft state and accepted status; finishing still requires explicit irreversible confirmation."
+    ],
+    "existing_rules_preserved": [
+      "Trusted server time governs deadline and accepted-before-deadline work. Browser time and reconnection do not extend the clock.",
+      "Finish closes new intake immediately after confirmation; unanswered items earn no credit and already accepted work continues evaluating.",
+      "System error remains an infrastructure outcome, not learner failure or a consumed learner-result submission.",
+      "Pending accepted results are not prematurely classified as failure. Mastery/unlock follow the applied server outcome.",
+      "Current authorization is required. Access removal must not reveal protected statement, source or history."
+    ],
+    "engineering_contract_gaps": {
+      "drafts": "Draft preservation/autosave/same-device offline recovery behavior is approved, but no save API or implementation is proven by images. Version model, local retention duration, cross-device conflicts and expiry/access cleanup require a conservative engineering specification.",
+      "source_snapshot": "Existing raw-file intake does not prove a browser-editor submit path. A new adapter must preserve exact evaluated bytes, required-file identity, task/attempt binding and immutable accepted receipt without altering Judge semantics.",
+      "deadline_and_trust": "An editor buffer is not a submission. Server authorization, attempt state, trusted deadline, quota and idempotency must be revalidated atomically at acceptance. No client-reported saved time or result is trusted.",
+      "graded_vs_ungraded": "Run semantics are approved: visible examples only, ungraded, no graded-attempt consumption; Submit official evaluation. Separate resource/rate settings, deadline/access gating, cancellation and immutable run-source/stale-output handling need engineering specification. There is no implemented Run endpoint in the inspected source."
+    },
+    "proposed_safe_defaults_awaiting_decision": [
+      "Key drafts by authenticated learner, immutable checkpoint attempt and question identity. Never reuse a draft across attempts or learners.",
+      "APPROVED behavior: per-question server autosave and truthful Saving/Saved/Save failed states. Proposed implementation: versioned saves with acknowledgement; a save is never grading or a submission receipt.",
+      "APPROVED behavior: temporary same-device offline draft and resync only while exam time/access permit. Conservative engineering proposal: scope by learner/attempt/question, validate current authorization/deadline on reconnect and require an explicit choice on cross-device conflicts; never overwrite a newer draft silently.",
+      "Define a bounded retention duration and expiry/access cleanup before implementation. Do not assume indefinite browser persistence or sync after time/access expires. No queued graded Submit or deadline auto-submission is authorized.",
+      "On session expiry block grading and require sign-in. On access removal hide protected work immediately; local recovery retention/purge is a security decision, not assumed by the screen.",
+      "At explicit graded Submit, capture the exact buffer bytes and original intent until acceptance is known. Uncertain acknowledgement reconciles the same intent; later deliberate revision uses a new intent under the existing allowance.",
+      "Only the accepted immutable snapshot is evaluated. Further editing never changes accepted bytes, stored verdicts or history.",
+      "At deadline or confirmed early finish, close new submissions; do not grade an unsent buffer automatically. Previously accepted work finishes under existing policy.",
+      "APPROVED: Run visible examples only, ungraded, no graded-attempt consumption; Submit official evaluation. Keep output and source association separate from official submission history.",
+      "Visible examples are approved. Specify separate Run rate/resource limits, deadline/access gating, resource isolation, cancellation, stale-response handling and source-snapshot identity before implementation. No hidden-test details or browser execution are implied.",
+      "No AI/code completion, anti-paste, browser lockdown, tab monitoring or proctoring is introduced. The internal editor does not establish cheating prevention."
+    ],
+    "minimal_owner_decisions": [],
+    "acceptance_before_implementation": [
+      "Review actual desktop/mobile composition; these are static images, not functioning editors.",
+      "Configure an explicit question count/pass count per exam before publication; numeric decisions are deferred, not a design blocker.",
+      "Specify retention/conflict/session/access details for the approved autosave behavior and specify remaining Run resource/lifecycle details before implementation.",
+      "Confirm direct selection across every authorized question and restoration of its draft, cursor/scroll and accepted status after switching.",
+      "Test server save acknowledgements, save failure, reload, reconnect, session expiry, access removal, offline edits and cross-device conflict; no silent overwrite or cross-user/attempt leakage.",
+      "Verify official immutable source snapshots, duplicate/uncertain requests, deliberate revision, quota and concurrent submit/deadline races.",
+      "Verify Run pending/result/error/stale-source display separately from official history; no inferred score, pass/mastery or graded-attempt effect.",
+      "Specify and test Run cancellation/resource/rate/deadline rules; never leak hidden-test data.",
+      "Verify finish confirmation, unsent buffer treatment, accepted late result, evaluating and infrastructure-blocked finalization.",
+      "Verify keyboard editor escape/focus behavior, labeled region/tab navigation, screen-reader status, virtual keyboard, zoom, long code and reduced motion.",
+      "Do not mistake static artifact QA for source tests or real authenticated execution."
+    ],
+    "superseded_images": [
+      "Checkpoint-Active-Desktop.png",
+      "Checkpoint-Active-Mobile.png",
+      "Checkpoint-Finish-Confirmation.png",
+      "Checkpoint-State-Contract.png",
+      "Checkpoint-Result-States.png"
+    ],
+    "superseded_reason": "Upload-based Checkpoint composition and fixed-four result examples are historical only. Preserve their source bytes; do not use them as the implementation baseline for the editor exam.",
+    "run_design": {
+      "presence": "APPROVED",
+      "interpretation": "APPROVED visible-example-only, ungraded execution; no graded-attempt consumption. Submit official evaluation.",
+      "ui": [
+        "Run and Submit are separate actions; Run output is outside official submission history.",
+        "Represent idle, pending, bounded output, execution error and infrastructure failure distinctly.",
+        "Proposed: show the source/version associated with a run and mark output stale after edits; never apply old output to a newer buffer.",
+        "Run again is conditional on the eventual approved rules; pending feedback never invents percentages or a completion time."
+      ],
+      "unresolved": [
+        "separate numeric resource and rate limits",
+        "deadline/access gating",
+        "resource isolation",
+        "cancellation",
+        "immutable run source identity and stale output"
+      ],
+      "no_inferred_effect": ["official pass", "mastery", "score", "graded attempt consumption"]
+    },
+    "publication_gate": "Before publishing each real exam, configure and freeze its questions and passing count, validate the count against that definition and implement trusted aggregation. No missing threshold defaults or global pass-three fallback.",
+    "draft_engineering_recommendations": [
+      "Use optimistic version checks on learner/attempt/question-scoped server drafts. Reject stale writes; retain both versions for an explicit recovery choice rather than silently overwriting newer work.",
+      "Temporarily scope offline recovery to the same authenticated learner, exam attempt and question. Do not put credentials in browser storage. Proposed conservative expiry: stop recovery sync at the trusted attempt deadline or access removal, and clear protected local recovery on logout/access removal. Exact retention/purge timing must be documented and tested; this recommendation is not a newly awarded exam entitlement.",
+      "Session expiry blocks grading and sync until the same identity is reauthorized within the exam window. Never auto-submit saved/offline code at deadline.",
+      "Keep draft persistence, official Submit snapshot and visible-example Run snapshot separate. Associate output with the exact source version; mark it stale after edits."
+    ],
+    "existing_api_mapping": [
+      {
+        "route": "/api/checkpoints",
+        "methods": "GET read; POST start/finish/replacement",
+        "file": "apps/web/app/api/checkpoints/route.ts",
+        "status": "EXISTING / server authorization and trusted attempt state"
+      },
+      {
+        "route": "/api/checkpoints/submissions",
+        "methods": "POST raw source bytes and required filename",
+        "file": "apps/web/app/api/checkpoints/submissions/route.ts",
+        "status": "EXISTING / candidate adapter for exact editor snapshot; editor binding is NOT verified"
+      },
+      {
+        "route": null,
+        "methods": "draft save/recovery and visible-example Run",
+        "file": null,
+        "status": "NEW CONTRACT/IMPLEMENTATION REQUIRED / no new endpoint names invented"
+      }
+    ]
+  },
+  "validation_after_approval": [
+    "Desktop 1440x900 and 1440x1000; tablet 768x1024; mobile 390x844 and 320x812.",
+    "Journey whole outline, START and every node visible without page scrolling; text not clipped; uniform resize/orientation scaling.",
+    "Selected-node overlay never traps or loses focus; Escape/back returns correctly; locked items have explanation without unauthorized href.",
+    "Keyboard focus and visible focus ring; accessible ordered-step alternative; touch and reduced-motion behavior.",
+    "Home long titles, missing data, no action and all result/access/error states; single primary CTA has an adequate target.",
+    "Preserve server-owned semantics; run relevant source checks plus actual browser verification. A static PNG is not implementation QA."
+  ],
+  "source_status": {
+    "last_saved_checks": "278 tests / 33 files plus typecheck, lint, format, production build and static preflight passed at 07677f4. Not rerun during design work.",
+    "fixture_evidence": "Home 271 saved assertions; Checkpoint 106; Raid 65 plus 3 keyboard checks. These are dated component fixtures, not live learner data.",
+    "real_evidence": "25 October isolated sign-in + wrong/correct raw upload + Runner + durable mastery/unlock passed before the new Home. Test access was disabled. No current Home/checkpoint/Raid full authenticated rehearsal.",
+    "raid_readiness": "Co-resident managed Auth/Storage and policies must be verified. No service start, migration or new access is authorized by this package.",
+    "content": "Published source is one development quest/two challenges; catalog remains CANDIDATE with six missing pack references. Q11/Q12 definitions are not approved."
+  },
+  "superseded": "docs/design/PISCINE_DESIGN_FREEZE_V1_HANDOFF.md is historical: its navy/Roadmap-V4/no-map instructions conflict with later heart/neutral-emerald approvals. Do not use it as the current visual authority. This handoff states the conflict without editing that repo file. The later 26 October Checkpoint-only editor direction supersedes the earlier no-IDE restriction only for exams, not ordinary Challenge/Quest/Raid upload workflows. The fixed-four grading policy is not automatically rewritten.",
+  "handoff_execution": "Local application implementation is now explicitly authorized in small tested slices and commits, starting original Home B and accepted full-heart Journey. This frozen package is an input, not proof of implemented editor/Run/autosave or a production-ready pilot. Restricted runtime/access/publication actions remain gated.",
+  "provenance": "Official logos unchanged; existing Hairline rest geometry from hairline-icons.generated.json. Poppins fonts reused under included OFL. SVGs are design-native editable image sources, not application code.",
+  "library_delivery": "All existing and new PNGs are confirmed in Library. Exact image IDs are in LIBRARY-DELIVERY.json. These HTML/JSON/ZIP artifacts replace their existing Library identities; no duplicate package is intended.",
+  "approval_log": [
+    {
+      "date": "2026-10-26",
+      "decision": "Home B is the approved CURRENT BASELINE; Home A is unselected and retained only for comparison."
+    },
+    {
+      "date": "2026-10-26",
+      "decision": "The shown Journey heart and framing are accepted. Keep them as shown; do not reopen cosmetic tweaks."
+    },
+    {
+      "date": "2026-10-26",
+      "decision": "The concern that Home may lack information is deferred. No additions were selected; do not invent them or claim information completeness."
+    },
+    {
+      "date": "2026-10-26",
+      "decision": "Compact mobile node IDs and full-title-on-selection behavior were not explicitly approved. They remain a separate interaction detail, without blocking other screen drafts."
+    },
+    {
+      "date": "2026-10-26",
+      "decision": "Continue the remaining DESIGNS. This does not authorize application implementation, services, access, database changes or deployment."
+    },
+    {
+      "date": "2026-10-26",
+      "key": "checkpoint_editor_20261026",
+      "decision": "Anas selected an internal code editor for Checkpoint exams only, with unrestricted question selection. Around ten questions is an example, not a fixed count or a revised pass formula. Quests and Raids retain external editor plus file upload. The new screen compositions and engineering defaults still require review."
+    },
+    {
+      "date": "2026-10-26",
+      "key": "checkpoint_run_threshold_20261026",
+      "decision": "Anas requested Run alongside Submit and deferred the numeric passing threshold to each individual exam. Run presence is approved; its visible-example/ungraded interpretation and execution policies are not approved by this answer."
+    },
+    {
+      "date": "2026-10-26",
+      "key": "checkpoint_autosave_20261026",
+      "decision": "Anas approved per-question draft preservation, server autosave with Saving/Saved/Save failed states, temporary same-device offline draft and resync only while time/access allow. Saving is separate from an immutable graded Submit snapshot; later edits remain drafts until resubmitted. Retention duration and cross-device conflict resolution remain engineering details."
+    },
+    {
+      "date": "2026-10-26",
+      "key": "run_semantics_approved",
+      "decision": "APPROVED: Run checks visible examples only, is ungraded and consumes no graded submission attempt. Submit performs official evaluation. Run still needs separate resource limits; exact numeric limits, deadline/cancellation and source association remain engineering work."
+    },
+    {
+      "date": "2026-10-26",
+      "key": "implementation_start_approved",
+      "decision": "Anas approved the delivered remaining visual compositions and explicitly authorized local implementation, starting original Home B and accepted full-heart Journey. Quixel comparison is not a replacement approval. No push/deploy, service bootstrap, retained DB mutation or new access provisioning."
+    }
+  ],
+  "approval_evidence": "Trusted parent transcripts: Anas approved Run visible examples/ungraded/no graded-attempt consumption in response to the explicit recommendation; then approved delivered remaining visuals and said everything is good, lets handoff to Codex to start work.",
+  "deferred_concerns": [
+    "Additional Home information: deferred by Anas; no new fields, metrics, cards or feeds selected."
+  ],
+  "next_implementation_slice": {
+    "status": "PREPARED_SPEC_ONLY_NOT_STARTED",
+    "requires_separate_execution_authorization": true,
+    "scope": [
+      "Apply the approved shown Home B presentation using current authorized next-action, safe latest-feedback/history, location and optional supplied milestone contracts.",
+      "Apply accepted Journey framing and desktop available-viewport fit without changing the existing heart coordinates, source grouping/order, states, routes, Back/query behavior or official logo.",
+      "Keep unapproved mobile compact-ID/full-title-selection changes out of this first slice until explicitly resolved."
+    ],
+    "candidate_files": [
+      "apps/web/components/learning/command-center.tsx",
+      "apps/web/components/learning/home-next-action.tsx",
+      "apps/web/components/learning/home.module.css",
+      "apps/web/components/learning/heart-journey.tsx",
+      "apps/web/components/learning/heart-journey.module.css"
+    ],
+    "preserve": [
+      "Do not alter auth/Judge/progression/schema/catalog semantics or add fields/metrics.",
+      "Do not change heart-map.ts coordinates/order or fabricate the nineteen illustrative reference records.",
+      "Preserve the four original dirty files; the untracked home-next-action.module.css is not permission to overwrite or stage it.",
+      "Keep Challenge/Hairline and existing endpoint behavior intact.",
+      "No fresh credentials, migration application, service setup, live rehearsal, push or deployment is authorized by this artifact."
+    ],
+    "acceptance": [
+      "Home B hierarchy and mobile order/dock match the selected references; one conditional primary action, readable safe feedback and existing history destination.",
+      "Exercise missing data, pending, passed receipt, project review, cancelled, locked/no-action, all-mastered, access and infrastructure cases without invented success.",
+      "Journey desktop outline, START and all real supplied nodes fit without page scrolling; no unnecessary page heading/copy/footer; no clipped titles or distorted geometry.",
+      "Retain accessible names, keyboard focus, ordered navigation, authorized/locked distinctions and Back/query restoration.",
+      "Review 1440/768/390/320 behavior; mobile interaction detail remains explicitly pending.",
+      "Run appropriate source checks and actual component-browser review when later authorized. Static image QA is not authenticated product QA."
+    ]
+  },
+  "trusted_transcript_evidence": [
+    "Trusted 26 October parent-supplied transcript: Anas selected Home B, accepted the shown heart Journey, deferred extra Home information and requested continuing remaining designs.",
+    "Anas requested an internal editor in Checkpoint only with unrestricted question selection.",
+    "Latest trusted answer: the passing count will be decided separately for each exam later, and add Run. This approves Run presence, not its test/grading/resource semantics.",
+    "Subsequent trusted answer approves per-question drafts, server autosave Saving/Saved/Save failed, temporary same-device offline recovery/resync while time/access allow, saving separate from immutable Submit. It does not answer the Run semantics proposal.",
+    "Latest trusted Run answer ok nice approves the explicit visible-example-only/ungraded/no graded-attempt-consumption recommendation.",
+    "Latest trusted implementation instruction: everything is good lets handoff to codex to start work. The local implementation scope and restrictions are recorded above."
+  ],
+  "new_design_slices": {
+    "checkpoint": {
+      "status": "VISUALS_AND_CORE_BEHAVIOR_APPROVED / ENGINEERING_GAPS_RECORDED / NOT_IMPLEMENTED",
+      "images": [
+        "Checkpoint-Editor-Desktop.png",
+        "Checkpoint-Editor-Mobile.png",
+        "Checkpoint-Editor-Overview.png",
+        "Checkpoint-Editor-Finish.png",
+        "Checkpoint-Editor-State-Contract.png"
+      ],
+      "superseded_images": [
+        "Checkpoint-Active-Desktop.png",
+        "Checkpoint-Active-Mobile.png",
+        "Checkpoint-Finish-Confirmation.png",
+        "Checkpoint-State-Contract.png",
+        "Checkpoint-Result-States.png"
+      ],
+      "routes": [
+        "/app/cohorts/[cohortId]/checkpoints/[nodeKey]",
+        "/app/cohorts/[cohortId]/checkpoints/[nodeKey]/result"
+      ],
+      "components": [
+        "apps/web/lib/checkpoints/checkpoint.tsx",
+        "apps/web/components/learning/checkpoint-result.tsx",
+        "apps/web/lib/learning/checkpoint-presentation.ts",
+        "apps/web/app/app/cohorts/[cohortId]/checkpoints/[nodeKey]/page.tsx"
+      ],
+      "new_editor_api_status": "PROPOSED / NOT IMPLEMENTED / existing upload APIs are not evidence of editor draft or submit support"
+    },
+    "raid": {
+      "status": "DELIVERED_VISUALS_APPROVED / IMPLEMENTATION_AUTHORIZED_WITH_RESTRICTIONS",
+      "images": [
+        "Raid-Learner-Desktop.png",
+        "Raid-Learner-Mobile.png",
+        "Raid-Mentor-Review.png",
+        "Raid-Owner-Assignment.png",
+        "Raid-State-Contract.png"
+      ],
+      "routes": ["/app/cohorts/[cohortId]/challenges/[nodeKey]", "/operator/raids"],
+      "components": [
+        "apps/web/lib/raids/panel.tsx",
+        "apps/web/lib/raids/assignment.tsx",
+        "apps/web/lib/raids/raid.module.css",
+        "apps/web/app/operator/raids/page.tsx"
+      ],
+      "existing_endpoints": ["/api/raids", "/api/raids/artifact"],
+      "rules": [
+        "Learner view separates automated PASS from pending mentor review and shared completion.",
+        "Only the assigned active mentor reviews/downloads the exact accepted immutable file. No browser source execution.",
+        "Owner assignment uses the existing cohort/project/mentor/member ID fields and exactly three members. No new people-search endpoint, account creation or role grant is implied.",
+        "Revision creates a fresh attempt requiring fresh tests/review; old file and frozen team remain auditable.",
+        "Deactivation creates an owner hold. No automatic award, exclusion, override or hold-resolution policy.",
+        "Shared completion has distinct per-member receipts; future unlocks still respect personal prerequisites.",
+        "Readiness/configuration failure keeps intake/review/download unavailable. A picture does not prove live Storage integration."
+      ],
+      "states": [
+        "no_assignment",
+        "checks_pending",
+        "checks_failed",
+        "mentor_pending",
+        "changes_requested",
+        "owner_hold",
+        "shared_completion",
+        "new_revision",
+        "access_removed",
+        "configuration_unavailable"
+      ]
+    },
+    "login_access": {
+      "status": "DELIVERED_VISUALS_APPROVED / IMPLEMENTATION_AUTHORIZED_WITH_RESTRICTIONS",
+      "images": ["Login-Desktop.png", "Login-Mobile.png", "Access-and-Recovery-States.png"],
+      "routes": ["/login", "/access-denied", "/app"],
+      "components": [
+        "apps/web/app/login/page.tsx",
+        "apps/web/app/login/actions.ts",
+        "apps/web/app/access-denied/page.tsx",
+        "apps/web/app/app/error.tsx"
+      ],
+      "rules": [
+        "Provisioned email/password sign-in only. No new signup, reset, social login or remember-me feature.",
+        "Keep existing generic credential/logout errors and native username/current-password autocomplete.",
+        "Do not disclose whether an account exists, invent enrollment, or reveal protected work during denial.",
+        "No-cohort, role/membership denial and service outage remain distinct. Contact guidance sends no message.",
+        "Responsive form remains usable with keyboard/zoom; existing Auth and redirect semantics stay authoritative."
+      ]
+    }
+  },
+  "remaining_visual_review": [
+    "Delivered Home B, heart Journey, editor, Raid and login/access visuals are approved. Do not reopen the accepted composition or substitute Quixel.",
+    "Entry/retake/full final-result and Quest/Evidence are mapped existing surfaces, not newly redesigned or falsely claimed complete. Preserve behavior and review actual component states during implementation."
+  ],
+  "execution_boundaries": {
+    "allowed": "Small tested local source changes, migration drafts and logical local commits. Start original Home B and full-heart Journey; then approved Checkpoint and Raid/access.",
+    "not_authorized": [
+      "push",
+      "deployment",
+      "service bootstrap",
+      "retained database mutation",
+      "credential/account/token/role creation",
+      "production migrations",
+      "catalog approval/publication",
+      "real learner awards"
+    ],
+    "first_slice": "Home B and accepted heart viewport framing; preserve server-owned data/actions and unrelated dirty files.",
+    "execution_record": "Repository commits and implementation ledger record actual progress. This package is the frozen input at HEAD 07677f4, not a claim every approved feature is implemented."
+  },
+  "flow_route_mapping": [
+    {
+      "surface": "Home",
+      "route": "/app",
+      "files": [
+        "apps/web/app/app/page.tsx",
+        "apps/web/components/learning/command-center.tsx",
+        "apps/web/components/learning/home-next-action.tsx"
+      ],
+      "contract": "Existing authorized next action, safe feedback/history, location and optional milestone. Original Home B approved."
+    },
+    {
+      "surface": "Journey / Quest detail",
+      "route": "/app/cohorts/[cohortId] and ?quest=[moduleKey] (existing node/kind/layout/mapQuest queries)",
+      "files": [
+        "apps/web/app/app/cohorts/[cohortId]/page.tsx",
+        "apps/web/components/learning/roadmap.tsx",
+        "apps/web/components/learning/heart-journey.tsx"
+      ],
+      "contract": "Quest detail is an existing query view, not a separate invented /quests endpoint. Preserve Back/query, server grouping/order, eligibility and supplied destinations."
+    },
+    {
+      "surface": "Challenge / Raid learner",
+      "route": "/app/cohorts/[cohortId]/challenges/[nodeKey]",
+      "files": [
+        "apps/web/app/app/cohorts/[cohortId]/challenges/[nodeKey]/page.tsx",
+        "apps/web/components/learning/challenge.tsx",
+        "apps/web/lib/raids/panel.tsx"
+      ],
+      "contract": "Keep external editor/raw-file workflow. Existing /api/submissions POST and /api/submissions/history GET; Raid /api/raids GET/POST and /api/raids/artifact GET. No new auth/award policy."
+    },
+    {
+      "surface": "Checkpoint / final result",
+      "route": "/app/cohorts/[cohortId]/checkpoints/[nodeKey] and /result",
+      "files": [
+        "apps/web/app/app/cohorts/[cohortId]/checkpoints/[nodeKey]/page.tsx",
+        "apps/web/app/app/cohorts/[cohortId]/checkpoints/[nodeKey]/result/page.tsx",
+        "apps/web/lib/checkpoints/checkpoint.tsx",
+        "apps/web/components/learning/checkpoint-result.tsx"
+      ],
+      "contract": "Internal editor is the new approved target, not current backend proof. Existing source still enforces fixed-four policy until an authorized later migration/source change. Do not silently apply per-exam policy in a browser."
+    },
+    {
+      "surface": "Evidence",
+      "route": "/app/evidence alias and /app/cohorts/[cohortId]/evidence?filter=[filter]",
+      "files": [
+        "apps/web/app/app/evidence/page.tsx",
+        "apps/web/app/app/cohorts/[cohortId]/evidence/page.tsx",
+        "apps/web/components/learning/evidence.tsx",
+        "apps/web/lib/learning/evidence.ts"
+      ],
+      "contract": "Learner-authorized stored receipts/outcomes only. Preserve current coverage limits, filters and safe result destinations. No unbounded history or invented metrics."
+    },
+    {
+      "surface": "Raid owner/mentor",
+      "route": "/operator/raids",
+      "files": ["apps/web/app/operator/raids/page.tsx", "apps/web/lib/raids/assignment.tsx"],
+      "contract": "Existing authority and immutable shared attempt/member receipts. Live co-resident Storage/DB rehearsal remains unverified."
+    },
+    {
+      "surface": "Login / access / errors",
+      "route": "/login; /access-denied; existing app error/loading boundaries",
+      "files": [
+        "apps/web/app/login/page.tsx",
+        "apps/web/app/login/actions.ts",
+        "apps/web/app/access-denied/page.tsx",
+        "apps/web/app/app/error.tsx",
+        "apps/web/components/learning/loading.tsx"
+      ],
+      "contract": "Existing provisioned authentication and protected content boundaries. No new signup/reset/accounts."
+    }
+  ],
+  "screen_state_coverage": [
+    {
+      "surface": "Home B / Journey",
+      "coverage": "Approved desktop/mobile images and Home state contract. Journey geometry preserved.",
+      "remaining": "Implement responsive fit with existing selected-node details, focus and ordered navigation; no new catalog edges."
+    },
+    {
+      "surface": "Checkpoint active editor",
+      "coverage": "Five approved desktop/mobile/overview/finish/state artboards. Run output separate from official history; drafts separate from Submit.",
+      "remaining": "Draft/Run APIs and per-exam config are not implemented. Resource, retention/conflict and deadline/cancellation details require engineering specification."
+    },
+    {
+      "surface": "Checkpoint entry / retake / final result",
+      "coverage": "Existing source components and policy states. New state sheet names evaluating/passed/failed/infrastructure-blocked; legacy fixed-four result PNG is explicitly superseded.",
+      "remaining": "No new full entry/retake/final-result artboard is claimed. Preserve existing authorized states and review actual rendering when adapting dynamic count/threshold; report any needed visual decision instead of inventing a score or retake rule."
+    },
+    {
+      "surface": "Raid / login / access",
+      "coverage": "Delivered learner desktop/mobile, mentor/owner/lifecycle and login/access images approved.",
+      "remaining": "Safe source implementation and fixture checks; live Storage/access setup remains separately gated."
+    },
+    {
+      "surface": "Quest / Challenge / Evidence",
+      "coverage": "Existing implementation with verified route/component mapping. Challenge/Hairline is accepted.",
+      "remaining": "No new Quest/Evidence redesign supplied or required by this freeze. Preserve current behavior and check the connected rendered flow after Home/Journey; request a bounded visual change only for a concrete gap."
+    }
+  ],
+  "implementation_sequence": [
+    {
+      "slice": 1,
+      "work": "Original approved Home B and full-heart Journey viewport/no outer copy",
+      "preserve": "All authoritative titles/states/destinations and current query/Back/access behavior; preserve unrelated four dirty files.",
+      "validation": "Focused state/navigation tests, type/lint/format/build; actual responsive component inspection where allowed. No services/bootstrap or credentials."
+    },
+    {
+      "slice": 2,
+      "work": "Checkpoint policy/configuration, draft/Run engineering contracts and pure regression tests",
+      "preserve": "Per-exam count/pass threshold must be explicit before publication, existing timing/quota/retake/access invariants.",
+      "validation": "Versioned conflicts, exact source snapshots, concurrency, deadline races, no hidden-test leak, no Run graded-attempt consumption. Draft migrations only; do not apply retained DB changes."
+    },
+    {
+      "slice": 3,
+      "work": "Checkpoint internal editor, free question navigation, truthful autosave/recovery, Run and Submit bindings",
+      "preserve": "No AI completion/proctoring; no offline/deadline auto-submit; immutable official snapshots; no silent draft overwrite.",
+      "validation": "Component fixtures, keyboard/viewport/reload/offline/error states. Live DB/Runner/storage claims require separately approved environment actions."
+    },
+    {
+      "slice": 4,
+      "work": "Approved Raid and login/access presentation; connected Quest/Challenge/Evidence polish only for concrete gaps",
+      "preserve": "Existing auth, team/reviewer authority, shared completion semantics and external editor for quests/Raids.",
+      "validation": "Existing component/source regressions; no new access provisioning or catalog publication."
+    },
+    {
+      "slice": 5,
+      "work": "Authorized isolated integration rehearsal and demo readiness",
+      "preserve": "This step is a future approval gate, not current permission to start services, apply DB changes, create access or deploy.",
+      "validation": "Explicit supported fixture isolation, cleanup and honest live/fixture evidence; production content/deployment gates remain separate."
+    }
+  ]
+}

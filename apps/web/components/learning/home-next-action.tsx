@@ -1,7 +1,6 @@
 import Link from 'next/link';
 import type { LearningOverview } from '../../lib/learning/types';
 import { displayState } from '../../lib/learning/display';
-import { EditorHairline } from './editor-hairline';
 import { HairlineIcon } from './hairline-icon';
 import s from './home.module.css';
 
@@ -24,7 +23,7 @@ export function HomeNextAction({
   return (
     <section className={s.next} aria-labelledby="home-next-title" data-home-next>
       <div className={s.nextTop}>
-        <p className={s.eyebrow}>Your next step</p>
+        <p className={s.eyebrow}>{action ? `Current ${action.kind}` : 'Your next step'}</p>
         <span className={s.state} data-state={action?.state ?? undefined}>
           {action
             ? displayState(action.state)
@@ -49,16 +48,23 @@ export function HomeNextAction({
               : !action
                 ? 'No work is ready to open right now. Review your recorded progress and access requirements in Journey.'
                 : (view.currentDescription ??
-                  'Read the brief, build in your own editor and terminal, then upload your source file from the challenge.')}
+                  (action.kind === 'checkpoint'
+                    ? 'Review the checkpoint requirements and attempt status before starting.'
+                    : 'Read the brief, build in your own editor and terminal, then upload your source file from the challenge.'))}
           </p>
         </div>
-        {action && (
-          <div className={s.terminal}>
-            <EditorHairline />
-          </div>
-        )}
       </div>
-      <div className={s.nextActions}>
+      <p className={s.editorNote}>
+        <HairlineIcon name={action?.kind === 'checkpoint' ? 'gate' : 'code'} size={28} />
+        <span>
+          {action
+            ? action.kind === 'checkpoint'
+              ? 'Review the checkpoint requirements before starting.'
+              : 'Work in your own editor and terminal.'
+            : `${name.trim().split(/\s+/)[0] || name}, your recorded work stays in Journey.`}
+        </span>
+      </p>
+      <div className={s.nextActions} data-actionable={!!action}>
         <Link
           className={s.primary}
           href={action?.href ?? '/app/cohorts/' + encodeURIComponent(cohort.id)}
@@ -68,11 +74,6 @@ export function HomeNextAction({
           </span>
           <HairlineIcon name="arrow" size={25} />
         </Link>
-        <p className={s.editorNote}>
-          {action
-            ? 'Work in your own editor and terminal.'
-            : `${name.trim().split(/\s+/)[0] || name}, your recorded work stays in Journey.`}
-        </p>
       </div>
     </section>
   );

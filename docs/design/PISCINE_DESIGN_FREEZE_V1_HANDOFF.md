@@ -1,5 +1,7 @@
 # NextEra Piscine — Design Freeze v1 / Production Handoff
 
+> Historical visual direction — superseded by the approved 26 October 2026 Home B, full-heart Journey and Checkpoint editor handoff. See [the current implementation report](../../digital-product/frontend/HOME_B_JOURNEY_001.md) and its frozen decision snapshot. The navy/Roadmap V4 and upload-only Checkpoint directions below are retained as history, not current implementation instructions. Existing server/security contracts remain authoritative.
+
 Status
 Design Freeze Candidate: V5
 Core flow: Command Center → Roadmap → Challenge → Checkpoint → Result → Evidence

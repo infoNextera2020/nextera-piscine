@@ -1,0 +1,38 @@
+@font-face {
+  font-family: 'Piscine Poppins';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url('/fonts/poppins/Poppins-Regular.ttf') format('truetype');
+}
+@font-face {
+  font-family: 'Piscine Poppins';
+  font-style: normal;
+  font-weight: 500;
+  font-display: swap;
+  src: url('/fonts/poppins/Poppins-Medium.ttf') format('truetype');
+}
+@font-face {
+  font-family: 'Piscine Poppins';
+  font-style: normal;
+  font-weight: 600;
+  font-display: swap;
+  src: url('/fonts/poppins/Poppins-SemiBold.ttf') format('truetype');
+}
+:root {
+  --workspace-neutral-950: #090d0b;
+  --workspace-neutral-900: #101612;
+  --workspace-neutral-700: #2a3730;
+  --workspace-neutral-400: #9baaa1;
+  --workspace-neutral-50: #edf3ef;
+  --workspace-emerald-300: #59e6ad;
+  --workspace-bg: var(--workspace-neutral-950);
+  --workspace-panel: var(--workspace-neutral-900);
+  --workspace-border: var(--workspace-neutral-700);
+  --workspace-muted: var(--workspace-neutral-400);
+  --workspace-text: var(--workspace-neutral-50);
+  --workspace-accent: var(--workspace-emerald-300);
+  --workspace-ink: var(--workspace-neutral-950);
+  --workspace-warning: #e0cc8d;
+  --workspace-font: 'Piscine Poppins', Arial, Helvetica, sans-serif;
+}

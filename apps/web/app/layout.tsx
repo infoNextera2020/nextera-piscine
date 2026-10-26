@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 import type { ReactNode } from 'react';
 import '../styles/globals.css';
+import '../styles/workspace-tokens.css';
 
 export const metadata: Metadata = {
   title: 'NextEra Piscine',
