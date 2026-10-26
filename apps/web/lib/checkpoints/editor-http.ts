@@ -90,6 +90,11 @@ export type VisibleRunRecord = Readonly<{
 export interface CheckpointRunBackend {
   context(actor: EditorActor, task: EditorTaskIdentity): Promise<RunServerContext>;
   read(actor: EditorActor, scope: EditorScope, runId: string): Promise<VisibleRunRecord | null>;
+  readByRequest?(
+    actor: EditorActor,
+    scope: EditorScope,
+    requestId: string,
+  ): Promise<VisibleRunRecord | null>;
   accept(
     input: EditorSourceWrite & {
       filename: string;
@@ -373,15 +378,26 @@ export function createCheckpointRunHandlers(
       try {
         const who = await actor(deps),
           task = taskIdentity(request, false),
-          runId = new URL(request.url).searchParams.get('run')?.toLowerCase() ?? null;
-        if (!task || !runId || !isRequestId(runId)) return json({ error: 'INVALID_REQUEST' }, 400);
+          runId = new URL(request.url).searchParams.get('run')?.toLowerCase() ?? null,
+          requestId = new URL(request.url).searchParams.get('request')?.toLowerCase() ?? null;
+        if (
+          !task ||
+          !!runId === !!requestId ||
+          (runId !== null && !isRequestId(runId)) ||
+          (requestId !== null && !isRequestId(requestId))
+        )
+          return json({ error: 'INVALID_REQUEST' }, 400);
         if (!deps.backend) throw new EditorApiError('UNAVAILABLE');
         const context = await deps.backend.context(who, task);
         checkContext(context, who, task);
         checkRunContext(context);
-        const record = await deps.backend.read(who, context.scope, runId);
+        if (requestId && !deps.backend.readByRequest) throw new EditorApiError('UNAVAILABLE');
+        const record = requestId
+          ? await deps.backend.readByRequest!(who, context.scope, requestId)
+          : await deps.backend.read(who, context.scope, runId!);
         if (!record) return json({ error: 'RUN_NOT_FOUND' }, 404);
-        if (record.id !== runId) throw new EditorApiError('UNAVAILABLE');
+        if ((runId && record.id !== runId) || (requestId && record.requestId !== requestId))
+          throw new EditorApiError('UNAVAILABLE');
         return json(publicRun(record, context));
       } catch (error) {
         return failure(error);

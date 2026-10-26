@@ -1,3 +1,5 @@
+> Later source update: [CHECKPOINT_VISIBLE_RUN_001.md](CHECKPOINT_VISIBLE_RUN_001.md) adds the prepared visible manifest/policy/reservation/executor contracts and original-request lookup. Production adapters remain disabled. The descriptions and counts below record the original HTTP milestone.
+
 # Checkpoint editor HTTP boundary — slice 001
 
 Status: source-only API plumbing with injectable backend contracts and pure HTTP tests. **Production draft persistence and visible-example execution are not implemented/enabled.** `editor-backends.ts` deliberately supplies null adapters; valid authenticated calls return private, non-cacheable 503 `EDITOR_CAPABILITY_UNAVAILABLE`. There is no memory store, environment-flag enablement, fake save receipt, fake Run result or fallback to graded evaluation.
