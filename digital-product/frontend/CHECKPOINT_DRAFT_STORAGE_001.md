@@ -1,6 +1,8 @@
+> Verification update: the separately approved disposable PostgreSQL rehearsal subsequently passed all 13 real database cases and cleanup verification. See [CHECKPOINT_DRAFT_SQL_001.md](CHECKPOINT_DRAFT_SQL_001.md). The draft is still unregistered/unapplied to retained databases; production adapters remain disabled. The source-only statements below describe the original `59e1660` milestone.
+
 # Versioned Checkpoint draft storage — source slice 001
 
-Status: prepared PostgreSQL repository/adapter, injected tests and **unapplied migration draft**. The production adapters in `editor-backends.ts` remain null. No database connection, DDL, data/role/credential change, service startup, persistence rehearsal or real learner operation was performed.
+Status at source commit `59e1660`: prepared PostgreSQL repository/adapter, injected tests and **unapplied migration draft**. The production adapters in `editor-backends.ts` remain null. No database connection, DDL, data/role/credential change, service startup, persistence rehearsal or real learner operation was performed.
 
 ## Deliverables
 
