@@ -13,6 +13,7 @@ export default defineConfig({
       'scripts/raid/*.test.ts',
       'apps/web/app/api/health/route.test.ts',
       'apps/web/lib/submissions/*.test.ts',
+      'apps/web/lib/checkpoints/*.test.ts',
       'apps/web/lib/learning/*.test.ts',
       'apps/web/lib/raids/*.test.ts',
     ],
