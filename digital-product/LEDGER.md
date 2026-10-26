@@ -28,3 +28,10 @@
 - Production adapters remain unavailable; no fake save/Run success and no fallback to official grading.
 - No migration, retained database, credential, Judge or catalog changes; current manual preview untouched.
 - See [API boundary and remaining backend gates](frontend/CHECKPOINT_EDITOR_API_001.md). Injected-port HTTP tests are not live integration.
+
+## Versioned Checkpoint draft storage — source slice 001
+
+- Prepared strict repository/RPC projection and a PostgreSQL adapter factory; production remains disabled.
+- Added an unregistered migration DRAFT with immutable byte receipts, scoped CAS/idempotency and explicit disabled policy configuration.
+- No PostgreSQL connection or SQL execution; injected tests and SQL source guard checks are not real race/ACL/cleanup verification.
+- See [storage draft, policy proposals and smallest isolated verification gate](frontend/CHECKPOINT_DRAFT_STORAGE_001.md).

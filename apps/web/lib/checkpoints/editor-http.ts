@@ -20,7 +20,13 @@ const taskPattern = /^[a-z0-9-]{1,100}$/;
 
 export class EditorApiError extends Error {
   constructor(
-    readonly code: 'FORBIDDEN' | 'CLOSED' | 'IDEMPOTENCY_CONFLICT' | 'RATE_LIMITED' | 'UNAVAILABLE',
+    readonly code:
+      | 'FORBIDDEN'
+      | 'CLOSED'
+      | 'DEFINITION_MISMATCH'
+      | 'IDEMPOTENCY_CONFLICT'
+      | 'RATE_LIMITED'
+      | 'UNAVAILABLE',
     readonly retryAfterSeconds?: number,
   ) {
     super(code);
@@ -105,6 +111,7 @@ function failure(error: unknown) {
     );
   if (error instanceof EditorApiError) {
     if (error.code === 'FORBIDDEN') return json({ error: 'FORBIDDEN' }, 403);
+    if (error.code === 'DEFINITION_MISMATCH') return json({ error: 'DEFINITION_MISMATCH' }, 412);
     if (error.code === 'CLOSED' || error.code === 'IDEMPOTENCY_CONFLICT')
       return json({ error: error.code }, 409);
     if (error.code === 'RATE_LIMITED') {
@@ -125,10 +132,12 @@ async function actor(deps: Dependencies) {
 }
 function taskIdentity(request: Request, mutation: boolean): EditorTaskIdentity | null {
   const query = new URL(request.url).searchParams;
-  const attemptId = mutation ? request.headers.get('x-attempt-id') : query.get('attempt');
+  const attemptId = (
+    mutation ? request.headers.get('x-attempt-id') : query.get('attempt')
+  )?.toLowerCase();
   const taskKey = mutation ? request.headers.get('x-task-key') : query.get('task');
   return attemptId && isRequestId(attemptId) && taskKey && taskPattern.test(taskKey)
-    ? { attemptId, taskKey }
+    ? { attemptId: attemptId.toLowerCase(), taskKey }
     : null;
 }
 function checkContext(context: EditorServerContext, who: EditorActor, task: EditorTaskIdentity) {
@@ -277,10 +286,10 @@ async function sourceBody(request: Request, maxBytes: number, emptyAllowed: bool
 }
 function writeIdentity(request: Request) {
   const task = taskIdentity(request, true),
-    requestId = request.headers.get('idempotency-key'),
+    requestId = request.headers.get('idempotency-key')?.toLowerCase(),
     definition = request.headers.get('x-definition-digest');
   return task && requestId && isRequestId(requestId) && definition && digestPattern.test(definition)
-    ? { task, requestId, definition }
+    ? { task, requestId: requestId.toLowerCase(), definition }
     : null;
 }
 
@@ -292,7 +301,7 @@ export function createCheckpointDraftHandlers(
       try {
         const who = await actor(deps),
           task = taskIdentity(request, false),
-          requestId = new URL(request.url).searchParams.get('request');
+          requestId = new URL(request.url).searchParams.get('request')?.toLowerCase() ?? null;
         if (!task || (requestId !== null && !isRequestId(requestId)))
           return json({ error: 'INVALID_REQUEST' }, 400);
         if (!deps.backend) throw new EditorApiError('UNAVAILABLE');
@@ -364,7 +373,7 @@ export function createCheckpointRunHandlers(
       try {
         const who = await actor(deps),
           task = taskIdentity(request, false),
-          runId = new URL(request.url).searchParams.get('run');
+          runId = new URL(request.url).searchParams.get('run')?.toLowerCase() ?? null;
         if (!task || !runId || !isRequestId(runId)) return json({ error: 'INVALID_REQUEST' }, 400);
         if (!deps.backend) throw new EditorApiError('UNAVAILABLE');
         const context = await deps.backend.context(who, task);

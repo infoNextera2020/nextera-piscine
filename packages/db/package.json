@@ -16,7 +16,8 @@
     "./operations/checkpoints": "./operations/checkpoints.ts",
     "./checkpoints": "./queries/checkpoints.ts",
     "./raids": "./queries/raids.ts",
-    "./raid-readiness": "./queries/raid-readiness.ts"
+    "./raid-readiness": "./queries/raid-readiness.ts",
+    "./checkpoint-drafts": "./queries/checkpoint-drafts.ts"
   },
   "scripts": {
     "build": "tsc -p tsconfig.json",

@@ -498,3 +498,25 @@ describe('Source stream resource cleanup', () => {
     expect(f.drafts.save).not.toHaveBeenCalled();
   });
 });
+
+it('canonicalizes UUID casing at the PostgreSQL boundary and reports a commit-time definition mismatch', async () => {
+  const attempt = 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa',
+    request = 'bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb';
+  const f = fixture();
+  vi.mocked(f.drafts.context).mockResolvedValue({
+    ...context,
+    scope: { ...context.scope, attemptId: attempt },
+  });
+  const response = await f.draftHandlers.POST(
+    post('source', {
+      'x-attempt-id': attempt.toUpperCase(),
+      'idempotency-key': request.toUpperCase(),
+    }),
+  );
+  expect(response.status).toBe(200);
+  expect(vi.mocked(f.drafts.save).mock.calls[0]![0].requestId).toBe(request);
+  vi.mocked(f.drafts.save).mockRejectedValue(new EditorApiError('DEFINITION_MISMATCH'));
+  expect((await f.draftHandlers.POST(post('source', { 'x-attempt-id': attempt }))).status).toBe(
+    412,
+  );
+});
