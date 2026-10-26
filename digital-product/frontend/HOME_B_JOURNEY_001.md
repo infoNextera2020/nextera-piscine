@@ -4,6 +4,8 @@ Date: 26 October 2026. Base: `07677f4c81e624a23b2415d45b332aeb07bc85a0`, branch 
 
 Status: application source implemented and source checks passed; application browser acceptance remains pending. No running preview or live verification is claimed.
 
+> This paragraph records the original source-check checkpoint. The later approved [browser follow-up](./HOME_B_JOURNEY_BROWSER_001.md) records the completed 78-check fixture pass, responsive correction, current manual-review URLs and running-preview cleanup. It does not turn fixture checks into authenticated verification.
+
 ## Approved design and boundaries
 
 Implement the original Home B, not the optional Quixel comparison. Keep the accepted heart silhouette and transparent START logo, remove surrounding Journey copy, and fit the whole heart into the available shell viewport. Do not infer curriculum, learner progress, prerequisites or unlocks from illustrative art.

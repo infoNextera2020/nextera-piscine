@@ -14,3 +14,10 @@
 - No active Checkpoint UI, API, storage or database behavior changed; missing backend capabilities remain unavailable.
 - Numeric Run limits and local retention have no production defaults. No automatic submission, deadline extension or silent conflict overwrite.
 - See [contract and integration gates](frontend/CHECKPOINT_EDITOR_CONTRACT_001.md). Source verification is separate from browser/live verification.
+
+## Home B / Journey browser follow-up
+
+- Approved loopback-only fixture left running on 127.0.0.1:3118 for manual review.
+- Fixed clipped tablet labels and a clipped desktop map label; heart geometry/server data unchanged.
+- Final actual Chrome pass: 78 checks, zero failures or page/console errors at 1440/768/390/320 with reduced motion.
+- See [browser evidence and manual review](frontend/HOME_B_JOURNEY_BROWSER_001.md). This is fixture verification, not live Auth/DB/Judge E2E.

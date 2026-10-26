@@ -875,12 +875,14 @@
   display: grid;
   place-items: center;
   overflow: hidden;
+  container-type: size;
+  container-name: heartmap;
 }
 .mapFrame {
   position: relative;
   width: 100%;
   aspect-ratio: 2620 / 1800;
-  overflow: hidden;
+  overflow: visible;
 }
 .mapCanvas {
   position: absolute;
@@ -1070,6 +1072,24 @@
   }
   .orderedDialog ol {
     grid-template-columns: minmax(0, 1fr);
+  }
+}
+/* Full titles remain in accessible names and Browse when a fitted map is compact. */
+@container heartmap (max-width: 900px) or (max-height: 550px) {
+  .mapLabel {
+    display: none;
+  }
+  .mapNodes > li,
+  .mapNodes [data-step-action] {
+    width: 24px;
+    height: 24px;
+  }
+  .mapNodes .marker {
+    width: 22px;
+    height: 22px;
+  }
+  .mapNodes .marker text {
+    font-size: 18px;
   }
 }
 @media (forced-colors: active) {
