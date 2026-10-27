@@ -1,12 +1,9 @@
 import Link from 'next/link';
 import { logout } from '../login/actions';
-
-const messages = {
-  NOT_PROVISIONED:
-    'Your identity is authenticated, but a NextEra account has not been provisioned. Contact your operator.',
-  INACTIVE: 'Your NextEra account is inactive. Contact your operator.',
-  FORBIDDEN: 'Your NextEra role does not allow access to this page.',
-};
+import { AccessSurface } from '../../components/learning/access-surface';
+import { HairlineIcon } from '../../components/learning/hairline-icon';
+import { accessDeniedState } from '../../lib/learning/access-state';
+import s from '../../components/learning/access.module.css';
 
 export default async function AccessDeniedPage({
   searchParams,
@@ -14,19 +11,22 @@ export default async function AccessDeniedPage({
   searchParams: Promise<{ reason?: string }>;
 }) {
   const { reason } = await searchParams;
-  const code =
-    reason && Object.hasOwn(messages, reason) ? (reason as keyof typeof messages) : 'FORBIDDEN';
+  const state = accessDeniedState(reason);
   return (
-    <main className="mx-auto max-w-xl space-y-6 px-6 py-16">
-      <h1 className="text-3xl font-semibold">Access denied</h1>
-      <p>{messages[code]}</p>
-      <p className="font-mono text-sm">{code}</p>
-      <Link href="/app" className="block text-teal-300">
-        Return to app
+    <AccessSurface>
+      <HairlineIcon name="gate" size={38} />
+      <p className={s.eyebrow}>Access denied</p>
+      <h1>This workspace is unavailable</h1>
+      <p className={s.description}>{state.message}</p>
+      <p className={s.reason}>{state.code}</p>
+      <Link href="/app" className={s.secondary}>
+        Return to Home <HairlineIcon name="arrow" />
       </Link>
       <form action={logout}>
-        <button className="rounded border px-4 py-2">Sign out</button>
+        <button className={s.secondary}>
+          Sign out <HairlineIcon name="logout" />
+        </button>
       </form>
-    </main>
+    </AccessSurface>
   );
 }

@@ -1,5 +1,8 @@
-import Link from 'next/link';
 import { login } from './actions';
+import { AccessSurface } from '../../components/learning/access-surface';
+import { LoginForm } from '../../components/learning/login-form';
+import { loginFailureMessage } from '../../lib/learning/access-state';
+import s from '../../components/learning/access.module.css';
 
 export default async function LoginPage({
   searchParams,
@@ -7,47 +10,18 @@ export default async function LoginPage({
   searchParams: Promise<{ error?: string }>;
 }) {
   const { error } = await searchParams;
+  const message = loginFailureMessage(error);
   return (
-    <main className="mx-auto max-w-md px-6 py-16">
-      <Link href="/" className="text-teal-300">
-        NextEra Piscine
-      </Link>
-      <h1 className="my-6 text-3xl font-semibold">Sign in</h1>
-      <p className="mb-6 text-slate-400">Use your provisioned Piscine account.</p>
-      {error && (
-        <p role="alert" className="mb-4 text-amber-300">
-          {error === 'logout_failed'
-            ? 'Sign out failed. Please try again.'
-            : 'Unable to sign in. Check your email and password.'}
+    <AccessSurface>
+      <h1>Sign in</h1>
+      <p className={s.description}>Use your provisioned Piscine account.</p>
+      {message && (
+        <p role="alert" className={s.error}>
+          {message}
         </p>
       )}
-      <form action={login} className="flex flex-col gap-4">
-        <label>
-          Email
-          <input
-            name="email"
-            type="email"
-            autoComplete="username"
-            maxLength={320}
-            required
-            className="mt-1 w-full rounded border border-slate-600 p-3"
-          />
-        </label>
-        <label>
-          Password
-          <input
-            name="password"
-            type="password"
-            autoComplete="current-password"
-            maxLength={1024}
-            required
-            className="mt-1 w-full rounded border border-slate-600 p-3"
-          />
-        </label>
-        <button className="rounded bg-teal-300 px-4 py-3 font-semibold text-slate-950">
-          Sign in
-        </button>
-      </form>
-    </main>
+      <LoginForm action={login} />
+      <p className={s.footer}>Access is provided by your program owner.</p>
+    </AccessSurface>
   );
 }
