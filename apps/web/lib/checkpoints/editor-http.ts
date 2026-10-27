@@ -298,6 +298,47 @@ function writeIdentity(request: Request) {
     : null;
 }
 
+/** Read-only bootstrap: a first draft needs the authoritative definition before its first write. */
+export function createCheckpointEditorHandler(
+  deps: Dependencies & { backend: CheckpointDraftBackend | null },
+) {
+  return async function GET(request: Request) {
+    try {
+      const who = await actor(deps),
+        task = taskIdentity(request, false);
+      if (!task) return json({ error: 'INVALID_REQUEST' }, 400);
+      if (!deps.backend) throw new EditorApiError('UNAVAILABLE');
+      const context = await deps.backend.context(who, task);
+      checkContext(context, who, task);
+      if (
+        !Number.isFinite(Date.parse(context.serverNow)) ||
+        !Number.isFinite(Date.parse(context.deadline)) ||
+        !['active', 'closed'].includes(context.status) ||
+        !/^[A-Za-z0-9_]+\.go$/.test(context.filename)
+      )
+        throw new EditorApiError('UNAVAILABLE');
+      const draft = await deps.backend.read(who, context.scope);
+      return json({
+        schema: 1,
+        window: {
+          scope: context.scope,
+          access: 'confirmed',
+          attempt: context.status,
+          serverNow: context.serverNow,
+          deadline: context.deadline,
+          capabilities: { draftsV1: true, officialSubmit: false, visibleRun: null },
+        },
+        filename: context.filename,
+        sourceBytes: context.sourceBytes,
+        draft: draft === null ? null : publicDraft(draft, context),
+        offlineRecovery: null,
+      });
+    } catch (error) {
+      return failure(error);
+    }
+  };
+}
+
 export function createCheckpointDraftHandlers(
   deps: Dependencies & { backend: CheckpointDraftBackend | null },
 ) {
