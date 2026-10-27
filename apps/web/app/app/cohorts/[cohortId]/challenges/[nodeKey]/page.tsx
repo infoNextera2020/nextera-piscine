@@ -86,42 +86,16 @@ export default async function SubjectPage({
               preview.
             </p>
           )}
-          {subject!.kind === 'project' && !raid && (
-            <p className={s.notice}>
-              Shared team workflow is unavailable in this environment. The brief remains read-only.
-            </p>
-          )}
-          {raid ? (
-            <div className={s.columns}>
-              <section className={s.briefCard}>
-                <div className={s.briefBody}>
-                  <div className={s.subject}>
-                    <Subject>{subject!.subjectMarkdown}</Subject>
-                  </div>
-                  <section className={s.requirements}>
-                    <h2>Shared submission requirements</h2>
-                    <dl>
-                      <div>
-                        <dt>Required file</dt>
-                        <dd>{rules.required_files.join(', ')}</dd>
-                      </div>
-                      <div>
-                        <dt>Maximum size</dt>
-                        <dd>{rules.max_size_kb} KiB</dd>
-                      </div>
-                    </dl>
-                  </section>
-                </div>
-              </section>
-              <RaidPanel
-                key={cohort.id + ':' + nodeKey + ':' + (query.team ?? '')}
-                cohort={cohort.id}
-                node={nodeKey}
-                team={query.team}
-                initial={raid}
-                rules={rules}
-              />
-            </div>
+          {subject!.kind === 'project' ? (
+            <RaidPanel
+              key={cohort.id + ':' + nodeKey + ':' + (query.team ?? '')}
+              cohort={cohort.id}
+              node={nodeKey}
+              team={query.team}
+              initial={raid}
+              rules={rules}
+              brief={<Subject>{subject!.subjectMarkdown}</Subject>}
+            />
           ) : (
             <Challenge
               key={cohort.id + ':' + nodeKey}

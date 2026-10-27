@@ -1,10 +1,11 @@
 'use client';
 import raidStyles from './raid.module.css';
-import { useRef, useState } from 'react';
+import { Fragment, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { isRequestId } from '@nextera/domain';
 import { SubmissionIntents } from '../submissions/retry-intent';
 import s from '../../components/learning/challenge.module.css';
+import { HairlineIcon } from '../../components/learning/hairline-icon';
 export function RaidAssignment() {
   const router = useRouter(),
     pending = useRef(false),
@@ -13,8 +14,9 @@ export function RaidAssignment() {
     [message, setMessage] = useState('');
   if (!intents.current) intents.current = new SubmissionIntents(() => sessionStorage);
   return (
-    <section className={s.uploadCard + ' ' + raidStyles.controls}>
-      <h2>Assign a team and mentor</h2>
+    <section className={raidStyles.assignment + ' ' + raidStyles.controls}>
+      <h2>Assign a Raid team</h2>
+      <p>Exactly three active learners and one reviewing mentor.</p>
       <p className={s.muted}>
         Use provisioned domain user IDs. All three learners must belong to the same cohort.
         Reassigning a member retires their previous team for this Raid; previous accepted records
@@ -70,7 +72,7 @@ export function RaidAssignment() {
               return;
             }
             const data = (await response.json()) as { id?: string };
-            if (!data.id) throw new Error();
+            if (!data.id || !isRequestId(data.id)) throw new Error();
             intents.current!.confirm(key);
             setMessage('Team assignment recorded.');
             router.refresh();
@@ -86,36 +88,50 @@ export function RaidAssignment() {
       >
         <fieldset disabled={busy}>
           <legend>Owner assignment</legend>
-          {(
-            [
-              ['name', 'Team name'],
-              ['cohort', 'Cohort ID'],
-              ['node', 'Published Raid node key'],
-              ['mentor', 'Assigned mentor domain user ID'],
-              ['member1', 'Learner 1 domain user ID'],
-              ['member2', 'Learner 2 domain user ID'],
-              ['member3', 'Learner 3 domain user ID'],
-            ] as const
-          ).map(([name, label]) => (
-            <label key={name}>
-              <span className={s.fieldLabel}>{label}</span>
-              <input
-                name={name}
-                required
-                autoComplete="off"
-                maxLength={100}
-                aria-describedby="assignment-message"
-              />
-            </label>
-          ))}
-          <button type="submit" className={s.submitButton}>
-            {busy ? 'Saving…' : 'Assign team'}
+          <div className={raidStyles.assignmentGrid}>
+            {(
+              [
+                ['name', 'Team name'],
+                ['cohort', 'Cohort ID'],
+                ['node', 'Published Raid node key'],
+                ['mentor', 'Assigned mentor domain user ID'],
+                ['member1', 'Learner 1 domain user ID'],
+                ['member2', 'Learner 2 domain user ID'],
+                ['member3', 'Learner 3 domain user ID'],
+              ] as const
+            ).map(([name, label]) => (
+              <Fragment key={name}>
+                {name === 'member1' && (
+                  <div className={raidStyles.memberIntro}>
+                    <h3>Team members</h3>
+                    <p>Use the existing domain IDs of the three active learners.</p>
+                  </div>
+                )}
+                <label className={name.startsWith('member') ? raidStyles.memberField : undefined}>
+                  <span className={s.fieldLabel}>{label}</span>
+                  <input
+                    name={name}
+                    required
+                    autoComplete="off"
+                    maxLength={100}
+                    aria-describedby="assignment-message"
+                  />
+                </label>
+              </Fragment>
+            ))}
+          </div>
+          <button type="submit" className={raidStyles.primaryButton}>
+            {busy ? 'Saving…' : 'Assign team'} <HairlineIcon name="arrow" />
           </button>
         </fieldset>
         <p id="assignment-message" className={s.feedback} role="status">
           {message}
         </p>
       </form>
+      <p>
+        Assignment uses existing provisioned accounts. It does not create accounts, grant roles or
+        award completion.
+      </p>
     </section>
   );
 }

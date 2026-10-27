@@ -2,6 +2,7 @@
 import { useRef, useState } from 'react';
 import { SubmissionIntents } from './retry-intent';
 import { uploadFailureMessage } from './messages';
+import { HairlineIcon } from '../../components/learning/hairline-icon';
 import { Icon } from '../../components/learning/icon';
 import s from '../../components/learning/challenge.module.css';
 
@@ -11,12 +12,16 @@ export function SubmissionForm({
   filename,
   maxSizeKb = 256,
   onAccepted,
+  onAccessUnavailable,
+  copy,
 }: {
   cohort: string;
   node: string;
   filename: string;
   maxSizeKb?: number;
   onAccepted?: () => void;
+  onAccessUnavailable?: () => void;
+  copy?: { heading: string; description: string; submitLabel: string };
 }) {
   const [phase, setPhase] = useState<'ready' | 'uploading' | 'accepted' | 'error'>('ready');
   const [message, setMessage] = useState('');
@@ -26,8 +31,10 @@ export function SubmissionForm({
   if (!intents.current) intents.current = new SubmissionIntents(() => sessionStorage);
   return (
     <section aria-label="Submission">
-      <h2>Submit your solution</h2>
-      <p className={s.muted}>Upload your source file when you are ready.</p>
+      <h2>{copy?.heading ?? 'Submit your solution'}</h2>
+      <p className={s.muted}>
+        {copy?.description ?? 'Upload your source file when you are ready.'}
+      </p>
       <form
         onSubmit={async (event) => {
           event.preventDefault();
@@ -61,6 +68,7 @@ export function SubmissionForm({
               },
             });
             if (!response.ok) {
+              if (response.status === 401 || response.status === 403) onAccessUnavailable?.();
               setPhase('error');
               setMessage(uploadFailureMessage(response.status));
               return;
@@ -104,8 +112,8 @@ export function SubmissionForm({
             Required filename: {filename} · {maxSizeKb} KiB maximum
           </p>
           <button className={s.submitButton} type="submit">
-            {phase === 'uploading' ? 'Uploading…' : 'Submit solution'}
-            <Icon name="arrow" size={20} />
+            {phase === 'uploading' ? 'Uploading…' : (copy?.submitLabel ?? 'Submit solution')}
+            {copy ? <HairlineIcon name="arrow" size={20} /> : <Icon name="arrow" size={20} />}
           </button>
         </fieldset>
         <p

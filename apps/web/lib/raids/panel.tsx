@@ -1,10 +1,16 @@
 'use client';
 import raidStyles from './raid.module.css';
-import { useCallback, useEffect, useRef, useState } from 'react';
-import type { RaidAttemptView, RaidView, SubmissionRules } from '@nextera/domain';
+import { useCallback, useEffect, useRef, useState, type ReactNode } from 'react';
+import Link from 'next/link';
+import {
+  isRequestId,
+  type RaidAttemptView,
+  type RaidView,
+  type SubmissionRules,
+} from '@nextera/domain';
 import { SubmissionForm } from '../submissions/form';
 import { SubmissionIntents } from '../submissions/retry-intent';
-import { EditorHairline } from '../../components/learning/editor-hairline';
+import { HairlineIcon } from '../../components/learning/hairline-icon';
 import { formatMoment, displayState } from '../learning/display';
 import s from '../../components/learning/challenge.module.css';
 
@@ -17,137 +23,242 @@ export const raidLabels: Record<RaidAttemptView['status'], string> = {
   completed: 'Team completed',
   superseded: 'Previous revision',
 };
+/** A review receipt is not necessarily a shared outcome. */
+export function raidReviewReceiptMessage(
+  record: { review_id?: unknown; outcome_id?: unknown },
+  decision: string,
+) {
+  if (
+    typeof record.review_id !== 'string' ||
+    !isRequestId(record.review_id) ||
+    (record.outcome_id !== undefined &&
+      record.outcome_id !== null &&
+      (typeof record.outcome_id !== 'string' || !isRequestId(record.outcome_id)))
+  )
+    return null;
+  if (record.outcome_id) return 'Shared completion recorded.';
+  if (decision === 'changes_requested') return 'Changes requested for this revision.';
+  if (decision === 'approved')
+    return 'Review receipt confirmed. Refresh the shared result before treating this Raid as complete.';
+  return null;
+}
+
 export function RaidPanel({
   cohort,
   node,
   team,
   initial,
   rules,
+  brief,
 }: {
   cohort: string;
   node: string;
   team?: string | undefined;
-  initial: RaidView;
+  initial: RaidView | null;
   rules: SubmissionRules;
+  brief?: ReactNode;
 }) {
   const [view, setView] = useState<RaidView | null>(initial),
-    [error, setError] = useState('');
+    [error, setError] = useState(''),
+    [accessRemoved, setAccessRemoved] = useState(false);
   const request = useRef<AbortController | null>(null);
+  const hideProtected = useCallback(() => {
+    request.current?.abort();
+    request.current = null;
+    setView(null);
+    setAccessRemoved(true);
+    setError(
+      'Raid access could not be confirmed. Protected brief, team records and controls are hidden.',
+    );
+  }, []);
   const refresh = useCallback(async () => {
     if (request.current) return;
     const controller = new AbortController();
     request.current = controller;
     try {
-      const response = await fetch(
-        `/api/raids?cohort=${cohort}&node=${node}${team ? '&team=' + team : ''}`,
-        { cache: 'no-store', signal: controller.signal },
-      );
-      if (!response.ok) {
-        if (response.status === 401 || response.status === 403) setView(null);
-        throw new Error();
+      const query = new URLSearchParams({ cohort, node, ...(team ? { team } : {}) });
+      const response = await fetch('/api/raids?' + query.toString(), {
+        cache: 'no-store',
+        signal: controller.signal,
+      });
+      if (controller.signal.aborted || request.current !== controller) return;
+      if (response.status === 401 || response.status === 403) {
+        hideProtected();
+        return;
       }
+      if (!response.ok) throw new Error();
       const next = (await response.json()) as RaidView;
       if (!Array.isArray(next.attempts)) throw new Error();
-      if (!controller.signal.aborted) {
+      if (!controller.signal.aborted && request.current === controller) {
         setView(next);
+        setAccessRemoved(false);
         setError('');
       }
     } catch {
-      if (!controller.signal.aborted)
+      if (!controller.signal.aborted && request.current === controller)
         setError(
           'Raid access or results could not be confirmed. Refresh before taking another action.',
         );
     } finally {
       if (request.current === controller) request.current = null;
     }
-  }, [cohort, node, team]);
+  }, [cohort, node, team, hideProtected]);
   useEffect(() => {
-    const timer = setInterval(() => {
-      if (document.visibilityState === 'visible') void refresh();
-    }, 5000);
+    const visible = () => {
+      if (!accessRemoved && document.visibilityState === 'visible') void refresh();
+    };
+    const timer = !accessRemoved ? setInterval(visible, 5000) : undefined;
+    document.addEventListener('visibilitychange', visible);
     return () => {
       clearInterval(timer);
       request.current?.abort();
       request.current = null;
+      document.removeEventListener('visibilitychange', visible);
     };
-  }, [refresh]);
-  return (
-    <aside className={s.tools + ' ' + raidStyles.controls} aria-label="Team Raid">
-      <section className={s.editorCard}>
-        <div>
-          <h2>Work with your team</h2>
-          <p>Use your own editor. One file is evaluated for the frozen team of three.</p>
-        </div>
-        <EditorHairline />
+  }, [refresh, accessRemoved]);
+  if (accessRemoved)
+    return (
+      <section className={raidStyles.access} aria-label="Raid access unavailable">
+        <h2>Access must be confirmed</h2>
+        <p role="alert">{error}</p>
+        <button className={raidStyles.outlineButton} onClick={() => void refresh()}>
+          Retry authorized read
+        </button>
+        <Link className={raidStyles.outlineButton} href={'/app/cohorts/' + cohort}>
+          Return to Journey <HairlineIcon name="arrow" />
+        </Link>
       </section>
+    );
+  const latest =
+    view?.attempts.reduce<RaidAttemptView | null>(
+      (a, b) => (!a || b.ordinal > a.ordinal ? b : a),
+      null,
+    ) ?? null;
+  const previous = view?.attempts.filter((a) => a.id !== latest?.id) ?? [];
+  return (
+    <div className={raidStyles.workspace + ' ' + raidStyles.controls} aria-label="Team Raid">
       {error && (
-        <p className={s.error} role="alert">
-          {error}
-        </p>
+        <div className={raidStyles.alert} role="alert">
+          <p>{error}</p>
+          <button className={raidStyles.outlineButton} onClick={() => void refresh()}>
+            Retry authorized read
+          </button>
+        </div>
       )}
-      <section className={s.uploadCard}>
-        {!view ? (
+      <section className={raidStyles.brief}>
+        <span className={raidStyles.eyebrow}>Project brief</span>
+        <h2>Work with your team</h2>
+        <p>
+          Build your solution in your own editor and terminal. Upload one shared source file for the
+          team.
+        </p>
+        <p>A revised upload needs new checks and a fresh mentor review.</p>
+        <div className={raidStyles.editorNote}>
+          <HairlineIcon name="code" size={56} />
+          <strong>One accepted file. One exact revision.</strong>
+        </div>
+        {brief && <div className={raidStyles.authoredBrief}>{brief}</div>}
+      </section>
+      <section className={raidStyles.team} aria-label="Current team assignment">
+        <span className={raidStyles.eyebrow}>Current team</span>
+        <h2>
+          {view ? (view.team?.name ?? 'Team assignment pending') : 'Team workflow unavailable'}
+        </h2>
+        {view?.team ? (
           <>
-            <h2>Access must be confirmed</h2>
-            <p>Team records and submission controls are hidden.</p>
+            <ul>
+              {view.team.members.map((member) => (
+                <li key={member.id}>{member.displayName}</li>
+              ))}
+            </ul>
+            <p>Assigned mentor: {view.team.mentor}</p>
           </>
         ) : (
-          <>
-            <h2>{view.team?.name ?? 'Team assignment pending'}</h2>
-            {view.team ? (
-              <>
-                <ul>
-                  {view.team.members.map((member) => (
-                    <li key={member.id}>{member.displayName}</li>
-                  ))}
-                </ul>
-                <p className={s.muted}>Assigned mentor: {view.team.mentor}</p>
-              </>
-            ) : (
-              <p>Your owner must assign a team of exactly three before a shared upload.</p>
-            )}
-            {view.can_submit && !error ? (
-              <SubmissionForm
-                cohort={cohort}
-                node={node}
-                filename={rules.required_files[0]!}
-                maxSizeKb={rules.max_size_kb}
-                onAccepted={() => void refresh()}
-              />
-            ) : (
-              <p className={s.muted}>
-                Upload is unavailable under the current team, access or evaluation configuration.
-              </p>
-            )}
-          </>
+          <p>
+            {view
+              ? 'Your owner must assign a team of exactly three before a shared upload.'
+              : 'Shared team workflow is unavailable in this environment. The published brief remains read-only.'}
+          </p>
         )}
+        <p className={raidStyles.small}>
+          Each accepted revision records its own frozen members. Later assignments do not change
+          that history.
+        </p>
       </section>
-      <section className={s.historyCard} aria-labelledby="raid-history-heading">
-        <div className={s.historyHeading}>
+      <section className={raidStyles.history} aria-labelledby="raid-history-heading">
+        <div className={raidStyles.historyHeading}>
           <h2 id="raid-history-heading">Shared team history</h2>
-          <button type="button" className={s.textButton} onClick={() => void refresh()}>
+          <button className={raidStyles.outlineButton} onClick={() => void refresh()}>
             Refresh
           </button>
         </div>
-        {view && (
-          <RaidHistory
-            attempts={view.attempts}
-            canReview={view.can_review && !error}
-            onReviewed={() => void refresh()}
-          />
+        {view ? (
+          <>
+            <RaidHistory
+              attempts={latest ? [latest] : []}
+              canReview={view.can_review}
+              paused={!!error}
+              onReviewed={() => void refresh()}
+              onAccessRemoved={hideProtected}
+            />
+            {previous.length > 0 && (
+              <details className={raidStyles.earlier}>
+                <summary>Earlier revisions ({previous.length})</summary>
+                <RaidHistory
+                  attempts={previous}
+                  canReview={view.can_review}
+                  paused={!!error}
+                  onReviewed={() => void refresh()}
+                  onAccessRemoved={hideProtected}
+                />
+              </details>
+            )}
+          </>
+        ) : (
+          <p>No shared history can be confirmed until the team workflow is available.</p>
         )}
       </section>
-    </aside>
+      <section className={raidStyles.upload}>
+        {view?.can_submit && !error ? (
+          <SubmissionForm
+            cohort={cohort}
+            node={node}
+            filename={rules.required_files[0]!}
+            maxSizeKb={rules.max_size_kb}
+            copy={{
+              heading: latest ? 'New revision' : 'Shared source file',
+              description:
+                'Build locally and upload one shared file. Earlier accepted files and frozen team records stay unchanged.',
+              submitLabel: latest ? 'Upload new revision' : 'Upload team source',
+            }}
+            onAccepted={() => void refresh()}
+            onAccessUnavailable={hideProtected}
+          />
+        ) : (
+          <>
+            <h2>Shared upload unavailable</h2>
+            <p>Upload is unavailable under the current team, access or evaluation configuration.</p>
+            <button className={raidStyles.outlineButton} onClick={() => void refresh()}>
+              Recheck team access
+            </button>
+          </>
+        )}
+      </section>
+    </div>
   );
 }
 export function RaidHistory({
   attempts,
   canReview = false,
   onReviewed,
+  paused = false,
+  onAccessRemoved,
 }: {
   attempts: RaidAttemptView[];
   canReview?: boolean;
   onReviewed?: (() => void) | undefined;
+  paused?: boolean;
+  onAccessRemoved?: (() => void) | undefined;
 }) {
   if (!attempts.length)
     return (
@@ -163,7 +274,11 @@ export function RaidHistory({
             <strong>Revision {a.ordinal}</strong>
             <span className={s.verdict}>{raidLabels[a.status]}</span>
           </div>
-          <p>Automated checks: {displayState(a.automated_state)}</p>
+          <p className={raidStyles.checks} data-state={a.automated_state}>
+            {a.automated_state === 'passed'
+              ? 'Checks passed'
+              : `Automated checks: ${displayState(a.automated_state)}`}
+          </p>
           {a.feedback?.message && <p>{a.feedback.message}</p>}
           <p>
             Mentor:{' '}
@@ -195,7 +310,7 @@ export function RaidHistory({
               next steps follow their own prerequisites.
             </p>
           )}
-          <details>
+          <details className={raidStyles.acceptedFile}>
             <summary>Accepted file and team</summary>
             <p>
               {a.filename} · uploaded by {a.uploader}
@@ -209,12 +324,25 @@ export function RaidHistory({
             </code>
             <time dateTime={a.created_at}>{formatMoment(a.created_at)}</time>
           </details>
-          {canReview && a.automated_state === 'passed' && (
-            <a href={'/api/raids/artifact?attempt=' + a.id}>Download the accepted source file</a>
+          {canReview && !paused && a.automated_state === 'passed' && (
+            <a
+              className={raidStyles.outlineButton}
+              href={'/api/raids/artifact?attempt=' + encodeURIComponent(a.id)}
+            >
+              Download the accepted source file <HairlineIcon name="arrow" />
+            </a>
           )}
-          {canReview && a.status === 'awaiting_review' && !a.review && (
-            <RaidReview attempt={a} onReviewed={onReviewed} />
-          )}
+          {canReview &&
+            a.automated_state === 'passed' &&
+            a.status === 'awaiting_review' &&
+            !a.review && (
+              <RaidReview
+                attempt={a}
+                onReviewed={onReviewed}
+                paused={paused}
+                onAccessRemoved={onAccessRemoved}
+              />
+            )}
         </li>
       ))}
     </ol>
@@ -223,9 +351,13 @@ export function RaidHistory({
 function RaidReview({
   attempt,
   onReviewed,
+  paused = false,
+  onAccessRemoved,
 }: {
   attempt: RaidAttemptView;
   onReviewed?: (() => void) | undefined;
+  paused?: boolean;
+  onAccessRemoved?: (() => void) | undefined;
 }) {
   const [busy, setBusy] = useState(false),
     [message, setMessage] = useState('');
@@ -236,9 +368,12 @@ function RaidReview({
     <form
       onSubmit={async (event) => {
         event.preventDefault();
-        if (pending.current) return;
+        if (pending.current || paused) return;
         const fields = new FormData(event.currentTarget);
-        const decision = String(fields.get('decision'));
+        const decision =
+          (event.nativeEvent as SubmitEvent).submitter?.getAttribute('value') ??
+          'changes_requested';
+        if (decision !== 'approved' && decision !== 'changes_requested') return;
         const feedback = String(fields.get('feedback'));
         pending.current = true;
         setBusy(true);
@@ -262,6 +397,10 @@ function RaidReview({
             }),
           });
           if (!response.ok) {
+            if (response.status === 401 || response.status === 403) {
+              onAccessRemoved?.();
+              return;
+            }
             setMessage(
               response.status === 409
                 ? 'Review conflicts with current access or revision. Refresh the team result before retrying.'
@@ -271,13 +410,10 @@ function RaidReview({
             return;
           }
           const result = (await response.json()) as { review_id?: string; outcome_id?: string };
-          if (!result.review_id) throw new Error();
+          const receiptMessage = raidReviewReceiptMessage(result, decision);
+          if (!receiptMessage) throw new Error();
           intents.current!.confirm(key);
-          setMessage(
-            result.outcome_id
-              ? 'Shared completion recorded.'
-              : 'Changes requested for this revision.',
-          );
+          setMessage(receiptMessage);
           onReviewed?.();
         } catch {
           setMessage(
@@ -289,19 +425,18 @@ function RaidReview({
         }
       }}
     >
-      <fieldset disabled={busy}>
+      <fieldset disabled={busy || paused}>
         <legend>Review this exact revision</legend>
+        {paused && (
+          <p role="alert">
+            A fresh authorized read is required before recording a review. Your feedback stays in
+            this form.
+          </p>
+        )}
         <p className={s.muted}>
           Confirm the accepted file digest and published brief before deciding. A new upload
           requires new checks and a fresh review.
         </p>
-        <label>
-          <span className={s.fieldLabel}>Decision</span>
-          <select name="decision" required defaultValue="changes_requested">
-            <option value="changes_requested">Request changes</option>
-            <option value="approved">Approve exact revision</option>
-          </select>
-        </label>
         <label>
           <span className={s.fieldLabel}>Feedback shared with all three members</span>
           <textarea
@@ -312,9 +447,27 @@ function RaidReview({
             aria-describedby={'review-message-' + attempt.id}
           />
         </label>
-        <button className={s.submitButton} type="submit">
-          {busy ? 'Recording…' : 'Record review'}
-        </button>
+        <p className={s.muted}>
+          This decision applies to this exact revision and its three frozen members.
+        </p>
+        <div className={raidStyles.reviewActions}>
+          <button
+            className={raidStyles.outlineButton}
+            name="decision"
+            value="changes_requested"
+            type="submit"
+          >
+            {busy ? 'Recording…' : 'Request changes'} <HairlineIcon name="arrow" />
+          </button>
+          <button
+            className={raidStyles.primaryButton}
+            name="decision"
+            value="approved"
+            type="submit"
+          >
+            {busy ? 'Recording…' : 'Approve shared result'} <HairlineIcon name="arrow" />
+          </button>
+        </div>
       </fieldset>
       <p id={'review-message-' + attempt.id} role="status" className={s.feedback}>
         {message}

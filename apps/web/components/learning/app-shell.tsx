@@ -15,7 +15,7 @@ type ShellProps = {
   cohort?: { id: string; name: string; version: string } | null;
   nodes?: LearningNode[];
   updates?: LearningUpdate[];
-  active: 'command' | 'roadmap' | 'challenge' | 'checkpoint' | 'evidence';
+  active: 'command' | 'roadmap' | 'challenge' | 'checkpoint' | 'evidence' | 'reviews';
   children: ReactNode;
 };
 
@@ -72,6 +72,13 @@ export function AppShell({
     },
     { key: 'roadmap', title: 'Journey', icon: 'map', href: base, current: journeyActive },
     {
+      key: 'reviews',
+      title: 'Team reviews',
+      icon: 'folder',
+      href: '/operator/raids',
+      current: active === 'reviews',
+    },
+    {
       key: 'evidence',
       title: 'Evidence',
       icon: 'evidence',
@@ -82,7 +89,11 @@ export function AppShell({
   const navigation = () => (
     <nav aria-label="Learner navigation" className={s.nav}>
       {navItems
-        .filter((item) => item.key !== 'evidence' || user.role === 'learner')
+        .filter(
+          (item) =>
+            (item.key !== 'evidence' || user.role === 'learner') &&
+            (item.key !== 'reviews' || user.role !== 'learner'),
+        )
         .map((item) => (
           <Link
             key={item.key}
