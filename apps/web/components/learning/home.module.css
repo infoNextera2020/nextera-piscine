@@ -526,3 +526,169 @@
     transition: none !important;
   }
 }
+
+/* Isolated option 1 comparison. The adopted desk presentation is unchanged. */
+.page[data-home-layout='focus-review'] .heading {
+  padding-bottom: 40px;
+}
+.page[data-home-layout='focus-review'] .heading h1 {
+  max-width: 70%;
+  font-size: clamp(42px, 5.2vw, 72px);
+  font-weight: 600;
+  line-height: 1.14;
+  letter-spacing: -0.045em;
+  margin-bottom: 14px;
+}
+.focusAccent {
+  color: var(--workspace-accent);
+}
+.page[data-home-layout='focus-review'] .heading > p:last-child {
+  display: block;
+  max-width: 61%;
+  font-size: 17px;
+}
+.page[data-home-layout='focus-review'] .layout {
+  grid-template-columns: minmax(0, 1.65fr) minmax(280px, 1fr);
+  gap: 32px;
+}
+.page[data-home-layout='focus-review'] .next {
+  min-height: 540px;
+  padding: 30px 36px 34px;
+  background: color-mix(in srgb, var(--workspace-panel) 82%, transparent);
+}
+.page[data-home-layout='focus-review'] .nextBody h2 {
+  font-size: clamp(38px, 4.4vw, 62px);
+  font-weight: 600;
+}
+.page[data-home-layout='focus-review'] .questContext {
+  font-size: 20px;
+}
+.page[data-home-layout='focus-review'] .description {
+  font-size: 16px;
+  line-height: 1.8;
+  margin-top: 30px;
+}
+.page[data-home-layout='focus-review'] .contextColumn {
+  padding-top: 0;
+}
+.artworkSlot {
+  height: 420px;
+  margin-top: -250px;
+  margin-bottom: 12px;
+  min-width: 0;
+}
+.artworkPending {
+  height: 100%;
+  display: grid;
+  place-items: center;
+  padding: 24px;
+  border: 1px dashed var(--workspace-border);
+  border-radius: 8px;
+  color: var(--workspace-muted);
+  text-align: center;
+  font-size: 12px;
+}
+.page[data-home-layout='focus-review'] .latest {
+  border: 1px solid var(--workspace-border);
+  border-radius: 8px;
+  padding: 24px;
+  background: color-mix(in srgb, var(--workspace-panel) 82%, transparent);
+}
+.page[data-home-layout='focus-review'] .recordTitle {
+  gap: 20px;
+}
+.page[data-home-layout='focus-review'] .recordTitle h3 {
+  font-size: 26px;
+}
+.page[data-home-layout='focus-review'] .feedbackLink {
+  margin-top: 24px;
+}
+.page[data-home-layout='focus-review'] .location {
+  margin-top: 24px;
+  padding-top: 20px;
+}
+.page[data-home-layout='focus-review'] .position {
+  margin-top: 14px;
+}
+.page[data-home-layout='focus-review'] .milestone {
+  margin-top: 32px;
+}
+@media (max-width: 75rem) {
+  .page[data-home-layout='focus-review'] .layout {
+    gap: 24px;
+    grid-template-columns: minmax(0, 1.5fr) minmax(245px, 1fr);
+  }
+  .page[data-home-layout='focus-review'] .next {
+    padding-inline: 25px;
+  }
+  .artworkSlot {
+    height: 380px;
+    margin-top: -220px;
+  }
+}
+@media (max-width: 60rem) {
+  .page[data-home-layout='focus-review'] .layout {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .page[data-home-layout='focus-review'] .heading h1,
+  .page[data-home-layout='focus-review'] .heading > p:last-child {
+    max-width: 100%;
+  }
+  .page[data-home-layout='focus-review'] .next {
+    min-height: 0;
+  }
+  .artworkSlot {
+    height: 330px;
+    margin: 0 auto 20px;
+    max-width: 420px;
+    width: 100%;
+  }
+}
+@media (max-width: 47.99rem) {
+  .page[data-home-layout='focus-review'] {
+    padding-bottom: 40px;
+  }
+  .page[data-home-layout='focus-review'] .heading {
+    padding-bottom: 28px;
+  }
+  .page[data-home-layout='focus-review'] .heading h1 {
+    font-size: 44px;
+  }
+  .page[data-home-layout='focus-review'] .heading > p:last-child {
+    font-size: 14px;
+    margin-top: 14px;
+  }
+  .page[data-home-layout='focus-review'] .next {
+    padding: 24px;
+  }
+  .page[data-home-layout='focus-review'] .nextBody h2 {
+    font-size: 38px;
+  }
+  .page[data-home-layout='focus-review'] .questContext {
+    font-size: 17px;
+  }
+  .page[data-home-layout='focus-review'] .description {
+    font-size: 14px;
+  }
+  .page[data-home-layout='focus-review'] .nextActions[data-actionable='true'] {
+    position: static;
+    padding: 0;
+    border: 0;
+    background: transparent;
+    margin-top: 26px;
+  }
+  .page[data-home-layout='focus-review'] .latest {
+    padding: 24px;
+  }
+  .page[data-home-layout='focus-review'] .contextColumn {
+    padding-top: 0;
+  }
+  .page[data-home-layout='focus-review'] .artworkSlot {
+    height: 300px;
+  }
+}
+
+.page[data-home-layout='focus-review'] a.primary {
+  background: var(--home-cta, var(--workspace-accent));
+  --hairline-ui-ground: var(--home-cta, var(--workspace-accent));
+}

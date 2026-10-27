@@ -274,3 +274,31 @@ describe('Home cancellation and project result copy', () => {
     expect(html).not.toContain('does not by itself confirm project completion');
   });
 });
+
+describe('Home option 1 comparison preserves the actual component contract', () => {
+  it.each(['failed', 'passed', 'queued', 'system_error'] as const)(
+    'keeps %s receipt facts and destinations in the opt-in presentation',
+    (state) => {
+      const view = { ...base, submissions: [{ ...receipt, state }] };
+      const desk = renderToStaticMarkup(
+        createElement(CommandCenter, { name: 'Learner', cohort, view }),
+      );
+      const focus = renderToStaticMarkup(
+        createElement(CommandCenter, {
+          name: 'Learner',
+          cohort,
+          view,
+          presentation: 'focus-review',
+        }),
+      );
+      expect(focus).toContain('data-home-layout="focus-review"');
+      expect(desk).toContain('data-home-layout="desk"');
+      expect(focus.match(/href="[^"]+"/g)?.sort()).toEqual(desk.match(/href="[^"]+"/g)?.sort());
+      for (const text of [node.title, node.questTitle, receipt.title, receipt.feedback!])
+        expect(focus).toContain(text);
+      expect(focus).toContain('Refined Blender artwork pending');
+      expect(desk).not.toContain('Refined Blender artwork pending');
+      expect(focus).not.toMatch(/<canvas|WebGL|hello\.go|signup|team sign-off/);
+    },
+  );
+});

@@ -1,3 +1,4 @@
+import type { ReactNode } from 'react';
 import Link from 'next/link';
 import type { AuthorizedCohort } from '@nextera/db/cohorts';
 import type { LearningOverview, LearningSubmission } from '../../lib/learning/types';
@@ -90,25 +91,50 @@ export function CommandCenter({
   name,
   cohort,
   view,
+  presentation = 'desk',
+  artwork,
 }: {
   name: string;
   cohort: AuthorizedCohort;
   view: LearningOverview;
+  presentation?: 'desk' | 'focus-review';
+  artwork?: ReactNode;
 }) {
   const base = '/app/cohorts/' + cohort.id;
   const current = view.nodes.length ? view.current : null;
   const latest = view.submissions[0] ?? null;
   const milestone = view.checkpoint;
   return (
-    <main className={s.page} data-home-layout="desk">
+    <main className={s.page} data-home-layout={presentation}>
       <header className={s.heading}>
         <p className={s.eyebrow}>Home</p>
-        <h1>Your workspace</h1>
+        <h1>
+          {presentation === 'focus-review' ? (
+            <>
+              Welcome <span className={s.focusAccent}>back</span>
+            </>
+          ) : (
+            'Your workspace'
+          )}
+        </h1>
         <p>One next step, with your latest feedback close by.</p>
       </header>
       <div className={s.layout}>
         <HomeNextAction name={name} cohort={cohort} view={view} />
         <aside className={s.contextColumn} aria-label="Your Piscine context">
+          {presentation === 'focus-review' && (
+            <div className={s.artworkSlot} data-home-artwork>
+              {artwork ?? (
+                <div
+                  className={s.artworkPending}
+                  role="img"
+                  aria-label="Refined Blender render pending"
+                >
+                  Refined Blender artwork pending
+                </div>
+              )}
+            </div>
+          )}
           <section className={s.latest} aria-labelledby="home-latest-title" data-home-latest>
             <h2 id="home-latest-title" className={s.eyebrow}>
               Latest submission
