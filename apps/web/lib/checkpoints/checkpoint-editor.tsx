@@ -427,7 +427,9 @@ function DraftSyncStatus({
                 ? 'Saving and resync are closed. No draft is automatically submitted.'
                 : 'Each question keeps a separate draft. Submit evaluates an immutable snapshot.'}
       </p>
-      {state?.localStatus === 'stored' ? (
+      {state?.recovery ? (
+        <p>A device draft is awaiting your choice. No recovered text has been sent.</p>
+      ) : state?.localStatus === 'stored' ? (
         <p>
           Temporary recovery is stored on this device until its configured expiry, at most the exam
           deadline.
