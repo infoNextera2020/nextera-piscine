@@ -210,7 +210,7 @@ describe('Browser bootstrap and exact draft transport', () => {
     for (const key of ['learnerId', 'cohortId', 'attemptId', 'taskKey'] as const)
       expect(() => parseEditorBootstrap(value, { ...expected, [key]: id2 })).toThrow();
     for (const patch of [
-      { offlineRecovery: { retentionMs: 60000 } },
+      { offlineRecovery: { retentionMs: 0 } },
       { sourceBytes: 0 },
       { filename: 'x/y.go' },
       { draft: { source: 'x', version: -1, requestId: null } },

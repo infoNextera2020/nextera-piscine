@@ -30,7 +30,13 @@ export default async function CheckpointPage({
       >
         <main className={s.page}>
           <Breadcrumbs cohort={cohort} title={node.title} />
-          <Checkpoint cohort={cohort.id} node={nodeKey} title={node.title} initial={checkpoint} />
+          <Checkpoint
+            learnerId={user.id}
+            cohort={cohort.id}
+            node={nodeKey}
+            title={node.title}
+            initial={checkpoint}
+          />
         </main>
       </AppShell>
     );

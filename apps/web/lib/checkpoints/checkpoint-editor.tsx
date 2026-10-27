@@ -6,9 +6,7 @@ import { SubmissionIntents } from '../submissions/retry-intent';
 import { HairlineIcon } from '../../components/learning/hairline-icon';
 import { Subject, SafeHistory } from '../../components/learning/workspace-parts';
 import {
-  acceptQuestion,
   captureCheckpointSource,
-  editQuestion,
   hasUnsubmittedDrafts,
   identifyCheckpointSource,
   isQuestionDraftDirty,
@@ -18,6 +16,8 @@ import {
   type QuestionDrafts,
 } from './checkpoint-source';
 import e from './checkpoint-editor.module.css';
+import { useEditorSession } from './use-editor-session';
+import type { QuestionSession } from './editor-session';
 
 function questionStatus(task: CheckpointPresentation['display']['tasks'][number] | undefined) {
   if (!task) return 'Closed';
@@ -27,8 +27,9 @@ function questionStatus(task: CheckpointPresentation['display']['tasks'][number]
   return displayState(task.state);
 }
 
-/** Scoped by the parent's attempt key. No source is written to browser storage. */
+/** Scoped by authenticated identity and attempt. Recovery stays disabled without explicit policy. */
 export function CheckpointEditor({
+  learnerId,
   cohort,
   node,
   view,
@@ -38,6 +39,7 @@ export function CheckpointEditor({
   onAccessRemoved,
   onDraftWarning,
 }: {
+  learnerId?: string | undefined;
   cohort: string;
   node: string;
   view: CheckpointPresentation;
@@ -49,7 +51,28 @@ export function CheckpointEditor({
 }) {
   const [selected, setSelected] = useState(view.tasks[0]?.key ?? '');
   const [panel, setPanel] = useState<'statement' | 'editor' | 'history'>('editor');
-  const [drafts, setDrafts] = useState<QuestionDrafts>({});
+  const [acceptedSources, setAcceptedSources] = useState<Record<string, string>>({});
+  const { session, drafts: questionSessions } = useEditorSession({
+    learnerId,
+    cohortId: cohort,
+    attemptId: view.attempt?.id ?? '',
+    selected,
+    paused,
+    expired,
+    serverNow: view.server_now,
+    deadline: view.attempt?.deadline_at ?? view.server_now,
+    active: view.attempt?.status === 'active',
+    onAccessRemoved,
+  });
+  const drafts: QuestionDrafts = Object.fromEntries(
+    Object.entries(questionSessions).map(([key, value]) => [
+      key,
+      {
+        source: value.source,
+        acceptedSource: Object.hasOwn(acceptedSources, key) ? acceptedSources[key]! : null,
+      },
+    ]),
+  );
   const [pending, setPending] = useState<Record<string, OfficialSnapshot>>({});
   const [sending, setSending] = useState<string | null>(null);
   const [feedback, setFeedback] = useState<Record<string, string>>({});
@@ -141,7 +164,7 @@ export function CheckpointEditor({
           delete next[snapshot!.taskKey];
           return next;
         });
-        setDrafts((old) => acceptQuestion(old, snapshot!));
+        setAcceptedSources((old) => ({ ...old, [snapshot!.taskKey]: snapshot!.source }));
         setFeedback((old) => ({
           ...old,
           [snapshot!.taskKey]:
@@ -266,10 +289,8 @@ export function CheckpointEditor({
             autoCapitalize="off"
             spellCheck={false}
             wrap="off"
-            readOnly={!intake}
-            onChange={(event) =>
-              setDrafts((old) => editQuestion(old, item.key, event.target.value))
-            }
+            readOnly={expired || !view.display.intakeOpen}
+            onChange={(event) => session.edit(item.key, event.target.value)}
           />
           <div id="checkpoint-code-help" className={e.editorFooter}>
             <span>Plain code editor</span>
@@ -280,14 +301,18 @@ export function CheckpointEditor({
             </span>
           </div>
         </div>
-        <div id="checkpoint-save-status" className={e.saveStatus}>
-          <span className={e.eyebrow}>Draft status</span>
-          <strong>Not saved to server</strong>
-          <p>
-            Autosave and reload recovery are unavailable. Drafts stay in this page only; leaving or
-            refreshing can lose them.
-          </p>
-        </div>
+        <DraftSyncStatus
+          state={questionSessions[item.key]}
+          paused={paused || expired}
+          canLoad={!!learnerId}
+          onRetry={() =>
+            void (questionSessions[item.key]?.phase === 'unavailable'
+              ? session.load(item.key, true)
+              : session.save(item.key))
+          }
+          onConflict={(choice) => session.resolve(item.key, choice)}
+          onRecovery={(choice) => session.chooseRecovery(item.key, choice)}
+        />
         <div className={e.editorActions}>
           <button className={e.button} disabled aria-describedby="checkpoint-run-status">
             Run <HairlineIcon name="arrow" />
@@ -349,6 +374,123 @@ export function CheckpointEditor({
         <h2>Official submission history</h2>
         <SafeHistory items={view.submissions.filter((h) => h.task_key === item.key)} />
       </section>
+    </div>
+  );
+}
+
+function DraftSyncStatus({
+  state,
+  paused,
+  canLoad,
+  onRetry,
+  onConflict,
+  onRecovery,
+}: {
+  state?: QuestionSession | undefined;
+  paused: boolean;
+  canLoad: boolean;
+  onRetry(): void;
+  onConflict(choice: 'keep_local' | 'use_server'): void;
+  onRecovery(choice: 'use_device' | 'keep_current'): void;
+}) {
+  const phase = state?.phase ?? 'idle',
+    status = state?.status ?? 'unsaved';
+  const label =
+    phase === 'loading'
+      ? 'Checking autosave…'
+      : phase !== 'ready'
+        ? 'Autosave unavailable'
+        : (
+            {
+              unsaved: 'Not saved to server',
+              saving: 'Saving…',
+              saved: 'Saved to server',
+              failed: 'Save failed',
+              conflict: 'Choose a draft version',
+              closed: 'Autosave closed',
+            } as const
+          )[status];
+  return (
+    <div id="checkpoint-save-status" className={e.saveStatus}>
+      <span className={e.eyebrow}>Draft status</span>
+      <strong role="status" aria-live="polite">
+        {label}
+      </strong>
+      <p>
+        {phase !== 'ready'
+          ? 'Server saving could not be confirmed. Drafts stay in this page only; leaving or refreshing can lose them. Saving is separate from official Submit.'
+          : status === 'saved'
+            ? 'This draft is saved. It has not been submitted for grading.'
+            : status === 'failed'
+              ? 'Save receipt is unconfirmed. Retry uses the exact original write before later edits.'
+              : status === 'closed'
+                ? 'Saving and resync are closed. No draft is automatically submitted.'
+                : 'Each question keeps a separate draft. Submit evaluates an immutable snapshot.'}
+      </p>
+      {state?.localStatus === 'stored' ? (
+        <p>
+          Temporary recovery is stored on this device until its configured expiry, at most the exam
+          deadline.
+        </p>
+      ) : (
+        <p>
+          {state?.localStatus === 'failed'
+            ? 'Device recovery could not be stored.'
+            : 'Device recovery is unavailable without a configured retention policy.'}
+        </p>
+      )}
+      {(phase === 'unavailable' || status === 'failed') && canLoad && (
+        <button className={e.button} disabled={paused} onClick={onRetry}>
+          {phase === 'unavailable' ? 'Recheck autosave' : 'Retry same save'}
+        </button>
+      )}
+      {state?.conflict && (
+        <div className={e.draftConflict} role="group" aria-label="Resolve draft conflict">
+          <p>A newer server draft exists. Nothing has been overwritten.</p>
+          <details open>
+            <summary>Server draft</summary>
+            <pre tabIndex={0}>{state.conflict.source}</pre>
+          </details>
+          <p>Your current draft remains in the editor.</p>
+          <div className={e.dialogActions}>
+            <button className={e.button} disabled={paused} onClick={() => onConflict('keep_local')}>
+              Keep my draft and save
+            </button>
+            <button className={e.button} disabled={paused} onClick={() => onConflict('use_server')}>
+              Use server draft
+            </button>
+          </div>
+        </div>
+      )}
+      {state?.recovery && (
+        <div className={e.draftConflict} role="group" aria-label="Review device recovery">
+          <p>
+            {state.recovery.conflict
+              ? 'The device draft and server version differ. Choose explicitly before syncing.'
+              : 'An unexpired draft is available on this device. Review it before replacing the editor.'}
+          </p>
+          <details open>
+            <summary>Device draft</summary>
+            <pre tabIndex={0}>{state.recovery.source}</pre>
+          </details>
+          <details>
+            <summary>Server draft</summary>
+            <pre tabIndex={0}>{state.recovery.remote}</pre>
+          </details>
+          <div className={e.dialogActions}>
+            <button className={e.button} disabled={paused} onClick={() => onRecovery('use_device')}>
+              Use device draft
+            </button>
+            <button
+              className={e.button}
+              disabled={paused}
+              onClick={() => onRecovery('keep_current')}
+            >
+              Keep current editor draft
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

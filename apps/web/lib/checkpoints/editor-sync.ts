@@ -30,6 +30,7 @@ export async function sendDraftIntent(
       credentials: 'same-origin',
       cache: 'no-store',
       redirect: 'error',
+      signal: AbortSignal.timeout(10000),
       headers: {
         'content-type': 'application/octet-stream',
         'x-attempt-id': intent.scope.attemptId,
@@ -116,8 +117,26 @@ export class CheckpointDraftSync {
       this.close(window.access);
       return;
     }
-    this.window = window;
+    const current = this.currentWindow();
+    const oldNow = Date.parse(current.serverNow),
+      nextNow = Date.parse(window.serverNow);
+    const oldDeadline = Date.parse(current.deadline),
+      nextDeadline = Date.parse(window.deadline);
+    this.window =
+      Number.isFinite(oldNow) &&
+      Number.isFinite(nextNow) &&
+      Number.isFinite(oldDeadline) &&
+      Number.isFinite(nextDeadline)
+        ? {
+            ...window,
+            serverNow: new Date(Math.max(oldNow, nextNow)).toISOString(),
+            deadline: new Date(Math.min(oldDeadline, nextDeadline)).toISOString(),
+          }
+        : window;
     this.receivedAt = this.deps.now();
+  }
+  saveBlock() {
+    return this.blocked ?? editorActionBlock(this.draft.scope, this.currentWindow(), 'save');
   }
   async save() {
     if (this.blocked) return { blocked: this.blocked };

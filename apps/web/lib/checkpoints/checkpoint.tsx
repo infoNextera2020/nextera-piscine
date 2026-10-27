@@ -11,11 +11,13 @@ import { displayState, formatMoment } from '../learning/display';
 import { checkpointResultHref } from '../learning/checkpoint-result-link';
 import s from '../../components/learning/workspace.module.css';
 export function Checkpoint({
+  learnerId,
   cohort,
   node,
   initial,
   title = 'Checkpoint workspace',
 }: {
+  learnerId?: string | undefined;
   cohort: string;
   node: string;
   initial: CheckpointPresentation;
@@ -241,7 +243,8 @@ export function Checkpoint({
       )}
       {view.tasks.length && view.attempt ? (
         <CheckpointEditor
-          key={`${cohort}:${node}:${view.attempt.id}`}
+          key={`${learnerId ?? ''}:${cohort}:${node}:${view.attempt.id}`}
+          learnerId={learnerId}
           cohort={cohort}
           node={node}
           view={view}

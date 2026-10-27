@@ -57,7 +57,8 @@ describe('Checkpoint internal editor presentation', () => {
   );
   it('keeps saving and Run honestly unavailable without configured production backends', () => {
     const markup = html(view());
-    expect(markup).toContain('Not saved to server');
+    expect(markup).toContain('Autosave unavailable');
+    expect(markup).not.toContain('Saved to server');
     expect(markup).toContain('Run unavailable');
     expect(markup).toMatch(/<button[^>]*disabled=""[^>]*aria-describedby="checkpoint-run-status"/);
     expect(markup).toContain('No Run has been started');

@@ -12,7 +12,7 @@ export type EditorBootstrap = Readonly<{
   filename: string;
   sourceBytes: number;
   draft: BootstrapDraft | null;
-  offlineRecovery: null;
+  offlineRecovery: null | Readonly<{ retentionMs: number }>;
 }>;
 const uuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 const digest = /^[0-9a-f]{64}$/;
@@ -73,7 +73,11 @@ export function parseEditorBootstrap(value: unknown, expected: EditorIdentity): 
     caps.draftsV1 !== true ||
     caps.officialSubmit !== false ||
     caps.visibleRun !== null ||
-    body.offlineRecovery !== null
+    (body.offlineRecovery !== null &&
+      (!body.offlineRecovery ||
+        typeof body.offlineRecovery !== 'object' ||
+        !Number.isSafeInteger((body.offlineRecovery as { retentionMs?: unknown }).retentionMs) ||
+        Number((body.offlineRecovery as { retentionMs?: unknown }).retentionMs) <= 0))
   )
     throw new Error('EDITOR_RESPONSE');
   const verifiedScope: EditorScope = Object.freeze({
@@ -93,7 +97,12 @@ export function parseEditorBootstrap(value: unknown, expected: EditorIdentity): 
     filename: body.filename,
     sourceBytes: body.sourceBytes,
     draft: body.draft === null ? null : parseBootstrapDraft(body.draft, body.sourceBytes),
-    offlineRecovery: null,
+    offlineRecovery:
+      body.offlineRecovery === null
+        ? null
+        : Object.freeze({
+            retentionMs: Number((body.offlineRecovery as { retentionMs: number }).retentionMs),
+          }),
   });
 }
 
@@ -133,6 +142,7 @@ export async function loadCheckpointEditor(expected: EditorIdentity, send: typeo
       credentials: 'same-origin',
       cache: 'no-store',
       redirect: 'error',
+      signal: AbortSignal.timeout(10000),
     });
     if (response.status === 401) return { kind: 'blocked', reason: 'session_expired' } as const;
     if (response.status === 403) return { kind: 'blocked', reason: 'removed' } as const;
