@@ -1,3 +1,5 @@
+> Later source update: [CHECKPOINT_RUN_STORAGE_001.md](CHECKPOINT_RUN_STORAGE_001.md) prepares durable Run repository/outbox SQL and makes execution versus compilation/startup budgets explicit. New SQL remains unapplied and unexecuted; production stays disabled. Statements/counts below record the earlier interface milestone.
+
 # Visible-example Run contract - source slice 001
 
 Status: prepared manifest/policy validation, immutable work/outcome contracts, a backend factory over injected authority/reservation ports, and request-ID reconciliation. **No real reservation store, executor, public example catalog or production wiring was enabled.** `checkpointRunBackend` and `checkpointDraftBackend` remain null. No services, database operations, accounts, roles, tokens or credentials were created in this slice.

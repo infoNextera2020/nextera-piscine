@@ -159,10 +159,11 @@ export function parseVisibleExampleManifest(value: unknown): VisibleExampleManif
   exactRunBytes(JSON.stringify(result), ceiling);
   return result;
 }
+export function serializeVisibleExampleManifest(manifest: unknown) {
+  return JSON.stringify(parseVisibleExampleManifest(manifest));
+}
 export function visibleManifestDigest(manifest: unknown) {
-  return hash(
-    'nextera-visible-examples\0v1\0' + JSON.stringify(parseVisibleExampleManifest(manifest)),
-  );
+  return hash('nextera-visible-examples\0v1\0' + serializeVisibleExampleManifest(manifest));
 }
 export type VisibleRunPolicy = Readonly<{
   version: 1;
@@ -172,6 +173,12 @@ export type VisibleRunPolicy = Readonly<{
   graded: false;
   consumesGradedAttempts: false;
   limits: VisibleRunLimits;
+  budgets: Readonly<{ compilationMs: number; startupMs: number; leaseMs: number }>;
+  storage: Readonly<{
+    maxRunsPerAttempt: number;
+    maxSourceBytesPerAttempt: number;
+    readAfterDeadlineSeconds: number;
+  }>;
   maxExamples: number;
   isolation: Readonly<{
     imageDigest: string;
@@ -193,6 +200,8 @@ export function parseVisibleRunPolicy(value: unknown): VisibleRunPolicy {
     'consumesGradedAttempts',
     'limits',
     'maxExamples',
+    'budgets',
+    'storage',
     'isolation',
   ]);
   if (
@@ -219,8 +228,29 @@ export function parseVisibleRunPolicy(value: unknown): VisibleRunPolicy {
   ]);
   if (
     !validVisibleRunLimits(l as VisibleRunLimits) ||
+    Object.values(l).some((value) => Number(value) > 2147483647) ||
     Number(l.sourceBytes) > ceiling ||
     Number(l.outputBytes) > ceiling
+  )
+    invalid();
+  const budgets = object(p.budgets, ['compilationMs', 'startupMs', 'leaseMs']);
+  const storage = object(p.storage, [
+    'maxRunsPerAttempt',
+    'maxSourceBytesPerAttempt',
+    'readAfterDeadlineSeconds',
+  ]);
+  if (
+    Object.values(budgets).some(
+      (v) => !Number.isSafeInteger(v) || Number(v) < 1 || Number(v) > 2147483647,
+    ) ||
+    !Number.isSafeInteger(storage.maxRunsPerAttempt) ||
+    Number(storage.maxRunsPerAttempt) < 1 ||
+    Number(storage.maxRunsPerAttempt) > 2147483647 ||
+    !Number.isSafeInteger(storage.maxSourceBytesPerAttempt) ||
+    Number(storage.maxSourceBytesPerAttempt) < Number(l.sourceBytes) ||
+    !Number.isSafeInteger(storage.readAfterDeadlineSeconds) ||
+    Number(storage.readAfterDeadlineSeconds) < 0 ||
+    Number(storage.readAfterDeadlineSeconds) > 2147483647
   )
     invalid();
   const i = object(p.isolation, [
@@ -250,10 +280,12 @@ export function parseVisibleRunPolicy(value: unknown): VisibleRunPolicy {
     consumesGradedAttempts: false,
     limits: Object.freeze({ ...l }) as VisibleRunLimits,
     maxExamples: Number(p.maxExamples),
+    budgets: Object.freeze({ ...budgets }) as VisibleRunPolicy['budgets'],
+    storage: Object.freeze({ ...storage }) as VisibleRunPolicy['storage'],
     isolation: Object.freeze({ ...i }) as VisibleRunPolicy['isolation'],
   });
 }
-export function visiblePolicyDigest(policy: unknown) {
+export function serializeVisibleRunPolicy(policy: unknown) {
   const p = parseVisibleRunPolicy(policy);
   // Canonical key order even when the supplied configuration object's order differs.
   const {
@@ -265,31 +297,35 @@ export function visiblePolicyDigest(policy: unknown) {
     windowMs,
     concurrency,
   } = p.limits;
+  const { compilationMs, startupMs, leaseMs } = p.budgets;
+  const { maxRunsPerAttempt, maxSourceBytesPerAttempt, readAfterDeadlineSeconds } = p.storage;
   const { imageDigest, network, hostAccess, filesystem, processUser, resourceEnforcement } =
     p.isolation;
-  return hash(
-    'nextera-visible-run-policy\0v1\0' +
-      JSON.stringify({
-        ...p,
-        limits: {
-          timeoutMs,
-          memoryMb,
-          outputBytes,
-          sourceBytes,
-          requestsPerWindow,
-          windowMs,
-          concurrency,
-        },
-        isolation: {
-          imageDigest,
-          network,
-          hostAccess,
-          filesystem,
-          processUser,
-          resourceEnforcement,
-        },
-      }),
-  );
+  return JSON.stringify({
+    ...p,
+    budgets: { compilationMs, startupMs, leaseMs },
+    storage: { maxRunsPerAttempt, maxSourceBytesPerAttempt, readAfterDeadlineSeconds },
+    limits: {
+      timeoutMs,
+      memoryMb,
+      outputBytes,
+      sourceBytes,
+      requestsPerWindow,
+      windowMs,
+      concurrency,
+    },
+    isolation: {
+      imageDigest,
+      network,
+      hostAccess,
+      filesystem,
+      processUser,
+      resourceEnforcement,
+    },
+  });
+}
+export function visiblePolicyDigest(policy: unknown) {
+  return hash('nextera-visible-run-policy\0v1\0' + serializeVisibleRunPolicy(policy));
 }
 export type VisibleRunIntent = Readonly<{
   scope: EditorScope;

@@ -85,6 +85,12 @@ function policy() {
       concurrency: 1,
     },
     maxExamples: 2,
+    budgets: { compilationMs: 3000, startupMs: 1000, leaseMs: 5000 },
+    storage: {
+      maxRunsPerAttempt: 10,
+      maxSourceBytesPerAttempt: 1024,
+      readAfterDeadlineSeconds: 60,
+    },
     isolation: {
       imageDigest: 'sha256:' + 'b'.repeat(64),
       network: 'none',
@@ -585,4 +591,46 @@ it('never dispatches extra storage metadata and measures output bounds in UTF-8 
       output: '\u00e9'.repeat(33),
     }),
   ).toThrow();
+});
+
+it.each(['compilationMs', 'startupMs', 'leaseMs'])(
+  'requires separate %s instead of borrowing execution timeout',
+  (key) => {
+    const p = policy() as unknown as { budgets: Record<string, unknown> };
+    delete p.budgets[key];
+    expect(() => parseVisibleRunPolicy(p)).toThrow();
+  },
+);
+it('binds separate startup/compilation/lease/storage policy identity without implicit values', () => {
+  const p = policy(),
+    original = visiblePolicyDigest(p);
+  p.budgets.compilationMs += 1;
+  expect(visiblePolicyDigest(p)).not.toBe(original);
+  const q = policy();
+  expect(
+    visiblePolicyDigest({
+      ...q,
+      budgets: Object.fromEntries(Object.entries(q.budgets).reverse()),
+      storage: Object.fromEntries(Object.entries(q.storage).reverse()),
+    }),
+  ).toBe(visiblePolicyDigest(q));
+  q.storage.readAfterDeadlineSeconds = 0;
+  expect(parseVisibleRunPolicy(q).storage.readAfterDeadlineSeconds).toBe(0);
+});
+it.each(['maxRunsPerAttempt', 'maxSourceBytesPerAttempt', 'readAfterDeadlineSeconds'])(
+  'requires explicit storage setting %s',
+  (key) => {
+    const p = policy() as unknown as { storage: Record<string, unknown> };
+    delete p.storage[key];
+    expect(() => parseVisibleRunPolicy(p)).toThrow();
+  },
+);
+it('rejects out-of-range resource/database budgets', () => {
+  for (const patch of [
+    { budgets: { ...policy().budgets, compilationMs: 0 } },
+    { limits: { ...policy().limits, timeoutMs: 2147483648 } },
+    { storage: { ...policy().storage, readAfterDeadlineSeconds: -1 } },
+    { storage: { ...policy().storage, maxSourceBytesPerAttempt: 1 } },
+  ])
+    expect(() => parseVisibleRunPolicy({ ...policy(), ...patch })).toThrow();
 });
