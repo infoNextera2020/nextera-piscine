@@ -3,39 +3,34 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
 import type { CheckpointPresentation } from '../learning/checkpoint-presentation';
 import { StatusBadge } from '../../components/learning/primitives';
-import {
-  RecordDetails,
-  SafeHistory,
-  Subject,
-  WorkspaceEmpty,
-} from '../../components/learning/workspace-parts';
-import { HairlineFigure } from '../../components/learning/hairline-figure';
+import { RecordDetails, WorkspaceEmpty } from '../../components/learning/workspace-parts';
+import { HairlineIcon } from '../../components/learning/hairline-icon';
+import { CheckpointEditor } from './checkpoint-editor';
+import e from './checkpoint-editor.module.css';
 import { displayState, formatMoment } from '../learning/display';
 import { checkpointResultHref } from '../learning/checkpoint-result-link';
-import { SubmissionIntents } from '../submissions/retry-intent';
 import s from '../../components/learning/workspace.module.css';
 export function Checkpoint({
   cohort,
   node,
   initial,
+  title = 'Checkpoint workspace',
 }: {
   cohort: string;
   node: string;
   initial: CheckpointPresentation;
+  title?: string;
 }) {
   const [view, setView] = useState(initial);
-  const [task, setTask] = useState(0);
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState('');
   const [readError, setReadError] = useState('');
   const [accessUnavailable, setAccessUnavailable] = useState(false);
+  const [draftWarning, setDraftWarning] = useState(false);
   const [seconds, setSeconds] = useState<number | null>(null);
   const clock = useRef({ at: 0, remaining: 0 });
-  const source = useRef<HTMLInputElement>(null);
   const finishDialog = useRef<HTMLDialogElement>(null);
   const finishButton = useRef<HTMLButtonElement>(null);
-  const intents = useRef<SubmissionIntents | null>(null);
-  if (!intents.current) intents.current = new SubmissionIntents(() => sessionStorage);
   const startId = useRef('');
   const inFlight = useRef(false);
   const readRequest = useRef<AbortController | null>(null);
@@ -111,6 +106,12 @@ export function Checkpoint({
       document.removeEventListener('visibilitychange', visible);
     };
   }, [refresh, accessUnavailable]);
+  const removeEditorAccess = useCallback(() => {
+    setAccessUnavailable(true);
+    setReadError(
+      'Checkpoint access could not be confirmed. Drafts and protected task details have been removed from this page.',
+    );
+  }, []);
   function closeFinish() {
     finishDialog.current?.close();
     finishButton.current?.focus();
@@ -152,325 +153,147 @@ export function Checkpoint({
       setBusy(false);
     }
   }
-  async function submit() {
-    const file = source.current?.files?.[0];
-    const item = view.tasks[task];
-    if (inFlight.current || !item || !view.attempt) return;
-    if (
-      !file ||
-      file.name !== item.rules.required_files[0] ||
-      file.size < 1 ||
-      file.size > item.rules.max_size_kb * 1024
-    ) {
-      setMessage('Choose the required solution file within the published size limit.');
-      source.current?.focus();
-      return;
-    }
-    inFlight.current = true;
-    setBusy(true);
-    setMessage('Uploading checkpoint task…');
-    try {
-      const bytes = await file.arrayBuffer();
-      const digest = Array.from(new Uint8Array(await crypto.subtle.digest('SHA-256', bytes)), (b) =>
-        b.toString(16).padStart(2, '0'),
-      ).join('');
-      const intent = `checkpoint-submission:${cohort}:${node}:${view.attempt.id}:${item.key}:${file.name}:${digest}`;
-      const requestId = intents.current!.requestId(intent);
-      const response = await fetch('/api/checkpoints/submissions', {
-        method: 'POST',
-        headers: {
-          'x-attempt-id': view.attempt.id,
-          'x-task-key': item.key,
-          'x-filename': file.name,
-          'idempotency-key': requestId,
-        },
-        body: file,
-      });
-      if (!response.ok) throw new Error();
-      const receipt = (await response.json()) as { id?: unknown };
-      if (typeof receipt.id !== 'string' || !receipt.id) throw new Error();
-      intents.current!.confirm(intent);
-      if (source.current) source.current.value = '';
-      setMessage('Submission accepted. Awaiting trusted evaluation.');
-      await refresh();
-    } catch {
-      setMessage(
-        'Submission could not be confirmed. Refresh and check access, trusted time and task allowance before retrying.',
-      );
-      await refresh();
-    } finally {
-      inFlight.current = false;
-      setBusy(false);
-    }
-  }
   if (accessUnavailable)
     return (
-      <section className={s.card} aria-label="Checkpoint access unavailable">
-        <div className={s.notice} role="alert">
+      <section className={e.screen} aria-label="Checkpoint access unavailable">
+        <div className={e.alert} role="alert">
           <h2>Recheck checkpoint access</h2>
           <p>{readError}</p>
         </div>
-        <div className={s.actions}>
-          <button className={s.button} onClick={() => void refresh()}>
+        <div className={e.dialogActions}>
+          <button className={e.button} onClick={() => void refresh()}>
             Retry checkpoint read
           </button>
-          <Link className={s.button} href={'/app/cohorts/' + cohort}>
+          <Link className={e.button} href={'/app/cohorts/' + cohort}>
             Return to Journey
           </Link>
         </div>
       </section>
     );
-  const item = view.tasks[task];
-  const taskDisplay = view.display.tasks[task];
   const resultHref = `/app/cohorts/${cohort}/checkpoints/${node}/result`;
   const state = view.attempt?.status ?? (view.eligible ? 'available' : 'locked');
+  const expired = seconds === 0 || !view.display.intakeOpen;
   return (
-    <div className={s.stack}>
-      {readError && (
-        <div className={s.notice} role="alert">
-          <p>{readError}</p>
-          <button className={s.button} onClick={() => void refresh()}>
-            Retry checkpoint read
-          </button>
-        </div>
-      )}
-      <div className={s.notice} role="status">
-        <div className={s.recordHead}>
-          <span>
-            Checkpoint status: <strong>{displayState(state)}</strong>
-          </span>
+    <div className={e.screen}>
+      <header className={e.header}>
+        <div>
+          <h1>{title}</h1>
           <StatusBadge state={state} />
-        </div>
-        {view.display.expiredAwaitingEvaluation && (
           <p>
-            Trusted deadline reached. Intake is closed; awaiting server finalization. Accepted
-            pre-deadline work remains valid.
+            {view.tasks.length
+              ? `${view.tasks.length} questions · choose any question`
+              : 'Questions appear after an authorized attempt starts.'}
           </p>
-        )}
-        {view.attempt?.status === 'evaluating' && (
-          <p>
-            Intake is closed. Accepted work is still evaluating, including work accepted before the
-            deadline.
-          </p>
-        )}
-        {['passed', 'failed', 'infrastructure_blocked'].includes(state) && (
-          <div className={s.actions}>
-            <Link className={s.button} href={resultHref}>
-              View authoritative result
-            </Link>
-          </div>
-        )}
-      </div>
-      <div className={s.columns}>
-        <div className={s.stack}>
-          {!view.tasks.length ? (
-            <section className={s.card + ' ' + s.gateIntro}>
-              <HairlineFigure kind="gate" state={state} prominent />
-              <WorkspaceEmpty
-                title={view.eligible ? 'A focused test of transfer' : 'This gate is locked'}
-              >
-                Four checkpoint-specific tasks become visible when a legitimate attempt starts. The
-                server controls access.
-              </WorkspaceEmpty>
-              {view.display.startAvailable && (
-                <button
-                  className={s.button + ' ' + s.navigation}
-                  disabled={busy || !!readError}
-                  onClick={() => void mutate('start')}
-                >
-                  {busy ? 'Starting…' : 'Start checkpoint'}
-                </button>
-              )}
-            </section>
-          ) : (
-            <>
-              <section className={s.card}>
-                <div className={s.sectionHead}>
-                  <h2>Checkpoint tasks</h2>
-                  <span className={s.muted}>Four tasks · unrestricted order</span>
-                </div>
-                <nav aria-label="Checkpoint tasks" className={s.taskList}>
-                  {view.tasks.map((t, i) => (
-                    <button
-                      key={t.key}
-                      className={s.task}
-                      data-state={view.display.tasks[i]?.state}
-                      aria-pressed={task === i}
-                      disabled={busy}
-                      onClick={() => {
-                        setTask(i);
-                        if (source.current) source.current.value = '';
-                      }}
-                    >
-                      <span className={s.recordHead}>
-                        <strong>
-                          {i + 1}. {t.title}
-                        </strong>
-                        <StatusBadge
-                          state={view.display.tasks[i]?.state ?? 'locked'}
-                          label={
-                            view.display.tasks[i]?.state === 'available'
-                              ? view.display.tasks[i]?.submitAvailable
-                                ? 'Open'
-                                : 'No slots available'
-                              : view.display.tasks[i]?.state === 'system_error'
-                                ? view.display.tasks[i]?.submitAvailable
-                                  ? 'System retry'
-                                  : 'Infrastructure issue'
-                                : view.display.tasks[i]?.state === 'closed'
-                                  ? 'Closed'
-                                  : displayState(view.display.tasks[i]?.state ?? 'closed')
-                          }
-                        />
-                      </span>
-                      <small>{t.reserved} of 3 submission slots used or pending</small>
-                      {view.display.tasks[i]?.state === 'system_error' && (
-                        <small>Infrastructure errors do not use one of your attempts</small>
-                      )}
-                    </button>
-                  ))}
-                </nav>
-              </section>
-              {item && (
-                <section className={s.card} aria-label="Selected checkpoint task">
-                  <h2>{item.title}</h2>
-                  <Subject>{item.subject}</Subject>
-                  <p className={s.notice} style={{ marginTop: 20 }}>
-                    {item.passed
-                      ? 'Task passed'
-                      : `${item.reserved} of 3 submission slots used or pending`}
-                  </p>
-                  {taskDisplay?.submitAvailable && (
-                    <form
-                      onSubmit={(event) => {
-                        event.preventDefault();
-                        void submit();
-                      }}
-                    >
-                      <fieldset
-                        disabled={busy || !!readError}
-                        style={{ border: 0, padding: 0, minWidth: 0 }}
-                      >
-                        <div className={s.upload}>
-                          <label>
-                            Solution file ({item.rules.required_files[0]})
-                            <input
-                              ref={source}
-                              type="file"
-                              required
-                              accept={'.' + item.rules.required_files[0]?.split('.').at(-1)}
-                              aria-describedby="checkpoint-file-help"
-                            />
-                          </label>
-                          <p id="checkpoint-file-help" className={s.muted}>
-                            {item.rules.max_size_kb} KiB maximum · exact filename required
-                          </p>
-                        </div>
-                        <button className={s.button + ' ' + s.navigation} type="submit">
-                          {busy ? 'Submitting…' : 'Submit checkpoint task'}
-                        </button>
-                      </fieldset>
-                    </form>
-                  )}
-                  {!taskDisplay?.submitAvailable && (
-                    <p className={s.muted}>
-                      Task intake is closed or no submission slot is currently available. The server
-                      controls the allowance.
-                    </p>
-                  )}
-                  <h3 style={{ marginTop: 24, marginBottom: 12 }}>Safe task history</h3>
-                  <SafeHistory items={view.submissions.filter((h) => h.task_key === item.key)} />
-                </section>
-              )}
-            </>
-          )}
         </div>
-        <aside className={s.stack} aria-label="Checkpoint controls">
-          {!!view.tasks.length && (
-            <div className={s.card}>
-              <HairlineFigure kind="gate" state={state} />
-              <p className={s.muted}>Four tasks · one authoritative gate</p>
-            </div>
-          )}
+        <div className={e.headerActions}>
           {view.attempt && (
-            <div className={s.timer}>
-              <small>DISPLAY-ONLY TIME LEFT</small>
+            <div className={e.timer}>
+              <small>Time remaining</small>
               <output aria-label="Time remaining">
                 {seconds === null
                   ? 'Syncing…'
                   : `${Math.floor(seconds / 60)}:${String(seconds % 60).padStart(2, '0')}`}
               </output>
-              <small>Trusted deadline</small>
               <time dateTime={view.attempt.deadline_at}>
                 {formatMoment(view.attempt.deadline_at)}
               </time>
-              <p className={s.muted}>Countdown does not close intake or decide the outcome.</p>
             </div>
           )}
-          <section className={s.card}>
-            <h2>Checkpoint policy</h2>
-            <ol className={s.policy}>
-              <li>
-                <strong>90 trusted minutes</strong>Refresh and reconnect never extend the deadline.
-              </li>
-              <li>
-                <strong>Pass 3 of 4 tasks</strong>Up to 3 learner-result submissions per task.
-              </li>
-              <li>
-                <strong>Infrastructure is separate</strong>Infrastructure errors do not use one of
-                your attempts.
-              </li>
-              <li>
-                <strong>Accepted work remains valid</strong>Pre-deadline submissions count even when
-                evaluation finishes later.
-              </li>
-            </ol>
-          </section>
           {view.display.intakeOpen && (
-            <section className={s.card}>
-              <h2>Finish early?</h2>
-              <p className={s.muted}>
-                Finishing is irreversible. New intake closes immediately. Unanswered tasks receive
-                no credit; accepted work continues evaluation.
-              </p>
-              <div className={s.actions}>
-                <button
-                  ref={finishButton}
-                  className={s.button + ' ' + s.danger}
-                  disabled={busy || !!readError}
-                  onClick={() => finishDialog.current?.showModal()}
-                >
-                  Finish checkpoint
-                </button>
-              </div>
-            </section>
-          )}
-          {view.attempt && view.display.startAvailable && (
             <button
-              className={s.button + ' ' + s.navigation}
+              ref={finishButton}
+              className={e.button}
+              disabled={busy || !!readError || expired}
+              onClick={() => finishDialog.current?.showModal()}
+            >
+              Review &amp; finish
+            </button>
+          )}
+        </div>
+      </header>
+      {readError && (
+        <div className={e.alert} role="alert">
+          <p>{readError}</p>
+          <button className={e.button} onClick={() => void refresh()}>
+            Retry checkpoint read
+          </button>
+        </div>
+      )}
+      {(view.display.expiredAwaitingEvaluation ||
+        (seconds === 0 && view.attempt?.status === 'active')) && (
+        <div className={e.alert} role="status">
+          Trusted deadline reached. Intake is closed; awaiting server finalization. Accepted
+          pre-deadline work remains valid. No draft is automatically submitted.
+        </div>
+      )}
+      {view.attempt?.status === 'evaluating' && (
+        <div className={e.alert} role="status">
+          Intake is closed. Accepted work is still evaluating, including work accepted before the
+          deadline.
+        </div>
+      )}
+      {['passed', 'failed', 'infrastructure_blocked'].includes(state) && (
+        <div className={e.dialogActions}>
+          <Link className={e.button} href={resultHref}>
+            View authoritative result
+          </Link>
+        </div>
+      )}
+      {view.tasks.length && view.attempt ? (
+        <CheckpointEditor
+          key={`${cohort}:${node}:${view.attempt.id}`}
+          cohort={cohort}
+          node={node}
+          view={view}
+          paused={busy || !!readError}
+          expired={expired}
+          onRefresh={refresh}
+          onAccessRemoved={removeEditorAccess}
+          onDraftWarning={setDraftWarning}
+        />
+      ) : (
+        <section className={e.entry}>
+          <HairlineIcon name="gate" size={72} />
+          <h2>{view.eligible ? 'A focused test of transfer' : 'This checkpoint is locked'}</h2>
+          <p>
+            Questions become visible when a legitimate attempt starts. Access, the deadline,
+            submission allowance and final results are controlled by the server.
+          </p>
+          {view.display.startAvailable && (
+            <button
+              className={e.primary}
               disabled={busy || !!readError}
               onClick={() => void mutate('start')}
             >
-              {busy ? 'Starting…' : 'Start next checkpoint attempt'}
+              {busy ? 'Starting…' : 'Start checkpoint'}
             </button>
           )}
-          {view.attempt?.retake_at && (
-            <p className={s.notice}>
-              Earliest policy retake time: {formatMoment(view.attempt.retake_at)}. Current access
-              and server approval are required.
-            </p>
-          )}
-          {view.replacement_available && (
-            <p className={s.notice} data-tone="system">
-              An authorized replacement grant is recorded. Starting still requires current access.
-            </p>
-          )}
-        </aside>
-      </div>
-      <p className={s.feedback} role="status">
+        </section>
+      )}
+      {view.attempt && view.tasks.length > 0 && view.display.startAvailable && (
+        <button
+          className={e.primary}
+          disabled={busy || !!readError}
+          onClick={() => void mutate('start')}
+        >
+          {busy ? 'Starting…' : 'Start next checkpoint attempt'}
+        </button>
+      )}
+      {view.attempt?.retake_at && (
+        <p className={e.notice}>
+          Earliest policy retake time: {formatMoment(view.attempt.retake_at)}. Current access and
+          server approval are required.
+        </p>
+      )}
+      {view.replacement_available && (
+        <p className={e.notice}>
+          An authorized replacement grant is recorded. Starting still requires current access.
+        </p>
+      )}
+      <p className={e.feedback} role="status">
         {message}
       </p>
-      <section className={s.card}>
+      <section className={e.attempts}>
         <h2>Attempt history</h2>
         {view.history.length ? (
           <ol className={s.history}>
@@ -478,12 +301,12 @@ export function Checkpoint({
               <li key={h.id} className={s.record}>
                 <span>
                   {h.kind === 'normal' ? 'Standard' : 'Replacement'} attempt {h.normal_slot}
-                  {h.points !== null ? ` · ${h.points}/4` : ''}
+                  {h.points !== null ? ` · ${h.points} points` : ''}
                 </span>
                 <StatusBadge state={h.status} />
                 {checkpointResultHref(cohort, node, h) && (
                   <Link
-                    className={s.button}
+                    className={e.button}
                     href={checkpointResultHref(cohort, node, h)!}
                     aria-label={'View result for attempt ' + h.id}
                   >
@@ -505,7 +328,7 @@ export function Checkpoint({
       </section>
       <dialog
         ref={finishDialog}
-        className={s.dialog}
+        className={e.dialog}
         aria-labelledby="finish-title"
         onKeyDown={(event) => {
           if (event.key !== 'Tab') return;
@@ -529,13 +352,26 @@ export function Checkpoint({
           This is irreversible. New submissions stop immediately. Unanswered tasks contribute zero.
           Already accepted work continues to authoritative finalization.
         </p>
-        <div className={s.actions}>
-          <button autoFocus className={s.button} onClick={closeFinish}>
+        {draftWarning && (
+          <p role="alert">
+            There are unsubmitted drafts or unconfirmed submissions. Finishing does not submit
+            drafts. Review official history before continuing.
+          </p>
+        )}
+        <ul>
+          {view.tasks.map((t, i) => (
+            <li key={t.key}>
+              {i + 1}. {t.title} — {displayState(view.display.tasks[i]?.state ?? 'closed')}
+            </li>
+          ))}
+        </ul>
+        <div className={e.dialogActions}>
+          <button autoFocus className={e.button} onClick={closeFinish}>
             Keep working
           </button>
           <button
-            className={s.button + ' ' + s.danger}
-            disabled={busy || !!readError}
+            className={e.primary}
+            disabled={busy || !!readError || expired}
             onClick={() => void mutate('finish')}
           >
             {busy ? 'Finishing…' : 'Confirm finish'}

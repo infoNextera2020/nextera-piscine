@@ -1,0 +1,508 @@
+.screen {
+  color: var(--workspace-text);
+  font-family: var(--workspace-font);
+  min-width: 0;
+}
+.header {
+  display: flex;
+  align-items: center;
+  gap: 24px;
+  justify-content: space-between;
+  padding: 8px 0 28px;
+  border-bottom: 1px solid var(--workspace-border);
+  margin-bottom: 24px;
+}
+.header h1 {
+  font-size: clamp(24px, 2.3vw, 34px);
+  font-weight: 500;
+  letter-spacing: -0.04em;
+  line-height: 1.3;
+  margin: 0 0 12px;
+}
+.header p {
+  color: var(--workspace-muted);
+  margin: 10px 0 0;
+  font-size: 13px;
+}
+.headerActions {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  flex-shrink: 0;
+}
+.timer {
+  border: 1px solid var(--workspace-border);
+  border-radius: 6px;
+  padding: 12px 16px;
+  min-width: 120px;
+}
+.timer small {
+  display: block;
+  color: var(--workspace-muted);
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+.timer output {
+  color: var(--workspace-warning);
+  font:
+    500 28px/1.4 ui-monospace,
+    monospace;
+  font-variant-numeric: tabular-nums;
+}
+.timer time {
+  color: var(--workspace-muted);
+  font-size: 10px;
+}
+.workspace {
+  display: grid;
+  grid-template-columns: minmax(140px, 0.65fr) minmax(250px, 1.4fr) minmax(320px, 2fr);
+  gap: 20px;
+  align-items: start;
+  min-width: 0;
+}
+.workspace > * {
+  min-width: 0;
+}
+.eyebrow {
+  display: block;
+  color: var(--workspace-muted);
+  font:
+    10px/1.5 ui-monospace,
+    monospace;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+.questions {
+  min-width: 0;
+}
+.questionList {
+  display: grid;
+  gap: 9px;
+  margin-top: 20px;
+}
+.question {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-height: 54px;
+  padding: 10px;
+  text-align: left;
+  color: var(--workspace-text);
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: 5px;
+  cursor: pointer;
+  font: inherit;
+  width: 100%;
+}
+.question[aria-pressed='true'] {
+  border-color: var(--workspace-accent);
+  background: color-mix(in srgb, var(--workspace-accent) 10%, var(--workspace-bg));
+}
+.number {
+  font:
+    12px/1.4 ui-monospace,
+    monospace;
+  color: var(--workspace-accent);
+}
+.questionInfo {
+  min-width: 0;
+}
+.questionInfo strong {
+  display: block;
+  font-size: 12px;
+  font-weight: 500;
+  overflow-wrap: anywhere;
+}
+.questionInfo small {
+  display: block;
+  color: var(--workspace-muted);
+  font-size: 10px;
+  margin-top: 4px;
+}
+.railHelp {
+  font-size: 11px;
+  line-height: 1.8;
+  color: var(--workspace-muted);
+  border-top: 1px solid var(--workspace-border);
+  margin-top: 24px;
+  padding-top: 20px;
+}
+.statement {
+  border: 1px solid var(--workspace-border);
+  border-radius: 6px;
+  padding: 24px 20px;
+  background: var(--workspace-panel);
+  overflow-wrap: anywhere;
+}
+.statement h2 {
+  font-size: 23px;
+  font-weight: 500;
+  letter-spacing: -0.025em;
+  margin: 14px 0;
+}
+.state {
+  display: inline-block;
+  padding: 6px 10px;
+  border: 1px solid var(--workspace-border);
+  border-radius: 4px;
+  font-size: 11px;
+  color: var(--workspace-warning);
+  margin-bottom: 24px;
+}
+.requirements {
+  border-top: 1px solid var(--workspace-border);
+  margin-top: 30px;
+  padding-top: 20px;
+}
+.requirements p {
+  color: var(--workspace-muted);
+  font-size: 11px;
+  line-height: 1.9;
+}
+.editorColumn {
+  display: grid;
+  gap: 16px;
+}
+.editorFrame {
+  border: 1px solid var(--workspace-border);
+  border-radius: 6px;
+  overflow: hidden;
+  background: var(--workspace-bg);
+}
+.editorHeader {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  padding: 12px 16px;
+  border-bottom: 1px solid var(--workspace-border);
+  min-width: 0;
+  font-size: 12px;
+}
+.editorHeader label {
+  overflow-wrap: anywhere;
+  min-width: 0;
+}
+.editorHeader > span {
+  margin-left: auto;
+  color: var(--workspace-muted);
+  font-size: 11px;
+}
+.code {
+  display: block;
+  width: 100%;
+  min-height: 320px;
+  max-height: 65vh;
+  resize: vertical;
+  overflow: auto;
+  color: var(--workspace-text);
+  background: var(--workspace-bg);
+  border: 0;
+  border-radius: 0;
+  padding: 22px;
+  font:
+    14px/1.9 ui-monospace,
+    SFMono-Regular,
+    Consolas,
+    monospace;
+  tab-size: 2;
+  box-sizing: border-box;
+}
+.code[readonly] {
+  color: var(--workspace-muted);
+}
+.editorFooter {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 12px 14px;
+  border-top: 1px solid var(--workspace-border);
+  font-size: 10px;
+  color: var(--workspace-warning);
+}
+.editorFooter > span:first-child {
+  color: var(--workspace-muted);
+}
+.saveStatus,
+.runOutput {
+  border: 1px solid var(--workspace-border);
+  border-radius: 6px;
+  padding: 18px;
+  background: var(--workspace-panel);
+}
+.saveStatus strong,
+.runOutput strong {
+  display: block;
+  font-size: 12px;
+  margin: 12px 0;
+  font-weight: 500;
+}
+.saveStatus p,
+.runOutput p {
+  font-size: 11px;
+  line-height: 1.9;
+  color: var(--workspace-muted);
+  margin: 8px 0 0;
+}
+.editorActions {
+  display: grid;
+  grid-template-columns: 1fr 2fr;
+  gap: 12px;
+}
+.button,
+.primary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  min-height: 48px;
+  padding: 12px 16px;
+  border: 1px solid var(--workspace-border);
+  border-radius: 5px;
+  color: var(--workspace-text);
+  background: transparent;
+  font: 500 12px/1.5 var(--workspace-font);
+  cursor: pointer;
+  text-decoration: none;
+}
+.primary {
+  background: var(--workspace-accent);
+  color: var(--workspace-ink);
+  border-color: var(--workspace-accent);
+}
+.button:disabled,
+.primary:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+.screen button:focus-visible,
+.screen a:focus-visible,
+.screen textarea:focus-visible,
+.screen summary:focus-visible,
+.screen pre:focus-visible {
+  outline: 2px solid var(--workspace-accent);
+  outline-offset: 3px;
+}
+.screen textarea:focus-visible {
+  outline-offset: -3px;
+}
+.notice,
+.feedback {
+  font-size: 12px;
+  line-height: 1.8;
+  color: var(--workspace-warning);
+  margin: 0;
+}
+.feedback {
+  color: var(--workspace-muted);
+}
+.snapshot {
+  border: 1px solid var(--workspace-border);
+  border-radius: 5px;
+  padding: 12px;
+  font-size: 11px;
+  min-width: 0;
+}
+.snapshot summary {
+  cursor: pointer;
+  min-height: 36px;
+}
+.snapshot pre {
+  overflow: auto;
+  max-width: 100%;
+  max-height: 240px;
+}
+.snapshot code {
+  overflow-wrap: anywhere;
+}
+.officialHistory {
+  grid-column: 2/-1;
+  border-top: 1px solid var(--workspace-border);
+  padding-top: 24px;
+  margin-top: 4px;
+}
+.officialHistory h2,
+.attempts h2 {
+  font-size: 14px;
+  font-weight: 500;
+  margin: 0 0 18px;
+}
+.mobileTabs {
+  display: none;
+}
+.attempts {
+  border-top: 1px solid var(--workspace-border);
+  padding-top: 24px;
+  margin-top: 32px;
+}
+.entry {
+  max-width: 680px;
+  padding: 28px;
+  border: 1px solid var(--workspace-border);
+  border-radius: 6px;
+  background: var(--workspace-panel);
+}
+.entry p {
+  color: var(--workspace-muted);
+  font-size: 13px;
+  line-height: 1.9;
+}
+.entry h2 {
+  font-size: 24px;
+  font-weight: 500;
+}
+.entry .button,
+.entry .primary {
+  margin-top: 16px;
+}
+.alert {
+  border: 1px solid var(--workspace-border);
+  padding: 16px;
+  margin-bottom: 20px;
+  color: var(--workspace-warning);
+  font-size: 12px;
+  line-height: 1.8;
+}
+.alert p {
+  margin: 0 0 12px;
+}
+.dialog {
+  color: var(--workspace-text);
+  background: var(--workspace-panel);
+  border: 1px solid var(--workspace-border);
+  border-radius: 8px;
+  max-width: 560px;
+  width: calc(100% - 32px);
+  padding: 28px;
+  box-sizing: border-box;
+}
+.dialog::backdrop {
+  background: rgb(0 0 0 / 75%);
+}
+.dialog h2 {
+  font-size: 22px;
+  font-weight: 500;
+}
+.dialog p {
+  font-size: 13px;
+  line-height: 1.9;
+  color: var(--workspace-muted);
+}
+.dialogActions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-top: 24px;
+}
+@media (max-width: 1100px) {
+  .workspace {
+    grid-template-columns: 125px minmax(220px, 1fr) minmax(270px, 1.35fr);
+    gap: 14px;
+  }
+  .questionInfo strong {
+    font-size: 11px;
+  }
+  .statement {
+    padding: 20px 16px;
+  }
+}
+@media (max-width: 950px) {
+  .workspace {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .questionList {
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+    gap: 8px;
+    margin-top: 14px;
+  }
+  .question {
+    justify-content: center;
+    padding: 12px 6px;
+    min-height: 48px;
+  }
+  .questionInfo {
+    display: none;
+  }
+  .railHelp {
+    display: none;
+  }
+  .mobileTabs {
+    display: flex;
+    gap: 4px;
+    border-bottom: 1px solid var(--workspace-border);
+    padding-bottom: 8px;
+  }
+  .mobileTabs button {
+    flex: 1;
+    padding: 12px 8px;
+    min-height: 44px;
+    text-transform: capitalize;
+    font: 12px var(--workspace-font);
+    color: var(--workspace-muted);
+    border: 0;
+    background: transparent;
+    cursor: pointer;
+  }
+  .mobileTabs button[aria-pressed='true'] {
+    color: var(--workspace-accent);
+    box-shadow: inset 0 -2px var(--workspace-accent);
+  }
+  .statement[data-visible='false'],
+  .editorColumn[data-visible='false'],
+  .officialHistory[data-visible='false'] {
+    display: none;
+  }
+  .officialHistory {
+    grid-column: auto;
+  }
+  .code {
+    font-size: 16px;
+    min-height: 300px;
+    padding: 16px;
+  }
+  .header {
+    align-items: flex-start;
+    gap: 20px;
+    flex-direction: column;
+  }
+  .headerActions {
+    order: -1;
+    width: 100%;
+    justify-content: space-between;
+  }
+  .timer {
+    min-width: 100px;
+    padding: 8px 12px;
+  }
+  .timer output {
+    font-size: 24px;
+  }
+  .editorFooter {
+    font-size: 10px;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .screen * {
+    scroll-behavior: auto;
+  }
+}
+
+.selectedHeading {
+  display: none;
+}
+@media (max-width: 950px) {
+  .selectedHeading {
+    display: block;
+  }
+  .selectedHeading h2 {
+    margin: 8px 0;
+    font-size: 21px;
+    font-weight: 500;
+    overflow-wrap: anywhere;
+  }
+  .selectedHeading > span:last-child {
+    color: var(--workspace-muted);
+    font-size: 11px;
+  }
+}
