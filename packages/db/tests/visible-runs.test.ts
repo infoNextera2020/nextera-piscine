@@ -370,3 +370,38 @@ it('bounds queue/recovery hints and rejects malformed or duplicate fenced identi
   await expect(listRecoverableVisibleRuns(d.db, 101)).rejects.toThrow();
   expect(d.execute).not.toHaveBeenCalled();
 });
+
+it('keeps the prepared SQL rehearsal opt-in and pinned to its private synthetic target', async () => {
+  const runner = await readFile(
+    fileURLToPath(new URL('../../../scripts/test-visible-runs-isolated.py', import.meta.url)),
+    'utf8',
+  );
+  for (const value of [
+    'foundation_test_visible_runs_ephemeral',
+    "listen_addresses=''",
+    '--auth-host=reject',
+    'unix_socket_permissions=0700',
+    'nextera-visible-run-test-',
+    'VISIBLE_RUN_TEST_SOCKET',
+    'cleanup',
+  ])
+    expect(runner).toContain(value);
+  const config = await readFile(
+    fileURLToPath(new URL('../../../vitest.config.ts', import.meta.url)),
+    'utf8',
+  );
+  expect(config).not.toContain('packages/db/tests/integration/visible-runs.test.ts');
+});
+it('requires schema namespace usage as well as function permission for Run callers', async () => {
+  const d = database(null);
+  await readVisibleRunReadiness(d.db, 'worker');
+  const q = new PgDialect().sqlToQuery(d.execute.mock.calls[1]![0] as never);
+  expect(q.sql).toContain("has_schema_privilege(current_user,'app','USAGE')");
+  const draft = await readFile(
+    fileURLToPath(new URL('../migration-drafts/0012_visible_runs.DRAFT.sql', import.meta.url)),
+    'utf8',
+  );
+  expect(draft).toContain(
+    'GRANT USAGE ON SCHEMA app TO nextera_visible_run_worker,nextera_visible_run_maintenance',
+  );
+});

@@ -13,6 +13,7 @@
     "packages/*/tests/**/*.ts",
     "packages/db/vitest.integration.config.ts",
     "packages/db/vitest.drafts.config.ts",
+    "packages/db/vitest.runs.config.ts",
     "apps/web/app/api/health/route.test.ts",
     "playwright.learning.config.ts",
     "tests/fixtures/learning.ts"

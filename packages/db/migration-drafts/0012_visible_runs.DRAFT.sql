@@ -225,6 +225,7 @@ CREATE FUNCTION app.list_recoverable_visible_runs(batch integer) RETURNS jsonb L
 END $$;
 
 -- No role, membership, principal mapping, enabled profile, scheduler or runtime is provisioned.
+GRANT USAGE ON SCHEMA app TO nextera_visible_run_worker,nextera_visible_run_maintenance;
 GRANT CREATE ON SCHEMA app TO nextera_checkpoint_owner;
 DO $$ DECLARE obj record;grantee record;BEGIN
  FOR obj IN SELECT c.oid,c.oid::regclass AS name FROM pg_class c JOIN pg_namespace n ON n.oid=c.relnamespace WHERE n.nspname='app' AND c.relname IN ('visible_run_profiles','visible_run_receipts','visible_run_sources','visible_run_outputs','visible_run_outbox','visible_run_principals') LOOP

@@ -75,7 +75,7 @@ export async function readVisibleRunReadiness(
     if (!Object.hasOwn(roles, capability)) fail();
     const [row] = await db.execute(sql.raw(VISIBLE_RUN_READINESS_SQL));
     const [caller] = await db.execute(
-      sql`SELECT pg_catalog.pg_has_role(current_user,${roles[capability]},'USAGE') AND (SELECT count(*) FROM (VALUES ('nextera_web'),('nextera_visible_run_worker'),('nextera_visible_run_maintenance')) allowed(role_name) WHERE pg_catalog.pg_has_role(current_user,allowed.role_name,'USAGE'))=1 AS permitted`,
+      sql`SELECT pg_catalog.pg_has_role(current_user,${roles[capability]},'USAGE') AND pg_catalog.has_schema_privilege(current_user,'app','USAGE') AND (SELECT count(*) FROM (VALUES ('nextera_web'),('nextera_visible_run_worker'),('nextera_visible_run_maintenance')) allowed(role_name) WHERE pg_catalog.pg_has_role(current_user,allowed.role_name,'USAGE'))=1 AS permitted`,
     );
     return {
       ready:
