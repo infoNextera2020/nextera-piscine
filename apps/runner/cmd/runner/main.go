@@ -19,6 +19,8 @@ func run(args []string) error {
 		return fmt.Errorf("usage: runner version|capabilities|verify-artifact")
 	}
 	switch args[0] {
+	case "public-run-stdio":
+		return publicRun(args[1:])
 	case "work":
 		return work(args[1:])
 	case "version", "capabilities":

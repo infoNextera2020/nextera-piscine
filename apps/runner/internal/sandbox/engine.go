@@ -26,6 +26,7 @@ var ErrOutput = errors.New("OUTPUT_LIMIT")
 
 type Engine struct {
 	Socket       string
+	Purpose      string
 	HTTP         *http.Client
 	Job, Attempt string
 }
@@ -39,7 +40,12 @@ func New(socket string) *Engine {
 // A newly fenced claim may remove containers belonging to older attempts of
 // that same job. Stopped Judge containers are also safe to reap after a crash.
 func (e *Engine) Cleanup(ctx context.Context) error {
-	filters, _ := json.Marshal(map[string][]string{"label": {"nextera.purpose=foundation004-judge"}})
+	purpose, ok := e.purpose()
+	// Public runs use exact run/execution cleanup only, never this broad Judge reaper.
+	if !ok || purpose != "foundation004-judge" {
+		return ErrInfrastructure
+	}
+	filters, _ := json.Marshal(map[string][]string{"label": {"nextera.purpose=" + purpose}})
 	var containers []struct {
 		ID     string `json:"Id"`
 		State  string
@@ -105,6 +111,10 @@ type Container struct {
 }
 
 func (e *Engine) Create(ctx context.Context, image string, compile bool) (*Container, error) {
+	purpose, ok := e.purpose()
+	if !ok {
+		return nil, ErrInfrastructure
+	}
 	memory, pids := int64(64<<20), 32
 	sizes := []int{12, 3, 1}
 	inodes := []int{768, 192, 64}
@@ -127,7 +137,7 @@ func (e *Engine) Create(ctx context.Context, image string, compile bool) (*Conta
 		return nil, ErrInfrastructure
 	}
 	// Independent control-plane crash backstop. Normal phase deadlines remain 20s/2s.
-	payload := map[string]any{"Image": image, "User": "65532:65532", "Cmd": []string{"/usr/bin/timeout", "--signal=KILL", "45", "/bin/sleep", "86400"}, "Labels": map[string]string{"nextera.purpose": "foundation004-judge", "nextera.job": e.Job, "nextera.attempt": e.Attempt},
+	payload := map[string]any{"Image": image, "User": "65532:65532", "Cmd": []string{"/usr/bin/timeout", "--signal=KILL", "45", "/bin/sleep", "86400"}, "Labels": map[string]string{"nextera.purpose": purpose, "nextera.job": e.Job, "nextera.attempt": e.Attempt},
 		"HostConfig": map[string]any{"NetworkMode": "none", "ReadonlyRootfs": true, "CapDrop": []string{"ALL"}, "SecurityOpt": []string{"no-new-privileges"}, "NanoCpus": 1000000000, "Memory": memory, "MemorySwap": memory, "PidsLimit": pids, "ShmSize": 1 << 20, "Tmpfs": tmp, "LogConfig": map[string]any{"Type": "none"}, "Ulimits": []map[string]any{{"Name": "core", "Soft": 0, "Hard": 0}}}}
 	var result struct {
 		ID string `json:"Id"`
