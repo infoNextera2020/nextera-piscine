@@ -2,7 +2,7 @@
 import { useCallback, useEffect, useRef, useState, type ReactNode } from 'react';
 import Link from 'next/link';
 import type { SubmissionSummary } from '@nextera/db/submissions';
-import type { SubmissionRules } from '@nextera/domain';
+import type { SubmissionRules, UserRole } from '@nextera/domain';
 import type { LearningNode } from '../../lib/learning/types';
 import { displayState, formatMoment } from '../../lib/learning/display';
 import { submissionNotices } from '../../lib/learning/submission-presentation';
@@ -10,6 +10,7 @@ import { historyFailureMessage } from '../../lib/submissions/messages';
 import { SubmissionForm } from '../../lib/submissions/form';
 import { Icon } from './icon';
 import { EditorHairline } from './editor-hairline';
+import { FocusedChallenge } from './focused-challenge';
 import s from './challenge.module.css';
 
 const tabs = ['Brief', 'Resources'] as const;
@@ -22,6 +23,7 @@ export function Challenge({
   subject,
   context,
   initialTab = 'Overview',
+  focused,
 }: {
   cohort: string;
   node: string;
@@ -31,7 +33,17 @@ export function Challenge({
   subject: ReactNode;
   context: LearningNode[];
   initialTab?: string | undefined;
+  focused?:
+    | {
+        cohort: { id: string; name: string; version: string };
+        current: Pick<LearningNode, 'key' | 'title' | 'questKey' | 'questTitle' | 'state'>;
+        role: UserRole;
+        notice?: ReactNode;
+        account?: ReactNode;
+      }
+    | undefined;
 }) {
+  const focusedView = !!focused;
   const [tab, setTab] = useState<(typeof tabs)[number]>(
     initialTab.toLowerCase() === 'resources' ? 'Resources' : 'Brief',
   );
@@ -87,15 +99,17 @@ export function Challenge({
     };
   }, [refresh, submittable, accessUnavailable]);
   useEffect(() => {
-    const sync = () =>
-      setTab(
-        new URL(window.location.href).searchParams.get('tab')?.toLowerCase() === 'resources'
-          ? 'Resources'
-          : 'Brief',
-      );
+    const sync = () => {
+      const target = new URL(window.location.href).searchParams.get('tab')?.toLowerCase();
+      setTab(target === 'resources' ? 'Resources' : 'Brief');
+      if (focusedView && target === 'submissions') {
+        historyRegion.current?.focus({ preventScroll: true });
+        historyRegion.current?.scrollIntoView({ block: 'start', behavior: 'instant' });
+      }
+    };
     window.addEventListener('popstate', sync);
     return () => window.removeEventListener('popstate', sync);
-  }, []);
+  }, [focusedView]);
   useEffect(() => {
     if (initialTab.toLowerCase() === 'submissions') {
       const history = historyRegion.current;
@@ -110,6 +124,86 @@ export function Challenge({
     url.searchParams.set('tab', next === 'Brief' ? 'overview' : 'resources');
     window.history.replaceState(null, '', url);
   }
+
+  const submission = (
+    <>
+      {submittable && !accessUnavailable ? (
+        <SubmissionForm
+          cohort={cohort}
+          node={node}
+          filename={rules.required_files[0]!}
+          maxSizeKb={rules.max_size_kb}
+          onAccessUnavailable={() => setAccessUnavailable(true)}
+          onAccepted={() => {
+            void refresh();
+            historyRegion.current?.focus({ preventScroll: true });
+          }}
+        />
+      ) : (
+        <section>
+          <p className={s.eyebrow}>Read-only brief</p>
+          <h2>Submission unavailable</h2>
+          <p className={s.muted}>
+            {accessUnavailable
+              ? 'Your session or challenge access has changed. Recheck access below before submitting.'
+              : 'Current access and an approved runnable evaluation are required for intake. You can continue reading this brief.'}
+          </p>
+        </section>
+      )}
+    </>
+  );
+  const historyContent = (
+    <>
+      {error && (
+        <p className={s.error} role="alert">
+          {error}
+        </p>
+      )}
+      {accessUnavailable ? (
+        <p className={s.muted}>History is hidden until access can be confirmed.</p>
+      ) : (
+        <ChallengeHistory items={history} kind={context.find((n) => n.key === node)?.kind} />
+      )}
+    </>
+  );
+  const historyTools = (
+    <>
+      {submittable && (
+        <button
+          type="button"
+          className={s.refreshButton}
+          onClick={() => void refresh()}
+          aria-label="Refresh history"
+        >
+          <svg
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="1.5"
+            aria-hidden="true"
+          >
+            <path d="M20 7v5h-5M4 17v-5h5" />
+            <path d="M6 7a7 7 0 0 1 12-1l2 3M4 15l2 3a7 7 0 0 0 12-1" />
+          </svg>
+        </button>
+      )}
+    </>
+  );
+  if (focused)
+    return (
+      <FocusedChallenge
+        {...focused}
+        rules={rules}
+        subject={subject}
+        submission={submission}
+        history={historyContent}
+        context={context}
+        historyTools={historyTools}
+        historyRef={historyRegion}
+        resourcesOpen={tab === 'Resources'}
+        onResourcesChange={(open) => select(open ? 'Resources' : 'Brief')}
+      />
+    );
 
   return (
     <div className={s.columns}>
@@ -250,30 +344,7 @@ export function Challenge({
           </div>
           <EditorHairline />
         </section>
-        <div className={s.uploadCard}>
-          {submittable && !accessUnavailable ? (
-            <SubmissionForm
-              cohort={cohort}
-              node={node}
-              filename={rules.required_files[0]!}
-              maxSizeKb={rules.max_size_kb}
-              onAccepted={() => {
-                void refresh();
-                historyRegion.current?.focus({ preventScroll: true });
-              }}
-            />
-          ) : (
-            <section>
-              <p className={s.eyebrow}>Read-only brief</p>
-              <h2>Submission unavailable</h2>
-              <p className={s.muted}>
-                {accessUnavailable
-                  ? 'Your session or challenge access has changed. Recheck access below before submitting.'
-                  : 'Current access and an approved runnable evaluation are required for intake. You can continue reading this brief.'}
-              </p>
-            </section>
-          )}
-        </div>
+        <div className={s.uploadCard}>{submission}</div>
         <section
           ref={historyRegion}
           className={s.historyCard}
@@ -282,36 +353,9 @@ export function Challenge({
         >
           <div className={s.historyHeading}>
             <h2 id="history-heading">Submission history</h2>
-            {submittable && (
-              <button
-                type="button"
-                className={s.refreshButton}
-                onClick={() => void refresh()}
-                aria-label="Refresh history"
-              >
-                <svg
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="1.5"
-                  aria-hidden="true"
-                >
-                  <path d="M20 7v5h-5M4 17v-5h5" />
-                  <path d="M6 7a7 7 0 0 1 12-1l2 3M4 15l2 3a7 7 0 0 0 12-1" />
-                </svg>
-              </button>
-            )}
+            {historyTools}
           </div>
-          {error && (
-            <p className={s.error} role="alert">
-              {error}
-            </p>
-          )}
-          {accessUnavailable ? (
-            <p className={s.muted}>History is hidden until access can be confirmed.</p>
-          ) : (
-            <ChallengeHistory items={history} kind={context.find((n) => n.key === node)?.kind} />
-          )}
+          {historyContent}
         </section>
       </aside>
     </div>

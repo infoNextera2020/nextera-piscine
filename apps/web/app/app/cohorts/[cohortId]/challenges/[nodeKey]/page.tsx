@@ -1,3 +1,4 @@
+import { logout } from '../../../../../login/actions';
 import { readRaid } from '@nextera/db/raids';
 import { RaidPanel } from '../../../../../../lib/raids/panel';
 import { Suspense } from 'react';
@@ -20,7 +21,7 @@ export default async function SubjectPage({
   searchParams,
 }: {
   params: Promise<{ cohortId: string; nodeKey: string }>;
-  searchParams: Promise<{ tab?: string; team?: string }>;
+  searchParams: Promise<{ tab?: string; team?: string; view?: string }>;
 }) {
   const { cohortId, nodeKey } = await params;
   const { user, cohort } = await authorizeCohortPage(cohortId);
@@ -66,6 +67,42 @@ export default async function SubjectPage({
           )
         : null;
     const rules = subject!.submissionRules as unknown as SubmissionRules;
+    const focused = query.view === 'focused' && subject!.kind === 'challenge';
+    const challenge = (
+      <Challenge
+        key={cohort.id + ':' + nodeKey}
+        focused={
+          focused
+            ? {
+                cohort: { id: cohort.id, name: cohort.name, version: cohort.version },
+                current: { ...current, title: subject!.title },
+                role: user.role,
+                notice:
+                  user.role !== 'learner' ? (
+                    <p>
+                      {user.role === 'admin' ? 'Administrative' : 'Assigned operator'} read-only
+                      subject preview.
+                    </p>
+                  ) : undefined,
+                account: (
+                  <form action={logout}>
+                    <button type="submit">Sign out</button>
+                  </form>
+                ),
+              }
+            : undefined
+        }
+        cohort={cohort.id}
+        node={nodeKey}
+        rules={rules}
+        submittable={submittable && subject!.kind !== 'project'}
+        initialHistory={history}
+        initialTab={query.tab}
+        subject={<Subject>{subject!.subjectMarkdown}</Subject>}
+        context={view.nodes.filter((n) => n.questKey === current.questKey)}
+      />
+    );
+    if (focused) return challenge;
     return (
       <AppShell
         user={user}
@@ -97,17 +134,7 @@ export default async function SubjectPage({
               brief={<Subject>{subject!.subjectMarkdown}</Subject>}
             />
           ) : (
-            <Challenge
-              key={cohort.id + ':' + nodeKey}
-              cohort={cohort.id}
-              node={nodeKey}
-              rules={rules}
-              submittable={submittable && subject!.kind !== 'project'}
-              initialHistory={history}
-              initialTab={query.tab}
-              subject={<Subject>{subject!.subjectMarkdown}</Subject>}
-              context={view.nodes.filter((n) => n.questKey === current.questKey)}
-            />
+            challenge
           )}
         </main>
       </AppShell>
