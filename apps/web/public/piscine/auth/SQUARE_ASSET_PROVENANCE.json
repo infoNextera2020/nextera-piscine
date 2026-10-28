@@ -1,0 +1,140 @@
+{
+  "library_file_id": "libfile_018056f486a48191a557e2faa6f0d389",
+  "library_version": 0,
+  "archive_sha256": "8c07d14b46dc03597a7b943a72563b45cb96a03edf220ef47a399eb1f6b940aa",
+  "approved_render": {
+    "version": "V5 square panel; approved V4 scene preserved",
+    "aspect_ratio": "1:1",
+    "source_size": [1280, 1280],
+    "object_position": "50% 50%",
+    "tested_panel_ratio_range": [0.8, 1.3296875],
+    "not_guaranteed_outside_tested_range": true,
+    "bounds_are_conservative_projected_3d_object_boxes": true,
+    "core_top_intentionally_continues_beyond_frame": true,
+    "metal_bounds_normalized_top_origin": {
+      "left": 0.284992516040802,
+      "top": 0.13260143995285034,
+      "right": 0.7606747150421143,
+      "bottom": 0.828414112329483
+    },
+    "metal_and_glass_bounds_normalized_top_origin": {
+      "left": 0.284992516040802,
+      "top": 0.13260143995285034,
+      "right": 0.7606747150421143,
+      "bottom": 0.857450470328331
+    },
+    "metal_and_glass_bounds_source_px": {
+      "left": 364.79042053222656,
+      "top": 169.72984313964844,
+      "right": 973.6636352539062,
+      "bottom": 1097.5366020202637
+    },
+    "qa_cases": [
+      {
+        "file": "qa-cover-639x631.png",
+        "width": 639,
+        "height": 631,
+        "ratio": 1.012678288431062,
+        "source_crop_xyxy": [0.0, 8.012519561815338, 1280.0, 1271.9874804381848],
+        "conservative_subject_bounds_in_panel_px": {
+          "left": 182.11021775007248,
+          "top": 80.73232012987137,
+          "right": 486.071142911911,
+          "bottom": 543.9108505398035
+        },
+        "all_metal_and_glass_in_frame": true,
+        "title": "Measured user panel"
+      },
+      {
+        "file": "qa-cover-640x800.png",
+        "width": 640,
+        "height": 800,
+        "ratio": 0.8,
+        "source_crop_xyxy": [128.0, 0.0, 1152.0, 1280.0],
+        "conservative_subject_bounds_in_panel_px": {
+          "left": 147.9940128326416,
+          "top": 106.08115196228027,
+          "right": 528.5397720336914,
+          "bottom": 685.9603762626648
+        },
+        "all_metal_and_glass_in_frame": true,
+        "title": "Portrait desktop panel"
+      },
+      {
+        "file": "qa-cover-768x640.png",
+        "width": 768,
+        "height": 640,
+        "ratio": 1.2,
+        "source_crop_xyxy": [0.0, 106.66666666666663, 1280.0, 1173.3333333333335],
+        "conservative_subject_bounds_in_panel_px": {
+          "left": 218.87425231933594,
+          "top": 37.837905883789084,
+          "right": 584.1981811523438,
+          "bottom": 594.5219612121582
+        },
+        "all_metal_and_glass_in_frame": true,
+        "title": "Wide desktop panel"
+      },
+      {
+        "file": "qa-cover-851x640.png",
+        "width": 851,
+        "height": 640,
+        "ratio": 1.3296875,
+        "source_crop_xyxy": [0.0, 158.68390129259694, 1280.0, 1121.316098707403],
+        "conservative_subject_bounds_in_panel_px": {
+          "left": 242.52863115072248,
+          "top": 7.343825399875642,
+          "right": 647.3341825008392,
+          "bottom": 624.1903502494097
+        },
+        "all_metal_and_glass_in_frame": true,
+        "title": "Upper tested ratio"
+      }
+    ],
+    "files": [
+      {
+        "file": "nextera-auth-panel-square-600.webp",
+        "width": 600,
+        "height": 600,
+        "bytes": 14620,
+        "sha256": "3115fb13099c7c1e2699dddd9250fb8fd4ca3c65c65a471961a94dd03c637395"
+      },
+      {
+        "file": "nextera-auth-panel-square-900.webp",
+        "width": 900,
+        "height": 900,
+        "bytes": 34206,
+        "sha256": "9146d39d9abeda2e2974bfe3f6833582785fc4de920bdc1d96d6a4d54b752e1c"
+      },
+      {
+        "file": "nextera-auth-panel-square-1280.webp",
+        "width": 1280,
+        "height": 1280,
+        "bytes": 94624,
+        "sha256": "afd1f0b76c09da87edc35d413f0395d513391963919c892942cedbfa802be9c0"
+      },
+      {
+        "file": "nextera-auth-panel-square-fallback.png",
+        "width": 1280,
+        "height": 1280,
+        "bytes": 1964752,
+        "sha256": "9ec01a9cee40cca1140ff19f4905eff2e796472a53e66c9d0040abb5f730e2a2"
+      },
+      {
+        "file": "nextera-auth-portrait-1200.webp",
+        "width": 1200,
+        "height": 1680,
+        "bytes": 161262,
+        "sha256": "c7a9ad8476df650648a50ae26847dfa77750098cf3c32fc2c6e40aa00a69993b"
+      }
+    ]
+  },
+  "original_assets_unchanged_sha256": {
+    "nextera-auth-sculpture-fallback.png": "4da00bfbd58b2b4acde2dc76bb65ff41d4caf21739967fe185d097048642f485",
+    "nextera-auth-sculpture-1200.webp": "c7a9ad8476df650648a50ae26847dfa77750098cf3c32fc2c6e40aa00a69993b",
+    "nextera-auth-sculpture-600.webp": "8de2d4c8552a90ce664b4a37a7c8300a0a5b32f7b03fc303246eb0335bd1a774",
+    "nextera-auth-sculpture-900.webp": "506cd11f33b6c643417de2075e530c92e5a668eae43e612c1b0aa3798abbc12d",
+    "PROVENANCE.json": "c4958a1a6ead54280bf99429965b16ab40eb2e97ba10f2f9aebad99e6fe75f7a"
+  },
+  "browser_integration_verified": false
+}

@@ -86,6 +86,10 @@ describe('invitation-only presentation', () => {
     expect(html).toContain('600w');
     expect(html).toContain('900w');
     expect(html).toContain('1200w');
+    expect(html).toContain('1280w');
+    expect(html).toContain('min-aspect-ratio: 161/100');
+    expect(html).toContain('max-aspect-ratio: 53/20');
+    expect(html).toContain('nextera-auth-panel-square-fallback.png');
     expect(html).toContain('width="1200"');
     expect(html).toContain('height="1680"');
   });

@@ -1,5 +1,17 @@
 # Auth artwork aspect refinement
 
+## Current square-asset integration
+
+The subsequently authorized native Blender square render is now integrated in the shared login/signup picture. Library source: `libfile_018056f486a48191a557e2faa6f0d389`. Its identity and bytes were verified on the consuming Ubuntu filesystem using the current official Library helper; the earlier Windows helper failure (`os.setxattr` unavailable) was resolved without changing browser or network security settings. The square render and upper-ratio supplied crop were visually inspected as local image files, not application screenshots.
+
+The square WebP candidates are 600/900/1280 pixels wide and 14,620/34,206/94,624 bytes; the matching 1280 PNG is the non-WebP fallback. Source geometry/material/light preservation and projected subject bounds are recorded in `apps/web/public/piscine/auth/SQUARE_ASSET_PROVENANCE.json`. Original portrait and all prior artwork files remain unchanged.
+
+A conservative viewport media range 1.61–2.65 chooses square art for the approximately half-width panel. Actual size-container queries allow centered cover only for panel width/height 0.80–1.3296875. The measured 639×631 user panel is within that range. A reduced visual viewport cannot force cover beyond those bounds. Narrower panels retain the original portrait, with cover restricted to its inspected range; unsupported container queries and unverified ratios use contain. Mobile art remains hidden. This does not claim seamless full bleed at every extreme aspect ratio.
+
+No form layout, controls, Auth behavior, viewport-height handling, page overflow rule or keyboard behavior changed. The image remains decorative and static, including reduced motion. Four supplied source-crop cases and twelve static viewport/keyboard-height cases were checked, alongside exact file hashes and PNG dimensions. These are not rendered browser/scroll/accessibility checks. The existing localhost browser denial was not retried; no new browser screenshot or Library screenshot ID is claimed.
+
+## Historical portrait-only CSS slice
+
 The supplied screenshot (`libfile_010b2919aaf481918f9d5728632e80ed`) and approved artwork were inspected. `object-fit: contain` creates side bands when the image canvas is narrower than the visual panel. The image's studio and floor edges vary in color, so a uniform CSS background cannot hide them accurately.
 
 The bounded CSS change uses proportional `cover` only for desktop viewport ratios from 10/7 through 1.78, where static geometry inspection retains the important metal composition. Portrait and wider/shorter ratios keep the original `contain`; mobile keeps the existing hidden-art breakpoint. No artwork pixels, forms, logo, markup or account behavior changed. Clipping applies only to the decorative artwork panel, never the account form or page.

@@ -1,0 +1,244 @@
+{
+  "source_parent_head": "a2180be7c02bf7c1f03386f3eea1ba5d72c9b3ae",
+  "verified_utc": "2026-10-28T14:13:05.514703+00:00",
+  "full_source_tests": 1075,
+  "focused_ui_tests": 10,
+  "checks": [
+    {
+      "name": "format",
+      "exitCode": 0,
+      "seconds": 5.77
+    },
+    {
+      "name": "focused",
+      "exitCode": 0,
+      "seconds": 5.01
+    },
+    {
+      "name": "test",
+      "exitCode": 0,
+      "seconds": 16.81
+    },
+    {
+      "name": "typecheck",
+      "exitCode": 0,
+      "seconds": 34.31
+    },
+    {
+      "name": "lint",
+      "exitCode": 0,
+      "seconds": 14.12
+    },
+    {
+      "name": "format-check",
+      "exitCode": 0,
+      "seconds": 22.1
+    },
+    {
+      "name": "build",
+      "exitCode": 0,
+      "seconds": 46.62
+    }
+  ],
+  "static_asset_and_geometry": {
+    "kind": "Static asset/hash/crop verification only; not browser or layout QA",
+    "library_file_id": "libfile_018056f486a48191a557e2faa6f0d389",
+    "archive_sha256": "8c07d14b46dc03597a7b943a72563b45cb96a03edf220ef47a399eb1f6b940aa",
+    "assets_verified": [
+      {
+        "file": "nextera-auth-panel-square-600.webp",
+        "width": 600,
+        "height": 600,
+        "bytes": 14620,
+        "sha256": "3115fb13099c7c1e2699dddd9250fb8fd4ca3c65c65a471961a94dd03c637395"
+      },
+      {
+        "file": "nextera-auth-panel-square-900.webp",
+        "width": 900,
+        "height": 900,
+        "bytes": 34206,
+        "sha256": "9146d39d9abeda2e2974bfe3f6833582785fc4de920bdc1d96d6a4d54b752e1c"
+      },
+      {
+        "file": "nextera-auth-panel-square-1280.webp",
+        "width": 1280,
+        "height": 1280,
+        "bytes": 94624,
+        "sha256": "afd1f0b76c09da87edc35d413f0395d513391963919c892942cedbfa802be9c0"
+      },
+      {
+        "file": "nextera-auth-panel-square-fallback.png",
+        "width": 1280,
+        "height": 1280,
+        "bytes": 1964752,
+        "sha256": "9ec01a9cee40cca1140ff19f4905eff2e796472a53e66c9d0040abb5f730e2a2"
+      },
+      {
+        "file": "nextera-auth-portrait-1200.webp",
+        "width": 1200,
+        "height": 1680,
+        "bytes": 161262,
+        "sha256": "c7a9ad8476df650648a50ae26847dfa77750098cf3c32fc2c6e40aa00a69993b"
+      }
+    ],
+    "qa_cases": [
+      {
+        "panel": [639, 631],
+        "source_crop_xyxy": [0.0, 8.012519561815338, 1280.0, 1271.9874804381848],
+        "all_metal_glass_inside": true
+      },
+      {
+        "panel": [640, 800],
+        "source_crop_xyxy": [128.0, 0.0, 1152.0, 1280.0],
+        "all_metal_glass_inside": true
+      },
+      {
+        "panel": [768, 640],
+        "source_crop_xyxy": [0.0, 106.66666666666663, 1280.0, 1173.3333333333335],
+        "all_metal_glass_inside": true
+      },
+      {
+        "panel": [851, 640],
+        "source_crop_xyxy": [0.0, 158.6839012925969, 1280.0, 1121.3160987074032],
+        "all_metal_glass_inside": true
+      }
+    ],
+    "viewport_model_cases": [
+      {
+        "viewport": [1278, 631],
+        "visual_height": 631,
+        "art_visible": true,
+        "source": "square",
+        "actual_panel_ratio": 1.011093502377179,
+        "fit": "cover",
+        "browser_test": false
+      },
+      {
+        "viewport": [1440, 900],
+        "visual_height": 900,
+        "art_visible": true,
+        "source": "original_portrait",
+        "actual_panel_ratio": 0.7988888888888889,
+        "fit": "cover",
+        "browser_test": false
+      },
+      {
+        "viewport": [1366, 768],
+        "visual_height": 768,
+        "art_visible": true,
+        "source": "square",
+        "actual_panel_ratio": 0.8880208333333334,
+        "fit": "cover",
+        "browser_test": false
+      },
+      {
+        "viewport": [1920, 1080],
+        "visual_height": 1080,
+        "art_visible": true,
+        "source": "square",
+        "actual_panel_ratio": 0.887962962962963,
+        "fit": "cover",
+        "browser_test": false
+      },
+      {
+        "viewport": [1702, 640],
+        "visual_height": 640,
+        "art_visible": true,
+        "source": "original_portrait",
+        "actual_panel_ratio": 1.328125,
+        "fit": "contain",
+        "browser_test": false
+      },
+      {
+        "viewport": [2500, 600],
+        "visual_height": 600,
+        "art_visible": true,
+        "source": "original_portrait",
+        "actual_panel_ratio": 2.0816666666666666,
+        "fit": "contain",
+        "browser_test": false
+      },
+      {
+        "viewport": [768, 1024],
+        "visual_height": 1024,
+        "art_visible": true,
+        "source": "original_portrait",
+        "actual_panel_ratio": 0.3740234375,
+        "fit": "contain",
+        "browser_test": false
+      },
+      {
+        "viewport": [800, 1200],
+        "visual_height": 1200,
+        "art_visible": true,
+        "source": "original_portrait",
+        "actual_panel_ratio": 0.3325,
+        "fit": "contain",
+        "browser_test": false
+      },
+      {
+        "viewport": [390, 844],
+        "visual_height": 844,
+        "art_visible": false,
+        "source": "original_portrait",
+        "actual_panel_ratio": 0.22985781990521326,
+        "fit": "contain",
+        "browser_test": false
+      },
+      {
+        "viewport": [320, 568],
+        "visual_height": 568,
+        "art_visible": false,
+        "source": "original_portrait",
+        "actual_panel_ratio": 0.27992957746478875,
+        "fit": "contain",
+        "browser_test": false
+      },
+      {
+        "viewport": [1440, 900],
+        "visual_height": 350,
+        "art_visible": true,
+        "source": "original_portrait",
+        "actual_panel_ratio": 2.0542857142857143,
+        "fit": "contain",
+        "browser_test": false
+      },
+      {
+        "viewport": [1920, 1080],
+        "visual_height": 450,
+        "art_visible": true,
+        "source": "square",
+        "actual_panel_ratio": 2.131111111111111,
+        "fit": "contain",
+        "browser_test": false
+      }
+    ],
+    "browser_checks": 0,
+    "browser_denial_retried": false,
+    "original_assets_unchanged": true,
+    "metadata_materialization": "Completed current official Library helper on same laptop Ubuntu; Linux xattrs verified"
+  },
+  "source_sha256": {
+    "apps/web/components/learning/auth-split-surface.tsx": "51a5353483d388f75a1791cb2aa5314770b89faaa27de0cc314373a157ba5122",
+    "apps/web/components/learning/auth-split.module.css": "f182a962520574722cc589e9baadf9a2010c8b99e9b9c637bade38bbd50e88ac",
+    "apps/web/lib/learning/invitation-ui.test.ts": "14a6376a327142023362962541b99be9aaf0ac4f1f389b8e782e3eb1e008fb1b",
+    "apps/web/public/piscine/auth/SQUARE_ASSET_PROVENANCE.json": "60357ddecf3a15de0c2d719961246f8c21973d54c93b947cdf9490bb4edfb341",
+    "docs/AUTH_ARTWORK_ASPECT_001.md": "93660ef7b664a374cef7c8a30fceefdaf2a26cee957cf8105568c8780e7897ac",
+    "apps/web/public/piscine/auth/nextera-auth-panel-square-600.webp": "3115fb13099c7c1e2699dddd9250fb8fd4ca3c65c65a471961a94dd03c637395",
+    "apps/web/public/piscine/auth/nextera-auth-panel-square-900.webp": "9146d39d9abeda2e2974bfe3f6833582785fc4de920bdc1d96d6a4d54b752e1c",
+    "apps/web/public/piscine/auth/nextera-auth-panel-square-1280.webp": "afd1f0b76c09da87edc35d413f0395d513391963919c892942cedbfa802be9c0",
+    "apps/web/public/piscine/auth/nextera-auth-panel-square-fallback.png": "9ec01a9cee40cca1140ff19f4905eff2e796472a53e66c9d0040abb5f730e2a2"
+  },
+  "original_dirty_hashes_unchanged": {
+    "apps/web/public/ASSETS.md": "feca5ebec9df9b3842afadb1c0a6442e24b38ad479c9445e1f1d26f2cd9a3cf9",
+    "apps/web/components/learning/home-next-action.module.css": "4eaa849950b223af5c220b8330ca6e3f732c865e907a66a454798dff22916d87",
+    "apps/web/public/piscine/official-logo.svg": "0fde8181d16ceb17ac55e6d52e8cab523c3f75976a9aaa81b8695942c7336e54",
+    "docs/RELEASE_CANDIDATE_001_REPORT.md": "95e04b9accaf10d922e5acac157d8d5d7ae33ef17284ccef042558fa0fbca2fd"
+  },
+  "browser_checks": 0,
+  "browser_denial_retried": false,
+  "new_browser_screenshots": 0,
+  "new_services_or_credentials": false,
+  "live_backend_enabled": false,
+  "quest2_content_changed": false
+}
