@@ -1,0 +1,31 @@
+{
+  "source": "User-approved original Blender stationary-base Home video; dark-only 600x660,24fps,5s. No screenshot or pseudo3D substitution.",
+  "library_ids": [
+    "libfile_88d4eda0ab608191bf48986b1c3f5a19",
+    "libfile_e2635021ed3c8191b405a7b9c0dbc936",
+    "libfile_3a76e917931c8191a3b4fee5ce246a23",
+    "libfile_162442dbcf4881919bd54e48f1b9433e"
+  ],
+  "assets": [
+    {
+      "file": "nextera_home_v9_final_5s.mp4",
+      "bytes": 330105,
+      "sha256": "58a1115d9f6489e8f06351090154578849c1257d61f8656e109d4ea980d66fbb"
+    },
+    {
+      "file": "nextera_home_v9_final_5s.webm",
+      "bytes": 249994,
+      "sha256": "7f3eb680c2c8ca95eff72039fab6884ccae3ecb7894f36a6fd78c4d6901db169"
+    },
+    {
+      "file": "nextera_home_v9_final_poster.png",
+      "bytes": 468015,
+      "sha256": "ad27eb0a40826a67964948f94dc6ea445c4548903fc0d4c7e3a149fb21f68cdc"
+    },
+    {
+      "file": "nextera_home_v9_final_poster.webp",
+      "bytes": 30514,
+      "sha256": "33843ba4820e6128deb7e9340cba4179db06ae7964a31f9fdecaa06ce0e101ed"
+    }
+  ]
+}

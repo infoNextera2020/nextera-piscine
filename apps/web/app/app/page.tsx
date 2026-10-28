@@ -5,6 +5,7 @@ import { listCohorts } from '@nextera/db/cohorts';
 import { authorizePage, getDatabase } from '../../lib/auth/server';
 import { readLearningOverview } from '../../lib/learning/server';
 import { AppShell } from '../../components/learning/app-shell';
+import { HomeMotionArtwork } from '../../components/learning/home-motion-artwork';
 import { CohortLinks, CommandCenter, HomeWelcome } from '../../components/learning/command-center';
 
 export default async function AppPage({
@@ -34,7 +35,13 @@ export default async function AppPage({
         updates={view?.updates ?? []}
       >
         {cohort && view ? (
-          <CommandCenter name={user.displayName} cohort={cohort} view={view} />
+          <CommandCenter
+            name={user.displayName}
+            cohort={cohort}
+            view={view}
+            presentation="focus-review"
+            artwork={<HomeMotionArtwork />}
+          />
         ) : (
           <HomeWelcome
             name={user.displayName}
