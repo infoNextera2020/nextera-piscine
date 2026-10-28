@@ -155,6 +155,7 @@ class GuardTests(unittest.TestCase):
     def test_exact_fake_run_arms_guard_first_stops_and_retains_data(self):
         result = self.subject.run(MODULE)
         self.assertTrue(result['tests_passed'])
+        self.assertFalse(result['real_postgres'])
         self.assertTrue(result['cleanup']['postgres_stopped'])
         self.assertFalse(result['cleanup']['permanent_deletion'])
         self.assertTrue(self.fake.data.exists())

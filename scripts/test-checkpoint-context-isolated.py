@@ -279,7 +279,8 @@ class Rehearsal:
         finally:
             # Also applies after partial init/start/test failures. Never deletes retained data.
             cleanup = self.stop()
-        return {'tests_passed': succeeded, 'cleanup': cleanup, 'real_postgres': True}
+        return {'tests_passed': succeeded, 'cleanup': cleanup,
+                'real_postgres': isinstance(self.commands, Commands)}
 
     def watchdog(self):
         while True:
