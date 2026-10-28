@@ -376,3 +376,68 @@ describe('Explicit-policy same-device recovery', () => {
       ).toThrow();
   });
 });
+
+describe('Draftless official bootstrap stays honest', () => {
+  function noDrafts(taskKey = 'a') {
+    const value = boot(taskKey);
+    return {
+      ...value,
+      draft: null,
+      offlineRecovery: null,
+      window: {
+        ...value.window,
+        capabilities: { draftsV1: false, officialSubmit: true, visibleRun: null },
+      },
+    };
+  }
+  it('preserves page buffers but labels autosave unavailable and performs no write/recovery', async () => {
+    const f = setup();
+    f.load.mockResolvedValue({ kind: 'available', bootstrap: noDrafts() } as never);
+    f.session.edit('a', 'page-only code');
+    await f.session.load('a');
+    expect(f.session.getSnapshot().a).toMatchObject({
+      phase: 'unavailable',
+      source: 'page-only code',
+      localStatus: 'disabled',
+      recovery: null,
+    });
+    f.session.edit('a', 'new page-only code');
+    await f.session.save('a');
+    await f.flush();
+    expect(f.session.getSnapshot().a!.source).toBe('new page-only code');
+    expect(f.write).not.toHaveBeenCalled();
+    expect(f.storage.setItem).not.toHaveBeenCalled();
+  });
+  it('retains existing local source when draft capability is withdrawn', async () => {
+    const f = setup();
+    await f.session.load('a');
+    f.session.edit('a', 'local draft');
+    f.load.mockResolvedValueOnce({ kind: 'available', bootstrap: noDrafts() } as never);
+    await f.session.load('a', true);
+    await f.flush();
+    expect(f.session.getSnapshot().a).toMatchObject({
+      phase: 'unavailable',
+      source: 'local draft',
+      localStatus: 'disabled',
+    });
+    expect(f.write).not.toHaveBeenCalled();
+  });
+  it('rejects a changed immutable definition even when neither bootstrap supports drafts', async () => {
+    const f = setup();
+    f.load.mockResolvedValueOnce({ kind: 'available', bootstrap: noDrafts() } as never);
+    await f.session.load('a');
+    const next = noDrafts();
+    f.load.mockResolvedValueOnce({
+      kind: 'available',
+      bootstrap: {
+        ...next,
+        window: {
+          ...next.window,
+          scope: { ...next.window.scope, definitionDigest: 'b'.repeat(64) },
+        },
+      },
+    } as never);
+    await f.session.load('a', true);
+    expect(f.accessRemoved).toHaveBeenCalledTimes(1);
+  });
+});

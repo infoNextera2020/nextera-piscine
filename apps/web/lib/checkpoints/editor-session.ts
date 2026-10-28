@@ -180,6 +180,22 @@ export class CheckpointEditorSession {
       return;
     }
     const boot = result.bootstrap;
+    if (e.boot && !sameEditorScope(e.boot.window.scope, boot.window.scope)) {
+      this.revoke();
+      return;
+    }
+    if (!boot.window.capabilities.draftsV1) {
+      // Official Submit may be attested independently. Never label it as autosave readiness.
+      // Retain a prior controller/uncertain intent for exact reconciliation if saving returns.
+      e.sync?.refresh(boot.window);
+      e.boot = boot;
+      e.phase = 'unavailable';
+      e.recovery = null;
+      e.localStatus = 'disabled';
+      this.deps.recovery?.remove(boot.window.scope);
+      this.emit();
+      return;
+    }
     if (e.sync) {
       if (!sameEditorScope(e.sync.state.draft.scope, boot.window.scope)) {
         this.revoke();

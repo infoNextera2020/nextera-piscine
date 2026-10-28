@@ -6,7 +6,12 @@ import {
   type DomainUser,
 } from '@nextera/domain';
 import { sameOrigin } from '../submissions/origin';
-import { validVisibleRunLimits, type EditorScope, type VisibleRunLimits } from './editor-contract';
+import {
+  sameEditorScope,
+  validVisibleRunLimits,
+  type EditorScope,
+  type VisibleRunLimits,
+} from './editor-contract';
 
 // Existing source intake ceiling, not a new Run or retention policy default.
 const SOURCE_CEILING = 262144;
@@ -298,18 +303,49 @@ function writeIdentity(request: Request) {
     : null;
 }
 
-/** Read-only bootstrap: a first draft needs the authoritative definition before its first write. */
+/** An independently configured server authority, never a client/query capability flag.
+ * submitAllowed must include the current task intake and remaining allowance. Every actual
+ * official POST still rechecks authorization, time, immutable attempt and quota atomically.
+ */
+export interface CheckpointOfficialSubmitAuthority {
+  context(
+    actor: EditorActor,
+    task: EditorTaskIdentity,
+  ): Promise<EditorServerContext & { submitAllowed: boolean }>;
+}
+
+/** Read-only bootstrap: capabilities remain independent and require authoritative metadata. */
 export function createCheckpointEditorHandler(
-  deps: Dependencies & { backend: CheckpointDraftBackend | null },
+  deps: Dependencies & {
+    backend: CheckpointDraftBackend | null;
+    officialSubmission?: CheckpointOfficialSubmitAuthority;
+  },
 ) {
   return async function GET(request: Request) {
     try {
       const who = await actor(deps),
         task = taskIdentity(request, false);
       if (!task) return json({ error: 'INVALID_REQUEST' }, 400);
-      if (!deps.backend) throw new EditorApiError('UNAVAILABLE');
-      const context = await deps.backend.context(who, task);
+      if (!deps.backend && !deps.officialSubmission) throw new EditorApiError('UNAVAILABLE');
+      const draftContext = deps.backend ? await deps.backend.context(who, task) : null;
+      const officialContext = deps.officialSubmission
+        ? await deps.officialSubmission.context(who, task)
+        : null;
+      const context = officialContext ?? draftContext!;
       checkContext(context, who, task);
+      if (officialContext && typeof officialContext.submitAllowed !== 'boolean')
+        throw new EditorApiError('UNAVAILABLE');
+      if (draftContext) {
+        checkContext(draftContext, who, task);
+        if (
+          !sameEditorScope(draftContext.scope, context.scope) ||
+          draftContext.filename !== context.filename ||
+          draftContext.sourceBytes !== context.sourceBytes ||
+          draftContext.status !== context.status ||
+          Date.parse(draftContext.deadline) !== Date.parse(context.deadline)
+        )
+          throw new EditorApiError('UNAVAILABLE');
+      }
       if (
         !Number.isFinite(Date.parse(context.serverNow)) ||
         !Number.isFinite(Date.parse(context.deadline)) ||
@@ -317,7 +353,7 @@ export function createCheckpointEditorHandler(
         !/^[A-Za-z0-9_]+\.go$/.test(context.filename)
       )
         throw new EditorApiError('UNAVAILABLE');
-      const draft = await deps.backend.read(who, context.scope);
+      const draft = deps.backend ? await deps.backend.read(who, context.scope) : null;
       return json({
         schema: 1,
         window: {
@@ -326,7 +362,14 @@ export function createCheckpointEditorHandler(
           attempt: context.status,
           serverNow: context.serverNow,
           deadline: context.deadline,
-          capabilities: { draftsV1: true, officialSubmit: false, visibleRun: null },
+          capabilities: {
+            draftsV1: deps.backend !== null,
+            officialSubmit:
+              officialContext?.submitAllowed === true &&
+              context.status === 'active' &&
+              Date.parse(context.serverNow) < Date.parse(context.deadline),
+            visibleRun: null,
+          },
         },
         filename: context.filename,
         sourceBytes: context.sourceBytes,

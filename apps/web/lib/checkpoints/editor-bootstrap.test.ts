@@ -455,3 +455,146 @@ describe('Per-question save and recovery orchestration', () => {
     }
   });
 });
+
+describe('Independent server-attested official Submit bootstrap', () => {
+  function official(submitAllowed = true) {
+    return { context: vi.fn(async () => ({ ...context, submitAllowed })) };
+  }
+  it('attests official intake without claiming draft, Run or recovery readiness', async () => {
+    const authority = official();
+    const GET = createCheckpointEditorHandler({
+      authenticate: async () => user,
+      backend: null,
+      officialSubmission: authority,
+    });
+    const response = await GET(new Request(url));
+    expect(response.status).toBe(200);
+    const value = await response.json();
+    expect(value.window.capabilities).toEqual({
+      draftsV1: false,
+      officialSubmit: true,
+      visibleRun: null,
+    });
+    expect(value.draft).toBeNull();
+    expect(value.offlineRecovery).toBeNull();
+    expect(parseEditorBootstrap(value, expected).window.capabilities).toEqual(
+      value.window.capabilities,
+    );
+    expect(authority.context).toHaveBeenCalledWith(
+      { id: learnerId, authUserId: id2 },
+      { attemptId, taskKey: 'question-a' },
+    );
+    expect(JSON.stringify(value)).not.toContain(id2);
+  });
+  it.each([
+    { submitAllowed: false },
+    { submitAllowed: true, status: 'closed' },
+    { submitAllowed: true, serverNow: context.deadline },
+  ])('does not authorize Submit for closed or denied context %o', async (patch) => {
+    const authority = official();
+    authority.context.mockResolvedValue({ ...context, ...patch } as Awaited<
+      ReturnType<typeof authority.context>
+    >);
+    const GET = createCheckpointEditorHandler({
+      authenticate: async () => user,
+      backend: null,
+      officialSubmission: authority,
+    });
+    const value = await (await GET(new Request(url))).json();
+    expect(value.window.capabilities.officialSubmit).toBe(false);
+    expect(value.window.capabilities.draftsV1).toBe(false);
+  });
+  it('does not accept an authority boolean from query strings', async () => {
+    const GET = createCheckpointEditorHandler({
+      authenticate: async () => user,
+      backend: null,
+      officialSubmission: official(false),
+    });
+    const value = await (await GET(new Request(url + '&officialSubmit=true&draftsV1=true'))).json();
+    expect(value.window.capabilities).toEqual({
+      draftsV1: false,
+      officialSubmit: false,
+      visibleRun: null,
+    });
+  });
+  it.each([
+    { filename: 'different.go' },
+    { sourceBytes: 512 },
+    { deadline: '2026-10-27T12:00:00Z' },
+    { scope: { ...context.scope, definitionDigest: 'b'.repeat(64) } },
+  ])('rejects disagreement with the separate draft authority %o', async (patch) => {
+    const f = fixture(),
+      authority = official();
+    authority.context.mockResolvedValue({ ...context, submitAllowed: true, ...patch });
+    const GET = createCheckpointEditorHandler({
+      authenticate: f.authenticate,
+      backend: f.backend,
+      officialSubmission: authority,
+    });
+    expect((await GET(new Request(url))).status).toBe(503);
+    expect(f.backend.read).not.toHaveBeenCalled();
+  });
+  it('rejects malformed or mismatched official authority without reading protected drafts', async () => {
+    const f = fixture(),
+      authority = official();
+    const GET = createCheckpointEditorHandler({
+      authenticate: f.authenticate,
+      backend: f.backend,
+      officialSubmission: authority,
+    });
+    authority.context.mockResolvedValue({ ...context, submitAllowed: 'true' } as never);
+    expect((await GET(new Request(url))).status).toBe(503);
+    authority.context.mockResolvedValue({
+      ...context,
+      submitAllowed: true,
+      scope: { ...context.scope, learnerId: id2 },
+    });
+    expect((await GET(new Request(url))).status).toBe(403);
+    expect(f.backend.read).not.toHaveBeenCalled();
+  });
+  it('retains a protected draft when both independent capabilities are configured', async () => {
+    const f = fixture();
+    vi.mocked(f.backend.read).mockResolvedValue({ source, version: 2, requestId: id });
+    const GET = createCheckpointEditorHandler({
+      authenticate: f.authenticate,
+      backend: f.backend,
+      officialSubmission: official(),
+    });
+    const value = await (await GET(new Request(url))).json();
+    expect(value.window.capabilities).toEqual({
+      draftsV1: true,
+      officialSubmit: true,
+      visibleRun: null,
+    });
+    expect(parseEditorBootstrap(value, expected).draft?.source).toBe(source);
+  });
+  it('rejects draft payload or recovery when draft capability is absent', () => {
+    const original = payload();
+    const value = {
+      ...original,
+      window: {
+        ...original.window,
+        capabilities: { draftsV1: false, officialSubmit: true, visibleRun: null },
+      },
+    };
+    expect(() =>
+      parseEditorBootstrap(
+        { ...value, draft: { source: 'private', version: 1, requestId: id } },
+        expected,
+      ),
+    ).toThrow();
+    expect(() =>
+      parseEditorBootstrap({ ...value, offlineRecovery: { retentionMs: 1000 } }, expected),
+    ).toThrow();
+    for (const caps of [
+      { draftsV1: 'false', officialSubmit: true, visibleRun: null },
+      { draftsV1: false, officialSubmit: 'true', visibleRun: null },
+    ])
+      expect(() =>
+        parseEditorBootstrap(
+          { ...value, window: { ...value.window, capabilities: caps } },
+          expected,
+        ),
+      ).toThrow();
+  });
+});

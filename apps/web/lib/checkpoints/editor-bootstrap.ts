@@ -70,8 +70,9 @@ export function parseEditorBootstrap(value: unknown, expected: EditorIdentity): 
     body.sourceBytes > 262144 ||
     typeof body.filename !== 'string' ||
     !/^[A-Za-z0-9_]+\.go$/.test(body.filename) ||
-    caps.draftsV1 !== true ||
-    caps.officialSubmit !== false ||
+    typeof caps.draftsV1 !== 'boolean' ||
+    typeof caps.officialSubmit !== 'boolean' ||
+    (caps.draftsV1 === false && (body.draft !== null || body.offlineRecovery !== null)) ||
     caps.visibleRun !== null ||
     (body.offlineRecovery !== null &&
       (!body.offlineRecovery ||
@@ -92,7 +93,11 @@ export function parseEditorBootstrap(value: unknown, expected: EditorIdentity): 
       attempt: window.attempt as 'active' | 'closed',
       serverNow: window.serverNow,
       deadline: window.deadline,
-      capabilities: Object.freeze({ draftsV1: true, officialSubmit: false, visibleRun: null }),
+      capabilities: Object.freeze({
+        draftsV1: caps.draftsV1,
+        officialSubmit: caps.officialSubmit,
+        visibleRun: null,
+      }),
     }),
     filename: body.filename,
     sourceBytes: body.sourceBytes,
