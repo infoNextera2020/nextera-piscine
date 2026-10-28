@@ -66,6 +66,7 @@ export interface EnrollmentPort {
    */
   ensure(
     scope: ActivationScope & { authUserId: string },
+    lease: Lease,
   ): Promise<'complete' | 'blocked' | 'unknown'>;
 }
 export type ActivationPolicy = Readonly<{
@@ -274,7 +275,10 @@ export function createInvitationActivation(dependencies: ActivationDependencies)
         invite = advanced;
       }
       if (invite.phase !== 'enrollment_pending') return { status: 'recovery_required' };
-      const enrolled = await d.enrollment!.ensure({ ...scope, authUserId: invite.authUserId! });
+      const enrolled = await d.enrollment!.ensure(
+        { ...scope, authUserId: invite.authUserId! },
+        lease,
+      );
       if (enrolled === 'blocked') return { status: 'forbidden' };
       if (enrolled !== 'complete') return { status: 'recovery_required' };
       if (!(await stillEligible())) return { status: 'forbidden' };

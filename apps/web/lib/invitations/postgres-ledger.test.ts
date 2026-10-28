@@ -79,6 +79,9 @@ describe('prepared Postgres invitation ledger', () => {
       }),
     ).toMatchObject({ kind: 'acquired', lease });
     expect(f.unsafe.mock.calls[1]![1]).toEqual([digest, request, 1000]);
+    expect(f.unsafe.mock.calls[1]![0]).toBe(
+      'SELECT app.invitation_claim($1::text,$2::uuid,$3::integer) AS result',
+    );
   });
   it.each(['busy', 'conflict', 'missing'] as const)(
     'preserves %s without fabricating a lease',

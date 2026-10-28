@@ -112,7 +112,7 @@ export function createPostgresInvitationLedger(
       await ready();
       // SQL uses its own server clock. Caller-provided now never extends expiry or the lease.
       const rows = await query(
-        'SELECT * FROM app.invitation_claim($1::text,$2::uuid,$3::integer)',
+        'SELECT app.invitation_claim($1::text,$2::uuid,$3::integer) AS result',
         [input.tokenDigest, input.requestId, input.leaseMs],
       );
       if (rows.length !== 1) bad();

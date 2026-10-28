@@ -6,6 +6,7 @@ import {
   type ActivationScope,
   type Invitation,
   type InvitationLedger,
+  type Lease,
 } from './activation';
 
 const requestId = '10000000-0000-4000-8000-000000000001';
@@ -86,8 +87,9 @@ function fixture() {
     recover: vi.fn(async (scope: ActivationScope) => scopeResult(scope)),
   };
   const enrollment = {
-    ensure: vi.fn(async (scope: ActivationScope & { authUserId: string }) => {
+    ensure: vi.fn(async (scope: ActivationScope & { authUserId: string }, lease: Lease) => {
       void scope;
+      void lease;
       return 'complete' as const;
     }),
   };
@@ -302,7 +304,8 @@ describe('source-only invitation activation', () => {
     expect(await f.service.activate(input(), 'caller')).toEqual({ status: 'activated' });
     expect(f.auth.begin).toHaveBeenCalledTimes(1);
     expect(f.auth.recover).not.toHaveBeenCalled();
-    expect(f.enrollment.ensure.mock.calls[0]).toEqual(f.enrollment.ensure.mock.calls[1]);
+    expect(f.enrollment.ensure.mock.calls[0]![0]).toEqual(f.enrollment.ensure.mock.calls[1]![0]);
+    expect(f.enrollment.ensure.mock.calls.map(([, lease]) => lease.fence)).toEqual(['1', '2']);
   });
   it('rechecks access removal after Auth before enrollment', async () => {
     const f = fixture();
