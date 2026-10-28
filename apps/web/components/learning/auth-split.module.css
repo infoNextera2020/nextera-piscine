@@ -1,4 +1,5 @@
 .page {
+  container: auth-page / size;
   height: 100svh;
   height: var(--auth-viewport-height, 100dvh);
   min-height: 0;
@@ -17,6 +18,7 @@
   box-sizing: border-box;
 }
 .panel {
+  grid-column: 1 / -1;
   min-width: 0;
   min-height: 0;
   display: flex;
@@ -282,7 +284,7 @@
   border-left: 1px solid #293c32;
   background: #050b08;
   overflow: hidden;
-  display: grid;
+  display: none;
   align-items: center;
 }
 .art picture {
@@ -300,8 +302,16 @@
 }
 /* Art direction is conservative: square only in its approved panel ratio range.
  * Query the actual container too, so a reduced visual viewport cannot crop the metal.
- * Unsupported container queries and all unverified ratios retain the complete canvas. */
+ * Unsupported container queries and unverified page ratios keep the form-only fallback. */
 @media (min-width: 761px) and (min-aspect-ratio: 161/100) and (max-aspect-ratio: 851/320) {
+  @container auth-page (min-aspect-ratio: 161/100) and (max-aspect-ratio: 851/320) {
+    .panel {
+      grid-column: auto;
+    }
+    .art {
+      display: grid;
+    }
+  }
   @container auth-art (min-aspect-ratio: 4/5) and (max-aspect-ratio: 851/640) {
     .art img {
       object-fit: cover;
@@ -311,6 +321,14 @@
 }
 /* Preserve the original portrait on narrower panels, with its inspected crop only. */
 @media (min-width: 761px) and (min-aspect-ratio: 121/100) and (max-aspect-ratio: 1609/1000) {
+  @container auth-page (min-aspect-ratio: 121/100) and (max-aspect-ratio: 1609/1000) {
+    .panel {
+      grid-column: auto;
+    }
+    .art {
+      display: grid;
+    }
+  }
   @container auth-art (min-aspect-ratio: 3/5) and (max-aspect-ratio: 89/100) {
     .art img {
       object-fit: cover;

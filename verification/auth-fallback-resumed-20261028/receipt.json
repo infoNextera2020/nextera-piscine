@@ -1,0 +1,67 @@
+{
+  "utc": "2026-10-28T21:11:42.280671+00:00",
+  "sourceHeadBeforeCommits": "54edb829e3cbdae2f70db93ddac3ae763d21635c",
+  "checks": [
+    {
+      "name": "test-bounded-workers",
+      "exitCode": 0,
+      "seconds": 39.43
+    },
+    {
+      "name": "typecheck",
+      "exitCode": 0,
+      "seconds": 41.99
+    },
+    {
+      "name": "lint",
+      "exitCode": 0,
+      "seconds": 18.86
+    },
+    {
+      "name": "format",
+      "exitCode": 0,
+      "seconds": 27.98
+    },
+    {
+      "name": "build",
+      "exitCode": 0,
+      "seconds": 53.68
+    }
+  ],
+  "initialTestRun": {
+    "passed": 1099,
+    "timedOut": 3,
+    "assertionFailures": 0
+  },
+  "finalTestsPassed": 1102,
+  "browser": {
+    "latestFallbackMatrix": "not_run",
+    "reason": "CUA documentation/inventory transport timeouts; no security route retried",
+    "newScreenshots": []
+  },
+  "http": {
+    "/review/auth/login": 200,
+    "/review/auth/signup": 200
+  },
+  "q2": {
+    "libraryId": "libfile_dad67c050a4481919e4f41e667486e5d",
+    "version": 2,
+    "draft": 3,
+    "exactSourceFilesVerified": 5,
+    "approvedActivities": 7,
+    "published": false,
+    "machineContentChanged": false
+  },
+  "fourOriginalDirtyFilesUnchanged": true,
+  "preview": {
+    "pid": 52589,
+    "startTicks": "5772996",
+    "command": [
+      "/home/anas/nextera-piscine/.tools/node-v24.19.0-linux-x64/bin/node",
+      "/mnt/c/Users/lap/Documents/Codex/2026-10-24/task/implementation/latest-piscine-review.cjs"
+    ],
+    "bind": "127.0.0.1:3118",
+    "fixtureOnly": true,
+    "authDbRunner": false
+  }
+}
