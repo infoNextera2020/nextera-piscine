@@ -1,11 +1,5 @@
-import { requireDomainUser } from '../../../../lib/auth/server';
-import { createCheckpointDraftHandlers } from '../../../../lib/checkpoints/editor-http';
-import { checkpointDraftBackend } from '../../../../lib/checkpoints/editor-backends';
+import { checkpointEditorApi } from '../../../../lib/checkpoints/editor-backends';
 
 export const runtime = 'nodejs';
-const handlers = createCheckpointDraftHandlers({
-  authenticate: requireDomainUser,
-  backend: checkpointDraftBackend,
-});
-export const GET = handlers.GET;
-export const POST = handlers.POST;
+export const GET = checkpointEditorApi.drafts.GET;
+export const POST = checkpointEditorApi.drafts.POST;

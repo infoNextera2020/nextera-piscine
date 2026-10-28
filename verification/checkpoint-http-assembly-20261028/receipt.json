@@ -1,0 +1,80 @@
+{
+  "source_parent_head": "0dda7321f00a5f959b843b0f5483fd372d7cb54a",
+  "verified_utc": "2026-10-28T14:00:09.906497+00:00",
+  "full_source_tests": 1075,
+  "focused_tests": 142,
+  "new_injected_assembly_tests": 16,
+  "checks": [
+    {
+      "name": "format",
+      "exitCode": 0
+    },
+    {
+      "name": "focused",
+      "exitCode": 0
+    },
+    {
+      "name": "typecheck",
+      "exitCode": 0
+    },
+    {
+      "name": "format",
+      "exitCode": 0,
+      "seconds": 6.04
+    },
+    {
+      "name": "test",
+      "exitCode": 0,
+      "seconds": 21.09
+    },
+    {
+      "name": "lint",
+      "exitCode": 0,
+      "seconds": 16.92
+    },
+    {
+      "name": "format-check",
+      "exitCode": 0,
+      "seconds": 22.37
+    },
+    {
+      "name": "build",
+      "exitCode": 0,
+      "seconds": 47.79
+    }
+  ],
+  "verification_kind": "Source checks plus injected Auth/SQL/HTTP/client assembly; no real provider, SQL or network",
+  "source_sha256": {
+    "apps/web/lib/checkpoints/editor-http.ts": "a5051421d4d284efe057caeb97048816fbf729003150619cb2cf025a760e77fe",
+    "apps/web/lib/checkpoints/editor-api.ts": "1100b15490964708099e31ac3e662d4e413a88c28d3e82e7dfdf588da580270e",
+    "apps/web/lib/checkpoints/editor-api.test.ts": "2a5e6f203f140ed31033a745b0aafd11a782f82875118376b5e4fb99d7996663",
+    "apps/web/lib/checkpoints/editor-backends.ts": "39900d00980b5dead83f1e14c24acaa34056a05ea64cd45385c121f5f353019b",
+    "apps/web/app/api/checkpoints/editor/route.ts": "b364eea99936a5adf060ecd3f1849a9453bdda62e169a56ad598d9b0ba4b6663",
+    "apps/web/app/api/checkpoints/drafts/route.ts": "fab1f21ffaf2780b0a635c0ce33855e6d29f57dd2706c8092ffbbae9b03bd23c",
+    "docs/CHECKPOINT_HTTP_ASSEMBLY_001.md": "5643100c5dcac11d3e737cedf4814b5001910304ff1fbbee2c9232bbd42ae985",
+    "docs/CHECKPOINT_AUTHENTICATED_REHEARSAL_PROPOSAL_001.md": "0cd0dd9a564f49f1a574a22559b3b406ebfb824cf1635fe82e8deda7c00bac3a",
+    "docs/CHECKPOINT_EDITOR_BOOTSTRAP_001.md": "8f4025690fa46f94c6010c9fefc1bff99a9ae751fae4a33c7fbfd31a0f42db5f"
+  },
+  "log_sha256": {
+    "build.log": "689c197da9bc59db914efcf87610baba35b12cd76d9b17530e50ad6dcb54d974",
+    "focused.log": "f97aaaf824cc29ed03a924c8f1c8f9f9f6aff5d72ca536506c8be8a56816dff4",
+    "format-check.log": "1d66faad74f5e8709353f7288592866bd3a9095da1174a916e7aa632949971e2",
+    "format.log": "a482c0f9b3a97773a8aa4361ed1d23eeb91a1849edee0917b76f9dbc05685875",
+    "lint.log": "050c69da23536758722729aeda55a8d0fb9d557495ef6d33d70873a3b64a71c1",
+    "test.log": "fe52d33a5caf0f24c95028fd1f64fb2c8d809aeb942864e48046f3b2256d30bb",
+    "typecheck.log": "daecb900b603cd77a1fa02534b9ce1f3bbe7a1558624abea1874f31fde795ff0"
+  },
+  "original_dirty_hashes_unchanged": {
+    "apps/web/public/ASSETS.md": "feca5ebec9df9b3842afadb1c0a6442e24b38ad479c9445e1f1d26f2cd9a3cf9",
+    "apps/web/components/learning/home-next-action.module.css": "4eaa849950b223af5c220b8330ca6e3f732c865e907a66a454798dff22916d87",
+    "apps/web/public/piscine/official-logo.svg": "0fde8181d16ceb17ac55e6d52e8cab523c3f75976a9aaa81b8695942c7336e54",
+    "docs/RELEASE_CANDIDATE_001_REPORT.md": "95e04b9accaf10d922e5acac157d8d5d7ae33ef17284ccef042558fa0fbca2fd"
+  },
+  "authenticated_browser_verified": false,
+  "live_adapters_enabled": false,
+  "services_started": false,
+  "credentials_created": false,
+  "retained_database_touched": false,
+  "browser_denial_retried": false,
+  "artwork_materialization": "Windows helper download metadata failed: os.setxattr unavailable; no completed asset installed at this checkpoint"
+}

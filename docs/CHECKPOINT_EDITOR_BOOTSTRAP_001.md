@@ -1,5 +1,7 @@
 # Checkpoint editor bootstrap and draft synchronization 001
 
+Current source assembly and controller integration supersede the earlier next-step notes below. See [HTTP assembly 001](CHECKPOINT_HTTP_ASSEMBLY_001.md). The separate [real SQL rehearsal](../verification/checkpoint-context-20261028/REPORT.md) passed 17 tests; authenticated HTTP/browser autosave remains unverified and disabled without explicit runtime configuration/policy.
+
 ## Scope
 
 This source-only slice adds a read-only authenticated GET /api/checkpoints/editor for one attempt/task, a bounded client decoder/transport, and a per-question synchronization controller. It does not enable live autosave, local source storage, visible Run execution, or a new grading path.

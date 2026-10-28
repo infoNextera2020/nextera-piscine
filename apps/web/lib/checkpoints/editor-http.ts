@@ -331,7 +331,7 @@ export function createCheckpointEditorHandler(
       const officialContext = deps.officialSubmission
         ? await deps.officialSubmission.context(who, task)
         : null;
-      const context = officialContext ?? draftContext!;
+      let context: EditorServerContext = officialContext ?? draftContext!;
       checkContext(context, who, task);
       if (officialContext && typeof officialContext.submitAllowed !== 'boolean')
         throw new EditorApiError('UNAVAILABLE');
@@ -340,11 +340,14 @@ export function createCheckpointEditorHandler(
         if (
           !sameEditorScope(draftContext.scope, context.scope) ||
           draftContext.filename !== context.filename ||
-          draftContext.sourceBytes !== context.sourceBytes ||
+          draftContext.sourceBytes > context.sourceBytes ||
           draftContext.status !== context.status ||
           Date.parse(draftContext.deadline) !== Date.parse(context.deadline)
         )
           throw new EditorApiError('UNAVAILABLE');
+        // The draft policy may deliberately be stricter than official intake. The shared
+        // editor honors that smaller server-owned ceiling without changing Submit rules.
+        context = { ...context, sourceBytes: draftContext.sourceBytes };
       }
       if (
         !Number.isFinite(Date.parse(context.serverNow)) ||
