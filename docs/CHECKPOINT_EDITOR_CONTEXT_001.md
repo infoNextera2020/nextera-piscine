@@ -1,0 +1,21 @@
+# Canonical Checkpoint editor context 001
+
+## Source implementation
+
+The editor bootstrap can attest official Submit independently of drafts and visible Run. Its authority must supply current access, frozen attempt identity, exact task filename/source ceiling, trusted deadline/clock and current official intake allowance. Client/query flags never grant capability. Draft and official authorities must agree on scope, definition digest, filename, source ceiling, status and deadline before protected draft data is returned. The client decoder rejects draft/recovery content when draft capability is absent. The session preserves page buffers and unresolved save intent while truthfully labeling autosave unavailable.
+
+Existing registered checkpoint_task_context returns only learner/cohort/rules; read_checkpoint returns latest attempt/task presentation without frozen definition digest. Neither can safely synthesize a full editor scope. The new unregistered migration draft0014 adds one read-only security-definer function over the exact immutable attempt. It verifies current learner/cohort access through the existing checkpoint_user guard, snapshot identity/digest, frozen task, single Go filename and source ceiling. It exposes public metadata only, never hidden test packs or evaluation specifications. Official allowance mirrors the current registered0007 rule: active before deadline, no prior PASS, fewer than three non-system-error reservations. It introduces no new quota, threshold, timing or grading policy. Future changes to canonical intake rules must update this projection too; actual Submit always rechecks atomically.
+
+The typed query requires the exact function signature, JSON return type, isolated owner/search path and narrow web ACL plus least-privileged caller attestation before invoking the function. Missing/malformed/broad readiness fails closed; there is no direct-table, owner-connection or client-digest fallback. Responses are validated and projected to the existing editor contract. A lazy web authority binds the returned learner to the authenticated domain actor and maps errors to generic protected API responses.
+
+The production GET source now includes this authority, but no database is opened at module import. Without installed verified0014, it returns503 rather than claiming readiness. This means0014 is required for this new editor bootstrap even if draft0011 is already available. The existing separate official raw-byte POST path remains unchanged.
+
+## Draft configuration
+
+CHECKPOINT_DRAFT_STORAGE accepts only exact postgres-v1. Absent or unknown settings retain null. Opt-in constructs lazy method wrappers, not a connection or an authorization grant. Every draft query still checks existing SQL0011 owner/role/function/table/trigger readiness and per-definition enabled storage policy. No flag was set by this source slice. Visible Run remains null regardless of storage setting. Offline recovery remains null: no retention duration or local storage policy was invented.
+
+## Verification boundaries
+
+Focused source tests cover independent capability validation, draftless lifecycle behavior, typed metadata/readiness rejection, lazy configuration, current actor binding and sanitized errors. DB and web typechecks passed. These use injected database responses, not a real database. The new SQL draft and readiness SQL have NOT been executed or parser-verified against PostgreSQL. No migration was registered/applied; no service, credentials, roles, environment setting or learner data were created/changed. Root owns final combined tests/build and local commit.
+
+Before live verification, explicitly approve applying draft0014 only to the newly authorized isolated database using an existing reviewed migration principal. Verify SQL syntax, exact grants/owner, current access removal, wrong learner/task, expired/closed attempt, frozen definition and quota boundaries. Exercise the real HTTP bootstrap with ordinary learner access. Draft persistence separately requires reviewed0011 application/policy and explicit postgres-v1 setting; recovery retention and Run worker/policy remain separate gates. Do not infer live capability from source tests or the existing fixture preview.

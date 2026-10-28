@@ -18,7 +18,8 @@
     "./raids": "./queries/raids.ts",
     "./raid-readiness": "./queries/raid-readiness.ts",
     "./checkpoint-drafts": "./queries/checkpoint-drafts.ts",
-    "./visible-runs": "./queries/visible-runs.ts"
+    "./visible-runs": "./queries/visible-runs.ts",
+    "./checkpoint-editor-context": "./queries/checkpoint-editor-context.ts"
   },
   "scripts": {
     "build": "tsc -p tsconfig.json",
