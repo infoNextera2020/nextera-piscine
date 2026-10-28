@@ -1,0 +1,258 @@
+[
+  {
+    "bounds": {
+      "h": 44,
+      "w": 278,
+      "x": 16,
+      "y": 316.65625
+    },
+    "document": [320, 568],
+    "documentScroll": [0, 0],
+    "id": "signup-name",
+    "label": null,
+    "panelScroll": 0,
+    "tag": "INPUT",
+    "type": null,
+    "viewport": [320, 568]
+  },
+  {
+    "bounds": {
+      "h": 44,
+      "w": 278,
+      "x": 16,
+      "y": 382.65625
+    },
+    "document": [320, 568],
+    "documentScroll": [0, 0],
+    "id": "signup-email",
+    "label": null,
+    "panelScroll": 0,
+    "tag": "INPUT",
+    "type": "email",
+    "viewport": [320, 568]
+  },
+  {
+    "bounds": {
+      "h": 44,
+      "w": 278,
+      "x": 16,
+      "y": 474.65625
+    },
+    "document": [320, 568],
+    "documentScroll": [0, 0],
+    "id": "signup-password",
+    "label": null,
+    "panelScroll": 0,
+    "tag": "INPUT",
+    "type": "password",
+    "viewport": [320, 568]
+  },
+  {
+    "bounds": {
+      "h": 44,
+      "w": 54,
+      "x": 236,
+      "y": 474.65625
+    },
+    "document": [320, 568],
+    "documentScroll": [0, 0],
+    "id": "",
+    "label": "Show password",
+    "panelScroll": 0,
+    "tag": "BUTTON",
+    "type": "button",
+    "viewport": [320, 568]
+  },
+  {
+    "bounds": {
+      "h": 44,
+      "w": 278,
+      "x": 16,
+      "y": 507.9895935058594
+    },
+    "document": [320, 568],
+    "documentScroll": [0, 0],
+    "id": "signup-confirm",
+    "label": null,
+    "panelScroll": 32.66666793823242,
+    "tag": "INPUT",
+    "type": "password",
+    "viewport": [320, 568]
+  },
+  {
+    "bounds": {
+      "h": 44,
+      "w": 54,
+      "x": 236,
+      "y": 507.9895935058594
+    },
+    "document": [320, 568],
+    "documentScroll": [0, 0],
+    "id": "",
+    "label": "Show confirmation password",
+    "panelScroll": 32.66666793823242,
+    "tag": "BUTTON",
+    "type": "button",
+    "viewport": [320, 568]
+  },
+  {
+    "bounds": {
+      "h": 44,
+      "w": 278,
+      "x": 16,
+      "y": 418.65625
+    },
+    "document": [320, 568],
+    "documentScroll": [0, 0],
+    "id": "",
+    "label": null,
+    "panelScroll": 178,
+    "tag": "BUTTON",
+    "type": "submit",
+    "viewport": [320, 568]
+  },
+  {
+    "bounds": {
+      "h": 44,
+      "w": 70.41667175292969,
+      "x": 180.89584350585935,
+      "y": 512.3229370117188
+    },
+    "document": [320, 568],
+    "documentScroll": [0, 0],
+    "id": "",
+    "label": null,
+    "panelScroll": 178,
+    "tag": "A",
+    "type": null,
+    "viewport": [320, 568]
+  },
+  {
+    "bounds": {
+      "h": 44,
+      "w": 350,
+      "x": 20,
+      "y": 291.19793701171875
+    },
+    "document": [390, 844],
+    "documentScroll": [0, 0],
+    "id": "signup-name",
+    "label": null,
+    "panelScroll": 0,
+    "tag": "INPUT",
+    "type": null,
+    "viewport": [390, 844]
+  },
+  {
+    "bounds": {
+      "h": 44,
+      "w": 350,
+      "x": 20,
+      "y": 360.19793701171875
+    },
+    "document": [390, 844],
+    "documentScroll": [0, 0],
+    "id": "signup-email",
+    "label": null,
+    "panelScroll": 0,
+    "tag": "INPUT",
+    "type": "email",
+    "viewport": [390, 844]
+  },
+  {
+    "bounds": {
+      "h": 44,
+      "w": 350,
+      "x": 20,
+      "y": 455.1979370117187
+    },
+    "document": [390, 844],
+    "documentScroll": [0, 0],
+    "id": "signup-password",
+    "label": null,
+    "panelScroll": 0,
+    "tag": "INPUT",
+    "type": "password",
+    "viewport": [390, 844]
+  },
+  {
+    "bounds": {
+      "h": 44,
+      "w": 54,
+      "x": 312,
+      "y": 455.1979370117187
+    },
+    "document": [390, 844],
+    "documentScroll": [0, 0],
+    "id": "",
+    "label": "Show password",
+    "panelScroll": 0,
+    "tag": "BUTTON",
+    "type": "button",
+    "viewport": [390, 844]
+  },
+  {
+    "bounds": {
+      "h": 44,
+      "w": 350,
+      "x": 20,
+      "y": 524.1979370117188
+    },
+    "document": [390, 844],
+    "documentScroll": [0, 0],
+    "id": "signup-confirm",
+    "label": null,
+    "panelScroll": 0,
+    "tag": "INPUT",
+    "type": "password",
+    "viewport": [390, 844]
+  },
+  {
+    "bounds": {
+      "h": 44,
+      "w": 54,
+      "x": 312,
+      "y": 524.1979370117188
+    },
+    "document": [390, 844],
+    "documentScroll": [0, 0],
+    "id": "",
+    "label": "Show confirmation password",
+    "panelScroll": 0,
+    "tag": "BUTTON",
+    "type": "button",
+    "viewport": [390, 844]
+  },
+  {
+    "bounds": {
+      "h": 44,
+      "w": 350,
+      "x": 20,
+      "y": 584.1979370117188
+    },
+    "document": [390, 844],
+    "documentScroll": [0, 0],
+    "id": "",
+    "label": null,
+    "panelScroll": 0,
+    "tag": "BUTTON",
+    "type": "submit",
+    "viewport": [390, 844]
+  },
+  {
+    "bounds": {
+      "h": 44,
+      "w": 70.41667175292969,
+      "x": 184.89584350585935,
+      "y": 674.8646240234375
+    },
+    "document": [390, 844],
+    "documentScroll": [0, 0],
+    "id": "",
+    "label": null,
+    "panelScroll": 0,
+    "tag": "A",
+    "type": null,
+    "viewport": [390, 844]
+  }
+]

@@ -1,5 +1,9 @@
 # Auth artwork aspect refinement
 
+## Verified responsive follow-up
+
+See [the actual 34-case responsive report](../verification/auth-responsive-20261028/REPORT.md). The stale running fixture was refreshed and the reported 1280×631 issue reproduced then corrected. Browser-tested range refinements also cover 1024×768 and 1702×640. Four unsupported aspect combinations still letterbox and await the owner's form-only/art-direction decision. Actual zoom and viewport reset remain unverified after Computer Use stopped on native Chrome URL-confidence policy. No security settings or old headless-denial workaround was used. The earlier sections below are historical source/static evidence, not a substitute for this browser report.
+
 ## Current square-asset integration
 
 The subsequently authorized native Blender square render is now integrated in the shared login/signup picture. Library source: `libfile_018056f486a48191a557e2faa6f0d389`. Its identity and bytes were verified on the consuming Ubuntu filesystem using the current official Library helper; the earlier Windows helper failure (`os.setxattr` unavailable) was resolved without changing browser or network security settings. The square render and upper-ratio supplied crop were visually inspected as local image files, not application screenshots.

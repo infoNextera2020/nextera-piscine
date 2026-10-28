@@ -1,0 +1,15 @@
+{
+  "pid": 49451,
+  "startTicks": "5308806",
+  "command": [
+    "/home/anas/nextera-piscine/.tools/node-v24.19.0-linux-x64/bin/node",
+    "/mnt/c/Users/lap/Documents/Codex/2026-10-24/task/implementation/latest-piscine-review.cjs"
+  ],
+  "bind": "127.0.0.1:3118",
+  "sourceHead": "5ddfc3d4ad415f6ade9fda52716e6ac21697ecff",
+  "fixtureOnly": true,
+  "authDbRunner": false,
+  "bundleSha256": "6b41b6eef2d85b419d593e2059f226edd541e4b77bec4200dc9ede68dfc9dd6e",
+  "cssSha256": "f0fc975f9cc1bfe6c0db650efdcd2393a72a802de9d95890434b998467234caa",
+  "oldPidStopped": 23617
+}

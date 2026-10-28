@@ -1,0 +1,920 @@
+[
+  {
+    "artVisible": true,
+    "document": [1280, 631],
+    "image": {
+      "complete": true,
+      "fit": "cover",
+      "horizontalGap": 0,
+      "rect": {
+        "h": 631,
+        "w": 639.3333740234375,
+        "x": 640.6666870117188,
+        "y": 0
+      },
+      "sourceCrop": [0, 8.342063142169877],
+      "src": "http://127.0.0.1:3118/piscine/auth/nextera-auth-panel-square-1280.webp",
+      "verticalGap": 0
+    },
+    "panel": {
+      "clientHeight": 631,
+      "scrollHeight": 631
+    },
+    "scroll": [0, 0],
+    "url": "/review/auth/login",
+    "viewport": [1280, 631],
+    "route": "login",
+    "requested": [1280, 631]
+  },
+  {
+    "artVisible": true,
+    "document": [1440, 900],
+    "image": {
+      "complete": true,
+      "fit": "cover",
+      "horizontalGap": 0,
+      "rect": {
+        "h": 900,
+        "w": 719.3333740234375,
+        "x": 720.6666870117188,
+        "y": 0
+      },
+      "sourceCrop": [0, 89.30495441963808],
+      "src": "http://127.0.0.1:3118/piscine/auth/nextera-auth-sculpture-900.webp",
+      "verticalGap": 0
+    },
+    "panel": {
+      "clientHeight": 900,
+      "scrollHeight": 900
+    },
+    "scroll": [0, 0],
+    "url": "/review/auth/login",
+    "viewport": [1440, 900],
+    "route": "login",
+    "requested": [1440, 900]
+  },
+  {
+    "artVisible": true,
+    "document": [1366, 768],
+    "image": {
+      "complete": true,
+      "fit": "cover",
+      "horizontalGap": 0,
+      "rect": {
+        "h": 768,
+        "w": 682.3333740234375,
+        "x": 683.6666870117188,
+        "y": 0
+      },
+      "sourceCrop": [71.38885498046875, 0],
+      "src": "http://127.0.0.1:3118/piscine/auth/nextera-auth-panel-square-1280.webp",
+      "verticalGap": 0
+    },
+    "panel": {
+      "clientHeight": 768,
+      "scrollHeight": 768
+    },
+    "scroll": [0, 0],
+    "url": "/review/auth/login",
+    "viewport": [1366, 768],
+    "route": "login",
+    "requested": [1366, 768]
+  },
+  {
+    "artVisible": true,
+    "document": [1920, 1080],
+    "image": {
+      "complete": true,
+      "fit": "cover",
+      "horizontalGap": 0,
+      "rect": {
+        "h": 1080,
+        "w": 959.3333740234376,
+        "x": 960.6666870117188,
+        "y": 0
+      },
+      "sourceCrop": [71.50614872685185, 0],
+      "src": "http://127.0.0.1:3118/piscine/auth/nextera-auth-panel-square-1280.webp",
+      "verticalGap": 0
+    },
+    "panel": {
+      "clientHeight": 1080,
+      "scrollHeight": 1080
+    },
+    "scroll": [0, 0],
+    "url": "/review/auth/login",
+    "viewport": [1920, 1080],
+    "route": "login",
+    "requested": [1920, 1080]
+  },
+  {
+    "artVisible": true,
+    "document": [1280, 800],
+    "image": {
+      "complete": true,
+      "fit": "cover",
+      "horizontalGap": 1.1368683772161605e-13,
+      "rect": {
+        "h": 800,
+        "w": 639.3333740234375,
+        "x": 640.6666870117188,
+        "y": 0
+      },
+      "sourceCrop": [0, 89.21798313253146],
+      "src": "http://127.0.0.1:3118/piscine/auth/nextera-auth-sculpture-900.webp",
+      "verticalGap": 0
+    },
+    "panel": {
+      "clientHeight": 800,
+      "scrollHeight": 800
+    },
+    "scroll": [0, 0],
+    "url": "/review/auth/login",
+    "viewport": [1280, 800],
+    "route": "login",
+    "requested": [1280, 800]
+  },
+  {
+    "artVisible": true,
+    "document": [1024, 768],
+    "image": {
+      "complete": true,
+      "fit": "cover",
+      "horizontalGap": 0,
+      "rect": {
+        "h": 768,
+        "w": 511.3333435058594,
+        "x": 512.6666870117188,
+        "y": 0
+      },
+      "sourceCrop": [40.72915554046631, 0],
+      "src": "http://127.0.0.1:3118/piscine/auth/nextera-auth-sculpture-900.webp",
+      "verticalGap": 0
+    },
+    "panel": {
+      "clientHeight": 768,
+      "scrollHeight": 768
+    },
+    "scroll": [0, 0],
+    "url": "/review/auth/login",
+    "viewport": [1024, 768],
+    "route": "login",
+    "requested": [1024, 768]
+  },
+  {
+    "artVisible": true,
+    "document": [768, 1024],
+    "image": {
+      "complete": true,
+      "fit": "contain",
+      "horizontalGap": 0,
+      "rect": {
+        "h": 1024,
+        "w": 383.3333435058594,
+        "x": 384.6666870117187,
+        "y": 0
+      },
+      "sourceCrop": [0, 0],
+      "src": "http://127.0.0.1:3118/piscine/auth/nextera-auth-sculpture-900.webp",
+      "verticalGap": 487.33331909179685
+    },
+    "panel": {
+      "clientHeight": 1024,
+      "scrollHeight": 1024
+    },
+    "scroll": [0, 0],
+    "url": "/review/auth/login",
+    "viewport": [768, 1024],
+    "route": "login",
+    "requested": [768, 1024]
+  },
+  {
+    "artVisible": true,
+    "document": [761, 760],
+    "image": {
+      "complete": true,
+      "fit": "contain",
+      "horizontalGap": 0,
+      "rect": {
+        "h": 760,
+        "w": 380,
+        "x": 381.3333435058594,
+        "y": 0
+      },
+      "sourceCrop": [0, 0],
+      "src": "http://127.0.0.1:3118/piscine/auth/nextera-auth-sculpture-900.webp",
+      "verticalGap": 228
+    },
+    "panel": {
+      "clientHeight": 760,
+      "scrollHeight": 760
+    },
+    "scroll": [0, 0],
+    "url": "/review/auth/login",
+    "viewport": [761, 760],
+    "route": "login",
+    "requested": [761, 760]
+  },
+  {
+    "artVisible": false,
+    "document": [760, 760],
+    "image": {
+      "complete": true,
+      "fit": "contain",
+      "horizontalGap": 0,
+      "rect": {
+        "h": 0,
+        "w": 0,
+        "x": 0,
+        "y": 0
+      },
+      "sourceCrop": null,
+      "src": "http://127.0.0.1:3118/piscine/auth/nextera-auth-sculpture-900.webp",
+      "verticalGap": 0
+    },
+    "panel": {
+      "clientHeight": 760,
+      "scrollHeight": 760
+    },
+    "scroll": [0, 0],
+    "url": "/review/auth/login",
+    "viewport": [760, 760],
+    "route": "login",
+    "requested": [760, 760]
+  },
+  {
+    "artVisible": false,
+    "document": [390, 844],
+    "image": {
+      "complete": true,
+      "fit": "contain",
+      "horizontalGap": 0,
+      "rect": {
+        "h": 0,
+        "w": 0,
+        "x": 0,
+        "y": 0
+      },
+      "sourceCrop": null,
+      "src": "http://127.0.0.1:3118/piscine/auth/nextera-auth-sculpture-900.webp",
+      "verticalGap": 0
+    },
+    "panel": {
+      "clientHeight": 844,
+      "scrollHeight": 844
+    },
+    "scroll": [0, 0],
+    "url": "/review/auth/login",
+    "viewport": [390, 844],
+    "route": "login",
+    "requested": [390, 844]
+  },
+  {
+    "artVisible": false,
+    "document": [320, 568],
+    "image": {
+      "complete": true,
+      "fit": "contain",
+      "horizontalGap": 0,
+      "rect": {
+        "h": 0,
+        "w": 0,
+        "x": 0,
+        "y": 0
+      },
+      "sourceCrop": null,
+      "src": "http://127.0.0.1:3118/piscine/auth/nextera-auth-sculpture-900.webp",
+      "verticalGap": 0
+    },
+    "panel": {
+      "clientHeight": 568,
+      "scrollHeight": 568
+    },
+    "scroll": [0, 0],
+    "url": "/review/auth/login",
+    "viewport": [320, 568],
+    "route": "login",
+    "requested": [320, 568]
+  },
+  {
+    "artVisible": true,
+    "document": [1024, 600],
+    "image": {
+      "complete": true,
+      "fit": "cover",
+      "horizontalGap": 0,
+      "rect": {
+        "h": 600,
+        "w": 511.3333435058594,
+        "x": 512.6666870117188,
+        "y": 0
+      },
+      "sourceCrop": [94.5777669270833, 0],
+      "src": "http://127.0.0.1:3118/piscine/auth/nextera-auth-panel-square-600.webp",
+      "verticalGap": 0
+    },
+    "panel": {
+      "clientHeight": 600,
+      "scrollHeight": 600
+    },
+    "scroll": [0, 0],
+    "url": "/review/auth/login",
+    "viewport": [1024, 600],
+    "route": "login",
+    "requested": [1024, 600]
+  },
+  {
+    "artVisible": true,
+    "document": [1280, 500],
+    "image": {
+      "complete": true,
+      "fit": "cover",
+      "horizontalGap": 0,
+      "rect": {
+        "h": 500,
+        "w": 639.3333740234375,
+        "x": 640.6666870117188,
+        "y": 0
+      },
+      "sourceCrop": [0, 139.47865542168768],
+      "src": "http://127.0.0.1:3118/piscine/auth/nextera-auth-panel-square-900.webp",
+      "verticalGap": 0
+    },
+    "panel": {
+      "clientHeight": 500,
+      "scrollHeight": 544
+    },
+    "scroll": [0, 0],
+    "url": "/review/auth/login",
+    "viewport": [1280, 500],
+    "route": "login",
+    "requested": [1280, 500]
+  },
+  {
+    "artVisible": true,
+    "document": [1280, 480],
+    "image": {
+      "complete": true,
+      "fit": "contain",
+      "horizontalGap": 296.47623116629467,
+      "rect": {
+        "h": 480,
+        "w": 639.3333740234375,
+        "x": 640.6666870117188,
+        "y": 0
+      },
+      "sourceCrop": [0, 0],
+      "src": "http://127.0.0.1:3118/piscine/auth/nextera-auth-sculpture-900.webp",
+      "verticalGap": 0
+    },
+    "panel": {
+      "clientHeight": 480,
+      "scrollHeight": 544
+    },
+    "scroll": [0, 0],
+    "url": "/review/auth/login",
+    "viewport": [1280, 480],
+    "route": "login",
+    "requested": [1280, 480]
+  },
+  {
+    "artVisible": true,
+    "document": [1702, 640],
+    "image": {
+      "complete": true,
+      "fit": "cover",
+      "horizontalGap": 0,
+      "rect": {
+        "h": 640,
+        "w": 850.3333740234375,
+        "x": 851.6666870117188,
+        "y": 0
+      },
+      "sourceCrop": [0, 158.3065695023393],
+      "src": "http://127.0.0.1:3118/piscine/auth/nextera-auth-panel-square-900.webp",
+      "verticalGap": 0
+    },
+    "panel": {
+      "clientHeight": 640,
+      "scrollHeight": 640
+    },
+    "scroll": [0, 0],
+    "url": "/review/auth/login",
+    "viewport": [1702, 640],
+    "route": "login",
+    "requested": [1702, 640]
+  },
+  {
+    "artVisible": true,
+    "document": [1920, 640],
+    "image": {
+      "complete": true,
+      "fit": "contain",
+      "horizontalGap": 502.1905168805804,
+      "rect": {
+        "h": 640,
+        "w": 959.3333740234376,
+        "x": 960.6666870117188,
+        "y": 0
+      },
+      "sourceCrop": [0, 0],
+      "src": "http://127.0.0.1:3118/piscine/auth/nextera-auth-sculpture-1200.webp",
+      "verticalGap": 0
+    },
+    "panel": {
+      "clientHeight": 640,
+      "scrollHeight": 640
+    },
+    "scroll": [0, 0],
+    "url": "/review/auth/login",
+    "viewport": [1920, 640],
+    "route": "login",
+    "requested": [1920, 640]
+  },
+  {
+    "artVisible": true,
+    "document": [2560, 1440],
+    "image": {
+      "complete": true,
+      "fit": "cover",
+      "horizontalGap": 0,
+      "rect": {
+        "h": 1440,
+        "w": 1279.3333740234375,
+        "x": 1280.666748046875,
+        "y": 0
+      },
+      "sourceCrop": [71.40738932291663, 0],
+      "src": "http://127.0.0.1:3118/piscine/auth/nextera-auth-panel-square-1280.webp",
+      "verticalGap": 0
+    },
+    "panel": {
+      "clientHeight": 1440,
+      "scrollHeight": 1440
+    },
+    "scroll": [0, 0],
+    "url": "/review/auth/login",
+    "viewport": [2560, 1440],
+    "route": "login",
+    "requested": [2560, 1440]
+  },
+  {
+    "artVisible": true,
+    "document": [1280, 631],
+    "image": {
+      "complete": true,
+      "fit": "cover",
+      "horizontalGap": 0,
+      "rect": {
+        "h": 631,
+        "w": 639.3333740234375,
+        "x": 640.6666870117188,
+        "y": 0
+      },
+      "sourceCrop": [0, 8.342063142169877],
+      "src": "http://127.0.0.1:3118/piscine/auth/nextera-auth-panel-square-1280.webp",
+      "verticalGap": 0
+    },
+    "panel": {
+      "clientHeight": 631,
+      "scrollHeight": 745
+    },
+    "scroll": [0, 0],
+    "url": "/review/auth/signup",
+    "viewport": [1280, 631],
+    "route": "signup",
+    "requested": [1280, 631]
+  },
+  {
+    "artVisible": true,
+    "document": [1440, 900],
+    "image": {
+      "complete": true,
+      "fit": "cover",
+      "horizontalGap": 0,
+      "rect": {
+        "h": 900,
+        "w": 719.3333740234375,
+        "x": 720.6666870117188,
+        "y": 0
+      },
+      "sourceCrop": [0, 89.30495441963808],
+      "src": "http://127.0.0.1:3118/piscine/auth/nextera-auth-sculpture-900.webp",
+      "verticalGap": 0
+    },
+    "panel": {
+      "clientHeight": 900,
+      "scrollHeight": 900
+    },
+    "scroll": [0, 0],
+    "url": "/review/auth/signup",
+    "viewport": [1440, 900],
+    "route": "signup",
+    "requested": [1440, 900]
+  },
+  {
+    "artVisible": true,
+    "document": [1366, 768],
+    "image": {
+      "complete": true,
+      "fit": "cover",
+      "horizontalGap": 0,
+      "rect": {
+        "h": 768,
+        "w": 682.3333740234375,
+        "x": 683.6666870117188,
+        "y": 0
+      },
+      "sourceCrop": [71.38885498046875, 0],
+      "src": "http://127.0.0.1:3118/piscine/auth/nextera-auth-panel-square-1280.webp",
+      "verticalGap": 0
+    },
+    "panel": {
+      "clientHeight": 768,
+      "scrollHeight": 768
+    },
+    "scroll": [0, 0],
+    "url": "/review/auth/signup",
+    "viewport": [1366, 768],
+    "route": "signup",
+    "requested": [1366, 768]
+  },
+  {
+    "artVisible": true,
+    "document": [1920, 1080],
+    "image": {
+      "complete": true,
+      "fit": "cover",
+      "horizontalGap": 0,
+      "rect": {
+        "h": 1080,
+        "w": 959.3333740234376,
+        "x": 960.6666870117188,
+        "y": 0
+      },
+      "sourceCrop": [71.50614872685185, 0],
+      "src": "http://127.0.0.1:3118/piscine/auth/nextera-auth-panel-square-1280.webp",
+      "verticalGap": 0
+    },
+    "panel": {
+      "clientHeight": 1080,
+      "scrollHeight": 1080
+    },
+    "scroll": [0, 0],
+    "url": "/review/auth/signup",
+    "viewport": [1920, 1080],
+    "route": "signup",
+    "requested": [1920, 1080]
+  },
+  {
+    "artVisible": true,
+    "document": [1280, 800],
+    "image": {
+      "complete": true,
+      "fit": "cover",
+      "horizontalGap": 1.1368683772161605e-13,
+      "rect": {
+        "h": 800,
+        "w": 639.3333740234375,
+        "x": 640.6666870117188,
+        "y": 0
+      },
+      "sourceCrop": [0, 89.21798313253146],
+      "src": "http://127.0.0.1:3118/piscine/auth/nextera-auth-sculpture-900.webp",
+      "verticalGap": 0
+    },
+    "panel": {
+      "clientHeight": 800,
+      "scrollHeight": 800
+    },
+    "scroll": [0, 0],
+    "url": "/review/auth/signup",
+    "viewport": [1280, 800],
+    "route": "signup",
+    "requested": [1280, 800]
+  },
+  {
+    "artVisible": true,
+    "document": [1024, 768],
+    "image": {
+      "complete": true,
+      "fit": "cover",
+      "horizontalGap": 0,
+      "rect": {
+        "h": 768,
+        "w": 511.3333435058594,
+        "x": 512.6666870117188,
+        "y": 0
+      },
+      "sourceCrop": [40.72915554046631, 0],
+      "src": "http://127.0.0.1:3118/piscine/auth/nextera-auth-sculpture-900.webp",
+      "verticalGap": 0
+    },
+    "panel": {
+      "clientHeight": 768,
+      "scrollHeight": 768
+    },
+    "scroll": [0, 0],
+    "url": "/review/auth/signup",
+    "viewport": [1024, 768],
+    "route": "signup",
+    "requested": [1024, 768]
+  },
+  {
+    "artVisible": true,
+    "document": [768, 1024],
+    "image": {
+      "complete": true,
+      "fit": "contain",
+      "horizontalGap": 0,
+      "rect": {
+        "h": 1024,
+        "w": 383.3333435058594,
+        "x": 384.6666870117187,
+        "y": 0
+      },
+      "sourceCrop": [0, 0],
+      "src": "http://127.0.0.1:3118/piscine/auth/nextera-auth-sculpture-900.webp",
+      "verticalGap": 487.33331909179685
+    },
+    "panel": {
+      "clientHeight": 1024,
+      "scrollHeight": 1024
+    },
+    "scroll": [0, 0],
+    "url": "/review/auth/signup",
+    "viewport": [768, 1024],
+    "route": "signup",
+    "requested": [768, 1024]
+  },
+  {
+    "artVisible": true,
+    "document": [761, 760],
+    "image": {
+      "complete": true,
+      "fit": "contain",
+      "horizontalGap": 0,
+      "rect": {
+        "h": 760,
+        "w": 380,
+        "x": 381.3333435058594,
+        "y": 0
+      },
+      "sourceCrop": [0, 0],
+      "src": "http://127.0.0.1:3118/piscine/auth/nextera-auth-sculpture-900.webp",
+      "verticalGap": 228
+    },
+    "panel": {
+      "clientHeight": 760,
+      "scrollHeight": 815
+    },
+    "scroll": [0, 0],
+    "url": "/review/auth/signup",
+    "viewport": [761, 760],
+    "route": "signup",
+    "requested": [761, 760]
+  },
+  {
+    "artVisible": false,
+    "document": [760, 760],
+    "image": {
+      "complete": true,
+      "fit": "contain",
+      "horizontalGap": 0,
+      "rect": {
+        "h": 0,
+        "w": 0,
+        "x": 0,
+        "y": 0
+      },
+      "sourceCrop": null,
+      "src": "http://127.0.0.1:3118/piscine/auth/nextera-auth-sculpture-900.webp",
+      "verticalGap": 0
+    },
+    "panel": {
+      "clientHeight": 760,
+      "scrollHeight": 760
+    },
+    "scroll": [0, 0],
+    "url": "/review/auth/signup",
+    "viewport": [760, 760],
+    "route": "signup",
+    "requested": [760, 760]
+  },
+  {
+    "artVisible": false,
+    "document": [390, 844],
+    "image": {
+      "complete": true,
+      "fit": "contain",
+      "horizontalGap": 0,
+      "rect": {
+        "h": 0,
+        "w": 0,
+        "x": 0,
+        "y": 0
+      },
+      "sourceCrop": null,
+      "src": "http://127.0.0.1:3118/piscine/auth/nextera-auth-sculpture-900.webp",
+      "verticalGap": 0
+    },
+    "panel": {
+      "clientHeight": 844,
+      "scrollHeight": 844
+    },
+    "scroll": [0, 0],
+    "url": "/review/auth/signup",
+    "viewport": [390, 844],
+    "route": "signup",
+    "requested": [390, 844]
+  },
+  {
+    "artVisible": false,
+    "document": [320, 568],
+    "image": {
+      "complete": true,
+      "fit": "contain",
+      "horizontalGap": 0,
+      "rect": {
+        "h": 0,
+        "w": 0,
+        "x": 0,
+        "y": 0
+      },
+      "sourceCrop": null,
+      "src": "http://127.0.0.1:3118/piscine/auth/nextera-auth-sculpture-900.webp",
+      "verticalGap": 0
+    },
+    "panel": {
+      "clientHeight": 568,
+      "scrollHeight": 746
+    },
+    "scroll": [0, 0],
+    "url": "/review/auth/signup",
+    "viewport": [320, 568],
+    "route": "signup",
+    "requested": [320, 568]
+  },
+  {
+    "artVisible": true,
+    "document": [1024, 600],
+    "image": {
+      "complete": true,
+      "fit": "cover",
+      "horizontalGap": 0,
+      "rect": {
+        "h": 600,
+        "w": 511.3333435058594,
+        "x": 512.6666870117188,
+        "y": 0
+      },
+      "sourceCrop": [94.5777669270833, 0],
+      "src": "http://127.0.0.1:3118/piscine/auth/nextera-auth-panel-square-600.webp",
+      "verticalGap": 0
+    },
+    "panel": {
+      "clientHeight": 600,
+      "scrollHeight": 742
+    },
+    "scroll": [0, 0],
+    "url": "/review/auth/signup",
+    "viewport": [1024, 600],
+    "route": "signup",
+    "requested": [1024, 600]
+  },
+  {
+    "artVisible": true,
+    "document": [1280, 500],
+    "image": {
+      "complete": true,
+      "fit": "cover",
+      "horizontalGap": 0,
+      "rect": {
+        "h": 500,
+        "w": 639.3333740234375,
+        "x": 640.6666870117188,
+        "y": 0
+      },
+      "sourceCrop": [0, 139.47865542168768],
+      "src": "http://127.0.0.1:3118/piscine/auth/nextera-auth-panel-square-900.webp",
+      "verticalGap": 0
+    },
+    "panel": {
+      "clientHeight": 500,
+      "scrollHeight": 745
+    },
+    "scroll": [0, 0],
+    "url": "/review/auth/signup",
+    "viewport": [1280, 500],
+    "route": "signup",
+    "requested": [1280, 500]
+  },
+  {
+    "artVisible": true,
+    "document": [1280, 480],
+    "image": {
+      "complete": true,
+      "fit": "contain",
+      "horizontalGap": 296.47623116629467,
+      "rect": {
+        "h": 480,
+        "w": 639.3333740234375,
+        "x": 640.6666870117188,
+        "y": 0
+      },
+      "sourceCrop": [0, 0],
+      "src": "http://127.0.0.1:3118/piscine/auth/nextera-auth-sculpture-900.webp",
+      "verticalGap": 0
+    },
+    "panel": {
+      "clientHeight": 480,
+      "scrollHeight": 745
+    },
+    "scroll": [0, 0],
+    "url": "/review/auth/signup",
+    "viewport": [1280, 480],
+    "route": "signup",
+    "requested": [1280, 480]
+  },
+  {
+    "artVisible": true,
+    "document": [1702, 640],
+    "image": {
+      "complete": true,
+      "fit": "cover",
+      "horizontalGap": 0,
+      "rect": {
+        "h": 640,
+        "w": 850.3333740234375,
+        "x": 851.6666870117188,
+        "y": 0
+      },
+      "sourceCrop": [0, 158.3065695023393],
+      "src": "http://127.0.0.1:3118/piscine/auth/nextera-auth-panel-square-900.webp",
+      "verticalGap": 0
+    },
+    "panel": {
+      "clientHeight": 640,
+      "scrollHeight": 749
+    },
+    "scroll": [0, 0],
+    "url": "/review/auth/signup",
+    "viewport": [1702, 640],
+    "route": "signup",
+    "requested": [1702, 640]
+  },
+  {
+    "artVisible": true,
+    "document": [1920, 640],
+    "image": {
+      "complete": true,
+      "fit": "contain",
+      "horizontalGap": 502.1905168805804,
+      "rect": {
+        "h": 640,
+        "w": 959.3333740234376,
+        "x": 960.6666870117188,
+        "y": 0
+      },
+      "sourceCrop": [0, 0],
+      "src": "http://127.0.0.1:3118/piscine/auth/nextera-auth-sculpture-1200.webp",
+      "verticalGap": 0
+    },
+    "panel": {
+      "clientHeight": 640,
+      "scrollHeight": 749
+    },
+    "scroll": [0, 0],
+    "url": "/review/auth/signup",
+    "viewport": [1920, 640],
+    "route": "signup",
+    "requested": [1920, 640]
+  },
+  {
+    "artVisible": true,
+    "document": [2560, 1440],
+    "image": {
+      "complete": true,
+      "fit": "cover",
+      "horizontalGap": 0,
+      "rect": {
+        "h": 1440,
+        "w": 1279.3333740234375,
+        "x": 1280.666748046875,
+        "y": 0
+      },
+      "sourceCrop": [71.40738932291663, 0],
+      "src": "http://127.0.0.1:3118/piscine/auth/nextera-auth-panel-square-1280.webp",
+      "verticalGap": 0
+    },
+    "panel": {
+      "clientHeight": 1440,
+      "scrollHeight": 1440
+    },
+    "scroll": [0, 0],
+    "url": "/review/auth/signup",
+    "viewport": [2560, 1440],
+    "route": "signup",
+    "requested": [2560, 1440]
+  }
+]

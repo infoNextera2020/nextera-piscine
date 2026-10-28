@@ -1,0 +1,378 @@
+{
+  "verified_utc": "2026-10-28T14:52:52.020147+00:00",
+  "source_parent_head": "5ddfc3d4ad415f6ade9fda52716e6ac21697ecff",
+  "source_checks": [
+    {
+      "name": "format",
+      "exitCode": 0,
+      "seconds": 5.7
+    },
+    {
+      "name": "focused",
+      "exitCode": 0,
+      "seconds": 5.3
+    },
+    {
+      "name": "test",
+      "exitCode": 0,
+      "seconds": 13.55
+    },
+    {
+      "name": "typecheck",
+      "exitCode": 0,
+      "seconds": 40.01
+    },
+    {
+      "name": "lint",
+      "exitCode": 0,
+      "seconds": 16.24
+    },
+    {
+      "name": "format-check",
+      "exitCode": 0,
+      "seconds": 21.79
+    },
+    {
+      "name": "build",
+      "exitCode": 0,
+      "seconds": 33.69
+    }
+  ],
+  "source_tests": 1075,
+  "browser_cases": 34,
+  "document_overflow_cases": 0,
+  "missing_visible_images": 0,
+  "keyboard_focus_checks": 16,
+  "cover_subject_bounds_checks": [
+    {
+      "route": "login",
+      "viewport": [1280, 631],
+      "subject_bounds_inside_actual_frame": true
+    },
+    {
+      "route": "login",
+      "viewport": [1440, 900],
+      "subject_bounds_inside_actual_frame": true
+    },
+    {
+      "route": "login",
+      "viewport": [1366, 768],
+      "subject_bounds_inside_actual_frame": true
+    },
+    {
+      "route": "login",
+      "viewport": [1920, 1080],
+      "subject_bounds_inside_actual_frame": true
+    },
+    {
+      "route": "login",
+      "viewport": [1280, 800],
+      "subject_bounds_inside_actual_frame": true
+    },
+    {
+      "route": "login",
+      "viewport": [1024, 768],
+      "subject_bounds_inside_actual_frame": true
+    },
+    {
+      "route": "login",
+      "viewport": [1024, 600],
+      "subject_bounds_inside_actual_frame": true
+    },
+    {
+      "route": "login",
+      "viewport": [1280, 500],
+      "subject_bounds_inside_actual_frame": true
+    },
+    {
+      "route": "login",
+      "viewport": [1702, 640],
+      "subject_bounds_inside_actual_frame": true
+    },
+    {
+      "route": "login",
+      "viewport": [2560, 1440],
+      "subject_bounds_inside_actual_frame": true
+    },
+    {
+      "route": "signup",
+      "viewport": [1280, 631],
+      "subject_bounds_inside_actual_frame": true
+    },
+    {
+      "route": "signup",
+      "viewport": [1440, 900],
+      "subject_bounds_inside_actual_frame": true
+    },
+    {
+      "route": "signup",
+      "viewport": [1366, 768],
+      "subject_bounds_inside_actual_frame": true
+    },
+    {
+      "route": "signup",
+      "viewport": [1920, 1080],
+      "subject_bounds_inside_actual_frame": true
+    },
+    {
+      "route": "signup",
+      "viewport": [1280, 800],
+      "subject_bounds_inside_actual_frame": true
+    },
+    {
+      "route": "signup",
+      "viewport": [1024, 768],
+      "subject_bounds_inside_actual_frame": true
+    },
+    {
+      "route": "signup",
+      "viewport": [1024, 600],
+      "subject_bounds_inside_actual_frame": true
+    },
+    {
+      "route": "signup",
+      "viewport": [1280, 500],
+      "subject_bounds_inside_actual_frame": true
+    },
+    {
+      "route": "signup",
+      "viewport": [1702, 640],
+      "subject_bounds_inside_actual_frame": true
+    },
+    {
+      "route": "signup",
+      "viewport": [2560, 1440],
+      "subject_bounds_inside_actual_frame": true
+    }
+  ],
+  "remaining_letterbox_cases": [
+    {
+      "route": "login",
+      "viewport": [768, 1024],
+      "gaps": [0, 487.33331909179685]
+    },
+    {
+      "route": "login",
+      "viewport": [761, 760],
+      "gaps": [0, 228]
+    },
+    {
+      "route": "login",
+      "viewport": [1280, 480],
+      "gaps": [296.47623116629467, 0]
+    },
+    {
+      "route": "login",
+      "viewport": [1920, 640],
+      "gaps": [502.1905168805804, 0]
+    },
+    {
+      "route": "signup",
+      "viewport": [768, 1024],
+      "gaps": [0, 487.33331909179685]
+    },
+    {
+      "route": "signup",
+      "viewport": [761, 760],
+      "gaps": [0, 228]
+    },
+    {
+      "route": "signup",
+      "viewport": [1280, 480],
+      "gaps": [296.47623116629467, 0]
+    },
+    {
+      "route": "signup",
+      "viewport": [1920, 640],
+      "gaps": [502.1905168805804, 0]
+    }
+  ],
+  "new_layout_approved": false,
+  "zoom_verified": false,
+  "viewport_reset_confirmed": false,
+  "last_viewport_override": [390, 844],
+  "browser_route": {
+    "provider": "supported Chrome extension",
+    "browser_id": "3",
+    "existing_user_tab": "906734722",
+    "initial_url": "http://127.0.0.1:3118/login",
+    "new_browser_launched": false,
+    "headless_denial_retried": false,
+    "security_settings_changed": false
+  },
+  "computer_use_stop": "Selecting Chrome native window for zoom verification stopped before input: current browser URL could not be established confidently enough to enforce policy. No further browser actions performed.",
+  "original_dirty_hashes_unchanged": {
+    "apps/web/public/ASSETS.md": "feca5ebec9df9b3842afadb1c0a6442e24b38ad479c9445e1f1d26f2cd9a3cf9",
+    "apps/web/components/learning/home-next-action.module.css": "4eaa849950b223af5c220b8330ca6e3f732c865e907a66a454798dff22916d87",
+    "apps/web/public/piscine/official-logo.svg": "0fde8181d16ceb17ac55e6d52e8cab523c3f75976a9aaa81b8695942c7336e54",
+    "docs/RELEASE_CANDIDATE_001_REPORT.md": "95e04b9accaf10d922e5acac157d8d5d7ae33ef17284ccef042558fa0fbca2fd"
+  },
+  "screenshots": {
+    "before-login-1024x768.jpg": {
+      "bytes": 51392,
+      "sha256": "09bee20b5ce965b55a45a96d48ff0b94f3ba7ebb5807c189502beb620bf49746"
+    },
+    "before-login-1702x640.jpg": {
+      "bytes": 52351,
+      "sha256": "d46fa2806d717269debf1dd2a367b82d7097d1a8f148cb4b89724458b771abbd"
+    },
+    "before-signup-1024x768.jpg": {
+      "bytes": 65781,
+      "sha256": "ec08603a4fb864edf5e5789a94f4125fd815d9e38cbbbe8005ba9af72f62915d"
+    },
+    "before-signup-1702x640.jpg": {
+      "bytes": 65506,
+      "sha256": "e5825ad00679fae04e39baf368da2e1df5541c8e34f00119f110e516106e9c2b"
+    },
+    "login-1024x600.jpg": {
+      "bytes": 41283,
+      "sha256": "7551df26568df6835ff110cedce0dd1eb448c62c8f7345d1e51ac78ddb558f9c"
+    },
+    "login-1024x768.jpg": {
+      "bytes": 52669,
+      "sha256": "881e4810f25479dda451710dbc7813f741aa9361c34a51a230ca7612555d30f8"
+    },
+    "login-1280x480.jpg": {
+      "bytes": 36193,
+      "sha256": "d726f202722e1dd94e8bb70105d8195438e5cb600fe8f42ca68af79f60f4bd48"
+    },
+    "login-1280x500.jpg": {
+      "bytes": 43641,
+      "sha256": "794ad5e7f67056051d2d5fa758282592509338b1aa04de46da51109b714940c2"
+    },
+    "login-1280x631-after.jpg": {
+      "bytes": 48434,
+      "sha256": "785d9e0e5d0b0f1339fcee46ec0d4d8c0a19a40c108dc09db59b6386d9ce6267"
+    },
+    "login-1280x631.jpg": {
+      "bytes": 48916,
+      "sha256": "16bcad7f696e86cbd472a7d2ffbed1417d11ae4a202e84085fb7a0e0928743ad"
+    },
+    "login-1280x800.jpg": {
+      "bytes": 60544,
+      "sha256": "79245e58a1a2f8c1b10c30c494e28a5d8cd6ae4d1e9932f3cee255370978cd90"
+    },
+    "login-1366x768.jpg": {
+      "bytes": 57054,
+      "sha256": "9b89ef5d50d396e352ac882380b999c6302b5bdf9283cf2fae8f0d5b6331169e"
+    },
+    "login-1440x900.jpg": {
+      "bytes": 72843,
+      "sha256": "84a4e348793eaa1a6a64a96d1d7692788fb8c4db9986f946a00a5b213bfdde1d"
+    },
+    "login-1702x640.jpg": {
+      "bytes": 57838,
+      "sha256": "044e115997245aa394c3c75c4dc89ce65942450a56409e4725d2793f121c8063"
+    },
+    "login-1920x1080.jpg": {
+      "bytes": 88392,
+      "sha256": "712dd48aa5d63d4243d9969145c1c4a64118454c68dfae1a2c4e6ececf91f02a"
+    },
+    "login-1920x640.jpg": {
+      "bytes": 53638,
+      "sha256": "4b075e37efdba6cb419c8957332ad17728235d229f50d1144de833e61e512f58"
+    },
+    "login-2560x1440.jpg": {
+      "bytes": 134136,
+      "sha256": "e25bf1340feb5aecb07c7c9206a6d7650c28ab43271fc467ee7f112a2f257691"
+    },
+    "login-320x568.jpg": {
+      "bytes": 18597,
+      "sha256": "8ba1b2e122fc2ae5f0bf9d4a7a7cf50d214dd27dadfe8996c5cfc9ab8187a631"
+    },
+    "login-390x844.jpg": {
+      "bytes": 21336,
+      "sha256": "d884e2e111a634e91ee10bcb2e1a7ac0b4ebe22dfd8c5cb90f874d645ac9f379"
+    },
+    "login-760x760.jpg": {
+      "bytes": 23871,
+      "sha256": "5239a69b55d4aac19379b8173b90ed62e23f9e054d8b91b22543561e4b7bdfde"
+    },
+    "login-761x760.jpg": {
+      "bytes": 39807,
+      "sha256": "e6e95f878ea8ac9ba71f8c6019ceb4965c37dbd70def0ca2409d8fd0a5655a10"
+    },
+    "login-768x1024.jpg": {
+      "bytes": 42630,
+      "sha256": "cdd703ec9b460f23fc99e6e58cccb6c5edf887966f7df72f8bcc426886e1df19"
+    },
+    "signup-1024x600.jpg": {
+      "bytes": 50956,
+      "sha256": "34f63289ca01ed81b60712363283b43d2c20bc36d73cf564d5e04e364a24af30"
+    },
+    "signup-1024x768.jpg": {
+      "bytes": 67228,
+      "sha256": "36809671c751450e47c028add0618756511ff1c6d19f79ef5831eee1f0014ff9"
+    },
+    "signup-1280x480.jpg": {
+      "bytes": 44809,
+      "sha256": "c255b63694b576322ed6de9626e024e5441a8dc7d5843178d0f4a5a2a236bcd9"
+    },
+    "signup-1280x500.jpg": {
+      "bytes": 50903,
+      "sha256": "55b6e92c781ce0832898895ec10a0e8d2df117670af993b731a80dceec60526f"
+    },
+    "signup-1280x631.jpg": {
+      "bytes": 38320,
+      "sha256": "463d4c71646bb1579989c8128a8707c911d88738c46a5a4df878ffb42226ef8b"
+    },
+    "signup-1280x800.jpg": {
+      "bytes": 77969,
+      "sha256": "2fe8c5eed31afc3a925a61a0f538b2a5fa51fa8c1bb50ff9d464680fda83f192"
+    },
+    "signup-1366x768.jpg": {
+      "bytes": 74469,
+      "sha256": "977edc9285e2f891b2f5839aad0cb942904cb82d9a6e78f06f749671c6341cdf"
+    },
+    "signup-1440x900.jpg": {
+      "bytes": 89611,
+      "sha256": "8a53981f259c8d351639fe7263964a1fddd48f2b8403022491e4c0ac029806f9"
+    },
+    "signup-1702x640.jpg": {
+      "bytes": 71264,
+      "sha256": "4c7d47d4eabc527c8e9eec23de74eeaf56fb29e29b108e926bd4669bd114f286"
+    },
+    "signup-1920x1080.jpg": {
+      "bytes": 108024,
+      "sha256": "22c55bc6e00b8b0db7bc0ee8a8401889e1b1fb0fdfdda262824269c8de7d9245"
+    },
+    "signup-1920x640.jpg": {
+      "bytes": 67109,
+      "sha256": "ec8c06cfa43dd5e9b76dad48def7a1affe32576f9ff821dc8f6ac30935b6fb85"
+    },
+    "signup-2560x1440.jpg": {
+      "bytes": 69850,
+      "sha256": "7cedb87d41c4051e7e8eafde33728d042f6514bc0a2e235d59999ba6d4a2d299"
+    },
+    "signup-320x568.jpg": {
+      "bytes": 26488,
+      "sha256": "62683484d27f751227f422b82bb6b8807a8dab610e5582e5e228b08438a4a4a9"
+    },
+    "signup-390x844.jpg": {
+      "bytes": 35202,
+      "sha256": "325d6430d8393d58b45f40df9fc3bf527d353d7276db9a8404ea7e1ec708e97a"
+    },
+    "signup-760x760.jpg": {
+      "bytes": 39375,
+      "sha256": "4a17fd74086a6661de4f3da75e3b399ecc5e9eb6c16f8e88172c88a5c8032df1"
+    },
+    "signup-761x760.jpg": {
+      "bytes": 54825,
+      "sha256": "e4bb95a5f79ee7f5d940912eb348425e071652b38a86752cb298711b5ff81239"
+    },
+    "signup-768x1024.jpg": {
+      "bytes": 58469,
+      "sha256": "11e183eb6c8e04d8bcc6ab729a6c5d69f558145f4301b86e4800d18658f6b198"
+    },
+    "signup-keyboard-320x568.jpg": {
+      "bytes": 27883,
+      "sha256": "979479076380801b4400147f3077e9e090d7a497155509456a4bcb3f71ba3dc8"
+    },
+    "signup-keyboard-390x844.jpg": {
+      "bytes": 37242,
+      "sha256": "968cc9adebe032b1831179ef018c6af6252e0186cdbb65fcedc38268b045d1b8"
+    }
+  },
+  "live_auth_db_runner": false,
+  "library_screenshot_uploads": "pending in separate supported non-browser operation"
+}

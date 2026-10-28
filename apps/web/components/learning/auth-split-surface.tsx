@@ -18,13 +18,13 @@ export function AuthSplitSurface({ children }: { children: ReactNode }) {
       <aside className={s.art} aria-hidden="true">
         <picture>
           <source
-            media="(min-width: 761px) and (min-aspect-ratio: 161/100) and (max-aspect-ratio: 53/20)"
+            media="(min-width: 761px) and (min-aspect-ratio: 161/100) and (max-aspect-ratio: 851/320)"
             type="image/webp"
             srcSet="/piscine/auth/nextera-auth-panel-square-600.webp 600w, /piscine/auth/nextera-auth-panel-square-900.webp 900w, /piscine/auth/nextera-auth-panel-square-1280.webp 1280w"
             sizes="50vw"
           />
           <source
-            media="(min-width: 761px) and (min-aspect-ratio: 161/100) and (max-aspect-ratio: 53/20)"
+            media="(min-width: 761px) and (min-aspect-ratio: 161/100) and (max-aspect-ratio: 851/320)"
             type="image/png"
             srcSet="/piscine/auth/nextera-auth-panel-square-fallback.png"
           />

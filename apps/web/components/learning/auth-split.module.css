@@ -301,7 +301,7 @@
 /* Art direction is conservative: square only in its approved panel ratio range.
  * Query the actual container too, so a reduced visual viewport cannot crop the metal.
  * Unsupported container queries and all unverified ratios retain the complete canvas. */
-@media (min-width: 761px) and (min-aspect-ratio: 161/100) and (max-aspect-ratio: 53/20) {
+@media (min-width: 761px) and (min-aspect-ratio: 161/100) and (max-aspect-ratio: 851/320) {
   @container auth-art (min-aspect-ratio: 4/5) and (max-aspect-ratio: 851/640) {
     .art img {
       object-fit: cover;
@@ -310,8 +310,8 @@
   }
 }
 /* Preserve the original portrait on narrower panels, with its inspected crop only. */
-@media (min-width: 761px) and (min-aspect-ratio: 10/7) and (max-aspect-ratio: 1609/1000) {
-  @container auth-art (min-aspect-ratio: 5/7) and (max-aspect-ratio: 89/100) {
+@media (min-width: 761px) and (min-aspect-ratio: 121/100) and (max-aspect-ratio: 1609/1000) {
+  @container auth-art (min-aspect-ratio: 3/5) and (max-aspect-ratio: 89/100) {
     .art img {
       object-fit: cover;
       object-position: 50% 50%;
