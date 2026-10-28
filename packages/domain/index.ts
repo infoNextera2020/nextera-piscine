@@ -5,3 +5,8 @@ export * from './curriculum.ts';
 export * from './progression.ts';
 export * from './checkpoints.ts';
 export * from './raids.ts';
+export * from './quest-release-review.ts';
+
+export * from './checkpoint-view';
+
+export * from './piscine-pilot-policy';
