@@ -25,3 +25,10 @@ apps/web/public/piscine/hairline/home-icons/*.js
 
 # Official supplied logo SVG bytes remain unchanged.
 apps/web/public/branding/01-coding/*.svg
+
+# Preserve supplied review source bytes; format companion status/provenance separately.
+content/source-baselines/quest2-standard-go-v3/README.md
+content/source-baselines/quest2-standard-go-v3/q2-learner-en.md
+content/source-baselines/quest2-standard-go-v3/review-ar.md
+content/source-baselines/quest2-standard-go-v3/review-question-bank.md
+content/source-baselines/quest2-standard-go-v3/source-map.md

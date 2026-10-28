@@ -1,0 +1,72 @@
+{
+  "purpose": "historical source eligibility policy; not a learner task list or catalog",
+  "repository": "https://github.com/Anasmoner2022/piscine-go",
+  "audited_commit": "4e25fdc4354592a898b55444b39bbdd8aeaebf82",
+  "policy_applies_to_future_raw_imports_until_reviewed": true,
+  "excluded_questions": [
+    {
+      "path": "Quest2/isnegative.md",
+      "reason": "removed external dependency or reference"
+    },
+    {
+      "path": "Quest2/printalphabet.md",
+      "reason": "removed external dependency or reference"
+    },
+    {
+      "path": "Quest2/printcomb.md",
+      "reason": "removed external dependency or reference"
+    },
+    {
+      "path": "Quest2/printcomb2.md",
+      "reason": "removed external dependency or reference"
+    },
+    {
+      "path": "Quest2/printcombn.md",
+      "reason": "removed external dependency or reference"
+    },
+    {
+      "path": "Quest2/printdigits.md",
+      "reason": "removed external dependency or reference"
+    },
+    {
+      "path": "Quest2/printnbr.md",
+      "reason": "removed external dependency or reference"
+    },
+    {
+      "path": "Quest2/printreversealphabet.md",
+      "reason": "removed external dependency or reference"
+    },
+    {
+      "path": "Quest3/printstr.md",
+      "reason": "removed external dependency or reference"
+    },
+    {
+      "path": "Quest5/firstrune.md",
+      "reason": "removed external dependency or reference"
+    },
+    {
+      "path": "Quest5/lastrune.md",
+      "reason": "removed external dependency or reference"
+    },
+    {
+      "path": "Quest5/nrune.md",
+      "reason": "removed external dependency or reference"
+    },
+    {
+      "path": "Quest8/bool.md",
+      "reason": "removed external dependency or reference"
+    },
+    {
+      "path": "Quest9/foreach.md",
+      "reason": "indirect example calls an excluded routine"
+    }
+  ],
+  "requires_index_cleanup": [
+    {
+      "path": "Quest8/README.md",
+      "removed_entry": "boolean / bool.md"
+    }
+  ],
+  "do_not_delete_original_repository": true,
+  "local_published_versions_changed": false
+}

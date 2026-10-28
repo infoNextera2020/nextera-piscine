@@ -1,0 +1,47 @@
+{
+  "status": "approved_learning_source_baseline_not_published",
+  "library_file_id": "libfile_dad67c050a4481919e4f41e667486e5d",
+  "library_version": 2,
+  "content_draft_version": 3,
+  "source_zip_name": "q2-beginner-review-v1.zip",
+  "source_zip_sha256": "be12a40f8c504133e6de7242f5c05b5a44b12863533567833b5b0163584cd708",
+  "source_reference": "Anasmoner2022/piscine-go main@4e25fdc4354592a898b55444b39bbdd8aeaebf82",
+  "approved_activities": [
+    "greeting-card",
+    "sign-label",
+    "count-up-down",
+    "even-range",
+    "sum-to-n",
+    "star-rectangle",
+    "ordered-pairs"
+  ],
+  "published": false,
+  "machine_contracts_enabled": false,
+  "files": [
+    {
+      "path": "README.md",
+      "bytes": 2280,
+      "sha256": "465f14708519bd5b7b600c4f24c139adcd0cbbbb7effd2fa4ed2995e47196280"
+    },
+    {
+      "path": "q2-learner-en.md",
+      "bytes": 15490,
+      "sha256": "3e54c04e93ad9a8d601e40eda88352b87ccf897253020587e9a35357d2f30807"
+    },
+    {
+      "path": "review-ar.md",
+      "bytes": 6299,
+      "sha256": "ab08b5c20ed770ad5db1ecbf96d37b98269f3a9b07f3d2a0bedc25fc9d806e3a"
+    },
+    {
+      "path": "review-question-bank.md",
+      "bytes": 2268,
+      "sha256": "2335763f7ded6aa7ba99d1d5ca106ac09ba8d31c6115bd256458a7f2135bfe69"
+    },
+    {
+      "path": "source-map.md",
+      "bytes": 8151,
+      "sha256": "e8eee9c67b4adf93bfb9bb1551dc974e24b9e50c24360688a09f54b4ea326ec9"
+    }
+  ]
+}

@@ -11,6 +11,7 @@ import {
   checkpointScoringPolicy,
 } from '@nextera/domain';
 import { contentDigest, sha256, type SourceFile } from './digest';
+import { assertActiveLearningText } from './source-selection';
 
 export class CurriculumValidationError extends Error {}
 const fail = (message: string): never => {
@@ -56,11 +57,18 @@ export function parseCurriculum(
     const bytes = sources.get(path);
     if (!bytes) return fail(`Missing required file: ${path}`);
     used.add(path);
+    let content: string;
     try {
-      return new TextDecoder('utf-8', { fatal: true, ignoreBOM: true }).decode(bytes);
+      content = new TextDecoder('utf-8', { fatal: true, ignoreBOM: true }).decode(bytes);
     } catch {
       return fail(`${path}: invalid UTF-8.`);
     }
+    try {
+      assertActiveLearningText(content, path);
+    } catch {
+      return fail(`${path}: removed dependency is not allowed in active content.`);
+    }
+    return content;
   };
   const yaml = (path: string) => {
     const document = parseDocument(read(path), {
