@@ -221,8 +221,8 @@ export function HeartJourney({
                 </svg>
                 <div className={s.start}>
                   <Image
-                    src="/piscine/official-nextera-mark.svg"
-                    alt="NextEra"
+                    src="/branding/01-coding/mark.svg"
+                    alt="01 coding"
                     width={220}
                     height={89}
                     unoptimized

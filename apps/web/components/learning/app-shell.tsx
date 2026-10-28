@@ -111,15 +111,11 @@ export function AppShell({
     <Link
       href="/app"
       className={s.brand}
-      aria-label="NextEra Piscine home"
+      aria-label="01 coding Piscine home"
       onClick={() => drawer.current?.close()}
     >
       <span className={s.brandMark}>
-        <Image src="/piscine/official-coding-logo.svg" alt="" width={52} height={52} unoptimized />
-      </span>
-      <span>
-        <strong>NextEra</strong>
-        <small>PISCINE</small>
+        <Image src="/branding/01-coding/mark.svg" alt="" width={52} height={52} unoptimized />
       </span>
     </Link>
   );
@@ -166,7 +162,13 @@ export function AppShell({
             <Icon name="menu" />
           </button>
           <span className={s.mobileBrand}>
-            NextEra <small>PISCINE</small>
+            <Image
+              src="/branding/01-coding/mark.svg"
+              alt="01 coding"
+              width={42}
+              height={42}
+              unoptimized
+            />
           </span>
           <div className={s.userActions}>
             {!!updates.length && (

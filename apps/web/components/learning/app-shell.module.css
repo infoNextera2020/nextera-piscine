@@ -87,7 +87,7 @@
   width: 3.25rem;
   height: 3.25rem;
   border-radius: 0.5rem;
-  background: #f4f5f2;
+  background: transparent;
   flex: 0 0 auto;
   overflow: hidden;
 }

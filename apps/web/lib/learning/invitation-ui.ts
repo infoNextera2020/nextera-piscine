@@ -7,7 +7,7 @@ export function invitationCopy(status: InvitationView['status']) {
     valid: {
       title: 'Activate your account',
       description:
-        'Your invitation to NextEra Piscine is ready. Set up your account to begin your journey.',
+        'Your invitation to 01 coding Piscine is ready. Set up your account to begin your journey.',
       detail: '',
     },
     expired: {
@@ -35,7 +35,7 @@ export function invitationCopy(status: InvitationView['status']) {
     },
     unavailable: {
       title: 'Open your invitation',
-      description: 'NextEra Piscine is invitation-only for accepted learners.',
+      description: '01 coding Piscine is invitation-only for accepted learners.',
       detail:
         'Use the original invitation email from your program team. Invitation verification and activation are not connected in this build.',
     },

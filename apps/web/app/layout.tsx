@@ -4,8 +4,8 @@ import '../styles/globals.css';
 import '../styles/workspace-tokens.css';
 
 export const metadata: Metadata = {
-  title: 'NextEra Piscine',
-  description: 'NextEra Piscine — Vertical Slice 001 foundation.',
+  title: '01 coding Piscine',
+  description: '01 coding Piscine learning portal.',
 };
 
 export default function RootLayout({ children }: Readonly<{ children: ReactNode }>) {

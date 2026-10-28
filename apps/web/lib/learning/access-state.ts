@@ -7,9 +7,9 @@ export function loginFailureMessage(error?: string) {
 }
 const reasons = {
   NOT_PROVISIONED:
-    'Your identity is authenticated, but a NextEra account has not been provisioned. Contact your operator.',
-  INACTIVE: 'Your NextEra account is inactive. Contact your operator.',
-  FORBIDDEN: 'Your NextEra role does not allow access to this page.',
+    'Your identity is authenticated, but a 01 coding account has not been provisioned. Contact your operator.',
+  INACTIVE: 'Your 01 coding account is inactive. Contact your operator.',
+  FORBIDDEN: 'Your 01 coding role does not allow access to this page.',
 } as const;
 export function accessDeniedState(reason?: string) {
   const code =

@@ -8,18 +8,8 @@ export function AccessSurface({ children }: { children: ReactNode }) {
   return (
     <main className={s.page}>
       <header className={s.header}>
-        <Link href="/" className={s.brand} aria-label="NextEra Piscine home">
-          <Image
-            src="/piscine/official-coding-logo.svg"
-            width={42}
-            height={42}
-            alt=""
-            unoptimized
-          />
-          <span>
-            <strong>NextEra</strong>
-            <small>PISCINE</small>
-          </span>
+        <Link href="/" className={s.brand} aria-label="01 coding Piscine home">
+          <Image src="/branding/01-coding/mark.svg" width={42} height={42} alt="" unoptimized />
         </Link>
       </header>
       <section className={s.card}>{children}</section>

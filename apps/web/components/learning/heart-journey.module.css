@@ -257,6 +257,8 @@
 .start img {
   width: 100%;
   height: auto;
+  aspect-ratio: 220 / 89;
+  object-fit: contain;
   display: block;
 }
 .start > span {

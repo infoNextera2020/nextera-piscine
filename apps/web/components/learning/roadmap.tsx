@@ -22,7 +22,7 @@ function Status({ state }: { state: string | null }) {
 export function JourneyEntry({ empty }: { empty: boolean }) {
   return (
     <header className={s.entry}>
-      <p className={s.eyebrow}>NEXTERA PISCINE / JOURNEY</p>
+      <p className={s.eyebrow}>01 coding PISCINE / JOURNEY</p>
       <h1>Your journey.</h1>
       <p>
         {empty
@@ -166,7 +166,7 @@ function QuestRoadmap({
       <header className={s.heading}>
         <div>
           <p className={s.eyebrow}>
-            {selection.detail ? 'QUEST / ' + cohortName : 'NEXTERA PISCINE / ' + cohortName}
+            {selection.detail ? 'QUEST / ' + cohortName : '01 coding PISCINE / ' + cohortName}
           </p>
           <h1>{selection.detail ? (quest?.title ?? 'Quest unavailable') : 'Your journey.'}</h1>
           <p>

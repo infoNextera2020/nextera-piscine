@@ -2,24 +2,15 @@ import Image from 'next/image';
 import Link from 'next/link';
 import type { ReactNode } from 'react';
 import s from './auth-split.module.css';
+import { AuthViewport } from './auth-viewport';
 
 export function AuthSplitSurface({ children }: { children: ReactNode }) {
   return (
-    <main className={s.page}>
-      <section className={s.panel}>
+    <AuthViewport className={s.page}>
+      <section className={s.panel} aria-label="Account access">
         <header className={s.brand}>
-          <Link href="/" aria-label="NextEra Piscine home">
-            <Image
-              src="/piscine/official-coding-logo.svg"
-              width={42}
-              height={42}
-              alt=""
-              unoptimized
-            />
-            <span>
-              <strong>NextEra</strong>
-              <small>PISCINE</small>
-            </span>
+          <Link href="/" aria-label="01 coding Piscine home">
+            <Image src="/branding/01-coding/mark.svg" width={42} height={42} alt="" unoptimized />
           </Link>
         </header>
         <div className={s.content}>{children}</div>
@@ -41,8 +32,8 @@ export function AuthSplitSurface({ children }: { children: ReactNode }) {
             unoptimized
           />
         </picture>
-        <span>NEXT ERA. YOUR JOURNEY.</span>
+        <span>01 coding. YOUR JOURNEY.</span>
       </aside>
-    </main>
+    </AuthViewport>
   );
 }

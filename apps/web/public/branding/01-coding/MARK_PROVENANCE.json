@@ -1,0 +1,28 @@
+{
+  "svg_library_id": "libfile_0accae181e6c819181601f075a1c7380",
+  "png_library_id": "libfile_5cae2b3703648191b68d54ce3b45c47f",
+  "svg": {
+    "path": "/home/anas/nextera-piscine/apps/web/public/branding/01-coding/mark.svg",
+    "bytes": 3403,
+    "sha256": "2084123cef07b09d99586ed471eec3242fcf4ff9e8ff1391dfc5cf8e6aae3af3"
+  },
+  "png": {
+    "path": "/home/anas/nextera-piscine/apps/web/public/branding/01-coding/mark.png",
+    "bytes": 66111,
+    "sha256": "d741e5dbe3a892a73a102efccfe898ca357f57cc66195f85819c6debc86b2e91",
+    "size": [1080, 1080],
+    "alpha_extrema": [0, 255],
+    "corner_alpha": [0, 0, 0, 0]
+  },
+  "nontext_svg_structure_matches_original": true,
+  "live_text_nodes": 0,
+  "font_dependency": "None in text-free derivative; unused source style declarations are not text nodes.",
+  "original_font_availability": {
+    "path": "/home/anas/nextera-piscine/apps/web/public/fonts/poppins/Poppins-Bold.ttf",
+    "exists": true,
+    "bytes": 155996,
+    "name": ["Poppins", "Bold"],
+    "sha256": "983676516167748b74de6f4771fb384c664fd913acb8b471122ecacf5da5ea6c"
+  },
+  "status": "Original and supplied approved derivative only. No recolor, tracing, recreation or UI change."
+}
