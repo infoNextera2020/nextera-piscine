@@ -1,5 +1,6 @@
 'use client';
 import { useFormStatus } from 'react-dom';
+import { PasswordControl } from './password-control';
 import { HairlineIcon } from './hairline-icon';
 import s from './access.module.css';
 
@@ -18,13 +19,10 @@ function LoginFields() {
         placeholder="you@example.com"
       />
       <label htmlFor="login-password">Password</label>
-      <input
+      <PasswordControl
         id="login-password"
         name="password"
-        type="password"
         autoComplete="current-password"
-        maxLength={1024}
-        required
         placeholder="Enter your password"
       />
       <button className={s.primary} type="submit">

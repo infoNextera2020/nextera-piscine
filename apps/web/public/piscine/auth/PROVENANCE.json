@@ -1,0 +1,52 @@
+{
+  "library_asset_pack": "libfile_b39d53f5a4bc81919e669fa6c337223f",
+  "source": "Original supplied Blender V4 static render; no screenshot extraction",
+  "manifest": {
+    "title": "NextEra wrapped-metal emerald auth sculpture",
+    "version": "V4 production still, approved V3 metal geometry preserved",
+    "aspect_ratio": "5:7",
+    "color_space": "sRGB",
+    "alpha": "opaque dark studio background",
+    "integration_performed": false,
+    "render": {
+      "engine": "Blender 4.3.2 Cycles CPU",
+      "max_samples": 512,
+      "adaptive_threshold": 0.016,
+      "denoising": false
+    },
+    "files": [
+      {
+        "file": "nextera-auth-sculpture-600.webp",
+        "width": 600,
+        "height": 840,
+        "bytes": 26460,
+        "sha256": "8de2d4c8552a90ce664b4a37a7c8300a0a5b32f7b03fc303246eb0335bd1a774",
+        "mime_type": "image/webp"
+      },
+      {
+        "file": "nextera-auth-sculpture-900.webp",
+        "width": 900,
+        "height": 1260,
+        "bytes": 67288,
+        "sha256": "506cd11f33b6c643417de2075e530c92e5a668eae43e612c1b0aa3798abbc12d",
+        "mime_type": "image/webp"
+      },
+      {
+        "file": "nextera-auth-sculpture-1200.webp",
+        "width": 1200,
+        "height": 1680,
+        "bytes": 161262,
+        "sha256": "c7a9ad8476df650648a50ae26847dfa77750098cf3c32fc2c6e40aa00a69993b",
+        "mime_type": "image/webp"
+      },
+      {
+        "file": "nextera-auth-sculpture-fallback.png",
+        "width": 1200,
+        "height": 1680,
+        "bytes": 2645755,
+        "sha256": "4da00bfbd58b2b4acde2dc76bb65ff41d4caf21739967fe185d097048642f485",
+        "mime_type": "image/png"
+      }
+    ]
+  }
+}
