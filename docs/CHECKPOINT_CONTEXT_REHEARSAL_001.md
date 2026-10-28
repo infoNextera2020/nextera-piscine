@@ -1,6 +1,6 @@
 # Prepared SQL0011+0014 context/draft rehearsal
 
-**No database rehearsal has been run by this source milestone.** The Python guard tests use fake commands and forbid real subprocess creation. The TypeScript SQL suite is opt-in, outside the default source-test suite, and must not be described as genuine PostgreSQL evidence until separately authorized and executed.
+**At preparation time, no database rehearsal had been run by the source milestone.** The Python guard tests use fake commands and forbid real subprocess creation. The TypeScript SQL suite is opt-in, outside the default source-test suite, and must not be described as genuine PostgreSQL evidence until separately authorized and executed.
 
 ## Concrete proposal requiring runtime approval
 
@@ -24,3 +24,7 @@ Control/evidence files live under `.tools/checkpoint-context-verification/` with
 ## Before runtime execution
 
 Review the current source diff and exact proposal; confirm no earlier uncertain cluster/control exists, verify current installed tooling and scope, then obtain the action-time confirmation. If a permission/credential/security change is unexpectedly needed, stop that step and report it. Do not expand this rehearsal into the newly prepared invitation/scoring/schedule sources. A successful combined SQL run would justify planning the next authenticated Checkpoint rehearsal, not claiming the full Sunday learner journey is operational.
+
+## Separately approved execution record
+
+The bounded rehearsal was subsequently executed on 28 October 2026 against fresh private PostgreSQL: **17/17 tests passed**, followed by verified shutdown with protected data/evidence retained. See [the runtime report](../verification/checkpoint-context-20261028/REPORT.md) and [receipt](../verification/checkpoint-context-20261028/receipt.json). This does not enable live Auth, browser autosave, public Run or production policy.

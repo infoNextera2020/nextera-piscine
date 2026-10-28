@@ -1,0 +1,117 @@
+{
+  "source_head": "06b640f813ca9275c8c027df4afe6e00c0f54859",
+  "verification": "real PostgreSQL 16.15 private Unix socket; not mock execution",
+  "tests_passed": 17,
+  "test_files_passed": 1,
+  "started_utc": "2026-10-28T13:36:18.795933+00:00",
+  "deadline_utc": "2026-10-28T14:06:18.795933+00:00",
+  "postgres_stopped_utc": "2026-10-28T13:36:35.037Z",
+  "verified_utc": "2026-10-28T13:38:41.578620+00:00",
+  "control": {
+    "version": 1,
+    "uid": 1000,
+    "directory": "/tmp/01coding-checkpoint-context-test-cuwj29vf",
+    "database": "foundation_test_checkpoint_context_20261028",
+    "port": "55450",
+    "created": 1793194578.7959325,
+    "deadline": 1793196378.7959325,
+    "parent_pid": 45762,
+    "stopped": true,
+    "stage": "tests_passed",
+    "watchdog_pid": 45763,
+    "cleanup": {
+      "postgres_stopped": true,
+      "socket_files": 0,
+      "retained_data_directory": "/tmp/01coding-checkpoint-context-test-cuwj29vf/data",
+      "permanent_deletion": false,
+      "retained_database_touched": false
+    }
+  },
+  "database_evidence": {
+    "database": "foundation_test_checkpoint_context_20261028",
+    "listen_addresses": "",
+    "checks": [
+      "migration_parsed_and_rolled_back_without_retained_objects_or_create_grant",
+      "combined0011_0014_parse_rollback_then_apply_private_only",
+      "real_catalog_acl_and_default_grant_cleanup",
+      "real_exact_byte_roundtrip_and_empty_clear",
+      "real_two_session_idempotency",
+      "real_two_session_CAS_one_winner_no_overwrite",
+      "task_independence_and_original_receipt_reconciliation",
+      "real_scope_definition_and_attempt_denial",
+      "real_access_removal_hides_and_blocks_without_silent_delete",
+      "real_two_session_access_removal_race",
+      "real_two_session_finish_deadline_ordering",
+      "real_save_transaction_rollback",
+      "real_storage_capacity_and_source_bounds",
+      "real_policy_hold_and_immutability",
+      "synthetic_purge_rolled_back_for_retained_evidence",
+      "real_expiry_read_denial_and_bounded_purge",
+      "combined_frozen_official_scope_and_hostile_default_acl",
+      "combined_context_and_draft_access_removal_no_fallback",
+      "combined_immutable_deadline_read_vs_write_boundary",
+      "combined_cas_source_bytes_without_official_submit"
+    ],
+    "counts": {
+      "submissions": "0",
+      "jobs": "0",
+      "outcomes": "0",
+      "passwords": "0",
+      "extra_login_roles": "0"
+    },
+    "test_policy_only": {
+      "source_bytes": 128,
+      "receipts_per_task": 3,
+      "total_bytes_per_task": 160,
+      "retention_seconds_after_deadline": 60
+    },
+    "production_enabled": false
+  },
+  "independent_cleanup": {
+    "exact_data_processes": 0,
+    "postmaster_pid_file": false,
+    "socket_files": 0,
+    "watchdog_process_present": false,
+    "private_modes_verified": true,
+    "permanent_deletion": false
+  },
+  "original_dirty_hashes_unchanged": {
+    "apps/web/public/ASSETS.md": "feca5ebec9df9b3842afadb1c0a6442e24b38ad479c9445e1f1d26f2cd9a3cf9",
+    "apps/web/components/learning/home-next-action.module.css": "4eaa849950b223af5c220b8330ca6e3f732c865e907a66a454798dff22916d87",
+    "apps/web/public/piscine/official-logo.svg": "0fde8181d16ceb17ac55e6d52e8cab523c3f75976a9aaa81b8695942c7336e54",
+    "docs/RELEASE_CANDIDATE_001_REPORT.md": "95e04b9accaf10d922e5acac157d8d5d7ae33ef17284ccef042558fa0fbca2fd"
+  },
+  "source_sha256": {
+    "scripts/test-checkpoint-context-isolated.py": "3b5119a327ff971489397658446b1d08d2882c1a8da470a9d02436f4208b1d68",
+    "packages/db/vitest.context.config.ts": "040cc4b7f74da4ab7fb4715a6351327e3f68925dd3765059b73dc15ea9df6848",
+    "packages/db/tests/integration/checkpoint-draft-storage.test.ts": "c86cf943c14f9594fd858e898d7d2b052ae422ecdb6f26387e39aa5175551174",
+    "packages/db/migration-drafts/0011_checkpoint_drafts.DRAFT.sql": "08234e3b628de71cca7be786d6bd21a4c5d1f463b548abe9b285c068fcb5d548",
+    "packages/db/migration-drafts/0014_checkpoint_editor_context.DRAFT.sql": "0e3684165279ba8458651889ae51ced169555163bde40b7713353202001c9911",
+    "packages/db/migrations/0000_foundation_001.sql": "fc06a66e470cf3daf5bda121340095bf3e0f07450a3fd92745c7cc419d88b61d",
+    "packages/db/migrations/0001_identity_access.sql": "11ae7f3cbc2fdc218c0bcc463d820f568841f2379fccf746304a0781d680588f",
+    "packages/db/migrations/0002_curriculum_enrollment.sql": "bbfa972ba9e44842f9b7d4284360762d2732212ca6f9f93f874368655d2ba242",
+    "packages/db/migrations/0003_judge_protocol.sql": "9bb4aed8f6f05d28cbb5f13b1c64a9d1b0e3bf9406d307a0fea97f07eb0a1fc3",
+    "packages/db/migrations/0004_source_storage_policies.sql": "b48cf5697c90c88d05be2dd117e5e510a6f63f1c02555ab4dee6cca7611f9f2a",
+    "packages/db/migrations/0005_result_application.sql": "841362f59c5c696bb8424b58fb53522a0c37034b48455a04ec4032d445ef40a6",
+    "packages/db/migrations/0006_checkpoint_domain.sql": "d6b8b6a4b553eb53e1a238ebc312a523c02a48fe9ae95da67589233cd8afe67a",
+    "packages/db/migrations/0007_checkpoint_operations.sql": "99e9d01c77f6eeb9f6f968e903375083531a3d2f112dfaca3249d458aaeeb35c",
+    "packages/db/migrations/0008_raid_domain.sql": "c4ac095e2b8cbdde3df918975801cc7ee0cc25c13990bc193369f097b6a4a718",
+    "packages/db/migrations/0009_raid_operations.sql": "49f98790ac105e99d2f946823813ee7aa150b0b9247f777afb494707ae5d4cbe",
+    "packages/db/migrations/0010_raid_artifact_read.sql": "164883c77851b063ea0ae643b7ec87fcfd54c9365f60cc6dade1bbf5616dcfe0"
+  },
+  "private_evidence_sha256": {
+    "control.json": "ca6e560cfc020cb3151f6aaea517af278fa9ebd10fe1b9a06183227e96bd661d",
+    "database-evidence.json": "4de7b20601868f6c170a09bb98c395481c2a200e64ec29ed4ef22523cb11e2a7",
+    "watchdog.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "postgres.log": "c0fb3a56c6bf27e6ba085ff76c014f345b98815b6bc1c33ac918782804780492",
+    "cleanup.lock": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "tests.log": "7f74db80529d10b788d7ab7d24eab0936eadacfc961f39f8828f4ced76028a13"
+  },
+  "limits": [
+    "No retained databases touched",
+    "No TCP listener",
+    "No real Auth accounts, passwords, invitations or application tokens",
+    "No Runner/public Run/HTTP/browser/full-journey verification",
+    "No production enablement or policy selection"
+  ]
+}
