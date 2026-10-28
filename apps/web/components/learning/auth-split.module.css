@@ -280,6 +280,7 @@
   height: 100%;
   border-left: 1px solid #293c32;
   background: #050b08;
+  overflow: hidden;
   display: grid;
   align-items: center;
 }
@@ -295,6 +296,13 @@
   height: 100%;
   max-height: 100%;
   object-fit: contain;
+}
+/* Keep the approved sculpture intact. Cover only the inspected landscape range;
+ * portrait and wider/shorter panels retain the full original canvas. */
+@media (min-width: 761px) and (min-aspect-ratio: 10/7) and (max-aspect-ratio: 89/50) {
+  .art img {
+    object-fit: cover;
+  }
 }
 .art > span {
   position: absolute;
