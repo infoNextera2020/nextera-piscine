@@ -1,7 +1,11 @@
 'use client';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
-import type { CheckpointPresentation } from '../learning/checkpoint-presentation';
+import { parseCheckpointView } from '@nextera/domain';
+import {
+  checkpointPresentation,
+  type CheckpointPresentation,
+} from '../learning/checkpoint-presentation';
 import { StatusBadge } from '../../components/learning/primitives';
 import { RecordDetails, WorkspaceEmpty } from '../../components/learning/workspace-parts';
 import { HairlineIcon } from '../../components/learning/hairline-icon';
@@ -50,7 +54,7 @@ export function Checkpoint({
         });
         status = response.status;
         if (!response.ok) throw new Error();
-        const data = (await response.json()) as CheckpointPresentation;
+        const data = checkpointPresentation(parseCheckpointView(await response.json()));
         if (!controller.signal.aborted && readRequest.current === controller) {
           setView(data);
           setAccessUnavailable(false);

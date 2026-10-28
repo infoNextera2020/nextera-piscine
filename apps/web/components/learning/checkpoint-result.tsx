@@ -69,9 +69,9 @@ export function CheckpointResult({
       </section>
     );
   const current = attempt.id === view.attempt?.id;
-  // Current tasks are the authorized frozen-attempt projection. Historical task
-  // counts are not projected yet; omit the denominator rather than assume four.
-  const taskCount = current && view.tasks.length ? view.tasks.length : null;
+  // Historical policy is frozen per attempt; legacy projections may omit it.
+  const policy = attempt.policy ?? (current ? view.policy : null);
+  const taskCount = policy?.task_count ?? (current && view.tasks.length ? view.tasks.length : null);
   const recordedScore = `${attempt.points ?? '—'}${taskCount === null ? '' : ` / ${taskCount}`}`;
   const mastered = overview.nodes.find((n) => n.key === node)?.state === 'mastered';
   return (
@@ -87,6 +87,11 @@ export function CheckpointResult({
           <div className={s.score}>
             <strong>{recordedScore}</strong>
             <span>Authoritative task passes</span>
+            {policy && (
+              <span>
+                Passing threshold: {policy.pass_points} / {policy.task_count}
+              </span>
+            )}
           </div>
         )}
         <div>

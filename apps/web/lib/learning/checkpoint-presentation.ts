@@ -1,7 +1,8 @@
-import type { CheckpointView } from '@nextera/db/checkpoints';
+import { parseCheckpointView, type CheckpointView } from '@nextera/domain';
 
 /** Server presentation hints only. PostgreSQL rechecks every action at intake. */
 export function checkpointPresentation(view: CheckpointView) {
+  view = parseCheckpointView(view);
   const attempt = view.attempt;
   const beforeDeadline = !!attempt && Date.parse(view.server_now) < Date.parse(attempt.deadline_at);
   const intakeOpen = attempt?.status === 'active' && beforeDeadline;

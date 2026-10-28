@@ -1,46 +1,7 @@
 import { sql } from 'drizzle-orm';
 import type { OperationalDatabase } from '../operations/curriculum';
-export type CheckpointView = {
-  server_now: string;
-  eligible: boolean;
-  attempt: null | {
-    id: string;
-    status: string;
-    normal_slot: number;
-    kind: string;
-    started_at: string;
-    deadline_at: string;
-    completed_at: string | null;
-    retake_at: string | null;
-  };
-  tasks: {
-    key: string;
-    title: string;
-    passed: boolean;
-    reserved: number;
-    subject: string;
-    rules: { required_files: string[]; max_size_kb: number };
-  }[];
-  submissions: {
-    id: string;
-    task_key: string;
-    state: string;
-    created_at: string;
-    feedback?: { message?: string };
-  }[];
-  history: {
-    id: string;
-    status: string;
-    points: number | null;
-    normal_slot: number;
-    kind: string;
-    started_at: string;
-    deadline_at: string;
-    completed_at: string | null;
-    outcome_id: string | null;
-  }[];
-  replacement_available: boolean;
-};
+import { parseCheckpointView } from '@nextera/domain';
+export type { CheckpointView } from '@nextera/domain';
 export async function readCheckpoint(
   db: OperationalDatabase,
   authId: string,
@@ -50,7 +11,7 @@ export async function readCheckpoint(
   const [row] = await db.execute(
     sql`SELECT app.read_checkpoint(${authId}::uuid,${cohortId}::uuid,${nodeKey}) AS data`,
   );
-  return row!.data as CheckpointView;
+  return parseCheckpointView(row?.data);
 }
 export async function startCheckpoint(
   db: OperationalDatabase,
