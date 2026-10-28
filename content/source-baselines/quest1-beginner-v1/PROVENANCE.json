@@ -1,0 +1,44 @@
+{
+  "status": "approved_source_baseline_not_published",
+  "approved_module": "Quest 1 beginner review v1",
+  "approval_evidence": "Parent relayed user approval: approved on quest1 and video. This source-only task does not implement video, grading, assignment or publication.",
+  "library_file_id": "libfile_46754df198d08191852a1af6d6d3cab8",
+  "file_id": "file_000000002d6481f59183bf0807560af6",
+  "current_version_number": 0,
+  "source_zip": "q1-beginner-review-v1.zip",
+  "source_zip_bytes": 15115,
+  "source_zip_sha256": "816db5644c981a3972363c182d046e9bc818153a95cbd8be6c2d3f3a3a7c20a5",
+  "upstream_reference": "Anasmoner2022/piscine-go main@4e25fdc4354592a898b55444b39bbdd8aeaebf82",
+  "incorporated_utc_date": "2026-10-28",
+  "byte_preservation": "All five supplied files copied unchanged; original draft/review wording retained as source history. See BASELINE_STATUS.md for current incorporation status.",
+  "published": false,
+  "grading_implemented": false,
+  "shell_runner_enabled": false,
+  "files": [
+    {
+      "path": "README.md",
+      "bytes": 1474,
+      "sha256": "49c3b45759d99217fadbddb877c9c9f57933c12c454e5e77b249341485fe33c9"
+    },
+    {
+      "path": "q1-learner-en.md",
+      "bytes": 13205,
+      "sha256": "b32fced0ebec73a4a46aed4f0d0ea2864e215748275a65f0361abc2c0e40ba0e"
+    },
+    {
+      "path": "review-ar.html",
+      "bytes": 7933,
+      "sha256": "fa91ab8b1327356dd2c5969b824f14c4f9de678e6491533efd66416935344a01"
+    },
+    {
+      "path": "review-ar.md",
+      "bytes": 7058,
+      "sha256": "6445a068e7438b03f74784fba435c98f1f550dea069780431a242bd9a4facaf5"
+    },
+    {
+      "path": "source-map.md",
+      "bytes": 5394,
+      "sha256": "fe8819a19bf94edd0e1ec5ecf80a1781a0aeb7d9abda0cb34d30ee2dbdaa9b8c"
+    }
+  ]
+}

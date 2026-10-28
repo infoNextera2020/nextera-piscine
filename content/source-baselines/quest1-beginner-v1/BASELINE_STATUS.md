@@ -1,0 +1,11 @@
+# Approved Quest 1 source baseline — not published
+
+The parent relayed Anas's approval of the Quest 1 beginner module on 28 October 2026 and explicitly authorized source-baseline incorporation. The five supplied files are preserved byte-for-byte. Their original draft/review wording is historical source material; this status file records the later source-baseline approval without rewriting those originals.
+
+This folder is outside the current published-curriculum loader's default `content/piscine-v1` root. It is not a curriculum manifest, platform import, grading pack, published quest, new learner record or authorization to execute Shell scripts. The current committed loader accepts Go challenge/task definitions and the accepted Runner uses its bounded Go function profile. Quest 1's plain files, command text, Bash scripts and manual learning checks must not be renamed into Go tasks or claimed to be runnable/uploadable through that contract.
+
+Keep the deferred curl/jq/JSON bridge, external capstone and optional quoting stretch deferred exactly as the source explains. No data source, test pack, automatic score, retry rule or duration is supplied by this incorporation. Git is taught locally and remains distinct from platform file upload; no Git remote, push, credential storage or Git-based submission was enabled.
+
+The latest owner decision supersedes the earlier proposal to lock Quest 2 until Quest 1 mentor approval. Quest access is scheduled by cohort date/time; review for every quest determines mastery/pass and XP eligibility separately from that access. Automatic nonreciprocal peer assignment and automatic mentor assignment are required. A per-quest question bank will supply a server-frozen selection of four or five questions, but the exact count, sampling and retry policy are not selected. These requirements and the remaining decisions are mapped in `docs/QUEST1_REVIEW_GATE_READINESS_001.md`. No schedule, assignment algorithm, review UI, XP award or progression override is implemented here.
+
+`PROVENANCE.json` contains the exact Library source identity, ZIP SHA256 and each preserved file hash. The source mapping records all 13 reviewed upstream Quest 1 files. The provenance is recorded for later content import; technical publication remains disabled because the current loader and evaluator do not support these submissions.
