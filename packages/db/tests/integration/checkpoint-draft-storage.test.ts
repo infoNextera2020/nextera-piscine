@@ -16,15 +16,23 @@ import {
   type DraftScope,
 } from '../../queries/checkpoint-drafts';
 import * as schema from '../../schema/index';
+import {
+  checkpointEditorContextReady,
+  readCheckpointEditorContext,
+} from '../../queries/checkpoint-editor-context';
 
 const socket = process.env.DRAFT_TEST_SOCKET ?? '',
   database = process.env.DRAFT_TEST_DB ?? '';
-const isolated =
-  /^\/tmp\/nextera-checkpoint-draft-test-[^/]+\/socket$/.test(socket) &&
-  database === 'foundation_test_checkpoint_drafts_ephemeral';
+const combined = process.env.DRAFT_CONTEXT_REHEARSAL === '0011+0014';
+const isolated = combined
+  ? /^\/tmp\/01coding-checkpoint-context-test-[A-Za-z0-9_-]+\/socket$/.test(socket) &&
+    database === 'foundation_test_checkpoint_context_20261028'
+  : !process.env.DRAFT_CONTEXT_REHEARSAL &&
+    /^\/tmp\/nextera-checkpoint-draft-test-[^/]+\/socket$/.test(socket) &&
+    database === 'foundation_test_checkpoint_drafts_ephemeral';
 const options = {
   host: socket,
-  port: 55449,
+  port: combined ? 55450 : 55449,
   database,
   username: process.env.DRAFT_TEST_USER ?? '',
   max: 1,
@@ -76,6 +84,25 @@ beforeAll(async () => {
   ).toBe(false);
   checks.push('migration_parsed_and_rolled_back_without_retained_objects_or_create_grant');
   await admin.unsafe(proposal);
+  if (combined) {
+    const contextProposal = await readFile(
+      fileURLToPath(
+        new URL('../../migration-drafts/0014_checkpoint_editor_context.DRAFT.sql', import.meta.url),
+      ),
+      'utf8',
+    );
+    const rollbackContext = contextProposal.replace(/\nCOMMIT;\s*$/, '\nROLLBACK;');
+    expect(rollbackContext).not.toBe(contextProposal);
+    await admin.unsafe(rollbackContext);
+    expect(
+      (
+        await admin`SELECT to_regprocedure('app.checkpoint_editor_context(uuid,uuid,text)') AS procedure`
+      )[0]!.procedure,
+    ).toBeNull();
+    await admin.unsafe(contextProposal);
+    checks.push('combined0011_0014_parse_rollback_then_apply_private_only');
+  }
+
   version = (
     await importCurriculum(drizzle(admin, { schema }), f.curriculum, f.gitCommitSha, f.evaluations)
   ).id;
@@ -134,10 +161,13 @@ afterAll(async () => {
   }
 });
 
+let contextLearners = 0,
+  contextCohorts = 0;
 async function learner(person?: Pick<Learner, 'auth' | 'user'>, start = true): Promise<Learner> {
   let auth = person?.auth,
     user = person?.user;
   if (!auth || !user) {
+    if (combined && ++contextLearners > 40) throw new Error('Synthetic identity ceiling reached');
     auth = randomUUID();
     await admin`INSERT INTO auth.users(id) VALUES(${auth})`;
     user = String(
@@ -146,6 +176,7 @@ async function learner(person?: Pick<Learner, 'auth' | 'user'>, start = true): P
       )[0]!.id,
     );
   }
+  if (combined && ++contextCohorts > 80) throw new Error('Synthetic cohort ceiling reached');
   const cohort = (
     await createCohort(drizzle(admin, { schema }), {
       slug: 'foundation-test-draft-' + randomUUID(),
@@ -483,13 +514,115 @@ describe.runIf(isolated)(
       await expect(
         admin`SELECT app.purge_expired_checkpoint_drafts(clock_timestamp(),NULL)`,
       ).rejects.toThrow('Invalid cleanup batch');
+      // Combined rehearsal retains fixture evidence: exercise purge transactionally and roll it back.
+      if (combined) await admin.unsafe('BEGIN');
       const purged = (
         await admin`SELECT app.purge_expired_checkpoint_drafts(clock_timestamp()+interval '1 year',1) AS n`
       )[0]!.n;
       expect(purged).toBe(1);
       expect((await count(expired))[0]!.n).toBe('0');
       expect((await count(recent))[0]!.n).toBe('1');
+      if (combined) {
+        await admin.unsafe('ROLLBACK');
+        checks.push('synthetic_purge_rolled_back_for_retained_evidence');
+      }
       checks.push('real_expiry_read_denial_and_bounded_purge');
     });
   },
 );
+
+// Prepared opt-in SQL0011+0014 suite. Never runs with URL/retained-db fallbacks.
+describe.runIf(isolated && combined)('combined frozen editor context and draft storage', () => {
+  it('reads only frozen official metadata through the scoped context repository', async () => {
+    await policy(true);
+    const l = await learner();
+    expect(await checkpointEditorContextReady(drizzle(web, { schema }))).toBe(true);
+    const official = await readCheckpointEditorContext(
+      drizzle(web, { schema }),
+      l.auth,
+      l.attempt,
+      task,
+    );
+    const draft = await readCheckpointDraftContext(
+      drizzle(web, { schema }),
+      l.auth,
+      l.attempt,
+      task,
+    );
+    expect(official.scope).toEqual(draft.scope);
+    expect(official.scope).toEqual(scope(l));
+    expect(official.filename).toBe(draft.filename);
+    expect(official.sourceBytes).toBeGreaterThanOrEqual(draft.sourceBytes);
+    expect(official.submitAllowed).toBe(true);
+    expect(
+      (
+        await admin`SELECT has_function_privilege('draft_untrusted','app.checkpoint_editor_context(uuid,uuid,text)','EXECUTE') AS allowed`
+      )[0]!.allowed,
+    ).toBe(false);
+    checks.push('combined_frozen_official_scope_and_hostile_default_acl');
+  });
+  it('denies another learner, unknown task and access removal on the next context read', async () => {
+    const l = await learner(),
+      other = await learner();
+    await expect(
+      readCheckpointEditorContext(drizzle(web, { schema }), other.auth, l.attempt, task),
+    ).rejects.toMatchObject({ code: 'forbidden' });
+    await expect(
+      readCheckpointEditorContext(drizzle(web, { schema }), l.auth, l.attempt, 'unknown-task'),
+    ).rejects.toMatchObject({ code: 'forbidden' });
+    await admin`UPDATE app.cohort_memberships SET status='inactive' WHERE cohort_id=${l.cohort} AND user_id=${l.user}`;
+    await expect(
+      readCheckpointEditorContext(drizzle(web, { schema }), l.auth, l.attempt, task),
+    ).rejects.toMatchObject({ code: 'forbidden' });
+    await expect(
+      readCheckpointDraftContext(drizzle(web, { schema }), l.auth, l.attempt, task),
+    ).rejects.toMatchObject({ code: 'forbidden' });
+    checks.push('combined_context_and_draft_access_removal_no_fallback');
+  });
+  it('retains read metadata after the immutable deadline but refuses submit and draft writes', async () => {
+    const l = await pastAttempt(await learner(), 1);
+    const context = await readCheckpointEditorContext(
+      drizzle(web, { schema }),
+      l.auth,
+      l.attempt,
+      task,
+    );
+    expect(context.submitAllowed).toBe(false);
+    expect(Date.parse(context.deadline)).toBeLessThan(Date.parse(context.serverNow));
+    await expect(save(l, 'late')).rejects.toMatchObject({ code: 'PD001' });
+    checks.push('combined_immutable_deadline_read_vs_write_boundary');
+  });
+  it('shares the frozen definition without making saving an official submission', async () => {
+    const l = await learner(),
+      source = '\uFEFFpackage main\r\n// café';
+    const official = await readCheckpointEditorContext(
+      drizzle(web, { schema }),
+      l.auth,
+      l.attempt,
+      task,
+    );
+    const first = await saveCheckpointDraft(drizzle(web, { schema }), {
+      authId: l.auth,
+      scope: official.scope,
+      requestId: randomUUID(),
+      baseVersion: 0,
+      source,
+    });
+    expect(first).toMatchObject({ kind: 'saved', record: { source, version: 1 } });
+    expect(
+      await saveCheckpointDraft(drizzle(web, { schema }), {
+        authId: l.auth,
+        scope: official.scope,
+        requestId: randomUUID(),
+        baseVersion: 0,
+        source: 'conflict',
+      }),
+    ).toMatchObject({ kind: 'conflict', current: { version: 1 } });
+    expect(
+      (
+        await admin`SELECT count(*) AS n FROM app.submissions WHERE checkpoint_attempt_id=${l.attempt}`
+      )[0]!.n,
+    ).toBe('0');
+    checks.push('combined_cas_source_bytes_without_official_submit');
+  });
+});
