@@ -19,6 +19,7 @@ export default defineConfig({
       'apps/web/lib/checkpoints/*.test.ts',
       'apps/web/lib/learning/*.test.ts',
       'apps/web/lib/raids/*.test.ts',
+      'apps/web/lib/invitations/*.test.ts',
     ],
   },
 });
