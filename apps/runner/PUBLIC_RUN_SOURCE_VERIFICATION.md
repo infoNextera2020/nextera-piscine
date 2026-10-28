@@ -17,6 +17,6 @@ Verification logs are retained outside the repo at `C:\Users\lap\Documents\Codex
 ## Remaining operational gates
 
 - An approved explicit public Run policy and reviewed public example manifests must exist; private grading packs are never a fallback.
-- The trusted TypeScript outbox/lease driver still needs its protected subprocess adapter and deployment configuration wired to this command. Current source interfaces must not be treated as a running queue worker.
+- The trusted TypeScript outbox/lease driver now has a protected, explicit subprocess adapter (`apps/web/lib/checkpoints/visible-run-process.ts`), verified only with fake processes. Runtime assembly and deployment configuration remain absent; source interfaces must not be treated as a running queue worker.
 - Real sandbox image/socket access, resource enforcement, cancellation, cleanup and crash/reconciliation require a separately scoped runtime rehearsal. No existing Auth/DB/official Judge rehearsal approval authorizes public Run execution.
 - No migrations, persistent access, credentials, services, learner records, policy enablement, push or deployment are performed by these checks.
