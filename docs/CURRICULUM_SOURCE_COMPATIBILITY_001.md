@@ -4,7 +4,7 @@ Read-only GitHub connector review of `Anasmoner2022/piscine-go`, branch `main`, 
 
 ## Exact inventory
 
-105 blobs, all Markdown. Eleven folders: Quest1–Quest9, Quest11, Quest12. Quest10 is absent. Four quest README/index files and97 exercise sheets; four root project briefs. No exam/checkpoint directory, machine-readable ordering manifest, submission/evaluation specifications, Go/JS test source, hidden oracle, public-run manifest, OCI pack or dependency lockfile is present in this revision.
+105 blobs, all Markdown. Eleven folders: Quest1–Quest9, Quest11, Quest12. Quest10 is absent. Four quest README/index files and 97 exercise sheets; four root project briefs. No exam/checkpoint directory, machine-readable ordering manifest, submission/evaluation specifications, Go/JS test source, hidden oracle, public-run manifest, OCI pack or dependency lockfile is present in this revision.
 
 | Folder  | Exercise sheets (README excluded) |
 | ------- | --------------------------------: |
