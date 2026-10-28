@@ -42,7 +42,8 @@
     "test:assessment-ui": "tsx scripts/test-learning-ui.ts --assessment",
     "local:status": "tsx scripts/local-status.ts",
     "test:raids": "python3 scripts/test-raids-isolated.py",
-    "raid:preflight": "tsx scripts/raid-preflight.ts"
+    "raid:preflight": "tsx scripts/raid-preflight.ts",
+    "learner:readiness": "tsx scripts/learner-readiness.ts"
   },
   "devDependencies": {
     "@nextera/db": "workspace:*",

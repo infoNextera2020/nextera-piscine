@@ -54,6 +54,12 @@ export function checkpointFixture(
   const nodeDefs = `  - id: transfer-checkpoint\n    quest: go-basics\n    type: checkpoint\n    title: Transfer checkpoint\n    order: 3\n    difficulty: 1\n  - id: after-checkpoint\n    quest: go-basics\n    type: challenge\n    title: After checkpoint\n    order: 4\n    difficulty: 1\n`;
   // Reuse the committed quest identity, avoiding assumptions about display names.
   const quest = original.curriculum.quests[0]!.key;
+  // Extending the fixture must preserve every committed prerequisite edge.
+  const baseEdges = original.curriculum.prerequisites
+    .map(
+      (edge) => '  - { from: ' + edge.from + ', to: ' + edge.to + ', rule: ' + edge.rule + ' }\n',
+    )
+    .join('');
   const cpEdges = options.prerequisites
     ? `  - { from: hello-go, to: transfer-checkpoint, rule: requires_pass }\n  - { from: even-or-odd, to: transfer-checkpoint, rule: requires_pass }\n`
     : '';
@@ -64,7 +70,7 @@ export function checkpointFixture(
     /edges:[\s\S]*$/,
     nodeDefs.replaceAll('quest: go-basics', `quest: ${quest}`) +
       unrelated +
-      `edges:\n${cpEdges}  - { from: transfer-checkpoint, to: after-checkpoint, rule: requires_pass }\n`,
+      `edges:\n${baseEdges}${cpEdges}  - { from: transfer-checkpoint, to: after-checkpoint, rule: requires_pass }\n`,
   );
   const root = 'content/piscine-v1';
   const files = original.files.map((f) =>
