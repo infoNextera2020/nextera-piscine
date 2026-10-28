@@ -7,6 +7,8 @@ import {
   type NodeKind,
   type SubmissionRules,
   type CheckpointTask,
+  type CheckpointDefinition,
+  checkpointScoringPolicy,
 } from '@nextera/domain';
 import { contentDigest, sha256, type SourceFile } from './digest';
 
@@ -119,19 +121,23 @@ export function parseCurriculum(
       const config = yaml(configPath);
       knownFields(
         config,
-        ['id', 'title', 'policy_version', 'duration_seconds', 'tasks'],
+        config.policy_version === 2
+          ? ['id', 'title', 'policy_version', 'duration_seconds', 'tasks', 'pass_points']
+          : ['id', 'title', 'policy_version', 'duration_seconds', 'tasks'],
         configPath,
       );
       if (
         config.id !== nodeKey ||
         config.title !== n.title ||
-        config.policy_version !== 1 ||
+        (config.policy_version !== 1 && config.policy_version !== 2) ||
         config.duration_seconds !== 5400
       )
         fail('Checkpoint identity or accepted policy mismatch.');
       const taskKeys = list(config.tasks, 'checkpoint.tasks').map((v) => key(v, 'task key'));
       unique(taskKeys, 'checkpoint tasks');
-      if (taskKeys.length !== 4) fail('A checkpoint requires exactly four tasks.');
+      if (!taskKeys.length) fail('A checkpoint requires at least one task.');
+      if (config.policy_version === 1 && taskKeys.length !== 4)
+        fail('A version 1 checkpoint requires exactly four tasks.');
       const tasks: CheckpointTask[] = taskKeys.map((taskKey) => {
         const base = `${folder}/tasks/${taskKey}`;
         const path = `${base}/task.yaml`;
@@ -192,6 +198,20 @@ export function parseCurriculum(
         tasks.map((t) => t.testPackId),
         'checkpoint evaluation identities',
       );
+      const checkpoint: CheckpointDefinition =
+        config.policy_version === 1
+          ? { policyVersion: 1, durationSeconds: 5400, tasks }
+          : {
+              policyVersion: 2,
+              durationSeconds: 5400,
+              passPoints: positive(config.pass_points, 'checkpoint.pass_points'),
+              tasks,
+            };
+      try {
+        checkpointScoringPolicy(checkpoint);
+      } catch {
+        fail('Checkpoint passing threshold conflicts with its frozen task count.');
+      }
       const subject = read(`${folder}/subject.md`);
       if (!subject.trim()) fail('Empty checkpoint subject.');
       return {
@@ -208,7 +228,7 @@ export function parseCurriculum(
         submissionRules: tasks[0]!.submissionRules,
         testPackId: tasks[0]!.testPackId,
         declaredLimits: tasks[0]!.declaredLimits,
-        checkpoint: { policyVersion: 1 as const, durationSeconds: 5400 as const, tasks },
+        checkpoint,
       };
     }
     const configPath = `${folder}/${kind}.yaml`;

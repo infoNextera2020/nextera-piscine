@@ -1,4 +1,4 @@
-import type { Curriculum, CheckpointTask } from '@nextera/domain';
+import { checkpointScoringPolicy, type Curriculum, type CheckpointTask } from '@nextera/domain';
 import { parseDocument } from 'yaml';
 import { evaluationDigest } from './digest';
 import { object, positive, text } from './load';
@@ -184,6 +184,7 @@ export function resolveEvaluations(curriculum: Curriculum, catalog?: unknown) {
   return curriculum.nodes.map((node) => {
     if (node.kind !== 'checkpoint') return resolve(node, node.key);
     if (!node.checkpoint) throw new EvaluationBoundaryError('Checkpoint definition required.');
+    checkpointScoringPolicy(node.checkpoint);
     const tasks = node.checkpoint.tasks.map((task) => {
       const resolved = resolve(task, node.key);
       if (!('execution_contract' in resolved.spec))
@@ -192,7 +193,16 @@ export function resolveEvaluations(curriculum: Curriculum, catalog?: unknown) {
         );
       return { ...task, evaluationSpec: resolved.spec, evaluationDigest: resolved.digest };
     });
-    const definition = { policyVersion: 1, durationSeconds: 5400, tasks };
+    // Keep v1's exact serialized shape; v2 commits the explicit exam threshold.
+    const definition =
+      node.checkpoint.policyVersion === 1
+        ? { policyVersion: 1 as const, durationSeconds: 5400 as const, tasks }
+        : {
+            policyVersion: 2 as const,
+            durationSeconds: 5400 as const,
+            passPoints: node.checkpoint.passPoints,
+            tasks,
+          };
     const spec = {
       ...tasks[0]!.evaluationSpec,
       checkpoint_definition: definition,

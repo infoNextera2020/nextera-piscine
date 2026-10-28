@@ -17,7 +17,7 @@ const copy = {
     label: 'LEARNER FAIL',
     title: 'The checkpoint was not passed.',
     detail:
-      'The authoritative evaluation did not meet the 3 of 4 task threshold. This attempt grants no gated unlock.',
+      "The authoritative evaluation did not meet this exam's passing threshold. This attempt grants no gated unlock.",
   },
   infrastructure_blocked: {
     label: 'INFRASTRUCTURE BLOCKED',
@@ -69,6 +69,10 @@ export function CheckpointResult({
       </section>
     );
   const current = attempt.id === view.attempt?.id;
+  // Current tasks are the authorized frozen-attempt projection. Historical task
+  // counts are not projected yet; omit the denominator rather than assume four.
+  const taskCount = current && view.tasks.length ? view.tasks.length : null;
+  const recordedScore = `${attempt.points ?? '—'}${taskCount === null ? '' : ` / ${taskCount}`}`;
   const mastered = overview.nodes.find((n) => n.key === node)?.state === 'mastered';
   return (
     <div className={s.stack}>
@@ -81,7 +85,7 @@ export function CheckpointResult({
           <HairlineFigure kind="gate" state="infrastructure_blocked" />
         ) : (
           <div className={s.score}>
-            <strong>{attempt.points ?? '—'} / 4</strong>
+            <strong>{recordedScore}</strong>
             <span>Authoritative task passes</span>
           </div>
         )}
@@ -91,7 +95,7 @@ export function CheckpointResult({
           <p>{outcome.detail}</p>
           {attempt.status === 'infrastructure_blocked' && (
             <p style={{ marginTop: 12 }}>
-              {attempt.points ?? '—'} / 4 task passes recorded. No learner FAIL has been declared.
+              {recordedScore} task passes recorded. No learner FAIL has been declared.
             </p>
           )}
           <div className={s.actions}>

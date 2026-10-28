@@ -34,24 +34,58 @@ export type CheckpointTask = {
   testPackId: string;
   declaredLimits: { timeout_ms: number; memory_mb: number; output_kb: number };
 };
-export type CheckpointDefinition = {
-  policyVersion: 1;
-  durationSeconds: 5400;
-  tasks: CheckpointTask[];
+type CheckpointPolicyHeader =
+  | { policyVersion: 1; durationSeconds: 5400 }
+  | { policyVersion: 2; durationSeconds: 5400; passPoints: number };
+export type CheckpointDefinition = CheckpointPolicyHeader & { tasks: CheckpointTask[] };
+export type CheckpointScoringDefinition = CheckpointPolicyHeader & {
+  tasks: readonly unknown[];
 };
+
+/** Trusted frozen definition only. v2 never inherits a global passing threshold.
+ * This is pure source support, not evidence that a database supports policy v2.
+ */
+export function checkpointScoringPolicy(definition: CheckpointScoringDefinition) {
+  if (
+    definition.durationSeconds !== CHECKPOINT_POLICY.durationSeconds ||
+    !Array.isArray(definition.tasks) ||
+    !definition.tasks.length
+  )
+    throw new Error('CHECKPOINT_POLICY');
+  const taskCount = definition.tasks.length;
+  if (definition.policyVersion === 1) {
+    if (taskCount !== CHECKPOINT_POLICY.taskCount || Object.hasOwn(definition, 'passPoints'))
+      throw new Error('CHECKPOINT_POLICY');
+    return Object.freeze({
+      version: 1 as const,
+      taskCount,
+      passPoints: CHECKPOINT_POLICY.passPoints,
+    });
+  }
+  if (
+    definition.policyVersion !== 2 ||
+    !Number.isSafeInteger(definition.passPoints) ||
+    definition.passPoints < 1 ||
+    definition.passPoints > taskCount
+  )
+    throw new Error('CHECKPOINT_POLICY');
+  return Object.freeze({ version: 2 as const, taskCount, passPoints: definition.passPoints });
+}
 export function aggregateCheckpoint(
   tasks: readonly { passed: boolean; pending: boolean; infrastructure: boolean }[],
+  definition?: CheckpointScoringDefinition,
 ) {
-  if (tasks.length !== 4) throw new Error('CHECKPOINT_TASK_COUNT');
+  const policy = definition ? checkpointScoringPolicy(definition) : CHECKPOINT_POLICY;
+  if (tasks.length !== policy.taskCount) throw new Error('CHECKPOINT_TASK_COUNT');
   if (tasks.some((t) => t.pending)) return { status: 'evaluating' as const, points: null };
   const points = tasks.filter((t) => t.passed).length;
   const uncertain = tasks.filter((t) => !t.passed && t.infrastructure).length;
   return {
     points,
     status:
-      points >= 3
+      points >= policy.passPoints
         ? ('passed' as const)
-        : points + uncertain >= 3
+        : points + uncertain >= policy.passPoints
           ? ('infrastructure_blocked' as const)
           : ('failed' as const),
   };
