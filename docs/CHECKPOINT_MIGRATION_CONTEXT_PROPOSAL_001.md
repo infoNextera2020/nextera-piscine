@@ -1,6 +1,6 @@
 # Checkpoint migration context: source contract and bounded proposal
 
-Status: source-only injectable contract with fake tests. No database adapter, broker import, runtime enablement, grant, credential, migration application or new attempt is included.
+Status: source-only injectable contract and concrete Postgres.js adapter with fake-client tests. See CHECKPOINT_MIGRATION_ADAPTER_REHEARSAL_001.md for the separately proposed real database verification and guard authority. No broker import, runtime enablement, grant, credential, migration application or new attempt is included.
 
 ## Existing authority and why it differs from SET access
 
@@ -33,7 +33,7 @@ The contract records controlled, immutable audit events and excludes raw errors/
 
 For a separately named fresh isolated rehearsal, allow only its existing migration actor, after verified preexisting ADMIN authority, to acquire the single temporary SET-capable self-membership above during the transaction containing SQL0011/0014. Require its removal and exact graph restoration before commit. Never grant that membership to the web role, learners, mentors or another principal. No new privileged role or lasting escalation is included. If verified existing authority is absent, stop rather than expanding privileges.
 
-This is a proposal, not a runtime grant. Before asking for execution approval, implement/review the concrete least-privilege adapter, verify its transaction/serialization and grantor-option behavior under a separately authorized disposable database test, and bind the policy and source hashes into a fresh runtime scope. Reuse neither attempt003 nor its closed approval. No target, resource, account, key or new profile is prepared by this record.
+This is a proposal, not a runtime grant. The concrete adapter is now implemented and statically reviewed, but its transaction/serialization and grantor-option behavior still need a separately authorized disposable database test. Prepare and review that test controller first, then bind the policy and source hashes into a genuinely fresh runtime scope. Reuse neither attempt003 nor its closed approval. No target, resource, account, key or new profile is prepared by this record.
 
 ## Verification and remaining limits
 

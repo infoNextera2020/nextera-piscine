@@ -28,12 +28,31 @@ const CONTEXT_ERROR_CODES = new Set([
   'TRANSACTION_FAILED',
 ]);
 export class MigrationContextError extends Error {
-  constructor(code, trace = []) {
+  constructor(code, trace = [], diagnostic = {}) {
     const safeCode = CONTEXT_ERROR_CODES.has(code) ? code : 'TRANSACTION_FAILED';
     super('CHECKPOINT_CONTEXT_' + safeCode);
     this.code = safeCode;
     this.trace = Object.freeze([...trace]);
     this.rollbackVerified = false;
+    const stages = new Set([
+      'begin',
+      'guard_attestation',
+      'catalog_lock',
+      'facts',
+      'grant',
+      'draft',
+      'revoke',
+      'audit',
+      'restore_check',
+      'commit',
+    ]);
+    this.diagnostic = Object.freeze({
+      stage: stages.has(diagnostic?.stage) ? diagnostic.stage : null,
+      sqlstate:
+        typeof diagnostic?.sqlstate === 'string' && /^[0-9A-Z]{5}$/.test(diagnostic.sqlstate)
+          ? diagnostic.sqlstate
+          : null,
+    });
   }
 }
 const fail = (code) => {
@@ -157,6 +176,14 @@ function sameIdentity(a, b) {
     fail('IDENTITY_CHANGED');
 }
 
+export function prepareCheckpointDraftMigration(policy, drafts) {
+  const bound = policyCopy(policy);
+  return Object.freeze({ policy: bound, bodies: Object.freeze(prepareBodies(bound, drafts)) });
+}
+export function validateCheckpointMigrationFacts(facts, policy) {
+  return factsCopy(facts, policyCopy(policy));
+}
+
 /** Injection contract, not a live adapter or an authorization provider.
  * transaction(work) MUST use ONE connection/transaction, serialize the complete
  * owner membership graph, rollback on any failure, and resolve {commitAcknowledged,
@@ -266,6 +293,10 @@ export async function withCheckpointDraftMigrationContext(repository, policy, dr
   } catch (error) {
     const code = error instanceof MigrationContextError ? error.code : 'TRANSACTION_FAILED';
     // Raw adapter errors may contain credentials or SQL; retain controlled codes/trace only.
-    throw new MigrationContextError(code, trace);
+    throw new MigrationContextError(
+      code,
+      trace,
+      error instanceof MigrationContextError ? error.diagnostic : {},
+    );
   }
 }

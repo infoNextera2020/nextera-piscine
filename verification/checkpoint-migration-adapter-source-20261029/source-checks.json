@@ -1,0 +1,67 @@
+{
+  "kind": "source_only_injected_adapter_checks",
+  "checkedAtUtc": "2026-10-29T16:13:16.315845+00:00",
+  "baselineHead": "9d7b685a66c70758274282ab7e1165de3ab9c3c0",
+  "node": {
+    "tests": 143,
+    "passed": 143,
+    "failed": 0,
+    "suites": [
+      "checkpoint-auth-runtime.node-unit.mjs",
+      "checkpoint-migration-context.node-unit.mjs",
+      "checkpoint-migration-postgres.node-unit.mjs"
+    ],
+    "newAdapterTests": 70
+  },
+  "python": {
+    "tests": 74,
+    "passed": 74,
+    "failed": 0,
+    "pattern": "test_checkpoint_auth*.py"
+  },
+  "static": {
+    "eslint": true,
+    "nodeSyntax": true,
+    "prettier": true,
+    "gitDiffCheck": true
+  },
+  "preservation": {
+    "fourOriginalDirtyFilesSha256Unchanged": true,
+    "draft0011Sha256": "08234e3b628de71cca7be786d6bd21a4c5d1f463b548abe9b285c068fcb5d548",
+    "draft0014Sha256": "0e3684165279ba8458651889ae51ced169555163bde40b7713353202001c9911"
+  },
+  "sourceSha256": {
+    "scripts/checkpoint-migration-context.mjs": "6a6f38fe2104c36406a633970d9c91b428b78923484f6894b35cc6b98082736f",
+    "scripts/checkpoint-migration-postgres.mjs": "41f3af4db952efb031defbbe6353256cb786d2a8e5d70c2af536ac3096126407",
+    "scripts/tests/checkpoint-migration-postgres.node-unit.mjs": "a247d655518251059e6ea98e0468e4ca89bb5e33c39780e24188fa62f20513a8",
+    "docs/CHECKPOINT_MIGRATION_CONTEXT_PROPOSAL_001.md": "8291e93415386a2b9af07dfc52d8e60d878cba19c1b34a889e476b6c8a878d11",
+    "docs/CHECKPOINT_MIGRATION_ADAPTER_REHEARSAL_001.md": "973a230a9772b79d742e8ce0d7bc6bdcb1592887df15a4f61abe21a80f3428f0"
+  },
+  "notRun": [
+    "real PostgreSQL connection or SQL execution",
+    "role grants or guard installation",
+    "real driver wire-protocol and concurrency tests",
+    "new runtime controller or services",
+    "application typecheck/build/browser checks; no application source changed"
+  ],
+  "limitations": [
+    "Fake-client rollback assertions are not verified PostgreSQL rollback.",
+    "No broker import or production enablement.",
+    "Checkpoint budget cannot cancel active multi-statement SQL; external supervisor required.",
+    "Attempt003 SQL exception and catalog/rollback state remain unknown.",
+    "Proposed disposable controller still requires source implementation/review and fresh exact runtime approval."
+  ],
+  "independentReview": {
+    "role": "read-only source and proposal reviewer",
+    "remainingFindings": 0,
+    "resolved": [
+      "new-object default ACL cleanup",
+      "effective web and SET exclusion",
+      "under-lock permission re-attestation",
+      "setup search path and function-body checking",
+      "admission/between-query budget limitation",
+      "precise deferred fixture variants and rollback-before-single-commit ordering"
+    ],
+    "runtimePerformed": false
+  }
+}
