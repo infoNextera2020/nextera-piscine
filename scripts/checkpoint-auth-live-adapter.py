@@ -72,14 +72,22 @@ def validate_effective(c,plan):
         if '/'+plan.database not in json.dumps(c['services'][name].get('environment',{})):raise scope.ScopeError('Split product/auth/storage database')
 
 
+GATE = "import os,sys; token=sys.stdin.buffer.read(1); sys.exit(0) if token!=b'1' else os.execvpe(sys.argv[1],sys.argv[1:],os.environ)"
+
+
 class Commands:
     def run(self,args,*,env,cwd,input=None,timeout=60):
-        p=subprocess.Popen(args,env=env,cwd=cwd,stdin=subprocess.PIPE,stdout=subprocess.PIPE,stderr=subprocess.PIPE,start_new_session=True)
         control=env.get('CHECKPOINT_REHEARSAL_CONTROL')
+        launch=[sys.executable,'-c',GATE,*args]
+        p=subprocess.Popen(launch,env=env,cwd=cwd,stdin=subprocess.PIPE,stdout=subprocess.PIPE,stderr=subprocess.PIPE,start_new_session=True)
         record={'pid':p.pid,'ticks':tick(p.pid),'cwd':str(Path(cwd).resolve()),'uid':os.getuid(),'finished':False}
-        if control:protected(Path(control)/'phase-process.json',record)
+        if control:
+            try:protected(Path(control)/'phase-process.json',record)
+            except Exception:
+                p.communicate(input=b'',timeout=5)  # EOF without GO: no sensitive command executes.
+                raise
         try:
-            stdout,stderr=p.communicate(input=input,timeout=timeout)
+            stdout,stderr=p.communicate(input=b'1'+(input or b''),timeout=timeout)
         except subprocess.TimeoutExpired:
             if tick(p.pid)==record['ticks']:os.killpg(p.pid,signal.SIGTERM)
             p.communicate(timeout=10)
@@ -95,7 +103,7 @@ class Commands:
 
 
 class LiveAdapter:
-    kind='live_adapter_not_yet_executed'
+    kind='local_docker_auth_db_http'
     def __init__(self,repo,template,browser,commands=None,now=time.time):
         self.repo=Path(repo).resolve();self.template=Path(template).resolve();self.browser=browser;self.commands=commands or Commands();self.now=now
         self.plan=scope.Plan();self.run=Path(self.plan.directory)
@@ -202,9 +210,13 @@ class LiveAdapter:
         source=self.run/'app-source'
         self.commands.run(['pnpm','build'],cwd=source,env=env,timeout=240)
         log=os.open(self.run/'app.private.log',os.O_WRONLY|os.O_CREAT|os.O_EXCL,0o600)
-        try:p=subprocess.Popen([self.node,str(source/'apps/web/node_modules/next/dist/bin/next'),'start','--hostname','127.0.0.1','--port','3151'],cwd=source/'apps/web',env=env,stdin=subprocess.DEVNULL,stdout=log,stderr=log,start_new_session=True)
+        try:p=subprocess.Popen([sys.executable,'-c',GATE,self.node,str(source/'apps/web/node_modules/next/dist/bin/next'),'start','--hostname','127.0.0.1','--port','3151'],cwd=source/'apps/web',env=env,stdin=subprocess.PIPE,stdout=log,stderr=log,start_new_session=True)
         finally:os.close(log)
-        protected(self.run/'app-process.json',{'pid':p.pid,'ticks':tick(p.pid),'cwd':str(source/'apps/web'),'exe':self.node})
+        try:
+            protected(self.run/'app-process.json',{'pid':p.pid,'ticks':tick(p.pid),'cwd':str(source/'apps/web'),'exe':self.node,'launcher_exe':sys.executable})
+            p.stdin.write(b'1');p.stdin.flush();p.stdin.close()
+        except Exception:
+            p.stdin.close();p.wait(timeout=5);raise
         import urllib.request
         for _ in range(80):
             try:
@@ -242,42 +254,25 @@ class LiveAdapter:
                     os.killpg(phase['pid'],signal.SIGTERM);poll=select.poll();poll.register(fd,select.POLLIN)
                     if not poll.poll(15000):raise scope.ScopeError('Phase still active; access revocation unsafe')
                 finally:os.close(fd)
-        for proc in Path('/proc').iterdir():
-            if not proc.name.isdigit() or int(proc.name)==os.getpid():continue
-            try:
-                raw=(proc/'cmdline').read_bytes().split(b'\0')
-                owned_broker=len(raw)>3 and raw[0]==self.node.encode() and raw[1]==self.broker.encode() and raw[3]==str(self.run).encode()
-                if owned_broker and proc.stat().st_uid==os.getuid() and os.getpgid(int(proc.name))==int(proc.name):
-                    pid=int(proc.name);identity=tick(pid);fd=os.pidfd_open(pid)
-                    try:
-                        if tick(pid)!=identity:raise scope.ScopeError('Recovered phase identity changed')
-                        os.killpg(pid,signal.SIGTERM);poll=select.poll();poll.register(fd,select.POLLIN)
-                        if not poll.poll(15000):raise scope.ScopeError('Recovered phase did not exit')
-                    finally:os.close(fd)
-            except (FileNotFoundError,ProcessLookupError):continue
+        # No process enumeration: the launch gate prevents unregistered sensitive work.
         # Cleanup commands are not a new work phase and must not overwrite the
         # process identity that an independent guard may be stopping.
         self.env.pop('CHECKPOINT_REHEARSAL_CONTROL',None)
         try:
             if any(isinstance(x,dict) and x.get('starting')=='issue_restricted_access' for x in c['phases']):self.command(self.broker_command('disable'),timeout=60)
-        except Exception:access=False
+        except Exception:
+            access=False
+            try:self.command(self.broker_command('disable_sql_access'),timeout=30)
+            except Exception:pass  # Keep cleanup unverified; still stop only owned endpoints.
         p=self.run/'app-process.json';apps=[]
         if p.exists():apps=[json.loads(p.read_text())]
-        else:
-            # Recover only an uncertain Popen acknowledgement in this fresh private cwd.
-            for proc in Path('/proc').iterdir():
-                if not proc.name.isdigit():continue
-                try:
-                    if proc.stat().st_uid!=os.getuid() or (proc/'cwd').resolve()!=self.run/'app-source/apps/web' or (proc/'exe').resolve()!=Path(self.node):continue
-                    command=(proc/'cmdline').read_bytes()
-                    if b'3151' in command or command.startswith(b'next-server'):apps.append({'pid':int(proc.name),'ticks':tick(int(proc.name)),'cwd':str(self.run/'app-source/apps/web'),'exe':self.node})
-                except (OSError,ProcessLookupError):continue
+        # Without an app identity receipt, its gate never received GO.
         for obj in apps:
             proc=Path('/proc',str(obj['pid']))
             if proc.exists():
                 fd=os.pidfd_open(obj['pid'])
                 try:
-                    if tick(obj['pid'])!=obj['ticks'] or proc.stat().st_uid!=os.getuid() or (proc/'cwd').resolve()!=Path(obj['cwd']) or (proc/'exe').resolve()!=Path(obj['exe']):raise scope.ScopeError('App identity mismatch')
+                    if tick(obj['pid'])!=obj['ticks'] or proc.stat().st_uid!=os.getuid() or (proc/'cwd').resolve()!=Path(obj['cwd']) or (proc/'exe').resolve() not in {Path(obj['exe']).resolve(),Path(obj.get('launcher_exe',obj['exe'])).resolve()}:raise scope.ScopeError('App identity mismatch')
                     signal.pidfd_send_signal(fd,signal.SIGTERM);poll=select.poll();poll.register(fd,select.POLLIN)
                     if not poll.poll(15000):raise scope.ScopeError('App did not exit')
                 finally:os.close(fd)

@@ -1,6 +1,6 @@
 """No real process/socket/provider is used. Only deterministic scope and command tests."""
 from pathlib import Path
-from unittest.mock import patch
+from unittest.mock import patch, Mock
 import importlib.util
 import sys
 import unittest
@@ -59,6 +59,16 @@ class AdapterTests(unittest.TestCase):
         self.assertEqual(self.fake.calls,[])
     def test_unknown_phase_is_rejected(self):
         with self.assertRaises(h.scope.ScopeError):self.phase('run_hidden_tests')
+    def test_sensitive_command_gate_releases_only_after_identity_is_recorded(self):
+        process=Mock(pid=123,returncode=0);process.communicate.return_value=(b'OK',b'');process.poll.return_value=0
+        with patch.object(h.subprocess,'Popen',return_value=process) as popen,patch.object(h,'tick',return_value='ticks'),patch.object(h,'protected') as record:
+            result=h.Commands().run(['node','owned-broker'],env={'CHECKPOINT_REHEARSAL_CONTROL':'/fake-private'},cwd='/fake-private',input=b'data')
+            self.assertEqual(result,b'OK');self.assertIn(h.GATE,popen.call_args.args[0]);self.assertTrue(record.called);process.communicate.assert_called_once_with(input=b'1data',timeout=60)
+    def test_journal_failure_sends_eof_without_starting_sensitive_command(self):
+        process=Mock(pid=123);process.communicate.return_value=(b'',b'')
+        with patch.object(h.subprocess,'Popen',return_value=process),patch.object(h,'tick',return_value='ticks'),patch.object(h,'protected',side_effect=OSError('fake disk failure')):
+            with self.assertRaises(OSError):h.Commands().run(['node','owned-broker'],env={'CHECKPOINT_REHEARSAL_CONTROL':'/fake-private'},cwd='/fake-private')
+            process.communicate.assert_called_once_with(input=b'',timeout=5)
     def test_owned_stop_refuses_retain_false(self):
         with self.assertRaises(h.scope.ScopeError):self.adapter.revoke_and_stop(str(self.adapter.run),self.adapter.plan,retain=False)
 

@@ -222,7 +222,7 @@ function state(run, cleanup = false) {
   return s;
 }
 async function execute(mode, run, repo) {
-  const s = state(run, mode === 'disable');
+  const s = state(run, mode === 'disable' || mode === 'disable_sql_access');
   const req = createRequire(repo + '/package.json');
   req('tsx/cjs');
   const secrets = () => JSON.parse(fs.readFileSync(run + '/credentials.json', 'utf8'));
@@ -584,6 +584,23 @@ SELECT format('ALTER DATABASE %I SET "app.settings.jwt_exp" TO %L', :'db', :'exp
         }
         save('fixture.json', fixture);
       }
+      return;
+    }
+    if (mode === 'disable_sql_access') {
+      await admin`UPDATE app.users SET active=false WHERE auth_user_id IN(SELECT id FROM auth.users WHERE email IN('checkpoint-a-20261028@example.invalid','checkpoint-b-20261028@example.invalid'))`;
+      await admin`UPDATE app.cohort_memberships SET status='inactive' WHERE user_id IN(SELECT id FROM app.users WHERE auth_user_id IN(SELECT id FROM auth.users WHERE email IN('checkpoint-a-20261028@example.invalid','checkpoint-b-20261028@example.invalid')))`;
+      const [role] =
+        await admin`SELECT 1 FROM pg_roles WHERE rolname='checkpoint_browser_web_20261028'`;
+      if (role) {
+        await admin.unsafe(
+          'ALTER ROLE checkpoint_browser_web_20261028 NOLOGIN;REVOKE nextera_web FROM checkpoint_browser_web_20261028',
+        );
+        await admin`SELECT pg_terminate_backend(pid) FROM pg_stat_activity WHERE usename='checkpoint_browser_web_20261028' AND pid<>pg_backend_pid()`;
+      }
+      save('sql-access-disabled.json', {
+        attempted: true,
+        providerCleanupStillRequiresVerification: true,
+      });
       return;
     }
     if (mode === 'disable') {

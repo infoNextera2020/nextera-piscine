@@ -69,7 +69,7 @@
       "exitCode": 0
     }
   ],
-  "python_fake_tests": 20,
+  "python_fake_tests": 22,
   "node_fake_tests": 16,
   "source_tests": 1102,
   "scope_sha256": "c59bed18ea9a12306cc6b59b0cb31cba7f094f209834bb12d1f5c53c761cb4fc",
@@ -82,5 +82,40 @@
   "owner_auth_ui_acceptance": "recorded separately; does not prove all-viewports or live Auth",
   "preserved_four_dirty_files": true,
   "unchanged_preview_http": 200,
-  "runtime_approval": "pending; no old approval renewed"
+  "runtime_approval": "pending; no old approval renewed",
+  "post_commit_failure_path_review": {
+    "utc": "2026-10-29T07:38:53.273275+00:00",
+    "base_commit": "40301ca439d20b3102efd1361e7d4d5ae37e250e",
+    "checks": [
+      {
+        "name": "launch-format",
+        "exitCode": 0
+      },
+      {
+        "name": "launch-python",
+        "exitCode": 0
+      },
+      {
+        "name": "launch-node",
+        "exitCode": 0
+      },
+      {
+        "name": "launch-lint",
+        "exitCode": 0
+      },
+      {
+        "name": "launch-format-check",
+        "exitCode": 0
+      }
+    ],
+    "python_fake_tests": 22,
+    "node_fake_tests": 16,
+    "guards": [
+      "sensitive command/app waits for durable identity before GO",
+      "no unrelated process enumeration",
+      "independent SQL revocation after provider cleanup failure"
+    ],
+    "full_source_tests_typecheck_build": "passed at base commit; no app or TypeScript source changed in this follow-up",
+    "live_runtime_executed": false
+  }
 }
