@@ -51,6 +51,88 @@ const SERVICES = ['db', 'auth', 'rest', 'storage', 'imgproxy', 'meta', 'studio',
 const check = (ok, code) => {
   if (!ok) throw new Error(code);
 };
+
+// Read-only prerequisite attestation. Never supplies or grants migration authority.
+const CHECKPOINT_MIGRATION_CONTEXT_SQL = `SELECT
+ (NOT r.rolcanlogin AND NOT r.rolsuper AND NOT r.rolbypassrls AND NOT r.rolcreatedb
+  AND NOT r.rolcreaterole AND NOT r.rolreplication
+  AND NOT EXISTS(SELECT FROM pg_catalog.pg_auth_members m WHERE m.member=r.oid)) AS owner_safe,
+ EXISTS(SELECT FROM pg_catalog.pg_roles WHERE rolname='nextera_web') AS web_exists,
+ pg_catalog.pg_has_role(current_user,'nextera_checkpoint_owner','SET') AS can_set_owner
+ FROM pg_catalog.pg_roles r WHERE r.rolname='nextera_checkpoint_owner'`;
+const CHECKPOINT_DRAFT_FILES = new Set([
+  '0011_checkpoint_drafts.DRAFT.sql',
+  '0014_checkpoint_editor_context.DRAFT.sql',
+]);
+async function checkpointMigrationContext(client) {
+  const rows = await client.unsafe(CHECKPOINT_MIGRATION_CONTEXT_SQL);
+  check(
+    rows.length === 1 && rows[0].owner_safe === true && rows[0].web_exists === true,
+    'CHECKPOINT_MIGRATION_OWNER_INVALID',
+  );
+  check(rows[0].can_set_owner === true, 'CHECKPOINT_MIGRATION_CONTEXT_REQUIRED');
+}
+function migrationFailureRecord(error, metadata, stage, sent) {
+  const controlled = new Set([
+    'CHECKPOINT_MIGRATION_OWNER_INVALID',
+    'CHECKPOINT_MIGRATION_CONTEXT_REQUIRED',
+  ]);
+  const state =
+    error &&
+    ['ERROR', 'FATAL'].includes(error.severity) &&
+    typeof error.code === 'string' &&
+    /^[0-9A-Z]{5}$/.test(error.code)
+      ? error.code
+      : null;
+  return Object.freeze({
+    phase: 'apply_scoped_sql',
+    file: metadata.file,
+    sha256: metadata.sha256,
+    stage,
+    reason: controlled.has(error?.message)
+      ? error.message
+      : state
+        ? 'POSTGRES_ERROR'
+        : 'MIGRATION_ADAPTER_ERROR',
+    sqlstate: state,
+    application_state: sent ? 'unknown_no_catalog_attestation' : 'not_sent',
+    rollback_verified: false,
+  });
+}
+async function applyScopedMigration(client, file, bytes, expectedSha256, journal, diagnostic) {
+  check(
+    typeof file === 'string' &&
+      (/^(000[0-9]|0010)_[a-z0-9_]+\.sql$/.test(file) || CHECKPOINT_DRAFT_FILES.has(file)),
+    'MIGRATION_SCOPE_INVALID',
+  );
+  check(
+    Buffer.isBuffer(bytes) &&
+      typeof expectedSha256 === 'string' &&
+      /^[0-9a-f]{64}$/.test(expectedSha256),
+    'MIGRATION_METADATA_INVALID',
+  );
+  const digest = crypto.createHash('sha256').update(bytes).digest('hex');
+  check(digest === expectedSha256, 'SQL_SOURCE_CHANGED');
+  const metadata = Object.freeze({ file, sha256: digest });
+  let sent = false,
+    stage = 'owner_context_preflight';
+  try {
+    if (CHECKPOINT_DRAFT_FILES.has(file)) await checkpointMigrationContext(client);
+    stage = 'journal_started';
+    journal({ ...metadata, state: 'started' });
+    stage = 'sql_execution';
+    sent = true;
+    await client.unsafe(bytes.toString('utf8'));
+    stage = 'journal_applied';
+    journal({ ...metadata, state: 'applied' });
+  } catch (error) {
+    const failure = migrationFailureRecord(error, metadata, stage, sent);
+    diagnostic(failure);
+    // eslint-disable-next-line preserve-caught-error -- Never retain raw SQL errors containing secrets; use redacted audit metadata.
+    throw new Error('CHECKPOINT_MIGRATION_FAILED', { cause: failure });
+  }
+}
+
 function writePrivateText(file, text) {
   check(!fs.existsSync(file) || !fs.lstatSync(file).isSymbolicLink(), 'PRIVATE_CONFIG_SYMLINK');
   fs.writeFileSync(file, text, { mode: 0o600 });
@@ -678,13 +760,18 @@ async function execute(mode, run, repo) {
       ]) {
         const bytes = fs.readFileSync(file);
         const lock = readSourceLock(s.source_lock_sha256);
-        const digest = crypto.createHash('sha256').update(bytes).digest('hex');
-        check(lock.sql[path.relative(sourceRepo, file)] === digest, 'SQL_SOURCE_CHANGED');
-        progress.push({ file: path.basename(file), sha256: digest, state: 'started' });
-        save('sql-progress.json', progress);
-        await admin.unsafe(bytes.toString('utf8'));
-        progress.at(-1).state = 'applied';
-        save('sql-progress.json', progress);
+        await applyScopedMigration(
+          admin,
+          path.basename(file),
+          bytes,
+          lock.sql[path.relative(sourceRepo, file)],
+          (entry) => {
+            if (entry.state === 'started') progress.push(entry);
+            else progress[progress.length - 1] = entry;
+            save('sql-progress.json', progress);
+          },
+          (failure) => save('sql-failure.json', failure),
+        );
       }
       return;
     }
@@ -948,6 +1035,9 @@ async function execute(mode, run, repo) {
   }
 }
 export {
+  CHECKPOINT_MIGRATION_CONTEXT_SQL,
+  checkpointMigrationContext,
+  applyScopedMigration,
   readSourceLock,
   brokerSourceRoot,
   writePrivateText,

@@ -8,6 +8,9 @@ import process from 'node:process';
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import {
+  CHECKPOINT_MIGRATION_CONTEXT_SQL,
+  checkpointMigrationContext,
+  applyScopedMigration,
   readSourceLock,
   brokerSourceRoot,
   writePrivateText,
@@ -474,5 +477,251 @@ test('runtime lock requires the adjacent immutable copy, with no repository fall
         },
       }),
     /missing private lock/,
+  );
+});
+
+const draftName = '0011_checkpoint_drafts.DRAFT.sql';
+const draftBytes = Buffer.from('-- public synthetic DDL\nBEGIN; SELECT 1; COMMIT;\n');
+const draftHash = crypto.createHash('sha256').update(draftBytes).digest('hex');
+function migrationClient(row = { owner_safe: true, web_exists: true, can_set_owner: true }) {
+  const calls = [];
+  return {
+    calls,
+    async unsafe(sql) {
+      calls.push(sql);
+      return sql === CHECKPOINT_MIGRATION_CONTEXT_SQL ? (row ? [row] : []) : [];
+    },
+  };
+}
+test('draft preflight attests only existing safe owner context and grants no authority', async () => {
+  assert.doesNotMatch(
+    CHECKPOINT_MIGRATION_CONTEXT_SQL,
+    /\b(?:GRANT|REVOKE|CREATE|ALTER|INSERT|UPDATE|DELETE|SET ROLE)\b/i,
+  );
+  const client = migrationClient();
+  await checkpointMigrationContext(client);
+  assert.deepEqual(client.calls, [CHECKPOINT_MIGRATION_CONTEXT_SQL]);
+});
+for (const [name, row] of [
+  ['missing owner', null],
+  ['unsafe owner', { owner_safe: false, web_exists: true, can_set_owner: true }],
+  ['missing web role', { owner_safe: true, web_exists: false, can_set_owner: true }],
+  ['nonboolean attestation', { owner_safe: 'true', web_exists: true, can_set_owner: true }],
+  [
+    'co-resident principal without SET',
+    { owner_safe: true, web_exists: true, can_set_owner: false },
+  ],
+])
+  test('draft migration fails before intake for ' + name, async () => {
+    const client = migrationClient(row),
+      journal = [],
+      diagnostics = [];
+    await assert.rejects(
+      applyScopedMigration(
+        client,
+        draftName,
+        draftBytes,
+        draftHash,
+        (entry) => journal.push(entry),
+        (entry) => diagnostics.push(entry),
+      ),
+      /CHECKPOINT_MIGRATION_FAILED/,
+    );
+    assert.deepEqual(client.calls, [CHECKPOINT_MIGRATION_CONTEXT_SQL]);
+    assert.deepEqual(journal, []);
+    assert.equal(diagnostics[0].application_state, 'not_sent');
+    assert.equal(diagnostics[0].rollback_verified, false);
+    assert.equal(
+      diagnostics[0].reason,
+      name === 'co-resident principal without SET'
+        ? 'CHECKPOINT_MIGRATION_CONTEXT_REQUIRED'
+        : 'CHECKPOINT_MIGRATION_OWNER_INVALID',
+    );
+  });
+test('existing valid migration authority applies exact hash-verified bytes unchanged', async () => {
+  for (const file of [draftName, '0014_checkpoint_editor_context.DRAFT.sql']) {
+    const client = migrationClient(),
+      journal = [],
+      diagnostics = [];
+    await applyScopedMigration(
+      client,
+      file,
+      draftBytes,
+      draftHash,
+      (entry) => journal.push(entry),
+      (entry) => diagnostics.push(entry),
+    );
+    assert.deepEqual(client.calls, [CHECKPOINT_MIGRATION_CONTEXT_SQL, draftBytes.toString('utf8')]);
+    assert.deepEqual(
+      journal.map((entry) => entry.state),
+      ['started', 'applied'],
+    );
+    assert.equal(journal[1].sha256, draftHash);
+    assert.deepEqual(diagnostics, []);
+  }
+});
+test('hash and closed migration scope reject before any database call', async () => {
+  for (const [file, hash] of [
+    [draftName, '0'.repeat(64)],
+    ['0012_checkpoint_runs.DRAFT.sql', draftHash],
+    ['../' + draftName, draftHash],
+  ]) {
+    const client = migrationClient(),
+      journal = [],
+      diagnostics = [];
+    await assert.rejects(
+      applyScopedMigration(
+        client,
+        file,
+        draftBytes,
+        hash,
+        (entry) => journal.push(entry),
+        (entry) => diagnostics.push(entry),
+      ),
+    );
+    assert.deepEqual(client.calls, []);
+    assert.deepEqual(journal, []);
+    assert.deepEqual(diagnostics, []);
+  }
+});
+test('PostgreSQL error records only controlled metadata and does not infer rollback', async () => {
+  const client = migrationClient(),
+    original = client.unsafe.bind(client),
+    journal = [],
+    diagnostics = [];
+  const secret = 'DO_NOT_RETAIN_password_token_sql_detail_hint_stack';
+  client.unsafe = async (sql) => {
+    if (sql === CHECKPOINT_MIGRATION_CONTEXT_SQL) return original(sql);
+    client.calls.push(sql);
+    throw Object.assign(new Error(secret), {
+      code: '42501',
+      severity: 'ERROR',
+      detail: secret,
+      hint: secret,
+      query: secret,
+      stack: secret,
+    });
+  };
+  await assert.rejects(
+    applyScopedMigration(
+      client,
+      draftName,
+      draftBytes,
+      draftHash,
+      (entry) => journal.push(entry),
+      (entry) => diagnostics.push(entry),
+    ),
+    /CHECKPOINT_MIGRATION_FAILED/,
+  );
+  assert.deepEqual(
+    journal.map((entry) => entry.state),
+    ['started'],
+  );
+  assert.deepEqual(diagnostics, [
+    {
+      phase: 'apply_scoped_sql',
+      file: draftName,
+      sha256: draftHash,
+      stage: 'sql_execution',
+      reason: 'POSTGRES_ERROR',
+      sqlstate: '42501',
+      application_state: 'unknown_no_catalog_attestation',
+      rollback_verified: false,
+    },
+  ]);
+  assert.ok(!JSON.stringify(diagnostics).includes(secret));
+});
+test('owner-context query failure retains no raw error or invalid SQLSTATE', async () => {
+  const diagnostics = [],
+    client = {
+      async unsafe() {
+        throw Object.assign(new Error('PRIVATE_DSN'), { code: 'PRIVATE_DSN', severity: 'ERROR' });
+      },
+    };
+  await assert.rejects(
+    applyScopedMigration(
+      client,
+      draftName,
+      draftBytes,
+      draftHash,
+      () => {},
+      (entry) => diagnostics.push(entry),
+    ),
+  );
+  assert.equal(diagnostics[0].sqlstate, null);
+  assert.equal(diagnostics[0].application_state, 'not_sent');
+  assert.ok(!JSON.stringify(diagnostics).includes('PRIVATE_DSN'));
+});
+test('journal failures never become an applied or rollback attestation', async () => {
+  for (const failAt of ['started', 'applied']) {
+    const client = migrationClient(),
+      diagnostics = [];
+    await assert.rejects(
+      applyScopedMigration(
+        client,
+        draftName,
+        draftBytes,
+        draftHash,
+        (entry) => {
+          if (entry.state === failAt) throw new Error('PRIVATE_DISK_ERROR');
+        },
+        (entry) => diagnostics.push(entry),
+      ),
+    );
+    assert.equal(client.calls.length, failAt === 'started' ? 1 : 2);
+    assert.equal(
+      diagnostics[0].application_state,
+      failAt === 'started' ? 'not_sent' : 'unknown_no_catalog_attestation',
+    );
+    assert.equal(diagnostics[0].rollback_verified, false);
+  }
+});
+
+test('registered migration retains its existing no-preflight path and exact bytes', async () => {
+  const client = migrationClient({ owner_safe: false, web_exists: false, can_set_owner: false });
+  const journal = [],
+    diagnostics = [];
+  await applyScopedMigration(
+    client,
+    '0007_checkpoint_operations.sql',
+    draftBytes,
+    draftHash,
+    (entry) => journal.push(entry),
+    (entry) => diagnostics.push(entry),
+  );
+  assert.deepEqual(client.calls, [draftBytes.toString('utf8')]);
+  assert.deepEqual(
+    journal.map((entry) => entry.state),
+    ['started', 'applied'],
+  );
+  assert.deepEqual(diagnostics, []);
+});
+test('thrown migration error retains only its sanitized diagnostic cause', async () => {
+  const client = {
+    async unsafe() {
+      throw Object.assign(new Error('PRIVATE_DSN_PASSWORD'), {
+        severity: 'ERROR',
+        code: '42501',
+        detail: 'PRIVATE_DSN_PASSWORD',
+        hint: 'PRIVATE_DSN_PASSWORD',
+      });
+    },
+  };
+  await assert.rejects(
+    applyScopedMigration(
+      client,
+      draftName,
+      draftBytes,
+      draftHash,
+      () => {},
+      () => {},
+    ),
+    (error) => {
+      assert.equal(error.message, 'CHECKPOINT_MIGRATION_FAILED');
+      assert.equal(error.cause.sqlstate, '42501');
+      assert.equal(error.cause.application_state, 'not_sent');
+      assert.ok(!JSON.stringify(error.cause).includes('PRIVATE_DSN_PASSWORD'));
+      return true;
+    },
   );
 });

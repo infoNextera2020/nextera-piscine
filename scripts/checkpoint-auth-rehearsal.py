@@ -94,6 +94,7 @@ def scope_digest(plan=Plan()):
 CLOSED_OWNER_APPROVALS = MappingProxyType({
     'Sentinel_7b5ec1bcc1cc819187d19f16ccc96f4a': ('2026-10-29T09:17:11Z', 'a267f057515c96963d1c44ae2125f68b41521c822ec62fc7be48c36507724b72'),
     'Sentinel_754d4f4bf350819194caab16f4119f8b': ('2026-10-29T13:17:45.761136Z', 'fa9c9ff5dd44fd4627b8da3d06e76d548dc7748b94fc05c824602f74712342ad'),
+    'Sentinel_86aebfe913e48191b51fc427a33efe78': ('2026-10-29T14:29:54.174524Z', '2ea73394604160d80746e9c50d499b25c361ec6c430195899dfb5e18b263dfd6'),
 })
 # This message approved source-policy changes only, never a runtime launch.
 SOURCE_ONLY_OWNER_MESSAGES = frozenset({'Sentinel_6c15d89054c08191b4923a8313c5552b'})

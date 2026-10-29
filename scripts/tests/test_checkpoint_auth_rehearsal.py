@@ -325,4 +325,15 @@ class GuardTests(unittest.TestCase):
         self.assertEqual(result['owner_approved_at_utc'],newer.approved_at_utc)
 
 
+    def test_completed_attempt003_grant_is_closed_after_verified_cleanup(self):
+        plan=h.plan_for('attempt003')
+        message='Sentinel_86aebfe913e48191b51fc427a33efe78'
+        stamp,digest=h.CLOSED_OWNER_APPROVALS[message]
+        owner=h.OwnerApproval(message,stamp,digest)
+        receipt=h.approval_receipt(owner,plan,owner.epoch)
+        with self.assertRaises(h.ScopeError):h.exercise_injected(self.f,receipt,lambda:owner.epoch,plan,owner_approval=owner)
+        with self.assertRaises(h.ScopeError):replace(owner,approved_at_utc='2026-10-29T15:29:54.174524Z')
+        self.assertEqual(self.f.events,[])
+
+
 if __name__=='__main__':unittest.main()
