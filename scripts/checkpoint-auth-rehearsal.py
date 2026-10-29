@@ -97,10 +97,10 @@ class OwnerApproval:
     def __post_init__(self):
         if not isinstance(self.message_id, str) or not re.fullmatch(r'Sentinel_[0-9a-f]{32}', self.message_id):
             raise ScopeError('Exact owner message ID is required.')
-        if not isinstance(self.approved_at_utc, str) or not re.fullmatch(r'\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}Z', self.approved_at_utc):
+        if not isinstance(self.approved_at_utc, str) or not re.fullmatch(r'[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}(?:\.[0-9]{1,6})?Z', self.approved_at_utc):
             raise ScopeError('Exact owner UTC timestamp is required; no current-time default.')
         try:
-            datetime.strptime(self.approved_at_utc, '%Y-%m-%dT%H:%M:%SZ')
+            datetime.strptime(self.approved_at_utc, '%Y-%m-%dT%H:%M:%S.%fZ' if '.' in self.approved_at_utc else '%Y-%m-%dT%H:%M:%SZ')
         except ValueError as error:
             raise ScopeError('Invalid owner timestamp.') from error
         if not isinstance(self.scope_sha256, str) or not re.fullmatch(r'[0-9a-f]{64}', self.scope_sha256):
@@ -112,7 +112,7 @@ class OwnerApproval:
 
     @property
     def epoch(self):
-        return datetime.strptime(self.approved_at_utc, '%Y-%m-%dT%H:%M:%SZ').replace(tzinfo=timezone.utc).timestamp()
+        return datetime.strptime(self.approved_at_utc, '%Y-%m-%dT%H:%M:%S.%fZ' if '.' in self.approved_at_utc else '%Y-%m-%dT%H:%M:%SZ').replace(tzinfo=timezone.utc).timestamp()
 
     def binding_digest(self, plan):
         if self.scope_sha256 != scope_digest(plan):

@@ -160,6 +160,53 @@ class GuardTests(unittest.TestCase):
         with self.assertRaises(h.ScopeError):replace(self.owner,scope_sha256=h.scope_digest(h.plan_for('attempt002')))
         with self.assertRaises(h.ScopeError):h.approval_receipt(self.owner,h.plan_for('attempt002'),1000)
 
+    def test_fractional_owner_time_preserves_exact_text_binding_and_microsecond_epoch(self):
+        # Historical text, synthetic ID, and pure in-memory receipt only.
+        stamp='2026-10-29T13:17:45.761136Z'
+        owner=h.OwnerApproval('Sentinel_'+'6'*32,stamp,h.scope_digest())
+        expected=h.datetime(2026,10,29,13,17,45,761136,tzinfo=h.timezone.utc)
+        self.assertEqual(owner.approved_at_utc,stamp)
+        self.assertEqual(owner.epoch,expected.timestamp())
+        self.assertEqual(h.datetime.fromtimestamp(owner.epoch,h.timezone.utc).microsecond,761136)
+        receipt=h.approval_receipt(owner,h.Plan(),owner.epoch)
+        self.assertEqual(receipt['owner_approved_at_utc'],stamp)
+        raw={'message_id':owner.message_id,'approved_at_utc':stamp,'scope_sha256':h.scope_digest()}
+        self.assertEqual(receipt['owner_binding_sha256'],h.hashlib.sha256(h.json.dumps(raw,sort_keys=True,separators=(',',':')).encode()).hexdigest())
+        with self.assertRaises(h.ScopeError):replace(owner,approved_at_utc='2026-10-29T13:17:45Z')
+        with self.assertRaises(h.ScopeError):h.validate_owner_approval({**receipt,'owner_approved_at_utc':'2026-10-29T13:17:45Z'},owner,owner.epoch,h.Plan())
+
+    def test_fractional_owner_time_keeps_exact_sixty_second_microsecond_boundary(self):
+        owner=h.OwnerApproval('Sentinel_'+'7'*32,'2026-10-29T13:17:45.761136Z',h.scope_digest())
+        receipt=h.approval_receipt(owner,h.Plan(),owner.epoch)
+        boundary=h.datetime(2026,10,29,13,18,45,761136,tzinfo=h.timezone.utc).timestamp()
+        h.validate_owner_approval(receipt,owner,boundary,h.Plan())
+        late=h.datetime(2026,10,29,13,18,45,761137,tzinfo=h.timezone.utc).timestamp()
+        self.assertGreater(late-boundary,0)
+        with self.assertRaises(h.ScopeError):h.exercise_injected(self.f,receipt,lambda:late,owner_approval=owner)
+        regenerated=h.approval_receipt(owner,h.Plan(),late)
+        with self.assertRaises(h.ScopeError):h.exercise_injected(self.f,regenerated,lambda:late,owner_approval=owner)
+        expired=h.datetime(2026,10,29,13,19,59,tzinfo=h.timezone.utc).timestamp()
+        with self.assertRaises(h.ScopeError):h.exercise_injected(self.f,h.approval_receipt(owner,h.Plan(),expired),lambda:expired,owner_approval=owner)
+        self.assertEqual(self.f.events,[])
+
+    def test_one_through_six_fractional_digits_are_supported_without_raw_rebinding(self):
+        for index,fraction in enumerate(['7','76','761','7611','76113','761136']):
+            stamp='2026-10-29T13:17:45.'+fraction+'Z'
+            owner=h.OwnerApproval('Sentinel_'+'8'*31+str(index),stamp,h.scope_digest())
+            self.assertEqual(owner.approved_at_utc,stamp)
+            self.assertEqual(h.datetime.fromtimestamp(owner.epoch,h.timezone.utc).microsecond,int(fraction.ljust(6,'0')))
+        owner=h.OwnerApproval('Sentinel_'+'9'*32,'2026-10-29T13:17:45.700000Z',h.scope_digest())
+        with self.assertRaises(h.ScopeError):replace(owner,approved_at_utc='2026-10-29T13:17:45.7Z')
+        closed_id,(closed_stamp,closed_scope)=next(iter(h.CLOSED_OWNER_APPROVALS.items()))
+        with self.assertRaises(h.ScopeError):h.OwnerApproval(closed_id,closed_stamp[:-1]+'.000000Z',closed_scope)
+        self.assertEqual(h.CLOSED_OWNER_APPROVALS[closed_id],(closed_stamp,closed_scope))
+
+    def test_malformed_or_excess_precision_fractional_owner_time_fails_closed(self):
+        for suffix in ['.Z','.1234567Z','.0000000Z','.1.2Z',',761136Z','.761136+00:00','.761136z',' .761136Z','.76113aZ']:
+            with self.subTest(suffix=suffix),self.assertRaises(h.ScopeError):
+                h.OwnerApproval('Sentinel_'+'0'*32,'2026-10-29T13:17:45'+suffix,h.scope_digest())
+        self.assertEqual(self.f.events,[])
+
     def test_regenerating_receipt_time_cannot_refresh_expired_owner_approval(self):
         fresh_receipt=h.approval_receipt(self.owner,h.Plan(),1061)
         self.assertEqual(fresh_receipt['owner_approved_at_utc'],self.owner.approved_at_utc)

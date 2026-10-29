@@ -1,0 +1,29 @@
+{
+  "status": "expired_before_local_dispatch_no_launch",
+  "owner_message_id": "Sentinel_754d4f4bf350819194caab16f4119f8b",
+  "owner_approved_at_utc": "2026-10-29T13:17:45.761136Z",
+  "owner_scope_sha256": "fa9c9ff5dd44fd4627b8da3d06e76d548dc7748b94fc05c824602f74712342ad",
+  "last_eligible_instant": "2026-10-29T13:18:45.761136Z",
+  "first_clock_check": "2026-10-29T13:19:59Z",
+  "owner_receipt_created": false,
+  "runtime_launch_attempted": false,
+  "runtime_target_created": false,
+  "credentials_created": false,
+  "runtime_lease_start": null,
+  "runtime_lease_deadline": null,
+  "source_correction": "Exact raw owner UTC text now accepts optional 1–6 fractional digits; epoch preserves microseconds. No rounding, default or widened guard.",
+  "verification": {
+    "python_injected_tests": 68,
+    "node_injected_tests": 28,
+    "checks": [
+      {
+        "name": "python",
+        "exit_code": 0
+      },
+      {
+        "name": "node",
+        "exit_code": 0
+      }
+    ]
+  }
+}

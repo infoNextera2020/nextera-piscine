@@ -35,3 +35,9 @@ The source now explicitly supplies the three expected DB bootstrap variables wit
 ## Verification
 
 34 Python injected tests and 19 Node injected tests pass, with targeted ESLint, formatting and diff checks. Regression cases cover immutable evidence, timestamp/scope reassignment, legacy receipts, regenerated receipts after expiry, exact 60-second boundaries, slow preflight and missing CLI owner inputs. No real provisioning is performed by these tests. Full application build and authenticated HTTP/browser checks were not rerun for this source-only change.
+
+## Fractional timestamp follow-up — 29 October 2026
+
+The later attempt003 approval was `Sentinel_754d4f4bf350819194caab16f4119f8b` at exactly `2026-10-29T13:17:45.761136Z`. The first local clock check was 13:19:59 UTC, after the unchanged 60-second cutoff at 13:18:45.761136 UTC. No launch, runtime target, credential, owner receipt or lease was created. The approval was not refreshed or reused.
+
+Source inspection also found that OwnerApproval accepted only whole-second timestamps. The parser now accepts one through six fractional digits while retaining the exact trusted text and microsecond epoch. It does not round, truncate, derive approval from receipt creation or alter the age guard. Tests cover the exact 60-second boundary, one microsecond late, expired regenerated receipts, malformed precision and raw binding reassignment. 68 Python and 28 Node injected tests pass. This is source verification, not a runtime retry; a genuinely new approval is still required after review/preparation.
