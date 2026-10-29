@@ -115,6 +115,19 @@ function browserReceipt(receipt, session) {
     check(receipt.checks?.[name] === true, 'BROWSER_ASSERTIONS_PENDING');
   return true;
 }
+function publicTemplateMode(name, verifiedPublicSource = false) {
+  check(
+    verifiedPublicSource === true &&
+      /^(?:[A-Za-z0-9_.-]+\/)*[A-Za-z0-9_.-]+$/.test(name) &&
+      !name.split('/').some((p) => p === '.' || p === '..'),
+    'UNVERIFIED_PUBLIC_TEMPLATE',
+  );
+  check(
+    name === '.env.example' || name === 'docker-compose.yml' || name.startsWith('volumes/'),
+    'PRIVATE_FILE_NOT_PUBLIC_TEMPLATE',
+  );
+  return name.endsWith('.sh') ? 0o755 : 0o644;
+}
 function appEnvironment(repo, credentials) {
   return {
     PATH:
@@ -233,6 +246,7 @@ async function execute(mode, run, repo) {
       fs.readFileSync(repo + '/infra/checkpoint-auth-rehearsal/source-lock.json', 'utf8'),
     );
     const template = s.template;
+    fs.mkdirSync(run + '/stack', { recursive: true, mode: 0o700 });
     for (const [p, hash] of Object.entries(lock.files)) {
       const source = path.join(template, p);
       check(
@@ -241,9 +255,9 @@ async function execute(mode, run, repo) {
         'TEMPLATE_HASH',
       );
       const dest = run + '/stack/' + p;
-      fs.mkdirSync(path.dirname(dest), { recursive: true, mode: 0o700 });
+      fs.mkdirSync(path.dirname(dest), { recursive: true, mode: 0o755 });
       fs.copyFileSync(source, dest);
-      fs.chmodSync(dest, 0o600);
+      fs.chmodSync(dest, publicTemplateMode(p, true));
     }
     const vals = req('dotenv').parse(fs.readFileSync(run + '/stack/.env.example'));
     Object.assign(vals, {
@@ -336,7 +350,7 @@ async function execute(mode, run, repo) {
 SELECT format('ALTER DATABASE %I SET "app.settings.jwt_secret" TO %L', :'db', :'secret') \gexec
 SELECT format('ALTER DATABASE %I SET "app.settings.jwt_exp" TO %L', :'db', :'expiry') \gexec
 `,
-      { mode: 0o600 },
+      { mode: publicTemplateMode('volumes/db/jwt.sql', true) },
     );
     fs.writeFileSync(run + '/stack/docker-compose.yml', yaml.stringify(c), { mode: 0o600 });
     const rendered = JSON.parse(
@@ -755,6 +769,7 @@ SELECT format('ALTER DATABASE %I SET "app.settings.jwt_exp" TO %L', :'db', :'exp
 }
 export {
   validateConfig,
+  publicTemplateMode,
   validateOwnedEndpoints,
   browserReceipt,
   appEnvironment,

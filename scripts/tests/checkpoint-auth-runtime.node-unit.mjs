@@ -2,6 +2,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import {
   validateConfig,
+  publicTemplateMode,
   validateOwnedEndpoints,
   browserReceipt,
   appEnvironment,
@@ -182,4 +183,12 @@ test('privileged endpoint checks require recorded new container IDs and exact lo
   const reused = structuredClone(rows);
   reused[0].Id = 'unrecorded';
   assert.throws(() => validateOwnedEndpoints(reused, ids, []));
+});
+
+test('verified public init SQL is readable and entry scripts executable without classifying secret files as public', () => {
+  assert.equal(publicTemplateMode('volumes/db/roles.sql', true), 0o644);
+  assert.equal(publicTemplateMode('volumes/api/kong-entrypoint.sh', true), 0o755);
+  for (const name of ['.env', 'credentials.json', '../.env', 'volumes/../.env'])
+    assert.throws(() => publicTemplateMode(name, true));
+  assert.throws(() => publicTemplateMode('volumes/db/roles.sql', false));
 });

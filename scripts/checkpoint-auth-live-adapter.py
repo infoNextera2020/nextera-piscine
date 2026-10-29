@@ -53,6 +53,17 @@ def guard_should_stop(control,now,read_ticks=tick,monotonic=time.monotonic):
     return now>=control['deadline']-180 or monotonic()>=control.get('monotonic_deadline',float('inf'))-180 or not parent_alive
 
 
+def validate_bootstrap_recovery(control,outcome,cleanup,now,expected_deadline,sql_started,learners_started):
+    plan=scope.Plan()
+    if control.get('project')!=plan.project or control.get('database')!=plan.database or control.get('scope_sha256')!=scope.scope_digest():raise scope.ScopeError('Recovery target mismatch')
+    if control.get('deadline')!=expected_deadline or control.get('deadline')-control.get('started')!=plan.maximum_seconds or now>=expected_deadline-180:raise scope.ScopeError('No recovery window or changed deadline')
+    if outcome.get('started')!=control['started'] or outcome.get('deadline')!=control['deadline'] or outcome.get('assertions_passed') is not False or outcome.get('cleanup_verified') is not True:raise scope.ScopeError('Unverified failure outcome')
+    if cleanup.get('access_disabled') is not True or cleanup.get('retained') is not True or cleanup.get('no_permanent_deletion') is not True:raise scope.ScopeError('Cleanup must be verified')
+    steps=[v.get('starting') for v in control.get('phases',[]) if isinstance(v,dict) and 'starting' in v]
+    if steps!=['stage','start'] or sql_started or learners_started:raise scope.ScopeError('Only known pre-SQL bootstrap failure may recover')
+    return True
+
+
 def validate_effective(c,plan):
     if c.get('name')!=plan.project or set(c.get('services',{}))!=set(plan.services):raise scope.ScopeError('Wrong effective project/services')
     for name,s in c['services'].items():

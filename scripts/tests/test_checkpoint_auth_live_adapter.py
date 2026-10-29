@@ -69,6 +69,13 @@ class AdapterTests(unittest.TestCase):
         with patch.object(h.subprocess,'Popen',return_value=process),patch.object(h,'tick',return_value='ticks'),patch.object(h,'protected',side_effect=OSError('fake disk failure')):
             with self.assertRaises(OSError):h.Commands().run(['node','owned-broker'],env={'CHECKPOINT_REHEARSAL_CONTROL':'/fake-private'},cwd='/fake-private')
             process.communicate.assert_called_once_with(input=b'',timeout=5)
+    def test_bootstrap_recovery_keeps_original_deadline_and_refuses_uncertain_or_post_sql_state(self):
+        c={'project':h.scope.Plan().project,'database':h.scope.Plan().database,'scope_sha256':h.scope.scope_digest(),'started':1000,'deadline':4600,'phases':[{'starting':'stage'},'stage',{'starting':'start'}]}
+        o={'started':1000,'deadline':4600,'assertions_passed':False,'cleanup_verified':True};cleanup={'access_disabled':True,'retained':True,'no_permanent_deletion':True}
+        self.assertTrue(h.validate_bootstrap_recovery(c,o,cleanup,1200,4600,False,False))
+        for sql,people,deadline,now in [(True,False,4600,1200),(False,True,4600,1200),(False,False,8200,1200),(False,False,4600,4420)]:
+            with self.subTest(sql=sql,people=people,deadline=deadline,now=now),self.assertRaises(h.scope.ScopeError):h.validate_bootstrap_recovery(c,o,cleanup,now,deadline,sql,people)
+        with self.assertRaises(h.scope.ScopeError):h.validate_bootstrap_recovery(c,{**o,'cleanup_verified':False},cleanup,1200,4600,False,False)
     def test_owned_stop_refuses_retain_false(self):
         with self.assertRaises(h.scope.ScopeError):self.adapter.revoke_and_stop(str(self.adapter.run),self.adapter.plan,retain=False)
 

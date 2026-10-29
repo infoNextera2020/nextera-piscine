@@ -1,0 +1,46 @@
+{
+  "utc": "2026-10-29T08:00:29.705615+00:00",
+  "start": 1793260265.9378886,
+  "deadline": 1793263865.9378886,
+  "diagnosis": [
+    {
+      "service": "db",
+      "permission_denied": true,
+      "known_public_init_paths": [
+        "/docker-entrypoint-initdb.d/init-scripts",
+        "/docker-entrypoint-initdb.d/init-scripts/00-schema.sql",
+        "/docker-entrypoint-initdb.d/init-scripts/00000000000000-initial-schema.sql",
+        "/docker-entrypoint-initdb.d/init-scripts/00000000000001-auth-schema.sql",
+        "/docker-entrypoint-initdb.d/init-scripts/00000000000002-storage-schema.sql",
+        "/docker-entrypoint-initdb.d/init-scripts/00000000000003-post-setup.sql",
+        "/docker-entrypoint-initdb.d/init-scripts/98-webhooks.sql",
+        "/docker-entrypoint-initdb.d/migrate.sh"
+      ]
+    }
+  ],
+  "running_services": [],
+  "listeners_gone": {
+    "56531": true,
+    "56532": true,
+    "3151": true
+  },
+  "guard_running": false,
+  "migrations_started": false,
+  "learner_creation_started": false,
+  "assertions_passed": false,
+  "cleanup": {
+    "access_disabled": true,
+    "retained": true,
+    "no_permanent_deletion": true,
+    "stopped_at": 1793260294.0849085
+  },
+  "protected_data_retained": true,
+  "denied_metadata_read": "PG_VERSION existence was denied by OS; not retried or permission-changed",
+  "repair_checks": {
+    "python_fake_tests": 23,
+    "node_fake_tests": 17,
+    "targeted_eslint": "passed",
+    "source_formatting": "passed",
+    "live_recovery": "not yet started"
+  }
+}
