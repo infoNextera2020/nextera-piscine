@@ -10,6 +10,7 @@ export default defineConfig({
       'packages/db/tests/schema.test.ts',
       'packages/db/tests/raid-readiness.test.ts',
       'packages/db/tests/checkpoint-drafts.test.ts',
+      'packages/db/tests/quest-reviews.test.ts',
       'packages/db/tests/checkpoint-editor-context.test.ts',
       'packages/db/tests/checkpoint-policy-v2.test.ts',
       'packages/db/tests/visible-runs.test.ts',
