@@ -47,12 +47,21 @@ const SERVICES = ['db', 'auth', 'rest', 'storage', 'imgproxy', 'meta', 'studio',
 const check = (ok, code) => {
   if (!ok) throw new Error(code);
 };
+function writePrivateText(file, text) {
+  check(!fs.existsSync(file) || !fs.lstatSync(file).isSymbolicLink(), 'PRIVATE_CONFIG_SYMLINK');
+  fs.writeFileSync(file, text, { mode: 0o600 });
+  fs.chmodSync(file, 0o600);
+}
 function privateWrite(file, value) {
   const tmp = file + '.next';
   fs.writeFileSync(tmp, JSON.stringify(value, null, 2), { mode: 0o600, flag: 'wx' });
   fs.renameSync(tmp, file);
 }
-function validateConfig(c, run = RUN) {
+function validateConfig(c, run = RUN, expectedImages) {
+  check(
+    expectedImages && Object.keys(expectedImages).sort().join() === [...SERVICES].sort().join(),
+    'PINNED_IMAGE_MAP',
+  );
   check(
     c.name === PROJECT && Object.keys(c.services).sort().join() === [...SERVICES].sort().join(),
     'SERVICE_SCOPE',
@@ -74,7 +83,10 @@ function validateConfig(c, run = RUN) {
         'LOOPBACK_PORT',
       );
     } else check(ports.length === 0, 'EXTRA_PORT');
-    check(/@sha256:[0-9a-f]{64}$/.test(s.image), 'UNPINNED_IMAGE');
+    check(
+      /@sha256:[0-9a-f]{64}$/.test(s.image) && s.image === expectedImages[name],
+      'UNPINNED_IMAGE',
+    );
     for (const v of s.volumes || [])
       if (v.type === 'bind')
         check(
@@ -160,11 +172,209 @@ function publicTemplateMode(name, verifiedPublicSource = false) {
   );
   return name.endsWith('.sh') ? 0o755 : 0o644;
 }
+const DB_JWT_INIT_SQL = String.raw`\getenv db POSTGRES_DB
+\getenv secret JWT_SECRET
+\getenv expiry JWT_EXP
+SELECT format('ALTER DATABASE %I SET "app.settings.jwt_secret" TO %L', :'db', :'secret') \gexec
+SELECT format('ALTER DATABASE %I SET "app.settings.jwt_exp" TO %L', :'db', :'expiry') \gexec
+`;
+function readSourceLock(expectedHash, io = fs) {
+  const frozen = path.join(
+    path.dirname(fileURLToPath(import.meta.url)),
+    'checkpoint-auth-source-lock.json',
+  );
+  const bytes = io.readFileSync(frozen);
+  check(
+    typeof expectedHash === 'string' &&
+      crypto.createHash('sha256').update(bytes).digest('hex') === expectedHash,
+    'IMMUTABLE_SOURCE_LOCK',
+  );
+  return JSON.parse(bytes);
+}
+function requiredInitEnvironment(sources) {
+  const names = new Set(),
+    slash = String.fromCharCode(92);
+  for (const text of sources)
+    for (const line of text.split(String.fromCharCode(10))) {
+      const parts = line.trim().replaceAll(String.fromCharCode(9), ' ').split(' ').filter(Boolean);
+      if (parts[0] === slash + 'getenv' && /^[A-Z][A-Z0-9_]*$/.test(parts[2] || ''))
+        names.add(parts[2]);
+      if (parts[0] === slash + 'set')
+        for (const [index, shell] of line.split('`').entries()) {
+          if (index % 2)
+            for (const match of shell.matchAll(/[$][{]?([A-Z][A-Z0-9_]*)/g)) names.add(match[1]);
+        }
+    }
+  return [...names].sort();
+}
+function validateInitEnvironment(sources, environment) {
+  for (const name of requiredInitEnvironment(sources))
+    check(
+      Object.hasOwn(environment, name) && environment[name] !== '',
+      'MISSING_INIT_ENVIRONMENT_' + name,
+    );
+  return true;
+}
+function validatePublicTemplateModes(records) {
+  for (const item of records) {
+    check(!item.symlink, 'PUBLIC_TEMPLATE_SYMLINK');
+    const expected =
+      item.kind === 'root'
+        ? 0o700
+        : item.kind === 'directory'
+          ? 0o755
+          : publicTemplateMode(item.name, true);
+    check(item.mode === expected, 'PUBLIC_TEMPLATE_MODE');
+  }
+  return true;
+}
+function copyVerifiedPublicTemplates(template, destination, files) {
+  const root = fs.realpathSync(destination),
+    origin = fs.realpathSync(template),
+    records = [];
+  const rootStat = fs.lstatSync(root);
+  check(
+    rootStat.isDirectory() && !rootStat.isSymbolicLink() && rootStat.uid === process.getuid(),
+    'PUBLIC_TEMPLATE_ROOT',
+  );
+  records.push({ name: '.', kind: 'root', mode: rootStat.mode & 0o777, symlink: false });
+  const directories = new Set();
+  for (const [name, digest] of Object.entries(files)) {
+    const mode = publicTemplateMode(name, true),
+      source = path.resolve(origin, name),
+      target = path.resolve(root, name);
+    check(
+      source.startsWith(origin + path.sep) &&
+        target.startsWith(root + path.sep) &&
+        !fs.lstatSync(source).isSymbolicLink() &&
+        fs.realpathSync(source).startsWith(origin + path.sep),
+      'PUBLIC_TEMPLATE_PATH',
+    );
+    check(
+      crypto.createHash('sha256').update(fs.readFileSync(source)).digest('hex') === digest,
+      'TEMPLATE_HASH',
+    );
+    let parent = root;
+    for (const part of name.split('/').slice(0, -1)) {
+      parent = path.join(parent, part);
+      if (!fs.existsSync(parent)) fs.mkdirSync(parent, { mode: 0o755 });
+      check(
+        !fs.lstatSync(parent).isSymbolicLink() && fs.statSync(parent).isDirectory(),
+        'PUBLIC_TEMPLATE_PARENT',
+      );
+      fs.chmodSync(parent, 0o755);
+      directories.add(parent);
+    }
+    check(!fs.existsSync(target), 'PUBLIC_TEMPLATE_DESTINATION_EXISTS');
+    fs.copyFileSync(source, target, fs.constants.COPYFILE_EXCL);
+    fs.chmodSync(target, mode);
+    const stat = fs.lstatSync(target);
+    records.push({ name, kind: 'file', mode: stat.mode & 0o777, symlink: stat.isSymbolicLink() });
+  }
+  for (const directory of directories) {
+    const stat = fs.lstatSync(directory);
+    records.push({
+      name: path.relative(root, directory),
+      kind: 'directory',
+      mode: stat.mode & 0o777,
+      symlink: stat.isSymbolicLink(),
+    });
+  }
+  validatePublicTemplateModes(records);
+  return records;
+}
+function buildPublicEnvironment(example) {
+  const vals = { ...example };
+
+  Object.assign(vals, {
+    POSTGRES_DB: DB,
+    POSTGRES_HOST: 'db',
+    POSTGRES_PORT: '5432',
+    SUPABASE_PUBLIC_URL: 'http://127.0.0.1:56531',
+    API_EXTERNAL_URL: 'http://127.0.0.1:56531/auth/v1',
+    SITE_URL: 'http://127.0.0.1:3151',
+    ADDITIONAL_REDIRECT_URLS: 'http://127.0.0.1:3151',
+    DISABLE_SIGNUP: 'true',
+    ENABLE_EMAIL_SIGNUP: 'true',
+    ENABLE_EMAIL_AUTOCONFIRM: 'true',
+    ENABLE_ANONYMOUS_USERS: 'false',
+    ENABLE_PHONE_SIGNUP: 'false',
+    JWT_EXPIRY: '300',
+    SMTP_HOST: '127.0.0.1',
+    SMTP_PORT: '9',
+    SMTP_USER: '',
+    SMTP_PASS: '',
+    OPENAI_API_KEY: '',
+    LOGFLARE_PUBLIC_ACCESS_TOKEN: '',
+    LOGFLARE_PRIVATE_ACCESS_TOKEN: '',
+    STUDIO_DEFAULT_ORGANIZATION: 'ISOLATED TEST',
+    STUDIO_DEFAULT_PROJECT: 'SYNTHETIC CHECKPOINT',
+  });
+  for (const key of [
+    'POSTGRES_PASSWORD',
+    'JWT_SECRET',
+    'PG_META_CRYPTO_KEY',
+    'DASHBOARD_PASSWORD',
+    'S3_PROTOCOL_ACCESS_KEY_SECRET',
+    'SECRET_KEY_BASE',
+    'REALTIME_DB_ENC_KEY',
+    'VAULT_ENC_KEY',
+    'S3_PROTOCOL_ACCESS_KEY_ID',
+    'ANON_KEY',
+    'SERVICE_ROLE_KEY',
+  ])
+    vals[key] = 'REHEARSAL_CONFIG_PLACEHOLDER_NOT_FOR_START';
+  return vals;
+}
+function buildPublicCompose(template, images) {
+  check(
+    images && Object.keys(images).sort().join() === [...SERVICES].sort().join(),
+    'PINNED_IMAGE_MAP',
+  );
+  const c = globalThis.structuredClone(template);
+  check(
+    SERVICES.every((name) => c.services?.[name] && /@sha256:[0-9a-f]{64}$/.test(images[name])),
+    'PUBLIC_SERVICE_TEMPLATE',
+  );
+  c.name = PROJECT;
+  c.services = Object.fromEntries(SERVICES.map((name) => [name, c.services[name]]));
+  for (const [name, service] of Object.entries(c.services)) {
+    service.image = images[name];
+    service.container_name = PROJECT + '-' + name;
+    service.restart = 'no';
+    delete service.profiles;
+    service.ports =
+      name === 'db' ? ['127.0.0.1:56532:5432'] : name === 'api-gw' ? ['127.0.0.1:56531:8000'] : [];
+    if (service.depends_on)
+      service.depends_on = Object.fromEntries(
+        Object.entries(service.depends_on).filter(([k]) => SERVICES.includes(k)),
+      );
+    for (const [k, v] of Object.entries(service.environment || {}))
+      if (typeof v === 'string')
+        service.environment[k] = v.replace(/\/postgres(?=\?|$)/g, '/' + DB);
+  }
+  c.services.db.environment = databaseBootstrapEnvironment(c.services.db.environment);
+  validateInitEnvironment([DB_JWT_INIT_SQL], c.services.db.environment);
+  c.services.auth.environment.GOTRUE_DB_DATABASE_URL =
+    'postgres://supabase_auth_admin:${POSTGRES_PASSWORD}@db:5432/' + DB;
+  c.services.auth.environment.GOTRUE_DISABLE_SIGNUP = 'true';
+  c.services.auth.environment.GOTRUE_EXTERNAL_ANONYMOUS_USERS_ENABLED = 'false';
+  c.services.rest.environment.PGRST_DB_URI =
+    'postgres://authenticator:${POSTGRES_PASSWORD}@db:5432/' + DB;
+  c.services.storage.environment.DATABASE_URL =
+    'postgres://supabase_storage_admin:${POSTGRES_PASSWORD}@db:5432/' + DB;
+  c.services.meta.environment.PG_META_DB_NAME = DB;
+  for (const [name, v] of Object.entries(c.volumes || {}))
+    c.volumes[name] = { ...(v || {}), name: PROJECT + '-' + name };
+  c.networks = { default: { name: PROJECT + '_default' } };
+  return c;
+}
 function databaseBootstrapEnvironment(environment) {
   return {
     ...environment,
     POSTGRES_DB: DB,
     PGDATABASE: DB,
+    POSTGRES_USER: 'supabase_admin',
     JWT_SECRET: '${JWT_SECRET}',
     JWT_EXP: '${JWT_EXPIRY}',
   };
@@ -281,70 +491,35 @@ function state(run, cleanup = false) {
   if (!cleanup) check(!fs.existsSync(run + '/revoking.json'), 'CLEANUP_STARTED');
   return s;
 }
+function brokerSourceRoot(mode, run, repo, io = fs) {
+  if (mode === 'stage') return repo;
+  const source = path.join(run, 'app-source');
+  const stat = io.lstatSync(source);
+  check(
+    stat.isDirectory() &&
+      !stat.isSymbolicLink() &&
+      stat.uid === process.getuid() &&
+      (stat.mode & 0o777) === 0o700,
+    'IMMUTABLE_APP_SOURCE',
+  );
+  return source;
+}
 async function execute(mode, run, repo) {
   const s = state(run, mode === 'disable' || mode === 'disable_sql_access');
-  const req = createRequire(repo + '/package.json');
+  const sourceRepo = brokerSourceRoot(mode, run, repo);
+  const req = createRequire(sourceRepo + '/package.json');
   req('tsx/cjs');
   const secrets = () => JSON.parse(fs.readFileSync(run + '/credentials.json', 'utf8'));
   const save = (name, v) => privateWrite(run + '/' + name, v);
   if (mode === 'stage') {
     check(!fs.existsSync(run + '/credentials.json'), 'UNCERTAIN_SECRET_ISSUANCE');
-    const lock = JSON.parse(
-      fs.readFileSync(repo + '/infra/checkpoint-auth-rehearsal/source-lock.json', 'utf8'),
-    );
+    const lock = readSourceLock(s.source_lock_sha256);
     const template = s.template;
     fs.mkdirSync(run + '/stack', { recursive: true, mode: 0o700 });
-    for (const [p, hash] of Object.entries(lock.files)) {
-      const source = path.join(template, p);
-      check(
-        !fs.lstatSync(source).isSymbolicLink() &&
-          crypto.createHash('sha256').update(fs.readFileSync(source)).digest('hex') === hash,
-        'TEMPLATE_HASH',
-      );
-      const dest = run + '/stack/' + p;
-      fs.mkdirSync(path.dirname(dest), { recursive: true, mode: 0o755 });
-      fs.copyFileSync(source, dest);
-      fs.chmodSync(dest, publicTemplateMode(p, true));
-    }
-    const vals = req('dotenv').parse(fs.readFileSync(run + '/stack/.env.example'));
-    Object.assign(vals, {
-      POSTGRES_DB: DB,
-      POSTGRES_HOST: 'db',
-      POSTGRES_PORT: '5432',
-      SUPABASE_PUBLIC_URL: 'http://127.0.0.1:56531',
-      API_EXTERNAL_URL: 'http://127.0.0.1:56531/auth/v1',
-      SITE_URL: 'http://127.0.0.1:3151',
-      ADDITIONAL_REDIRECT_URLS: 'http://127.0.0.1:3151',
-      DISABLE_SIGNUP: 'true',
-      ENABLE_EMAIL_SIGNUP: 'true',
-      ENABLE_EMAIL_AUTOCONFIRM: 'true',
-      ENABLE_ANONYMOUS_USERS: 'false',
-      ENABLE_PHONE_SIGNUP: 'false',
-      JWT_EXPIRY: '300',
-      SMTP_HOST: '127.0.0.1',
-      SMTP_PORT: '9',
-      SMTP_USER: '',
-      SMTP_PASS: '',
-      OPENAI_API_KEY: '',
-      LOGFLARE_PUBLIC_ACCESS_TOKEN: '',
-      LOGFLARE_PRIVATE_ACCESS_TOKEN: '',
-      STUDIO_DEFAULT_ORGANIZATION: 'ISOLATED TEST',
-      STUDIO_DEFAULT_PROJECT: 'SYNTHETIC CHECKPOINT',
-    });
-    for (const key of [
-      'POSTGRES_PASSWORD',
-      'JWT_SECRET',
-      'PG_META_CRYPTO_KEY',
-      'DASHBOARD_PASSWORD',
-      'S3_PROTOCOL_ACCESS_KEY_SECRET',
-      'SECRET_KEY_BASE',
-      'REALTIME_DB_ENC_KEY',
-      'VAULT_ENC_KEY',
-      'S3_PROTOCOL_ACCESS_KEY_ID',
-      'ANON_KEY',
-      'SERVICE_ROLE_KEY',
-    ])
-      vals[key] = 'REHEARSAL_CONFIG_PLACEHOLDER_NOT_FOR_START';
+    copyVerifiedPublicTemplates(template, run + '/stack', lock.files);
+    const vals = buildPublicEnvironment(
+      req('dotenv').parse(fs.readFileSync(run + '/stack/.env.example')),
+    );
     fs.writeFileSync(
       run + '/stack/.env',
       Object.entries(vals)
@@ -353,52 +528,14 @@ async function execute(mode, run, repo) {
       { mode: 0o600, flag: 'wx' },
     );
     const yaml = req('yaml'),
-      c = yaml.parse(fs.readFileSync(run + '/stack/docker-compose.yml', 'utf8'));
-    c.name = PROJECT;
-    c.services = Object.fromEntries(SERVICES.map((name) => [name, c.services[name]]));
-    for (const [name, service] of Object.entries(c.services)) {
-      service.image = lock.images[name];
-      service.container_name = PROJECT + '-' + name;
-      service.restart = 'no';
-      delete service.profiles;
-      service.ports =
-        name === 'db'
-          ? ['127.0.0.1:56532:5432']
-          : name === 'api-gw'
-            ? ['127.0.0.1:56531:8000']
-            : [];
-      if (service.depends_on)
-        service.depends_on = Object.fromEntries(
-          Object.entries(service.depends_on).filter(([k]) => SERVICES.includes(k)),
-        );
-      for (const [k, v] of Object.entries(service.environment || {}))
-        if (typeof v === 'string')
-          service.environment[k] = v.replace(/\/postgres(?=\?|$)/g, '/' + DB);
-    }
-    c.services.db.environment = databaseBootstrapEnvironment(c.services.db.environment);
-    c.services.auth.environment.GOTRUE_DB_DATABASE_URL =
-      'postgres://supabase_auth_admin:${POSTGRES_PASSWORD}@db:5432/' + DB;
-    c.services.auth.environment.GOTRUE_DISABLE_SIGNUP = 'true';
-    c.services.auth.environment.GOTRUE_EXTERNAL_ANONYMOUS_USERS_ENABLED = 'false';
-    c.services.rest.environment.PGRST_DB_URI =
-      'postgres://authenticator:${POSTGRES_PASSWORD}@db:5432/' + DB;
-    c.services.storage.environment.DATABASE_URL =
-      'postgres://supabase_storage_admin:${POSTGRES_PASSWORD}@db:5432/' + DB;
-    c.services.meta.environment.PG_META_DB_NAME = DB;
-    for (const [name, v] of Object.entries(c.volumes || {}))
-      c.volumes[name] = { ...(v || {}), name: PROJECT + '-' + name };
-    c.networks = { default: { name: PROJECT + '_default' } };
-    fs.writeFileSync(
-      run + '/stack/volumes/db/jwt.sql',
-      String.raw`\getenv db POSTGRES_DB
-\getenv secret JWT_SECRET
-\getenv expiry JWT_EXP
-SELECT format('ALTER DATABASE %I SET "app.settings.jwt_secret" TO %L', :'db', :'secret') \gexec
-SELECT format('ALTER DATABASE %I SET "app.settings.jwt_exp" TO %L', :'db', :'expiry') \gexec
-`,
-      { mode: publicTemplateMode('volumes/db/jwt.sql', true) },
-    );
-    fs.writeFileSync(run + '/stack/docker-compose.yml', yaml.stringify(c), { mode: 0o600 });
+      c = buildPublicCompose(
+        yaml.parse(fs.readFileSync(run + '/stack/docker-compose.yml', 'utf8')),
+        lock.images,
+      );
+    fs.writeFileSync(run + '/stack/volumes/db/jwt.sql', DB_JWT_INIT_SQL, {
+      mode: publicTemplateMode('volumes/db/jwt.sql', true),
+    });
+    writePrivateText(run + '/stack/docker-compose.yml', yaml.stringify(c));
     const rendered = JSON.parse(
       execFileSync(
         'docker',
@@ -428,7 +565,7 @@ SELECT format('ALTER DATABASE %I SET "app.settings.jwt_exp" TO %L', :'db', :'exp
         },
       ),
     );
-    validateConfig(rendered, run);
+    validateConfig(rendered, run, lock.images);
     save('configuration-before-keys.json', { verified: true, credentialMaterialIssued: false });
     const guard = JSON.parse(fs.readFileSync(run + '/guard-process.json', 'utf8'));
     const guardProc = '/proc/' + guard.pid;
@@ -523,7 +660,7 @@ SELECT format('ALTER DATABASE %I SET "app.settings.jwt_exp" TO %L', :'db', :'exp
     );
     if (mode === 'apply_scoped_sql') {
       check(!fs.existsSync(run + '/sql-progress.json'), 'UNCERTAIN_SQL_INSPECT_FIRST');
-      const folder = repo + '/packages/db/migrations';
+      const folder = sourceRepo + '/packages/db/migrations';
       const files = fs
         .readdirSync(folder)
         .filter((x) => /^(000[0-9]|0010)_.*\.sql$/.test(x))
@@ -532,15 +669,13 @@ SELECT format('ALTER DATABASE %I SET "app.settings.jwt_exp" TO %L', :'db', :'exp
       const progress = [];
       for (const file of [
         ...files.map((x) => folder + '/' + x),
-        repo + '/packages/db/migration-drafts/0011_checkpoint_drafts.DRAFT.sql',
-        repo + '/packages/db/migration-drafts/0014_checkpoint_editor_context.DRAFT.sql',
+        sourceRepo + '/packages/db/migration-drafts/0011_checkpoint_drafts.DRAFT.sql',
+        sourceRepo + '/packages/db/migration-drafts/0014_checkpoint_editor_context.DRAFT.sql',
       ]) {
         const bytes = fs.readFileSync(file);
-        const lock = JSON.parse(
-          fs.readFileSync(repo + '/infra/checkpoint-auth-rehearsal/source-lock.json', 'utf8'),
-        );
+        const lock = readSourceLock(s.source_lock_sha256);
         const digest = crypto.createHash('sha256').update(bytes).digest('hex');
-        check(lock.sql[path.relative(repo, file)] === digest, 'SQL_SOURCE_CHANGED');
+        check(lock.sql[path.relative(sourceRepo, file)] === digest, 'SQL_SOURCE_CHANGED');
         progress.push({ file: path.basename(file), sha256: digest, state: 'started' });
         save('sql-progress.json', progress);
         await admin.unsafe(bytes.toString('utf8'));
@@ -561,11 +696,11 @@ SELECT format('ALTER DATABASE %I SET "app.settings.jwt_exp" TO %L', :'db', :'exp
       v.web_dsn = 'postgres://' + role + ':' + password + '@127.0.0.1:56532/' + DB;
       save('credentials.json', v);
       const { drizzle } = req('drizzle-orm/postgres-js'),
-        schema = req(repo + '/packages/db/schema/index.ts');
+        schema = req(sourceRepo + '/packages/db/schema/index.ts');
       const domain = drizzle(admin, { schema });
-      const f = req(repo + '/tests/fixtures/checkpoints.ts').checkpointFixture();
+      const f = req(sourceRepo + '/tests/fixtures/checkpoints.ts').checkpointFixture();
       fixture.versionId = (
-        await req(repo + '/packages/db/operations/curriculum.ts').importCurriculum(
+        await req(sourceRepo + '/packages/db/operations/curriculum.ts').importCurriculum(
           domain,
           f.curriculum,
           f.gitCommitSha,
@@ -573,7 +708,7 @@ SELECT format('ALTER DATABASE %I SET "app.settings.jwt_exp" TO %L', :'db', :'exp
         )
       ).id;
       save('fixture.json', fixture);
-      const cohorts = req(repo + '/packages/db/operations/cohorts.ts');
+      const cohorts = req(sourceRepo + '/packages/db/operations/cohorts.ts');
       fixture.cohortId = (
         await cohorts.createCohort(domain, {
           slug: 'foundation-test' + PROJECT.slice('01coding'.length),
@@ -732,7 +867,7 @@ SELECT format('ALTER DATABASE %I SET "app.settings.jwt_exp" TO %L', :'db', :'exp
     }
     check(mode === 'assert_http', 'UNKNOWN_PHASE');
     const fixture = JSON.parse(fs.readFileSync(run + '/fixture.json', 'utf8'));
-    const appReq = createRequire(repo + '/apps/web/package.json');
+    const appReq = createRequire(sourceRepo + '/apps/web/package.json');
     const { createServerClient } = appReq('@supabase/ssr');
     const base = 'http://127.0.0.1:3151';
     for (const person of fixture.learners) {
@@ -809,6 +944,16 @@ SELECT format('ALTER DATABASE %I SET "app.settings.jwt_exp" TO %L', :'db', :'exp
   }
 }
 export {
+  readSourceLock,
+  brokerSourceRoot,
+  writePrivateText,
+  buildPublicEnvironment,
+  DB_JWT_INIT_SQL,
+  buildPublicCompose,
+  copyVerifiedPublicTemplates,
+  requiredInitEnvironment,
+  validateInitEnvironment,
+  validatePublicTemplateModes,
   databaseBootstrapEnvironment,
   profileFor,
   validateConfig,

@@ -32,11 +32,7 @@
     "bytes": 6488,
     "sha256": "0968e09d28327810b9b7ad7211c06751e36166beb679320b1315265ba9595686",
     "identity_verified": true,
-    "entries": [
-      "input_adapter_test.go",
-      "mentor-checklist.md",
-      "verification.md"
-    ],
+    "entries": ["input_adapter_test.go", "mentor-checklist.md", "verification.md"],
     "zip_integrity": "pass"
   },
   {

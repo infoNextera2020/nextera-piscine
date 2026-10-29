@@ -1,0 +1,93 @@
+{
+  "verified_at": "2026-10-29T11:34:34.556408+00:00",
+  "source_head_before_preflight_commit": "d8af381654e699e1ff22d1b65af45ab29952b489",
+  "source_overlay_sha256": {
+    "scripts/checkpoint-auth-live-adapter.py": "4a95730f525a5644fd9b3f280c177c8f98d2f2722ff6fb21b80601f05dca6489",
+    "scripts/checkpoint-auth-runtime.mjs": "5c01c37a3d9bc93bfadcef89b0ffd9b4f2cee0195f869fc0c3bcc9b3afc10c31",
+    "scripts/checkpoint-public-preflight.mjs": "4c22bb2be443dcde9a5ed1af336de16b6d5c36b2c4de39af67fedbc1b7375bf2",
+    "scripts/tests/checkpoint-auth-runtime.node-unit.mjs": "a9a445ce84b20ca719ac3e9cb7b37a2d934be94fbf15b844a979859402eb8810",
+    "scripts/tests/test_checkpoint_auth_live_adapter.py": "e091f7f561f6b51c9a9be43a592bd4b62ec32f25b47fc8382fb356799c021c68",
+    "verification/curriculum-atm-20261029/library-source-receipts.json": "ca0694b20d6f7b0243c60229bfaf546116b85f2313b111478b7cfc717bd0f6d3"
+  },
+  "counts": {
+    "root_vitest_tests": 1102,
+    "staff_ssr_mocked_route_tests": 28,
+    "python_injected_tests": 58,
+    "node_injected_tests": 27
+  },
+  "checks": [
+    {
+      "name": "build",
+      "returncode": 0,
+      "seconds": 97.63,
+      "log": "/home/anas/nextera-piscine/.tools/full-source-checks-20261029-final/build-direct.log"
+    },
+    {
+      "name": "staff",
+      "returncode": 0,
+      "seconds": 2.18,
+      "log": "/home/anas/nextera-piscine/.tools/full-source-checks-20261029-final/staff-direct.log"
+    },
+    {
+      "name": "typecheck",
+      "returncode": 0,
+      "seconds": 34.13,
+      "log": "/home/anas/nextera-piscine/.tools/full-source-checks-20261029-final/typecheck-direct.log"
+    },
+    {
+      "name": "unit",
+      "returncode": 0,
+      "seconds": 14.09,
+      "log": "/home/anas/nextera-piscine/.tools/full-source-checks-20261029-final/unit-verified.log"
+    },
+    {
+      "name": "format",
+      "returncode": 0,
+      "seconds": 16.02,
+      "log": "/home/anas/nextera-piscine/.tools/full-source-checks-20261029-final/format-verified.log"
+    },
+    {
+      "name": "python-harness",
+      "returncode": 0,
+      "seconds": 1.36,
+      "log": "/home/anas/nextera-piscine/.tools/full-source-checks-20261029-final/python-harness-verified.log"
+    },
+    {
+      "name": "lint",
+      "returncode": 0,
+      "seconds": 18.51,
+      "log": "/home/anas/nextera-piscine/.tools/full-source-checks-20261029-final/lint-final.log"
+    },
+    {
+      "name": "node-harness",
+      "returncode": 0,
+      "seconds": 0.73,
+      "log": "/home/anas/nextera-piscine/.tools/full-source-checks-20261029-final/node-harness-final.log"
+    }
+  ],
+  "application_source_matches_successful_build": true,
+  "real_dotenv_read_or_copied": false,
+  "original_dirty_changes_included": false,
+  "services_or_credentials_created": false,
+  "sql_executed": false,
+  "browser_tested": false,
+  "verification_context": "sanitized Git archive with independent synthetic local Git context for curriculum fixture reads; no original Git metadata or actual dotenv files",
+  "package_manager_safeguard": "pnpm refused unsafe module-layout removal in earlier check copy; no override/install/removal; exact installed CLI scripts used instead",
+  "initial_findings_and_resolutions": [
+    "Public templates now receive explicit container-readable public modes; keys/config remain private.",
+    "Missing DB JWT_SECRET and inherited bootstrap username are explicit.",
+    "Cleanup shares original deadlines and reserves time for owned-resource stop.",
+    "Exact service image and SQL source hashes verified before provisioning.",
+    "Private source lock is required and source/aliases stay bound to private snapshot.",
+    "Runtime build uses reviewed installed compiler commands; no package-manager installation.",
+    "Test-only URL/Buffer imports and evidence JSON formatting corrected."
+  ],
+  "not_verified": [
+    "new container initialization",
+    "authenticated Checkpoint HTTP/browser save flow",
+    "natural deadline crossing",
+    "staff browser/responsive interactions",
+    "live staff Auth/DB/Storage operations"
+  ],
+  "no_runtime_authorization": "Both old runtime targets are closed/retained. No new target, credentials or approval was created; another execution needs separately reviewed unused target and genuinely fresh owner evidence."
+}

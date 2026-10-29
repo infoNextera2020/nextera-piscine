@@ -1,7 +1,23 @@
+import { Buffer } from 'node:buffer';
+import { URL } from 'node:url';
+import fs from 'node:fs';
+import os from 'node:os';
+import path from 'node:path';
+import crypto from 'node:crypto';
 import process from 'node:process';
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import {
+  readSourceLock,
+  brokerSourceRoot,
+  writePrivateText,
+  buildPublicEnvironment,
+  DB_JWT_INIT_SQL,
+  buildPublicCompose,
+  copyVerifiedPublicTemplates,
+  requiredInitEnvironment,
+  validateInitEnvironment,
+  validatePublicTemplateModes,
   databaseBootstrapEnvironment,
   validateConfig,
   publicTemplateMode,
@@ -39,8 +55,13 @@ function config() {
     networks: { default: { name: PROJECT + '_default' } },
   };
 }
+function imageMap() {
+  return Object.fromEntries(
+    Object.entries(config().services).map(([name, service]) => [name, service.image]),
+  );
+}
 test('effective scoped configuration is accepted without executing a process', () =>
-  assert.equal(validateConfig(config()), true));
+  assert.equal(validateConfig(config(), undefined, imageMap()), true));
 for (const [name, mutate] of [
   ['public port', (c) => (c.services.db.ports[0].host_ip = '0.0.0.0')],
   ['extra service', (c) => (c.services.runner = c.services.db)],
@@ -61,7 +82,7 @@ for (const [name, mutate] of [
   test('rejects ' + name, () => {
     const c = config();
     mutate(c);
-    assert.throws(() => validateConfig(c));
+    assert.throws(() => validateConfig(c, undefined, imageMap()));
   });
 test('browser receipt cannot reuse fixture acceptance or another run', () => {
   const session = { scope_sha256: 'scope', started: 1000, deadline: 4600 };
@@ -208,7 +229,7 @@ test('attempt002 validates only its own target and identities without executing 
     assert.ok(Object.isFrozen(profile) && Object.isFrozen(profile.learners));
     for (const name of ['attempt003', '../attempt001', '/tmp/run', ''])
       assert.throws(() => isolated.profileFor(name));
-    assert.throws(() => isolated.validateConfig(config()));
+    assert.throws(() => isolated.validateConfig(config(), undefined, imageMap()));
     const current = config();
     current.name = profile.project;
     for (const [name, service] of Object.entries(current.services)) {
@@ -218,10 +239,10 @@ test('attempt002 validates only its own target and identities without executing 
     }
     current.volumes.data.name = profile.project + '-data';
     current.networks.default.name = profile.project + '_default';
-    assert.equal(isolated.validateConfig(current), true);
+    assert.equal(isolated.validateConfig(current, undefined, imageMap()), true);
     current.services.db.volumes[0].source =
       isolated.profileFor('attempt001').directory + '/stack/volumes/db';
-    assert.throws(() => isolated.validateConfig(current), /MOUNT_SCOPE/);
+    assert.throws(() => isolated.validateConfig(current, undefined, imageMap()), /MOUNT_SCOPE/);
   } finally {
     if (before === undefined) delete process.env.CHECKPOINT_REHEARSAL_PROFILE;
     else process.env.CHECKPOINT_REHEARSAL_PROFILE = before;
@@ -235,4 +256,180 @@ test('public JWT init script receives all required instance-local environment pl
   assert.equal(env.JWT_SECRET, '${JWT_SECRET}');
   assert.equal(env.JWT_EXP, '${JWT_EXPIRY}');
   assert.equal(env.PUBLIC_TEMPLATE_SETTING, 'unchanged');
+});
+
+test('requires exact pinned image map, not merely digest-shaped image names', () => {
+  assert.throws(() => validateConfig(config()), /PINNED_IMAGE_MAP/);
+  const c = config();
+  c.services.auth.image = 'other/vendor@sha256:' + 'b'.repeat(64);
+  assert.throws(() => validateConfig(c, undefined, imageMap()), /UNPINNED_IMAGE/);
+});
+test('pure public Compose renderer retains isolation and explicit inherited DB defaults', () => {
+  const original = config(),
+    before = structuredClone(original),
+    c = buildPublicCompose(original, imageMap());
+  assert.deepEqual(original, before);
+  assert.equal(c.services.db.environment.POSTGRES_USER, 'supabase_admin');
+  assert.equal(c.services.db.environment.JWT_SECRET, '${JWT_SECRET}');
+  assert.deepEqual(c.services.db.ports, ['127.0.0.1:56532:5432']);
+  assert.deepEqual(c.services['api-gw'].ports, ['127.0.0.1:56531:8000']);
+  for (const [name, service] of Object.entries(c.services)) {
+    assert.equal(service.image, imageMap()[name]);
+    assert.equal(service.restart, 'no');
+  }
+  const missing = imageMap();
+  delete missing.auth;
+  assert.throws(() => buildPublicCompose(original, missing), /PINNED_IMAGE_MAP/);
+});
+test('every generated init substitution is configured and missing JWT_SECRET fails preflight', () => {
+  assert.deepEqual(requiredInitEnvironment([DB_JWT_INIT_SQL]), [
+    'JWT_EXP',
+    'JWT_SECRET',
+    'POSTGRES_DB',
+  ]);
+  const slash = String.fromCharCode(92);
+  const other = [
+    slash + 'set pgpass `echo "$POSTGRES_PASSWORD"`',
+    slash + 'set pguser `echo "$POSTGRES_USER"`',
+  ].join(String.fromCharCode(10));
+  assert.deepEqual(requiredInitEnvironment([other]), ['POSTGRES_PASSWORD', 'POSTGRES_USER']);
+  const env = databaseBootstrapEnvironment({ POSTGRES_PASSWORD: '${POSTGRES_PASSWORD}' });
+  assert.equal(validateInitEnvironment([DB_JWT_INIT_SQL, other], env), true);
+  delete env.JWT_SECRET;
+  assert.throws(
+    () => validateInitEnvironment([DB_JWT_INIT_SQL], env),
+    /MISSING_INIT_ENVIRONMENT_JWT_SECRET/,
+  );
+});
+test('original public permission failures are rejected before credentials or startup', () => {
+  for (const item of [
+    { name: 'volumes/db/init.sql', kind: 'file', mode: 0o600, symlink: false },
+    { name: 'volumes/api/entry.sh', kind: 'file', mode: 0o644, symlink: false },
+    { name: 'volumes/db', kind: 'directory', mode: 0o700, symlink: false },
+    { name: 'volumes/db/init.sql', kind: 'file', mode: 0o644, symlink: true },
+  ])
+    assert.throws(() => validatePublicTemplateModes([item]));
+});
+test('actual verified public copy remains readable under private umask with private root', () => {
+  const base = fs.mkdtempSync(path.join(os.tmpdir(), '01coding-public-'));
+  const source = path.join(base, 'source'),
+    destination = path.join(base, 'destination');
+  fs.mkdirSync(source, { mode: 0o700 });
+  fs.mkdirSync(destination, { mode: 0o700 });
+  const contents = {
+    '.env.example': 'DUMMY_NOT_FOR_START=1\n',
+    'volumes/db/init.sql': 'SELECT 1;\n',
+    'volumes/api/entry.sh': '#!/bin/sh\ntrue\n',
+  };
+  const hashes = {};
+  try {
+    for (const [name, text] of Object.entries(contents)) {
+      const target = path.join(source, name);
+      fs.mkdirSync(path.dirname(target), { recursive: true });
+      fs.writeFileSync(target, text);
+      hashes[name] = crypto.createHash('sha256').update(text).digest('hex');
+    }
+    const previous = process.umask(0o077);
+    let records;
+    try {
+      records = copyVerifiedPublicTemplates(source, destination, hashes);
+    } finally {
+      process.umask(previous);
+    }
+    assert.equal(validatePublicTemplateModes(records), true);
+    const configPath = path.join(destination, '.env.example');
+    writePrivateText(configPath, 'DUMMY_PRIVATE_CONFIG=1');
+    assert.equal(fs.statSync(configPath).mode & 0o777, 0o600);
+    assert.equal(fs.statSync(destination).mode & 0o777, 0o700);
+    assert.equal(fs.statSync(path.join(destination, 'volumes/db')).mode & 0o777, 0o755);
+    assert.equal(fs.statSync(path.join(destination, 'volumes/db/init.sql')).mode & 0o777, 0o644);
+    assert.equal(fs.statSync(path.join(destination, 'volumes/api/entry.sh')).mode & 0o777, 0o755);
+  } finally {
+    assert.ok(
+      path.resolve(base).startsWith(path.resolve(os.tmpdir()) + path.sep + '01coding-public-'),
+    );
+    fs.rmSync(base, { recursive: true, force: true });
+  }
+});
+
+test('public environment preparation replaces all key material with placeholders without generating credentials', () => {
+  const env = buildPublicEnvironment({
+    POSTGRES_PASSWORD: 'NEVER',
+    JWT_SECRET: 'NEVER',
+    ANON_KEY: 'NEVER',
+    SERVICE_ROLE_KEY: 'NEVER',
+    SMTP_PASS: 'NEVER',
+  });
+  assert.ok(!JSON.stringify(env).includes('NEVER'));
+  for (const name of ['POSTGRES_PASSWORD', 'JWT_SECRET', 'ANON_KEY', 'SERVICE_ROLE_KEY'])
+    assert.equal(env[name], 'REHEARSAL_CONFIG_PLACEHOLDER_NOT_FOR_START');
+  assert.equal(env.JWT_EXPIRY, '300');
+  assert.equal(env.SMTP_PASS, '');
+});
+
+test('post-stage broker reads only private source snapshot, not mutable checkout', () => {
+  const stat = {
+    isDirectory: () => true,
+    isSymbolicLink: () => false,
+    uid: process.getuid(),
+    mode: 0o40700,
+  };
+  const io = {
+    lstatSync: (target) => {
+      assert.equal(target, '/approved/app-source');
+      return stat;
+    },
+  };
+  assert.equal(
+    brokerSourceRoot('stage', '/approved', '/checkout', {
+      lstatSync: () => {
+        throw new Error('stage must not require later snapshot');
+      },
+    }),
+    '/checkout',
+  );
+  for (const mode of [
+    'apply_scoped_sql',
+    'issue_restricted_access',
+    'assert_http',
+    'disable',
+    'disable_sql_access',
+    'app_environment',
+  ])
+    assert.equal(brokerSourceRoot(mode, '/approved', '/checkout', io), '/approved/app-source');
+  for (const bad of [
+    { ...stat, mode: 0o40755 },
+    { ...stat, uid: stat.uid + 1 },
+    { ...stat, isSymbolicLink: () => true },
+    { ...stat, isDirectory: () => false },
+  ])
+    assert.throws(
+      () => brokerSourceRoot('assert_http', '/approved', '/checkout', { lstatSync: () => bad }),
+      /IMMUTABLE_APP_SOURCE/,
+    );
+  const code = fs.readFileSync(new URL('../checkpoint-auth-runtime.mjs', import.meta.url), 'utf8');
+  assert.ok(!code.includes("req(repo + '/packages/"));
+  assert.ok(code.includes('lock.sql[path.relative(sourceRepo, file)]'));
+});
+
+test('runtime lock requires the adjacent immutable copy, with no repository fallback', () => {
+  const bytes = Buffer.from(JSON.stringify({ sql: { exact: 'digest' } }));
+  const digest = crypto.createHash('sha256').update(bytes).digest('hex');
+  const io = {
+    readFileSync: (target) => {
+      assert.ok(target.endsWith('/scripts/checkpoint-auth-source-lock.json'));
+      return bytes;
+    },
+  };
+  assert.deepEqual(readSourceLock(digest, io), { sql: { exact: 'digest' } });
+  assert.throws(() => readSourceLock('0'.repeat(64), io), /IMMUTABLE_SOURCE_LOCK/);
+  assert.throws(
+    () =>
+      readSourceLock(digest, {
+        readFileSync: () => {
+          throw new Error('missing private lock');
+        },
+      }),
+    /missing private lock/,
+  );
 });
