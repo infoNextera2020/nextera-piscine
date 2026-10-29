@@ -1,0 +1,68 @@
+{
+  "verified_at": "2026-10-29T08:31:13.482290+00:00",
+  "started_at": "2026-10-29T07:51:05.937889+00:00",
+  "original_deadline": "2026-10-29T08:51:05.937889+00:00",
+  "result": "bootstrap_failed; recovery_blocked_before_restart",
+  "failure": "Database initialization could not read copied public init templates. Source permission repair passed focused tests.",
+  "recovery_blocker": "OS PermissionError moving the protected failed data directory to history; action did not execute. No retry, protected content read, permission or ownership change.",
+  "services": [
+    {
+      "service": "storage",
+      "status": "created",
+      "running": false
+    },
+    {
+      "service": "meta",
+      "status": "created",
+      "running": false
+    },
+    {
+      "service": "api-gw",
+      "status": "exited",
+      "running": false
+    },
+    {
+      "service": "auth",
+      "status": "created",
+      "running": false
+    },
+    {
+      "service": "rest",
+      "status": "created",
+      "running": false
+    },
+    {
+      "service": "db",
+      "status": "exited",
+      "running": false
+    },
+    {
+      "service": "studio",
+      "status": "exited",
+      "running": false
+    },
+    {
+      "service": "imgproxy",
+      "status": "exited",
+      "running": false
+    }
+  ],
+  "listeners_gone": {
+    "56531": true,
+    "56532": true,
+    "3151": true
+  },
+  "guard_running": false,
+  "migrations_applied": false,
+  "learners_created": false,
+  "web_role_created": false,
+  "instance_keys_reissued": false,
+  "runtime_restarted": false,
+  "authenticated_http_assertions_run": false,
+  "browser_assertions_run": false,
+  "cleanup_verified": true,
+  "data_and_keys_retained_protected": true,
+  "permanent_deletion": false,
+  "original_dirty_files_unchanged": true,
+  "new_attempt_requires_approval": true
+}
