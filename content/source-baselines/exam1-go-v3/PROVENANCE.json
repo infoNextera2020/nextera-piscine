@@ -1,0 +1,16 @@
+{
+  "status": "approved_student_content_and_policy_baseline_not_published",
+  "library_file_id": "libfile_05bd6976076c8191a25d4a4267262d41",
+  "library_version": 2,
+  "content_draft_version": 3,
+  "student_file_sha256": "b39bd12cd76e3f5e8a41399bc74fed5d4ebaa1949e2b21df0b27bb620b8b76f0",
+  "student_file_bytes": 8842,
+  "mentor_archive": {
+    "library_file_id": "libfile_ae9dd07bd0c8819191c8838a9192e908",
+    "library_version": 2,
+    "sha256": "5e3dcdf90a75a269b7c7170f6e8d3c65a9f4b6547545af236c5658cb433b8347",
+    "location": "protected ignored .tools staging; not learner/public content"
+  },
+  "published": false,
+  "machine_contracts_enabled": false
+}

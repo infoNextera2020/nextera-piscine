@@ -1,0 +1,47 @@
+{
+  "verified_at": "2026-10-29T09:50:08.044895+00:00",
+  "library_file_id": "libfile_ae9dd07bd0c8819191c8838a9192e908",
+  "library_version": 2,
+  "zip_sha256": "5e3dcdf90a75a269b7c7170f6e8d3c65a9f4b6547545af236c5658cb433b8347",
+  "toolchain": "go version go1.26.2 windows/amd64",
+  "returncode": 0,
+  "tests": [
+    {
+      "test": "TestOrderTotal",
+      "result": "pass"
+    },
+    {
+      "test": "TestShiftCounter",
+      "result": "pass"
+    },
+    {
+      "test": "TestCountOutside",
+      "result": "pass"
+    },
+    {
+      "test": "TestCountText",
+      "result": "pass"
+    },
+    {
+      "test": "TestReadLabel",
+      "result": "pass"
+    },
+    {
+      "test": "TestSumAllRepair",
+      "result": "pass"
+    },
+    {
+      "test": "TestTraceQuestion6Model",
+      "result": "pass"
+    },
+    {
+      "test": "TestTraceQuestion7Model",
+      "result": "pass"
+    }
+  ],
+  "passed_tests": 8,
+  "failed_tests": 0,
+  "scope": "host Go source tests only; not a platform grader or live Judge",
+  "external_downloads": "disabled",
+  "private_answers_publicly_exposed": false
+}

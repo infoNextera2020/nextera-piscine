@@ -1,0 +1,57 @@
+{
+  "status": "approved_policy_source_only_not_activated",
+  "duration_seconds": 10800,
+  "question_count": 8,
+  "questions": [
+    {
+      "key": "q1",
+      "type": "coding",
+      "maximum_points": 15
+    },
+    {
+      "key": "q2",
+      "type": "coding",
+      "maximum_points": 15
+    },
+    {
+      "key": "q3",
+      "type": "coding",
+      "maximum_points": 15
+    },
+    {
+      "key": "q4",
+      "type": "coding",
+      "maximum_points": 15
+    },
+    {
+      "key": "q5",
+      "type": "coding",
+      "maximum_points": 15
+    },
+    {
+      "key": "q6",
+      "type": "trace_with_reason",
+      "maximum_points": 5
+    },
+    {
+      "key": "q7",
+      "type": "trace_with_reason",
+      "maximum_points": 5
+    },
+    {
+      "key": "q8",
+      "type": "debug_with_reason",
+      "maximum_points": 15
+    }
+  ],
+  "pass_conditions": {
+    "total_points_at_least": 60,
+    "coding_points_at_least": 45
+  },
+  "fine_partial_credit_rubric": null,
+  "retry_policy": null,
+  "scheduled_open_at": null,
+  "mixed_answer_ui_approved": false,
+  "machine_evaluation_enabled": false,
+  "legacy_rehearsal_fixture_changed": false
+}

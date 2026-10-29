@@ -1,0 +1,43 @@
+[
+  {
+    "file": "q3-beginner-review-v1.zip",
+    "bytes": 15046,
+    "sha256": "4c646465f91df64a44c6a88b51cd0f860c6e3c91bc3bcd8992976d8467c2783a",
+    "library_file_id": "libfile_3998f89dcf1c8191bc8017067403c73b",
+    "library_version": 0,
+    "identity_xattrs_verified": true,
+    "entries": [
+      "q3-beginner-review-v1/README.md",
+      "q3-beginner-review-v1/q3-learner-en.md",
+      "q3-beginner-review-v1/review-ar.md",
+      "q3-beginner-review-v1/review-question-bank.md",
+      "q3-beginner-review-v1/source-map.md"
+    ],
+    "zip_integrity": "pass"
+  },
+  {
+    "file": "exam1-student-en.md",
+    "bytes": 8842,
+    "sha256": "b39bd12cd76e3f5e8a41399bc74fed5d4ebaa1949e2b21df0b27bb620b8b76f0",
+    "library_file_id": "libfile_05bd6976076c8191a25d4a4267262d41",
+    "library_version": 2,
+    "identity_xattrs_verified": true
+  },
+  {
+    "file": "exam1-mentor-only-v1.zip",
+    "bytes": 10562,
+    "sha256": "5e3dcdf90a75a269b7c7170f6e8d3c65a9f4b6547545af236c5658cb433b8347",
+    "library_file_id": "libfile_ae9dd07bd0c8819191c8838a9192e908",
+    "library_version": 2,
+    "identity_xattrs_verified": true,
+    "entries": [
+      "README.md",
+      "check_expected_data.py",
+      "mentor-guide.md",
+      "reference.go",
+      "reference_test.go",
+      "verification.md"
+    ],
+    "zip_integrity": "pass"
+  }
+]

@@ -1,0 +1,46 @@
+{
+  "status": "approved_learning_source_baseline_not_published",
+  "library_file_id": "libfile_3998f89dcf1c8191bc8017067403c73b",
+  "library_version": 0,
+  "source_zip_sha256": "4c646465f91df64a44c6a88b51cd0f860c6e3c91bc3bcd8992976d8467c2783a",
+  "approved_activities": [
+    "StrLen",
+    "PointOne",
+    "Swap",
+    "DivMod",
+    "BasicAtoi",
+    "BasicAtoi2",
+    "Atoi",
+    "SumSlice",
+    "StrRev"
+  ],
+  "published": false,
+  "machine_contracts_enabled": false,
+  "files": [
+    {
+      "path": "README.md",
+      "bytes": 1833,
+      "sha256": "9b569834e7ca93a8e8e77ac0eb9e44f59c4a653904bf8f393f61b3f03c3281bd"
+    },
+    {
+      "path": "q3-learner-en.md",
+      "bytes": 17144,
+      "sha256": "7c7bf1b166263b095cf86b95612b9124d55d7aad274f0008cf2da9fab4e04070"
+    },
+    {
+      "path": "review-ar.md",
+      "bytes": 6007,
+      "sha256": "016ed4a60b4604e9cdf581cca6e41d5225e5f5cd21633b6e37d6dd5aa0c43faf"
+    },
+    {
+      "path": "review-question-bank.md",
+      "bytes": 2329,
+      "sha256": "d8eddbc3236b2ff2cbb00d394eb8eb693f1e95c502f20c6b927a34701b8b3fc9"
+    },
+    {
+      "path": "source-map.md",
+      "bytes": 7190,
+      "sha256": "1a08634d17dd5ef17dd122681622b7970decc05a8b2f7834ad87ebb7884d8ddc"
+    }
+  ]
+}

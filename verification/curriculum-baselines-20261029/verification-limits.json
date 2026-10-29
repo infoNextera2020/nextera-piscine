@@ -1,0 +1,11 @@
+{
+  "copied_source_bytes_preserved": true,
+  "standard_diff_check": "one expected imported source-map blank-at-EOF finding",
+  "scoped_exception": {
+    "file": "content/source-baselines/quest3-standard-go-v1/source-map.md",
+    "rule": "blank-at-eof only"
+  },
+  "all_other_staged_files_standard_diff_check": "pass",
+  "global_git_configuration_changed": false,
+  "live_runtime_or_grader": "not_run"
+}
