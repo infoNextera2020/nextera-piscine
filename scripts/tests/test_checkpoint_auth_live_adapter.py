@@ -79,5 +79,27 @@ class AdapterTests(unittest.TestCase):
     def test_owned_stop_refuses_retain_false(self):
         with self.assertRaises(h.scope.ScopeError):self.adapter.revoke_and_stop(str(self.adapter.run),self.adapter.plan,retain=False)
 
+    def test_attempt002_constructor_and_start_select_only_new_profile(self):
+        adapter=h.LiveAdapter('/repo','/public-template',{},self.fake,now=lambda:1000,profile='attempt002')
+        self.assertEqual(self.fake.calls,[])
+        self.assertEqual(adapter.profile,'attempt002')
+        self.assertEqual(adapter.env['CHECKPOINT_REHEARSAL_PROFILE'],'attempt002')
+        self.assertEqual(str(adapter.run),h.scope.plan_for('attempt002').directory)
+        adapter.journal=lambda *args:None;adapter.read=lambda:{'head':'expected-head','baseline_containers':[]};adapter.guard_identity=lambda:None
+        with patch.object(h,'protected'):adapter.phase('start',str(adapter.run),adapter.plan,4600)
+        argv=next(args for args,kwargs in self.fake.calls if 'up' in args)
+        self.assertIn(adapter.plan.project,argv)
+        self.assertNotIn(h.scope.Plan().project,argv)
+        self.assertEqual(self.fake.calls[0][1]['env']['CHECKPOINT_REHEARSAL_PROFILE'],'attempt002')
+
+    def test_attempt002_guard_receives_explicit_profile_without_launching_process(self):
+        adapter=h.LiveAdapter('/repo','/public-template',{},self.fake,now=lambda:1000,profile='attempt002')
+        child=Mock(pid=123)
+        with patch.object(h.os,'open',return_value=10),patch.object(h.os,'close'),patch.object(h,'protected'),patch.object(h,'tick',return_value='ticks'),patch.object(h.Path,'exists',return_value=True),patch.object(h.subprocess,'Popen',return_value=child) as launch:
+            guard=adapter.arm_guard(str(adapter.run),4600,parent_loss=True,retain=True)
+        argv=launch.call_args.args[0]
+        self.assertEqual(argv[-3:],['--watch','--profile','attempt002'])
+        self.assertEqual(guard,{'deadline':4600,'independent':True,'parent_loss':True})
+
 
 if __name__=='__main__':unittest.main()

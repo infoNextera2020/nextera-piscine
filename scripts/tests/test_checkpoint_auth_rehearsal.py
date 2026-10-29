@@ -78,5 +78,31 @@ class GuardTests(unittest.TestCase):
     def test_stale_listeners_or_guard_process_fail_cleanup_receipt(self):
         self.f.stopped=False;result=self.run_fake();self.assertFalse(result['cleanup_verified'])
 
+    def test_closed_attempt002_profile_has_distinct_identity_and_unchanged_limits(self):
+        original=h.plan_for('attempt001');fresh=h.plan_for('attempt002')
+        self.assertEqual(h.scope_digest(original),'c59bed18ea9a12306cc6b59b0cb31cba7f094f209834bb12d1f5c53c761cb4fc')
+        self.assertNotEqual(h.scope_digest(fresh),h.scope_digest(original))
+        for name in ['project','directory','database','login_role','learners']:
+            self.assertNotEqual(getattr(original,name),getattr(fresh,name))
+        self.assertFalse(set(original.learners).intersection(fresh.learners))
+        for name in h.asdict(original):
+            if name not in ['project','directory','database','login_role','learners']:
+                self.assertEqual(getattr(original,name),getattr(fresh,name))
+        for key in ['attempt003','../attempt001','/tmp/run','']:
+            with self.assertRaises(h.ScopeError):h.plan_for(key)
+        for field,value in [('directory','/tmp/reused'),('database',original.database),('maximum_seconds',7200),('offline_recovery',True)]:
+            with self.assertRaises(h.ScopeError):h.proposal(replace(fresh,**{field:value}))
+
+    def test_attempt002_rejects_old_approval_before_any_adapter_operation(self):
+        fresh=h.plan_for('attempt002')
+        with self.assertRaises(h.ScopeError):h.exercise_injected(self.f,self.approval,lambda:1000,fresh)
+        self.assertEqual(self.f.events,[])
+        self.f.proof.update(database=fresh.database,project=fresh.project,migrations=list(fresh.migrations),bindings=[list(x) for x in fresh.bindings],role_memberships=list(fresh.role_memberships),services=list(fresh.services))
+        approval={**self.approval,'scope_sha256':h.scope_digest(fresh)}
+        outcome=h.exercise_injected(self.f,approval,lambda:1000,fresh)
+        self.assertTrue(outcome['assertions_passed']);self.assertTrue(outcome['cleanup_verified'])
+        self.assertEqual(outcome['deadline']-outcome['started'],3600)
+        self.assertEqual(outcome['runtime_kind'],'injected_fake_not_integration_evidence')
+
 
 if __name__=='__main__':unittest.main()

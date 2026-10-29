@@ -1,0 +1,19 @@
+{
+  "attempt001": {
+    "project": "01coding-checkpoint-browser-20261028",
+    "directory": "/home/anas/.local/share/nextera-judge/checkpoint-browser-20261028/run-001",
+    "database": "foundation_test_checkpoint_browser_20261028",
+    "learners": ["checkpoint-a-20261028@example.invalid", "checkpoint-b-20261028@example.invalid"],
+    "login_role": "checkpoint_browser_web_20261028"
+  },
+  "attempt002": {
+    "project": "01coding-checkpoint-browser-20261029-attempt002",
+    "directory": "/home/anas/.local/share/nextera-judge/checkpoint-browser-20261029-attempt002/run-001",
+    "database": "foundation_test_checkpoint_browser_20261029_attempt002",
+    "learners": [
+      "checkpoint-a-20261029-attempt002@example.invalid",
+      "checkpoint-b-20261029-attempt002@example.invalid"
+    ],
+    "login_role": "checkpoint_browser_web_20261029_attempt002"
+  }
+}

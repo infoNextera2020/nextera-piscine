@@ -3,7 +3,8 @@
 Running this file prints a non-secret proposal. It cannot provision anything.
 Runtime implementation and fresh action-time authorization are separate gates.
 """
-from dataclasses import asdict, dataclass
+from dataclasses import asdict, dataclass, replace
+from pathlib import Path
 import hashlib
 import json
 
@@ -36,9 +37,33 @@ class Plan:
     upstream_commit: str = 'bc27d2661edd09a5d0b8d76ce33da6d4071a756e'
 
 
+def plan_for(profile='attempt001'):
+    stems = {'attempt001': '20261028', 'attempt002': '20261029-attempt002'}
+    if profile not in stems:
+        raise ScopeError('Unknown closed rehearsal profile.')
+    rows = json.loads(Path(__file__).with_name('checkpoint-auth-profiles.json').read_text())
+    if set(rows) != set(stems):
+        raise ScopeError('Profile registry changed; review source before approval.')
+    stem = stems[profile]; token = stem.replace('-', '_')
+    expected = {'project': '01coding-checkpoint-browser-' + stem,
+                'directory': '/home/anas/.local/share/nextera-judge/checkpoint-browser-' + stem + '/run-001',
+                'database': 'foundation_test_checkpoint_browser_' + token,
+                'learners': ['checkpoint-a-' + stem + '@example.invalid', 'checkpoint-b-' + stem + '@example.invalid'],
+                'login_role': 'checkpoint_browser_web_' + token}
+    if rows[profile] != expected:
+        raise ScopeError('Profile identity mismatch; arbitrary targets are forbidden.')
+    return replace(Plan(), **{**expected, 'learners': tuple(expected['learners'])})
+
+
+def profile_for_plan(plan):
+    for profile in ['attempt001', 'attempt002']:
+        if plan == plan_for(profile):
+            return profile
+    raise ScopeError('Scope changed; review a new proposal before runtime approval.')
+
+
 def proposal(plan=Plan()):
-    if plan != Plan():
-        raise ScopeError('Scope changed; review a new proposal before runtime approval.')
+    profile_for_plan(plan)
     return {'status': 'proposed_not_authorized', 'plan': asdict(plan),
             'gates': ['pinned_images_and_template_verified', 'fresh_resources',
                       'permitted_authenticated_browser_target', 'new_action_time_approval',

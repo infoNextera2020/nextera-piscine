@@ -1,3 +1,4 @@
+import process from 'node:process';
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import {
@@ -191,4 +192,37 @@ test('verified public init SQL is readable and entry scripts executable without 
   for (const name of ['.env', 'credentials.json', '../.env', 'volumes/../.env'])
     assert.throws(() => publicTemplateMode(name, true));
   assert.throws(() => publicTemplateMode('volumes/db/roles.sql', false));
+});
+
+test('attempt002 validates only its own target and identities without executing adapters', async () => {
+  const before = process.env.CHECKPOINT_REHEARSAL_PROFILE;
+  try {
+    process.env.CHECKPOINT_REHEARSAL_PROFILE = 'attempt002';
+    const isolated = await import('../checkpoint-auth-runtime.mjs?test-attempt002');
+    const profile = isolated.profileFor('attempt002');
+    assert.equal(profile.project, '01coding-checkpoint-browser-20261029-attempt002');
+    assert.equal(profile.database, 'foundation_test_checkpoint_browser_20261029_attempt002');
+    assert.equal(profile.login_role, 'checkpoint_browser_web_20261029_attempt002');
+    assert.equal(profile.learners.length, 2);
+    assert.ok(Object.isFrozen(profile) && Object.isFrozen(profile.learners));
+    for (const name of ['attempt003', '../attempt001', '/tmp/run', ''])
+      assert.throws(() => isolated.profileFor(name));
+    assert.throws(() => isolated.validateConfig(config()));
+    const current = config();
+    current.name = profile.project;
+    for (const [name, service] of Object.entries(current.services)) {
+      service.container_name = profile.project + '-' + name;
+      service.environment.connection = 'postgres://internal@db:5432/' + profile.database;
+      service.volumes = [{ type: 'bind', source: profile.directory + '/stack/volumes/' + name }];
+    }
+    current.volumes.data.name = profile.project + '-data';
+    current.networks.default.name = profile.project + '_default';
+    assert.equal(isolated.validateConfig(current), true);
+    current.services.db.volumes[0].source =
+      isolated.profileFor('attempt001').directory + '/stack/volumes/db';
+    assert.throws(() => isolated.validateConfig(current), /MOUNT_SCOPE/);
+  } finally {
+    if (before === undefined) delete process.env.CHECKPOINT_REHEARSAL_PROFILE;
+    else process.env.CHECKPOINT_REHEARSAL_PROFILE = before;
+  }
 });

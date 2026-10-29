@@ -1,6 +1,6 @@
 # Authenticated Checkpoint adapter 001
 
-Source implementation and fake verification only. No environment, credentials, identities or migration application has run. Earlier approvals are completed/expired. The owner manually accepted the current auth UI on 29 October; that is not a live Auth or full-device test.
+Source implementation and fake verification are complete. Attempt 001 created isolated instance keys but failed before application SQL or learner creation and is closed with all owned services stopped. Its approval cannot be renewed or reused; attempt 002 requires fresh exact approval. The owner manually accepted the current auth UI on 29 October; that is not a live Auth or full-device test.
 
 ## Adapter and execution gates
 
@@ -49,3 +49,5 @@ Post-commit failure-path review: sensitive phase commands and the app use a one-
 Actual bootstrap rehearsal 29 October: window07:51:05–08:51:05UTC; startup failed before app migrations/learners because copied public init templates were mode600. Cleanup stopped all owned services by07:51:34UTC. Source now gives only verified public templates mode644, public shell entrypoints755, public template directories755; runroot700 and secret files600 remain unchanged. Existing database-data permissions are never changed. A single explicitly authorized recovery may recognize only this verified pre-SQL stopped lease, retain failed initialization, reuse its original keys and preserve its original deadline. Post-SQL, learner-created, unknown-cleanup or expired states fail closed. No denied PG_VERSION read is repeated or worked around.
 
 Closed attempt: recovery was blocked before restart by an OS permission denial moving the protected failed data directory. No retry or protected-data workaround followed. All eight containers are stopped and all three scoped listeners are closed; no app migrations, learners or authenticated assertions ran. This lease is closed and is not permission to restart. See the sanitized `verification/checkpoint-auth-live-20261029/closed-attempt.json` and the proposed fresh, separately approved target in `docs/CHECKPOINT_AUTH_FRESH_ATTEMPT_PROPOSAL_002.md`.
+
+Closed profile preparation: `--profile attempt002` is now source-tested and selects only the separately proposed target. The default `attempt001` scope digest remains unchanged. Neither planning nor fake tests create resources. See `docs/CHECKPOINT_AUTH_FRESH_ATTEMPT_PROPOSAL_002.md` for the new approval boundary and source lock.

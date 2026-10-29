@@ -8,9 +8,41 @@ import { Buffer } from 'node:buffer';
 import { createRequire } from 'node:module';
 import { fileURLToPath } from 'node:url';
 const { fetch, AbortSignal } = globalThis;
-const RUN = '/home/anas/.local/share/nextera-judge/checkpoint-browser-20261028/run-001';
-const PROJECT = '01coding-checkpoint-browser-20261028';
-const DB = 'foundation_test_checkpoint_browser_20261028';
+import profileRegistry from './checkpoint-auth-profiles.json' with { type: 'json' };
+const PROFILE = process.env.CHECKPOINT_REHEARSAL_PROFILE || 'attempt001';
+function profileFor(profile) {
+  const stems = { attempt001: '20261028', attempt002: '20261029-attempt002' };
+  if (
+    !Object.hasOwn(stems, profile) ||
+    Object.keys(profileRegistry).sort().join() !== Object.keys(stems).sort().join()
+  )
+    throw new Error('UNKNOWN_REHEARSAL_PROFILE');
+  const stem = stems[profile],
+    token = stem.replaceAll('-', '_');
+  const expected = {
+    project: '01coding-checkpoint-browser-' + stem,
+    directory: '/home/anas/.local/share/nextera-judge/checkpoint-browser-' + stem + '/run-001',
+    database: 'foundation_test_checkpoint_browser_' + token,
+    learners: [
+      'checkpoint-a-' + stem + '@example.invalid',
+      'checkpoint-b-' + stem + '@example.invalid',
+    ],
+    login_role: 'checkpoint_browser_web_' + token,
+  };
+  const row = profileRegistry[profile];
+  if (
+    Object.keys(row).sort().join() !== Object.keys(expected).sort().join() ||
+    Object.entries(expected).some(
+      ([key, value]) => JSON.stringify(row[key]) !== JSON.stringify(value),
+    )
+  )
+    throw new Error('REHEARSAL_PROFILE_IDENTITY');
+  return Object.freeze({ ...expected, learners: Object.freeze([...expected.learners]) });
+}
+const ACTIVE = profileFor(PROFILE);
+const RUN = ACTIVE.directory;
+const PROJECT = ACTIVE.project;
+const DB = ACTIVE.database;
 const SERVICES = ['db', 'auth', 'rest', 'storage', 'imgproxy', 'meta', 'studio', 'api-gw'];
 const check = (ok, code) => {
   if (!ok) throw new Error(code);
@@ -225,7 +257,13 @@ function state(run, cleanup = false) {
     'PRIVATE_TARGET',
   );
   const s = JSON.parse(fs.readFileSync(run + '/control.json', 'utf8'));
-  check(s.project === PROJECT && s.database === DB && s.uid === process.getuid(), 'CONTROL_SCOPE');
+  check(
+    s.project === PROJECT &&
+      s.database === DB &&
+      s.uid === process.getuid() &&
+      (s.profile || 'attempt001') === PROFILE,
+    'CONTROL_SCOPE',
+  );
   if (!cleanup)
     check(
       Date.now() / 1000 < s.deadline && fs.existsSync(run + '/guard-ready.json'),
@@ -507,7 +545,7 @@ SELECT format('ALTER DATABASE %I SET "app.settings.jwt_exp" TO %L', :'db', :'exp
       check(!fs.existsSync(run + '/fixture.json'), 'UNCERTAIN_FIXTURE_INSPECT_FIRST');
       const fixture = { learners: [], cohortId: null, versionId: null };
       save('fixture.json', fixture);
-      const role = 'checkpoint_browser_web_20261028',
+      const role = ACTIVE.login_role,
         password = crypto.randomBytes(32).toString('hex');
       await admin.unsafe(
         `CREATE ROLE ${role} LOGIN INHERIT NOSUPERUSER NOCREATEDB NOCREATEROLE NOREPLICATION NOBYPASSRLS VALID UNTIL '${new Date(s.deadline * 1000).toISOString()}' PASSWORD '${password}';GRANT nextera_web TO ${role}`,
@@ -530,7 +568,7 @@ SELECT format('ALTER DATABASE %I SET "app.settings.jwt_exp" TO %L', :'db', :'exp
       const cohorts = req(repo + '/packages/db/operations/cohorts.ts');
       fixture.cohortId = (
         await cohorts.createCohort(domain, {
-          slug: 'foundation-test-checkpoint-browser-20261028',
+          slug: 'foundation-test' + PROJECT.slice('01coding'.length),
           name: 'SYNTHETIC AUTHENTICATED DRAFT TEST',
           curriculumVersionId: fixture.versionId,
           startsAt: new Date(),
@@ -543,7 +581,7 @@ SELECT format('ALTER DATABASE %I SET "app.settings.jwt_exp" TO %L', :'db', :'exp
       await admin`INSERT INTO app.checkpoint_draft_policies(curriculum_version_id,node_key,definition_digest,enabled,max_source_bytes,max_receipts_per_task,max_bytes_per_task,retention_after_deadline_seconds) VALUES(${fixture.versionId},'transfer-checkpoint',${fixture.definitionDigest},true,1024,64,65536,600)`;
       for (const suffix of ['a', 'b']) {
         const person = {
-          email: 'checkpoint-' + suffix + '-20261028@example.invalid',
+          email: ACTIVE.learners[suffix === 'a' ? 0 : 1],
           password: crypto.randomBytes(24).toString('hex'),
           authId: null,
           userId: null,
@@ -601,15 +639,14 @@ SELECT format('ALTER DATABASE %I SET "app.settings.jwt_exp" TO %L', :'db', :'exp
       return;
     }
     if (mode === 'disable_sql_access') {
-      await admin`UPDATE app.users SET active=false WHERE auth_user_id IN(SELECT id FROM auth.users WHERE email IN('checkpoint-a-20261028@example.invalid','checkpoint-b-20261028@example.invalid'))`;
-      await admin`UPDATE app.cohort_memberships SET status='inactive' WHERE user_id IN(SELECT id FROM app.users WHERE auth_user_id IN(SELECT id FROM auth.users WHERE email IN('checkpoint-a-20261028@example.invalid','checkpoint-b-20261028@example.invalid')))`;
-      const [role] =
-        await admin`SELECT 1 FROM pg_roles WHERE rolname='checkpoint_browser_web_20261028'`;
+      await admin`UPDATE app.users SET active=false WHERE auth_user_id IN(SELECT id FROM auth.users WHERE email IN(${ACTIVE.learners[0]},${ACTIVE.learners[1]}))`;
+      await admin`UPDATE app.cohort_memberships SET status='inactive' WHERE user_id IN(SELECT id FROM app.users WHERE auth_user_id IN(SELECT id FROM auth.users WHERE email IN(${ACTIVE.learners[0]},${ACTIVE.learners[1]})))`;
+      const [role] = await admin`SELECT 1 FROM pg_roles WHERE rolname=${ACTIVE.login_role}`;
       if (role) {
         await admin.unsafe(
-          'ALTER ROLE checkpoint_browser_web_20261028 NOLOGIN;REVOKE nextera_web FROM checkpoint_browser_web_20261028',
+          `ALTER ROLE ${ACTIVE.login_role} NOLOGIN;REVOKE nextera_web FROM ${ACTIVE.login_role}`,
         );
-        await admin`SELECT pg_terminate_backend(pid) FROM pg_stat_activity WHERE usename='checkpoint_browser_web_20261028' AND pid<>pg_backend_pid()`;
+        await admin`SELECT pg_terminate_backend(pid) FROM pg_stat_activity WHERE usename=${ACTIVE.login_role} AND pid<>pg_backend_pid()`;
       }
       save('sql-access-disabled.json', {
         attempted: true,
@@ -649,10 +686,7 @@ SELECT format('ALTER DATABASE %I SET "app.settings.jwt_exp" TO %L', :'db', :'exp
         }
       // Recover a lost createUser response only by exact approved test email, never expand scope.
       let unresolvedCreate = false;
-      for (const email of [
-        'checkpoint-a-20261028@example.invalid',
-        'checkpoint-b-20261028@example.invalid',
-      ]) {
+      for (const email of [ACTIVE.learners[0], ACTIVE.learners[1]]) {
         const [row] = await admin`SELECT id FROM auth.users WHERE email=${email}`;
         if (!row && fixture.learners.some((p) => p.email === email && p.authCreation === 'pending'))
           unresolvedCreate = true;
@@ -663,18 +697,17 @@ SELECT format('ALTER DATABASE %I SET "app.settings.jwt_exp" TO %L', :'db', :'exp
           await admin`UPDATE app.cohort_memberships SET status='inactive' WHERE user_id IN(SELECT id FROM app.users WHERE auth_user_id=${row.id})`;
         }
       }
-      const [role] =
-        await admin`SELECT 1 FROM pg_roles WHERE rolname='checkpoint_browser_web_20261028'`;
+      const [role] = await admin`SELECT 1 FROM pg_roles WHERE rolname=${ACTIVE.login_role}`;
       if (role) {
         await admin.unsafe(
-          'ALTER ROLE checkpoint_browser_web_20261028 NOLOGIN;REVOKE nextera_web FROM checkpoint_browser_web_20261028',
+          `ALTER ROLE ${ACTIVE.login_role} NOLOGIN;REVOKE nextera_web FROM ${ACTIVE.login_role}`,
         );
-        await admin`SELECT pg_terminate_backend(pid) FROM pg_stat_activity WHERE usename='checkpoint_browser_web_20261028' AND pid<>pg_backend_pid()`;
+        await admin`SELECT pg_terminate_backend(pid) FROM pg_stat_activity WHERE usename=${ACTIVE.login_role} AND pid<>pg_backend_pid()`;
       }
       const [remaining] =
-        await admin`SELECT (SELECT count(*) FROM app.users WHERE active AND auth_user_id IN(SELECT id FROM auth.users WHERE email IN('checkpoint-a-20261028@example.invalid','checkpoint-b-20261028@example.invalid'))) AS users,(SELECT count(*) FROM pg_roles WHERE rolname='checkpoint_browser_web_20261028' AND rolcanlogin) AS roles`;
+        await admin`SELECT (SELECT count(*) FROM app.users WHERE active AND auth_user_id IN(SELECT id FROM auth.users WHERE email IN(${ACTIVE.learners[0]},${ACTIVE.learners[1]}))) AS users,(SELECT count(*) FROM pg_roles WHERE rolname=${ACTIVE.login_role} AND rolcanlogin) AS roles`;
       const [sessions] =
-        await admin`SELECT count(*) AS count FROM auth.sessions WHERE user_id IN(SELECT id FROM auth.users WHERE email IN('checkpoint-a-20261028@example.invalid','checkpoint-b-20261028@example.invalid'))`;
+        await admin`SELECT count(*) AS count FROM auth.sessions WHERE user_id IN(SELECT id FROM auth.users WHERE email IN(${ACTIVE.learners[0]},${ACTIVE.learners[1]}))`;
       check(
         String(remaining.users) === '0' &&
           String(remaining.roles) === '0' &&
@@ -768,6 +801,7 @@ SELECT format('ALTER DATABASE %I SET "app.settings.jwt_exp" TO %L', :'db', :'exp
   }
 }
 export {
+  profileFor,
   validateConfig,
   publicTemplateMode,
   validateOwnedEndpoints,

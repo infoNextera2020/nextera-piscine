@@ -1,6 +1,6 @@
 # Authenticated Checkpoint rehearsal: fresh attempt proposal 002
 
-Status: proposed only. No resources, keys, accounts or database have been created for this target. A new exact action-time approval and a tested source profile are required before execution. This does not renew the previous lease.
+Status: proposed only. No resources, keys, accounts or database have been created for this target. The closed source profile and fake tests are complete. A new exact action-time approval is required before execution. This does not renew the previous lease.
 
 ## Closed attempt and retained evidence
 
@@ -24,10 +24,26 @@ First verify a permitted supported browser context and fresh source/image/config
 
 With genuine ordinary learner authentication: save status, question switching without source loss, refresh recovery and explicit conflict handling preserving the losing source. Separately verify HTTP unauthenticated/cross-learner denial, exact source-byte round trips, idempotency, concurrent compare-and-swap, stale definition, size rejection, access removal with a valid session, durable revisions and zero official submissions/jobs/outcomes. Record browser and HTTP evidence separately. A 90-minute exam cannot naturally expire inside a one-hour environment; natural deadline crossing is excluded, with existing SQL/injected expiry checks cited separately.
 
-Before execution, implement and fake-test a closed source profile for these exact new names and fresh mounts, verify its scope digest, permissions and cleanup receipts, and obtain fresh action-time approval bound to that digest and browser origin. The current CLI is deliberately pinned to attempt 001 and must not be pointed at a replacement directory or bypassed. Do not reuse an old approval receipt or extend its deadline.
+The closed source profile is now selected explicitly with `python3 scripts/checkpoint-auth-live-adapter.py --plan --profile attempt002`. Planning prints only public scope; it does not inspect a runtime lease, run Docker, create credentials or provision. The future execute, watch and cleanup paths all carry this exact profile; neither accepts an arbitrary replacement directory. The copied independent guard includes the same profile registry. Attempt 001 retains its original digest and can never satisfy attempt 002 approval. Obtain fresh action-time approval bound to the exact digest below and browser origin before using `--execute`; never reuse an old receipt or extend its deadline.
+
+Attempt 002 scope SHA256: `a267f057515c96963d1c44ae2125f68b41521c822ec62fc7be48c36507724b72`. Source/SQL/image locks are recorded in `verification/checkpoint-auth-attempt002/source-lock.json`. A new source change must be reviewed and rechecked before runtime; these hashes are evidence, not authorization.
 
 ## Separate approved content decisions
 
 Week 1 contains Q1–Q3, then the first exam and first project; Q4 begins week 2. The first project opens at its scheduled time after the exam, independently of exam submission or pass. Actual calendar timestamps remain undecided. These decisions do not modify the rehearsal fixture. The new first exam has eight approved question types (five coding, two trace with explanation, one debug fix); duration, weights, pass score and retry policy remain pending, and mixed-answer UI needs review before implementation.
 
 Quest 3 learning content is approved, but its Library materialization is blocked: the supported transfer helper on Windows downloaded into its temporary staging path then failed because Python has no `os.setxattr`. No final identity-preserving file was installed. The one bounded retry is exhausted; no helper patch, raw transfer or content reconstruction was used. Approved source is `libfile_3998f89dcf1c8191bc8017067403c73b`, version 0. Incorporation remains pending a supported consumer-local transfer.
+
+## Instance secrets and least privilege
+
+The approved future stage would create fresh POSTGRES_PASSWORD, JWT_SECRET, PG_META_CRYPTO_KEY, DASHBOARD_PASSWORD, S3_PROTOCOL_ACCESS_KEY_SECRET, SECRET_KEY_BASE, REALTIME_DB_ENC_KEY, VAULT_ENC_KEY and S3_PROTOCOL_ACCESS_KEY_ID, plus deadline-bound ANON_KEY and SERVICE_ROLE_KEY. It would also generate the restricted web-role password and two learner passwords only for this new stack. The instance admin key remains in the protected operator broker; the web application receives only its restricted database connection and public anonymous key. No external AI, telemetry or SMTP credentials are used and no email is sent. No new secret has been generated during this preparation.
+
+## Q3 supported transfer recovery proposal, not executed
+
+The first Windows transfer reported `library file transfer failed: download failed` and installed no file. The one bounded retry downloaded bytes to the helper's temporary staging path, then failed in metadata application with `AttributeError: module 'os' has no attribute 'setxattr'`. The final ZIP is absent and the destination directory is empty. Temporary bytes were not adopted, extracted or imported; the helper and its identity requirements were not patched.
+
+The documented resolved-reference route supports the unchanged Python materialization helper on a POSIX consumer. Proposed recovery: obtain a fresh transfer through `prepare_materialize`, then invoke the current unmodified helper and companion under WSL Python, with a new private native-ext4 destination inside the existing repository's ignored `.tools` area. Pass the full structured transfer object; require successful `user.library-file-id` and version xattr verification before opening the ZIP. This changes the consumer to one that supports required metadata, without touching denied database data or using a raw URL transfer. Because the earlier bounded retry is exhausted, this proposal is reported for approval before any further transfer. It has not been executed.
+
+## Preparation verification
+
+27 Python injected tests and 18 Node injected tests pass. They cover both closed profiles, unchanged attempt 001 digest, old-approval rejection before adapter calls, unchanged numeric policies, explicit guard profile propagation, new-only Compose configuration and rejection of retained mounts. Targeted ESLint, Prettier and diff checks pass. The tests do not start Docker, sockets, Auth, SQL or an executor. Full application build and browser integration were not rerun for this source-only harness change. The four original unrelated dirty files remain unchanged.

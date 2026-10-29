@@ -115,11 +115,12 @@ class Commands:
 
 class LiveAdapter:
     kind='local_docker_auth_db_http'
-    def __init__(self,repo,template,browser,commands=None,now=time.time):
+    def __init__(self,repo,template,browser,commands=None,now=time.time,profile='attempt001'):
         self.repo=Path(repo).resolve();self.template=Path(template).resolve();self.browser=browser;self.commands=commands or Commands();self.now=now
-        self.plan=scope.Plan();self.run=Path(self.plan.directory)
+        self.profile=profile;self.plan=scope.plan_for(profile);self.run=Path(self.plan.directory)
         self.env={'PATH':str(self.repo/'.tools/node-v24.19.0-linux-x64/bin')+':/mnt/c/Users/lap/AppData/Roaming/npm:/usr/bin:/bin','HOME':str(Path.home()),'LANG':'C.UTF-8','NEXT_TELEMETRY_DISABLED':'1'}
         self.env['DOCKER_CONFIG']=str(self.run/'docker-client')
+        self.env['CHECKPOINT_REHEARSAL_PROFILE']=self.profile
         self.node=str(self.repo/'.tools/node-v24.19.0-linux-x64/bin/node')
         self.broker=str((self.run/'adapter-code/checkpoint-auth-runtime.mjs') if (self.run/'adapter-code/checkpoint-auth-runtime.mjs').exists() else (self.repo/'scripts/checkpoint-auth-runtime.mjs'))
     def command(self,args,timeout=60,input=None):return self.commands.run([str(a) for a in args],env=self.env,cwd=self.repo,input=input,timeout=timeout)
@@ -149,23 +150,23 @@ class LiveAdapter:
         self.run.parent.mkdir(parents=True,exist_ok=True,mode=0o700)
         self.run.mkdir(mode=0o700);os.chmod(self.run,0o700)
         (self.run/'docker-client').mkdir(mode=0o700)
-        control={**outcome,'project':plan.project,'database':plan.database,'uid':os.getuid(),'parent_pid':os.getpid(),'parent_ticks':tick(os.getpid()),'template':str(self.template),'repo':str(self.repo),'head':self.head,'phases':[],'monotonic_deadline':time.monotonic()+plan.maximum_seconds,'baseline_containers':self.command(['docker','ps','-aq','--no-trunc']).decode().splitlines()}
+        control={**outcome,'project':plan.project,'database':plan.database,'uid':os.getuid(),'parent_pid':os.getpid(),'parent_ticks':tick(os.getpid()),'template':str(self.template),'repo':str(self.repo),'head':self.head,'phases':[],'monotonic_deadline':time.monotonic()+plan.maximum_seconds,'profile':self.profile,'baseline_containers':self.command(['docker','ps','-aq','--no-trunc']).decode().splitlines()}
         code=self.run/'adapter-code';code.mkdir(mode=0o700)
-        for name in ['checkpoint-auth-live-adapter.py','checkpoint-auth-rehearsal.py','checkpoint-auth-runtime.mjs']:
+        for name in ['checkpoint-auth-live-adapter.py','checkpoint-auth-rehearsal.py','checkpoint-auth-runtime.mjs','checkpoint-auth-profiles.json']:
             data=(self.repo/'scripts'/name).read_bytes();target=code/name
             fd=os.open(target,os.O_WRONLY|os.O_CREAT|os.O_EXCL,0o600)
             with os.fdopen(fd,'wb') as f:f.write(data);f.flush();os.fsync(f.fileno())
         self.broker=str(code/'checkpoint-auth-runtime.mjs')
         protected(self.run/'control.json',control);return str(self.run)
     def read(self):
-        if self.run!=Path(scope.Plan().directory) or self.run.is_symlink() or self.run.stat().st_uid!=os.getuid() or stat.S_IMODE(self.run.stat().st_mode)!=0o700:raise scope.ScopeError('Unrecognized private lease')
+        if self.run!=Path(self.plan.directory) or self.run.is_symlink() or self.run.stat().st_uid!=os.getuid() or stat.S_IMODE(self.run.stat().st_mode)!=0o700:raise scope.ScopeError('Unrecognized private lease')
         c=json.loads((self.run/'control.json').read_text())
-        if c['project']!=self.plan.project or c['database']!=self.plan.database or c['uid']!=os.getuid() or c['scope_sha256']!=scope.scope_digest():raise scope.ScopeError('Lease mismatch')
+        if c['project']!=self.plan.project or c['database']!=self.plan.database or c['uid']!=os.getuid() or c['scope_sha256']!=scope.scope_digest(self.plan) or c.get('profile','attempt001')!=self.profile:raise scope.ScopeError('Lease mismatch')
         return c
     def arm_guard(self,reservation,deadline,**kwargs):
         if reservation!=str(self.run) or kwargs!={'parent_loss':True,'retain':True}:raise scope.ScopeError('Wrong guard request')
         log=os.open(self.run/'guard.private.log',os.O_WRONLY|os.O_CREAT|os.O_EXCL,0o600)
-        try:p=subprocess.Popen([sys.executable,str(self.run/'adapter-code/checkpoint-auth-live-adapter.py'),'--watch'],env=self.env,cwd=self.repo,stdin=subprocess.DEVNULL,stdout=log,stderr=log,start_new_session=True)
+        try:p=subprocess.Popen([sys.executable,str(self.run/'adapter-code/checkpoint-auth-live-adapter.py'),'--watch','--profile',self.profile],env=self.env,cwd=self.repo,stdin=subprocess.DEVNULL,stdout=log,stderr=log,start_new_session=True)
         finally:os.close(log)
         protected(self.run/'guard-process.json',{'pid':p.pid,'ticks':tick(p.pid)})
         for _ in range(100):
@@ -317,11 +318,11 @@ class LiveAdapter:
 
 
 def main():
-    parser=argparse.ArgumentParser();mode=parser.add_mutually_exclusive_group();mode.add_argument('--plan',action='store_true');mode.add_argument('--execute',action='store_true');mode.add_argument('--watch',action='store_true');mode.add_argument('--cleanup',action='store_true');parser.add_argument('--approval-file');parser.add_argument('--browser-context');parser.add_argument('--template');args=parser.parse_args()
+    parser=argparse.ArgumentParser();mode=parser.add_mutually_exclusive_group();mode.add_argument('--plan',action='store_true');mode.add_argument('--execute',action='store_true');mode.add_argument('--watch',action='store_true');mode.add_argument('--cleanup',action='store_true');parser.add_argument('--approval-file');parser.add_argument('--browser-context');parser.add_argument('--template');parser.add_argument('--profile',choices=['attempt001','attempt002'],default='attempt001');args=parser.parse_args();plan=scope.plan_for(args.profile)
     repo=Path(__file__).resolve().parents[1]
-    if not (args.execute or args.watch or args.cleanup):print(json.dumps({**scope.proposal(),'scope_sha256':scope.scope_digest()},indent=2));return
+    if not (args.execute or args.watch or args.cleanup):print(json.dumps({**scope.proposal(plan),'profile':args.profile,'scope_sha256':scope.scope_digest(plan)},indent=2));return
     if args.watch or args.cleanup:
-        run=Path(scope.Plan().directory);c=json.loads((run/'control.json').read_text());adapter=LiveAdapter(c['repo'],c['template'],{})
+        run=Path(plan.directory);c=json.loads((run/'control.json').read_text());adapter=LiveAdapter(c['repo'],c['template'],{},profile=args.profile)
         adapter.read()
         if args.watch:
             protected(run/'guard-ready.json',{'pid':os.getpid(),'deadline':c['deadline'],'parent_loss':True})
@@ -336,8 +337,8 @@ def main():
     if approval_path.is_symlink() or approval_path.stat().st_uid!=os.getuid() or stat.S_IMODE(approval_path.stat().st_mode)!=0o600:raise scope.ScopeError('Approval receipt must be private and owned')
     approval=json.loads(approval_path.read_text())
     if approval.get('browser_origin')!='http://127.0.0.1:3151':raise scope.ScopeError('New authenticated origin must be explicitly approved')
-    adapter=LiveAdapter(repo,args.template,json.loads(Path(args.browser_context).read_text()))
-    outcome=scope.exercise_injected(adapter,approval,time.time);protected(adapter.run/'outcome.json',outcome)
+    adapter=LiveAdapter(repo,args.template,json.loads(Path(args.browser_context).read_text()),profile=args.profile)
+    outcome=scope.exercise_injected(adapter,approval,time.time,plan);protected(adapter.run/'outcome.json',outcome)
     print(json.dumps(outcome))
 
 
