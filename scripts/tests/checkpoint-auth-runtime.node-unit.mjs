@@ -227,7 +227,7 @@ test('attempt002 validates only its own target and identities without executing 
     assert.equal(profile.login_role, 'checkpoint_browser_web_20261029_attempt002');
     assert.equal(profile.learners.length, 2);
     assert.ok(Object.isFrozen(profile) && Object.isFrozen(profile.learners));
-    for (const name of ['attempt003', '../attempt001', '/tmp/run', ''])
+    for (const name of ['attempt004', '../attempt001', '/tmp/run', ''])
       assert.throws(() => isolated.profileFor(name));
     assert.throws(() => isolated.validateConfig(config(), undefined, imageMap()));
     const current = config();
@@ -243,6 +243,49 @@ test('attempt002 validates only its own target and identities without executing 
     current.services.db.volumes[0].source =
       isolated.profileFor('attempt001').directory + '/stack/volumes/db';
     assert.throws(() => isolated.validateConfig(current, undefined, imageMap()), /MOUNT_SCOPE/);
+  } finally {
+    if (before === undefined) delete process.env.CHECKPOINT_REHEARSAL_PROFILE;
+    else process.env.CHECKPOINT_REHEARSAL_PROFILE = before;
+  }
+});
+
+test('attempt003 source profile accepts only its identities and rejects both closed mounts', async () => {
+  const before = process.env.CHECKPOINT_REHEARSAL_PROFILE;
+  try {
+    process.env.CHECKPOINT_REHEARSAL_PROFILE = 'attempt003';
+    const isolated = await import('../checkpoint-auth-runtime.mjs?test-attempt003');
+    const profile = isolated.profileFor('attempt003');
+    assert.deepEqual(profile, {
+      project: '01coding-checkpoint-browser-20261029-attempt003',
+      directory:
+        '/home/anas/.local/share/nextera-judge/checkpoint-browser-20261029-attempt003/run-001',
+      database: 'foundation_test_checkpoint_browser_20261029_attempt003',
+      learners: [
+        'checkpoint-a-20261029-attempt003@example.invalid',
+        'checkpoint-b-20261029-attempt003@example.invalid',
+      ],
+      login_role: 'checkpoint_browser_web_20261029_attempt003',
+    });
+    assert.ok(Object.isFrozen(profile) && Object.isFrozen(profile.learners));
+    const current = config();
+    current.name = profile.project;
+    for (const [name, service] of Object.entries(current.services)) {
+      service.container_name = profile.project + '-' + name;
+      service.environment.connection = 'postgres://internal@db:5432/' + profile.database;
+      service.volumes = [{ type: 'bind', source: profile.directory + '/stack/volumes/' + name }];
+    }
+    current.volumes.data.name = profile.project + '-data';
+    current.networks.default.name = profile.project + '_default';
+    assert.equal(isolated.validateConfig(current, undefined, imageMap()), true);
+    for (const closed of ['attempt001', 'attempt002']) {
+      const previous = isolated.profileFor(closed);
+      for (const name of ['project', 'directory', 'database', 'login_role', 'learners'])
+        assert.notDeepEqual(profile[name], previous[name]);
+      current.services.db.volumes[0].source = previous.directory + '/stack/volumes/db';
+      assert.throws(() => isolated.validateConfig(current, undefined, imageMap()), /MOUNT_SCOPE/);
+    }
+    for (const name of ['attempt004', '../attempt003', '/tmp/run', ''])
+      assert.throws(() => isolated.profileFor(name), /UNKNOWN_REHEARSAL_PROFILE/);
   } finally {
     if (before === undefined) delete process.env.CHECKPOINT_REHEARSAL_PROFILE;
     else process.env.CHECKPOINT_REHEARSAL_PROFILE = before;

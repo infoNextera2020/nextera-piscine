@@ -11,7 +11,11 @@ const { fetch, AbortSignal } = globalThis;
 import profileRegistry from './checkpoint-auth-profiles.json' with { type: 'json' };
 const PROFILE = process.env.CHECKPOINT_REHEARSAL_PROFILE || 'attempt001';
 function profileFor(profile) {
-  const stems = { attempt001: '20261028', attempt002: '20261029-attempt002' };
+  const stems = {
+    attempt001: '20261028',
+    attempt002: '20261029-attempt002',
+    attempt003: '20261029-attempt003',
+  };
   if (
     !Object.hasOwn(stems, profile) ||
     Object.keys(profileRegistry).sort().join() !== Object.keys(stems).sort().join()

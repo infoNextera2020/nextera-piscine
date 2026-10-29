@@ -1,0 +1,27 @@
+{
+  "status": "public_placeholder_config_verified_not_runtime",
+  "observedAt": "2026-10-29T11:48:22.692Z",
+  "publicTemplates": 25,
+  "pinnedServices": ["api-gw", "auth", "db", "imgproxy", "meta", "rest", "storage", "studio"],
+  "exactImagePins": true,
+  "requiredDbInitEnvironment": [
+    "JWT_EXP",
+    "JWT_SECRET",
+    "POSTGRES_DB",
+    "POSTGRES_PASSWORD",
+    "POSTGRES_USER"
+  ],
+  "inheritedDbUser": "supabase_admin",
+  "privateConfigModes": {
+    ".env": 384,
+    "docker-compose.yml": 384,
+    "rendered-compose.fake.json": 384
+  },
+  "sqlSourcesVerified": 13,
+  "dbDataDirectoryCreated": false,
+  "keysGenerated": false,
+  "approvalCreated": false,
+  "servicesCreatedOrStarted": false,
+  "commands": ["docker compose config", "docker image inspect"],
+  "publicLockSha256": "6237cfe25a96a0be7cbd52308bdc2c0567a6687d18ec83b0e074bbf85dba12df"
+}

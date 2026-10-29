@@ -1,0 +1,61 @@
+{
+  "source_head": "20b9c700654bc72fa1021da559a1e27e933cb7fc",
+  "review": "root independently reviewed guarded profile, mandatory private source binding, unchanged owner freshness, explicit role/data/migration scope; no new defect found",
+  "scope_sha256": "fa9c9ff5dd44fd4627b8da3d06e76d548dc7748b94fc05c824602f74712342ad",
+  "source_only": true,
+  "runtime_target_probed": false,
+  "runtime_created": false,
+  "credentials_created": false,
+  "checks": [
+    {
+      "name": "unit",
+      "returncode": 0,
+      "seconds": 33.57,
+      "log": "/home/anas/nextera-piscine/.tools/source-checks-staff-quest-20261029/unit.log"
+    },
+    {
+      "name": "staff",
+      "returncode": 0,
+      "seconds": 3.59,
+      "log": "/home/anas/nextera-piscine/.tools/source-checks-staff-quest-20261029/staff.log"
+    },
+    {
+      "name": "python",
+      "returncode": 0,
+      "seconds": 1.37,
+      "log": "/home/anas/nextera-piscine/.tools/source-checks-staff-quest-20261029/python.log"
+    },
+    {
+      "name": "node",
+      "returncode": 0,
+      "seconds": 0.73,
+      "log": "/home/anas/nextera-piscine/.tools/source-checks-staff-quest-20261029/node.log"
+    },
+    {
+      "name": "types",
+      "returncode": 0,
+      "seconds": 74.82,
+      "log": "/home/anas/nextera-piscine/.tools/source-checks-staff-quest-20261029/types.log"
+    },
+    {
+      "name": "lint",
+      "returncode": 0,
+      "seconds": 13.16,
+      "log": "/home/anas/nextera-piscine/.tools/source-checks-staff-quest-20261029/lint.log"
+    },
+    {
+      "name": "format",
+      "returncode": 0,
+      "seconds": 16.41,
+      "log": "/home/anas/nextera-piscine/.tools/source-checks-staff-quest-20261029/format.log"
+    }
+  ],
+  "old_scope_digests_unchanged": true,
+  "counts": {
+    "root_tests": 1126,
+    "staff_tests": 28,
+    "python_tests": 64,
+    "node_tests": 28
+  },
+  "frontend_build": "previous20b9c70 milestone passed; UI source unchanged; new DB operation typechecked, current full frontend build not repeated"
+}

@@ -89,7 +89,7 @@ class GuardTests(unittest.TestCase):
         for name in h.asdict(original):
             if name not in ['project','directory','database','login_role','learners']:
                 self.assertEqual(getattr(original,name),getattr(fresh,name))
-        for key in ['attempt003','../attempt001','/tmp/run','']:
+        for key in ['attempt004','../attempt001','/tmp/run','']:
             with self.assertRaises(h.ScopeError):h.plan_for(key)
         for field,value in [('directory','/tmp/reused'),('database',original.database),('maximum_seconds',7200),('offline_recovery',True)]:
             with self.assertRaises(h.ScopeError):h.proposal(replace(fresh,**{field:value}))
@@ -106,6 +106,52 @@ class GuardTests(unittest.TestCase):
         self.assertEqual(outcome['deadline']-outcome['started'],3600)
         self.assertEqual(outcome['runtime_kind'],'injected_fake_not_integration_evidence')
 
+
+    def test_attempt003_source_profile_changes_only_five_unused_identities(self):
+        fresh=h.plan_for('attempt003')
+        identities={'project','directory','database','login_role','learners'}
+        self.assertEqual(h.profile_for_plan(fresh),'attempt003')
+        self.assertEqual(fresh.directory,'/home/anas/.local/share/nextera-judge/checkpoint-browser-20261029-attempt003/run-001')
+        self.assertEqual(fresh.migrations,tuple(f'{n:04d}' for n in range(11))+('0011','0014'))
+        self.assertEqual(fresh.services,('db','auth','rest','storage','imgproxy','meta','studio','api-gw'))
+        self.assertEqual(fresh.bindings,(('gateway','127.0.0.1',56531),('db','127.0.0.1',56532),('app','127.0.0.1',3151)))
+        self.assertEqual(fresh.role_memberships,('nextera_web',))
+        self.assertEqual((fresh.draft_source_bytes,fresh.draft_receipts,fresh.draft_total_source_bytes,fresh.draft_retention_seconds),(1024,64,65536,600))
+        self.assertEqual((fresh.maximum_seconds,fresh.auth_jwt_seconds,fresh.checkpoint_seconds),(3600,300,5400))
+        self.assertFalse(fresh.offline_recovery);self.assertTrue(fresh.retain_evidence_and_data)
+        for name,digest in [('attempt001','c59bed18ea9a12306cc6b59b0cb31cba7f094f209834bb12d1f5c53c761cb4fc'),('attempt002','a267f057515c96963d1c44ae2125f68b41521c822ec62fc7be48c36507724b72')]:
+            closed=h.plan_for(name)
+            self.assertEqual(h.scope_digest(closed),digest)
+            self.assertNotEqual(h.scope_digest(fresh),digest)
+            for field in h.asdict(closed):
+                if field in identities:self.assertNotEqual(getattr(fresh,field),getattr(closed,field))
+                else:self.assertEqual(getattr(fresh,field),getattr(closed,field))
+            self.assertFalse(set(fresh.learners).intersection(closed.learners))
+            for field in identities:
+                with self.subTest(profile=name,field=field),self.assertRaises(h.ScopeError):h.proposal(replace(fresh,**{field:getattr(closed,field)}))
+        self.assertEqual(h.proposal(fresh)['status'],'proposed_not_authorized')
+
+    def test_attempt003_keeps_immutable_owner_binding_and_sixty_second_guard(self):
+        fresh=h.plan_for('attempt003')
+        # These are deterministic 1970 fake inputs, never operational approval.
+        owner=h.OwnerApproval('Sentinel_'+'3'*32,'1970-01-01T00:16:40Z',h.scope_digest(fresh))
+        receipt=h.approval_receipt(owner,fresh,1000)
+        with self.assertRaises(h.ScopeError):h.exercise_injected(self.f,self.approval,lambda:1000,fresh,owner_approval=self.owner)
+        self.assertEqual(self.f.events,[])
+        self.f.proof.update(database=fresh.database,project=fresh.project)
+        h.validate_owner_approval(receipt,owner,1060,fresh)
+        expired=h.approval_receipt(owner,fresh,1061)
+        with self.assertRaises(h.ScopeError):h.exercise_injected(self.f,expired,lambda:1061,fresh,owner_approval=owner)
+        self.assertEqual(self.f.events,[])
+        outcome=h.exercise_injected(self.f,receipt,lambda:1000,fresh,owner_approval=owner)
+        self.assertTrue(outcome['assertions_passed']);self.assertTrue(outcome['cleanup_verified'])
+        self.assertEqual(outcome['owner_approved_at_utc'],'1970-01-01T00:16:40Z')
+        self.assertEqual(outcome['deadline']-outcome['started'],3600)
+
+    def test_profile_registry_cannot_add_or_rebind_arbitrary_targets(self):
+        original=h.json.loads(h.Path(h.__file__).with_name('checkpoint-auth-profiles.json').read_text())
+        for changed in [{**original,'attempt004':original['attempt003']},{**original,'attempt003':{**original['attempt003'],'directory':'/tmp/arbitrary'}}]:
+            with patch.object(h.Path,'read_text',return_value=h.json.dumps(changed)),self.assertRaises(h.ScopeError):h.plan_for('attempt003')
 
     def test_owner_evidence_is_frozen_and_message_time_cannot_be_reassigned(self):
         with self.assertRaises(FrozenInstanceError):self.owner.approved_at_utc='1970-01-01T00:17:41Z'

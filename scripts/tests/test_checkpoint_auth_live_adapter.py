@@ -105,6 +105,33 @@ class AdapterTests(unittest.TestCase):
         self.assertEqual(guard,{'deadline':4600,'independent':True,'parent_loss':True})
 
 
+    def test_attempt003_guard_keeps_explicit_profile_and_original_deadline(self):
+        adapter=h.LiveAdapter('/repo','/public-template',{},self.fake,now=lambda:1000,profile='attempt003')
+        self.assertEqual(self.fake.calls,[])
+        self.assertEqual(adapter.env['CHECKPOINT_REHEARSAL_PROFILE'],'attempt003')
+        child=Mock(pid=123)
+        with patch.object(h.os,'open',return_value=10),patch.object(h.os,'close'),patch.object(h,'protected'),patch.object(h,'tick',return_value='ticks'),patch.object(h.Path,'exists',return_value=True),patch.object(h.subprocess,'Popen',return_value=child) as launch:
+            guard=adapter.arm_guard(str(adapter.run),4600,parent_loss=True,retain=True)
+        self.assertEqual(launch.call_args.args[0][-3:],['--watch','--profile','attempt003'])
+        self.assertEqual(guard,{'deadline':4600,'independent':True,'parent_loss':True})
+
+    def test_attempt003_plan_cli_is_source_only_and_never_probes_runtime_target(self):
+        argv=['checkpoint-auth-live-adapter.py','--plan','--profile','attempt003']
+        with patch.object(h.sys,'argv',argv),patch.object(h,'LiveAdapter') as adapter,patch.object(h,'protected') as write,patch.object(h.scope,'OwnerApproval') as owner,patch.object(h.Path,'exists',side_effect=AssertionError('No runtime path probe')),patch('builtins.print') as output:
+            h.main()
+        value=json.loads(output.call_args.args[0])
+        self.assertEqual(value['profile'],'attempt003')
+        self.assertEqual(value['status'],'proposed_not_authorized')
+        self.assertEqual(value['scope_sha256'],h.scope.scope_digest(h.scope.plan_for('attempt003')))
+        adapter.assert_not_called();write.assert_not_called();owner.assert_not_called()
+        self.assertEqual(self.fake.calls,[])
+
+    def test_attempt003_execute_still_requires_separate_exact_owner_inputs(self):
+        argv=['checkpoint-auth-live-adapter.py','--execute','--profile','attempt003','--approval-file','/not-read','--browser-context','/not-read','--template','/not-read']
+        with patch.object(h.sys,'argv',argv),patch.object(h,'LiveAdapter') as adapter,patch.object(h.sys,'stderr'):
+            with self.assertRaises(SystemExit) as error:h.main()
+        self.assertEqual(error.exception.code,2);adapter.assert_not_called()
+
     def test_execute_requires_separate_trusted_owner_fields_before_receipt_or_adapter(self):
         argv=['checkpoint-auth-live-adapter.py','--execute','--approval-file','/not-read','--browser-context','/not-read','--template','/not-read']
         with patch.object(h.sys,'argv',argv),patch.object(h,'LiveAdapter') as adapter,patch.object(h.sys,'stderr'):

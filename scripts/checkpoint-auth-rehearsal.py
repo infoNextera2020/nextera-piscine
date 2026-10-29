@@ -41,7 +41,7 @@ class Plan:
 
 
 def plan_for(profile='attempt001'):
-    stems = {'attempt001': '20261028', 'attempt002': '20261029-attempt002'}
+    stems = {'attempt001': '20261028', 'attempt002': '20261029-attempt002', 'attempt003': '20261029-attempt003'}
     if profile not in stems:
         raise ScopeError('Unknown closed rehearsal profile.')
     rows = json.loads(Path(__file__).with_name('checkpoint-auth-profiles.json').read_text())
@@ -59,7 +59,7 @@ def plan_for(profile='attempt001'):
 
 
 def profile_for_plan(plan):
-    for profile in ['attempt001', 'attempt002']:
+    for profile in ['attempt001', 'attempt002', 'attempt003']:
         if plan == plan_for(profile):
             return profile
     raise ScopeError('Scope changed; review a new proposal before runtime approval.')
