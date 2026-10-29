@@ -23,3 +23,9 @@ All three fixture URLs returned HTTP 200. Production staff pages are not authent
 ## Delivery boundary
 
 Screenshots are saved under `C:/Users/lap/Documents/Codex/2026-10-24/task/verification/staff-browser-20261029/`. Automatic approval review rejected adding the Library upload helper because authority to upload these staff screenshots to the private Library was not explicit. No helper file or upload was created; no alternative route was attempted. Local delivery is complete. A specific approval to save the selected synthetic screenshots to the user's private ChatGPT Library is needed before that delivery action can resume.
+
+## Delivery completed after explicit approval
+
+The owner explicitly approved private delivery of all fourteen synthetic screenshots in `Sentinel_754d4f4bf350819194caab16f4119f8b`. The earlier helper-addition denial was retried once with that new evidence and succeeded. The official prepared flow then reported unavailable preparation tools before any transfer, so the documented ordered direct-create fallback was used. Its response was interrupted; a read-only recent Library inventory confirmed all fourteen files, with matching filenames and byte counts, before any further action. No upload batch was repeated.
+
+All fourteen screenshots are now in the private ChatGPT Library, totalling 633274 bytes. `confirmed-library-files.json` records confirmed IDs, sizes and creation times; unknown version IDs remain null. The official metadata helper associated every original local screenshot through its filesystem alias; identity markers were verified and all source SHA256 values remain unchanged. No auth file was copied, new credential created, file shared or public upload made. The runtime approval from the same message had independently expired before launch and was not reused.

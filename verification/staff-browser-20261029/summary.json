@@ -32,10 +32,16 @@
   "full_page_capture": "one CDP capture timeout, outcome checked; viewport captures succeeded without changing browser route",
   "performance_request_capture": "read-only browser performance API unavailable; no request count or latency claim",
   "library_delivery": {
-    "state": "blocked_before_upload",
-    "uploaded": false,
-    "helper_file_created": false,
-    "reason": "Automatic approval review rejected adding Library upload helper; screenshot-specific private destination authority requested. No alternate/direct upload attempted."
+    "state": "saved_and_confirmed",
+    "files": 14,
+    "bytes": 633274,
+    "authorization": "Sentinel_754d4f4bf350819194caab16f4119f8b explicitly approved private delivery independently of expired runtime window",
+    "destination": "private ChatGPT Library; no sharing/publication",
+    "prepared_flow": "official helper in WSL could not find native auth; no credential copied. Native official helper reported prepare_uploads unavailable before upload.",
+    "supported_fallback": "one ordered direct-create batch; response interrupted, authoritative recent inventory confirmed all14 creations; no duplicate batch attempted",
+    "original_identity_metadata": "applied using unchanged official helper through original filesystem aliases, verified on all 14; version_idnull preserved",
+    "original_source_bytes": "all14 SHA256 unchanged",
+    "new_security_credentials": false
   },
   "not_run": [
     "real staff authorization",
