@@ -1,0 +1,128 @@
+{
+  "status": "approved_learning_source_baseline_not_published",
+  "project": "Project 1 educational ATM",
+  "source_approval": "Owner approved delivered project; original draft/proposed labels preserved byte-for-byte, not silently promoted to platform policy.",
+  "team_size": 3,
+  "scope": [
+    "one invented account",
+    "mock PIN",
+    "balance",
+    "deposit",
+    "withdraw",
+    "exit",
+    "provided input bridge"
+  ],
+  "excluded": [
+    "transfers",
+    "PIN changes",
+    "multiple accounts",
+    "files or database persistence",
+    "web or network service",
+    "concurrency"
+  ],
+  "availability": "scheduled after Exam 1 independently of exam submission/pass; exact timestamps not configured",
+  "source_artifacts": [
+    {
+      "file": "atm-project-learner-en.md",
+      "library_file_id": "libfile_9a5215af72808191bcd6c90c0425fcc6",
+      "version": 0,
+      "bytes": 12235,
+      "sha256": "8d8ff72fdbc241e0c7fdcfe1692cef8223ee426ca68d373f004f63cf15f28a1b",
+      "identity_verified": true
+    },
+    {
+      "file": "atm-project-learner-source-v1.zip",
+      "library_file_id": "libfile_8c8418cdbf1c8191904efe8142db2bc4",
+      "version": 0,
+      "bytes": 11787,
+      "sha256": "13c824ca4768915d83f29f0e306875c7557eb1d7f20fd7de08c56d04aa30636b",
+      "identity_verified": true,
+      "entries": [
+        "README.md",
+        "input-demo/input.go",
+        "input-demo/main.go",
+        "learner-en.md",
+        "scaffold/README.md",
+        "scaffold/input.go",
+        "source-map.md"
+      ],
+      "zip_integrity": "pass"
+    },
+    {
+      "file": "atm-project-mentor-only-v1.zip",
+      "library_file_id": "libfile_9279a45649588191a3fc71d10182013a",
+      "version": 0,
+      "bytes": 6488,
+      "sha256": "0968e09d28327810b9b7ad7211c06751e36166beb679320b1315265ba9595686",
+      "identity_verified": true,
+      "entries": [
+        "input_adapter_test.go",
+        "mentor-checklist.md",
+        "verification.md"
+      ],
+      "zip_integrity": "pass"
+    },
+    {
+      "file": "atm-project-review-ar.md",
+      "library_file_id": "libfile_6cbbccb9c8f08191b795abad7876668e",
+      "version": 0,
+      "bytes": 11012,
+      "sha256": "49985d6c0456db0ea63cc7eab202814e2305ea966e588c84d5c974f4e3ce544f",
+      "identity_verified": true
+    }
+  ],
+  "files": [
+    {
+      "path": "README.md",
+      "bytes": 3115,
+      "sha256": "96f4bde77efb16b4dfa77f61315427093cbf0eac696973c580467fe408116051",
+      "audience": "learner"
+    },
+    {
+      "path": "input-demo/input.go",
+      "bytes": 474,
+      "sha256": "ce71d84089a9d950208be1479bbd731a0a1f86280370a75af4fd46fab5820bd3",
+      "audience": "learner"
+    },
+    {
+      "path": "input-demo/main.go",
+      "bytes": 317,
+      "sha256": "c0e05fbe9712a491552304a712724ffb377c2804e5a01feaf8f4b24ac4f5005b",
+      "audience": "learner"
+    },
+    {
+      "path": "learner-en.md",
+      "bytes": 12235,
+      "sha256": "8d8ff72fdbc241e0c7fdcfe1692cef8223ee426ca68d373f004f63cf15f28a1b",
+      "audience": "learner"
+    },
+    {
+      "path": "scaffold/README.md",
+      "bytes": 2841,
+      "sha256": "cacb3dc9611e619c5aa3d120f5fad91e3a8ac6d246bf743fab2b8ad165314234",
+      "audience": "learner"
+    },
+    {
+      "path": "scaffold/input.go",
+      "bytes": 474,
+      "sha256": "ce71d84089a9d950208be1479bbd731a0a1f86280370a75af4fd46fab5820bd3",
+      "audience": "learner"
+    },
+    {
+      "path": "source-map.md",
+      "bytes": 5293,
+      "sha256": "97c4175d1ff91e9fb8de4be34f3b29beb3734ecbc30077176ce5b48f3100a58c",
+      "audience": "learner"
+    },
+    {
+      "path": "review-ar.md",
+      "bytes": 11012,
+      "sha256": "49985d6c0456db0ea63cc7eab202814e2305ea966e588c84d5c974f4e3ce544f",
+      "audience": "owner_review"
+    }
+  ],
+  "mentor_source_location": "protected ignored .tools/library-atm-20261029/private-mentor; not learner/public assets",
+  "published": false,
+  "machine_contracts_enabled": false,
+  "full_ATM_solution_added": false
+}

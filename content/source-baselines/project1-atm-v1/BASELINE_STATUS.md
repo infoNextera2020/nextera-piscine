@@ -1,0 +1,9 @@
+# Project 1 educational ATM source baseline
+
+The owner approved the delivered project on 29 October 2026. The learner-source ZIP, standalone learner document, Arabic owner review and mentor-only test pack were materialized with the supported WSL workflow. Library identity/version metadata and archive integrity were verified before use. All source artifacts are version 0. Original learner/source files are copied byte-for-byte; their historical draft and proposed-value labels remain visible. No numeric limit is silently registered as an active platform setting.
+
+The scope is a team of three building a standalone standard-Go simulation of one invented account: mock PIN, balance, deposit, withdrawal and exit, using a provided input bridge. It has no real financial integration, transfers, PIN changes, multiple accounts, files/database persistence, web or concurrency. The input demonstration stays separate from the learner's future ATM program.
+
+The supplied ReadLine helper tests pass on the installed Go 1.26.2 Windows toolchain, with external downloads disabled. The input-only demonstration builds successfully and was not executed. This verifies the provided input helper, not a complete ATM solution, an interactive submission protocol or a working platform grader. No full ATM solution was added. Mentor tests/checklists remain in protected ignored staging, outside this learner baseline and public assets.
+
+The project opens at its scheduled time after Exam 1 independently of submitting/passing the exam. Exact release timestamps, upload packaging, interactive CLI evaluation, scoring, retry policy and immutable test-pack publication still require engineering/product configuration. The brief's local mentor demonstration fallback does not bypass the server's automated-evaluation and assigned-mentor completion requirements. No database, curriculum publication, user/team record, progression award or runtime credential is changed here.

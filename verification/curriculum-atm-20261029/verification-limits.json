@@ -1,0 +1,27 @@
+{
+  "full_ATM_program": "not implemented or tested",
+  "provided_input_demo": "built only, not executed",
+  "host_helper_tests": "passed",
+  "live_Judge_or_Raid_integration": "not run or enabled",
+  "original_source_bytes_preserved": true,
+  "source_whitespace_findings": [
+    {
+      "file": "README.md",
+      "finding": "original blank line at EOF preserved"
+    },
+    {
+      "file": "learner-en.md",
+      "finding": "original blank line at EOF preserved"
+    },
+    {
+      "file": "source-map.md",
+      "finding": "original blank line at EOF preserved"
+    },
+    {
+      "file": "review-ar.md",
+      "finding": "original blank line at EOF preserved"
+    }
+  ],
+  "mentor_private_material_in_learner_or_public_assets": false,
+  "no_new_numeric_machine_policy": true
+}

@@ -1,0 +1,40 @@
+{
+  "verified_at": "2026-10-29T10:58:56.618932+00:00",
+  "toolchain": "go version go1.26.2 windows/amd64",
+  "helper_test_returncode": 0,
+  "test_events": [
+    {
+      "name": "TestReadLine/empty-stream",
+      "result": "pass"
+    },
+    {
+      "name": "TestReadLine/blank-line",
+      "result": "pass"
+    },
+    {
+      "name": "TestReadLine/spaces-preserved",
+      "result": "pass"
+    },
+    {
+      "name": "TestReadLine/crlf",
+      "result": "pass"
+    },
+    {
+      "name": "TestReadLine/final-no-newline",
+      "result": "pass"
+    },
+    {
+      "name": "TestReadLine",
+      "result": "pass"
+    }
+  ],
+  "top_level_tests_passed": 1,
+  "subtests_passed": 5,
+  "tests_failed": 0,
+  "input_demo_build_returncode": 0,
+  "input_demo_executed": false,
+  "full_ATM_implemented_or_tested": false,
+  "platform_grader_verified": false,
+  "external_downloads": "disabled",
+  "scope": "provided input helper tests and input-only demonstration build; no banking implementation or live Judge"
+}
