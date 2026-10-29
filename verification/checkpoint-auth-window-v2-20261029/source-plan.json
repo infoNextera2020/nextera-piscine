@@ -1,0 +1,68 @@
+{
+  "scope_version": 2,
+  "owner_approval_max_age_seconds": 600,
+  "status": "proposed_not_authorized",
+  "plan": {
+    "project": "01coding-checkpoint-browser-20261029-attempt003",
+    "directory": "/home/anas/.local/share/nextera-judge/checkpoint-browser-20261029-attempt003/run-001",
+    "database": "foundation_test_checkpoint_browser_20261029_attempt003",
+    "bindings": [
+      ["gateway", "127.0.0.1", 56531],
+      ["db", "127.0.0.1", 56532],
+      ["app", "127.0.0.1", 3151]
+    ],
+    "services": ["db", "auth", "rest", "storage", "imgproxy", "meta", "studio", "api-gw"],
+    "migrations": [
+      "0000",
+      "0001",
+      "0002",
+      "0003",
+      "0004",
+      "0005",
+      "0006",
+      "0007",
+      "0008",
+      "0009",
+      "0010",
+      "0011",
+      "0014"
+    ],
+    "learners": [
+      "checkpoint-a-20261029-attempt003@example.invalid",
+      "checkpoint-b-20261029-attempt003@example.invalid"
+    ],
+    "login_role": "checkpoint_browser_web_20261029_attempt003",
+    "role_memberships": ["nextera_web"],
+    "maximum_seconds": 3600,
+    "auth_jwt_seconds": 300,
+    "checkpoint_seconds": 5400,
+    "draft_source_bytes": 1024,
+    "draft_receipts": 64,
+    "draft_total_source_bytes": 65536,
+    "draft_retention_seconds": 600,
+    "cleanup_authentication": "existing_test_accounts_inside_original_window_only",
+    "offline_recovery": false,
+    "retain_evidence_and_data": true,
+    "upstream_commit": "bc27d2661edd09a5d0b8d76ce33da6d4071a756e"
+  },
+  "gates": [
+    "pinned_images_and_template_verified",
+    "fresh_resources",
+    "permitted_authenticated_browser_target",
+    "new_action_time_approval",
+    "independent_deadline_and_parent_loss_guard",
+    "real_runtime_adapter_review"
+  ],
+  "excluded": [
+    "public_run",
+    "official_submit",
+    "invitations",
+    "mentor_awards",
+    "retained_databases",
+    "new_installs",
+    "security_setting_changes"
+  ],
+  "deadline_coverage": "Legacy attempt is 90 minutes; the one-hour stack cannot wait for its natural expiry. No deadline rewrite or full browser expiry claim.",
+  "profile": "attempt003",
+  "scope_sha256": "2ea73394604160d80746e9c50d499b25c361ec6c430195899dfb5e18b263dfd6"
+}

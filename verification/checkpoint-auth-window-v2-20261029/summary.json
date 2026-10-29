@@ -1,0 +1,98 @@
+{
+  "recorded_at_utc": "2026-10-29T14:02:27.278192+00:00",
+  "base_head": "e71b6370309cd9ef2d2438b2d3fdf10886960da7",
+  "scope_version": 2,
+  "profile": "attempt003",
+  "scope_sha256": "2ea73394604160d80746e9c50d499b25c361ec6c430195899dfb5e18b263dfd6",
+  "owner_approval_max_age_seconds": 600,
+  "runtime_maximum_seconds": 3600,
+  "cleanup_starts_seconds_early": 180,
+  "source_change_approval": {
+    "message_id": "Sentinel_6c15d89054c08191b4923a8313c5552b",
+    "approved_at_utc": "2026-10-29T13:51:58Z",
+    "scope": "source_policy_only_not_runtime"
+  },
+  "checks": [
+    {
+      "name": "python_ast",
+      "status": "passed"
+    },
+    {
+      "name": "python_injected",
+      "command": [
+        "python3",
+        "-B",
+        "-m",
+        "unittest",
+        "discover",
+        "-s",
+        "scripts/tests",
+        "-p",
+        "test_checkpoint_auth*.py"
+      ],
+      "exit_code": 0
+    },
+    {
+      "name": "node_injected",
+      "command": [
+        "/home/anas/nextera-piscine/.tools/node-v24.19.0-linux-x64/bin/node",
+        "--test",
+        "scripts/tests/checkpoint-auth-runtime.node-unit.mjs"
+      ],
+      "exit_code": 0
+    },
+    {
+      "name": "format",
+      "command": [
+        "/home/anas/nextera-piscine/.tools/node-v24.19.0-linux-x64/bin/node",
+        "node_modules/prettier/bin/prettier.cjs",
+        "--check",
+        "docs/CHECKPOINT_AUTH_APPROVAL_WINDOW_002.md",
+        "docs/CHECKPOINT_AUTH_ATTEMPT003_PROPOSAL.md",
+        "docs/CHECKPOINT_AUTH_APPROVAL_CORRECTION_001.md",
+        "docs/CHECKPOINT_AUTH_PREFLIGHT_REVIEW_002.md"
+      ],
+      "exit_code": 0
+    },
+    {
+      "name": "diff",
+      "command": ["git", "diff", "--check"],
+      "exit_code": 0
+    },
+    {
+      "name": "source_plan",
+      "command": [
+        "python3",
+        "-B",
+        "scripts/checkpoint-auth-live-adapter.py",
+        "--plan",
+        "--profile",
+        "attempt003"
+      ],
+      "exit_code": 0
+    }
+  ],
+  "python_injected_tests": 73,
+  "node_injected_tests": 28,
+  "independent_review": {
+    "finding": "no_blocking_source_or_documentation_findings",
+    "mode": "read_only_no_runtime",
+    "minor_documentation_clarifications": "historical version1 tests labeled; expired dispatch has no owner receipt"
+  },
+  "unchanged_dirty_sha256": {
+    "apps/web/public/ASSETS.md": "feca5ebec9df9b3842afadb1c0a6442e24b38ad479c9445e1f1d26f2cd9a3cf9",
+    "apps/web/components/learning/home-next-action.module.css": "4eaa849950b223af5c220b8330ca6e3f732c865e907a66a454798dff22916d87",
+    "apps/web/public/piscine/official-logo.svg": "0fde8181d16ceb17ac55e6d52e8cab523c3f75976a9aaa81b8695942c7336e54",
+    "docs/RELEASE_CANDIDATE_001_REPORT.md": "95e04b9accaf10d922e5acac157d8d5d7ae33ef17284ccef042558fa0fbca2fd"
+  },
+  "no_runtime_launch": true,
+  "no_runtime_resources_or_keys_created": true,
+  "no_owner_runtime_receipt_created": true,
+  "operational_preflight": "not_repeated; earlier availability/browser observations are stale",
+  "not_run": [
+    "live_auth",
+    "database",
+    "browser",
+    "application_build_typecheck_lint_unaffected_by_python_docs_change"
+  ]
+}

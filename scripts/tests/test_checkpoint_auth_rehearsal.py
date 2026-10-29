@@ -131,7 +131,7 @@ class GuardTests(unittest.TestCase):
                 with self.subTest(profile=name,field=field),self.assertRaises(h.ScopeError):h.proposal(replace(fresh,**{field:getattr(closed,field)}))
         self.assertEqual(h.proposal(fresh)['status'],'proposed_not_authorized')
 
-    def test_attempt003_keeps_immutable_owner_binding_and_sixty_second_guard(self):
+    def test_attempt003_keeps_immutable_owner_binding_and_approved_ten_minute_guard(self):
         fresh=h.plan_for('attempt003')
         # These are deterministic 1970 fake inputs, never operational approval.
         owner=h.OwnerApproval('Sentinel_'+'3'*32,'1970-01-01T00:16:40Z',h.scope_digest(fresh))
@@ -139,14 +139,89 @@ class GuardTests(unittest.TestCase):
         with self.assertRaises(h.ScopeError):h.exercise_injected(self.f,self.approval,lambda:1000,fresh,owner_approval=self.owner)
         self.assertEqual(self.f.events,[])
         self.f.proof.update(database=fresh.database,project=fresh.project)
-        h.validate_owner_approval(receipt,owner,1060,fresh)
-        expired=h.approval_receipt(owner,fresh,1061)
-        with self.assertRaises(h.ScopeError):h.exercise_injected(self.f,expired,lambda:1061,fresh,owner_approval=owner)
+        h.validate_owner_approval(receipt,owner,1600,fresh)
+        expired=h.approval_receipt(owner,fresh,1601)
+        with self.assertRaises(h.ScopeError):h.exercise_injected(self.f,expired,lambda:1601,fresh,owner_approval=owner)
         self.assertEqual(self.f.events,[])
         outcome=h.exercise_injected(self.f,receipt,lambda:1000,fresh,owner_approval=owner)
         self.assertTrue(outcome['assertions_passed']);self.assertTrue(outcome['cleanup_verified'])
         self.assertEqual(outcome['owner_approved_at_utc'],'1970-01-01T00:16:40Z')
         self.assertEqual(outcome['deadline']-outcome['started'],3600)
+
+
+    def test_attempt003_v2_scope_binds_window_and_invalidates_old_receipts_before_preflight(self):
+        plan=h.plan_for('attempt003');proposal=h.proposal(plan)
+        self.assertEqual(proposal['scope_version'],2)
+        self.assertEqual(proposal['owner_approval_max_age_seconds'],600)
+        self.assertEqual(h.approval_max_age_seconds(plan),600)
+        old_digest='fa9c9ff5dd44fd4627b8da3d06e76d548dc7748b94fc05c824602f74712342ad'
+        self.assertNotEqual(h.scope_digest(plan),old_digest)
+        self.assertEqual(h.scope_digest(plan),'2ea73394604160d80746e9c50d499b25c361ec6c430195899dfb5e18b263dfd6')
+        self.assertEqual((h.approval_max_age_seconds(h.plan_for('attempt001')),h.approval_max_age_seconds(h.plan_for('attempt002'))),(60,60))
+        owner=h.OwnerApproval('Sentinel_'+'1'*32,'1970-01-01T00:16:40Z',old_digest)
+        raw={'message_id':owner.message_id,'approved_at_utc':owner.approved_at_utc,'scope_sha256':old_digest}
+        receipt={'scope_sha256':old_digest,'confirmed_at_action_time':True,'browser_origin':'http://127.0.0.1:3151',
+                 'owner_message_id':owner.message_id,'owner_approved_at_utc':owner.approved_at_utc,
+                 'owner_binding_sha256':h.hashlib.sha256(h.json.dumps(raw,sort_keys=True,separators=(',',':')).encode()).hexdigest(),
+                 'receipt_created_at_epoch':1000}
+        for now in [1000,1059]:
+            with self.subTest(now=now),self.assertRaises(h.ScopeError):h.exercise_injected(self.f,receipt,lambda:now,plan,owner_approval=owner)
+        # Merely replacing the receipt's scope cannot rebind its independent owner.
+        with self.assertRaises(h.ScopeError):h.exercise_injected(self.f,{**receipt,'scope_sha256':h.scope_digest(plan)},lambda:1000,plan,owner_approval=owner)
+        with self.assertRaises(h.ScopeError):h.approval_receipt(owner,plan,1000)
+        self.assertEqual(self.f.events,[])
+
+    def test_attempt003_exact_six_hundred_second_microsecond_boundary_and_future_rejection(self):
+        plan=h.plan_for('attempt003')
+        owner=h.OwnerApproval('Sentinel_'+'2'*32,'2026-10-29T13:17:45.761136Z',h.scope_digest(plan))
+        receipt=h.approval_receipt(owner,plan,owner.epoch)
+        self.assertEqual(receipt['owner_approved_at_utc'],'2026-10-29T13:17:45.761136Z')
+        past_legacy_boundary=owner.epoch+60.000001
+        h.validate_owner_approval(receipt,owner,past_legacy_boundary,plan)
+        boundary=h.datetime(2026,10,29,13,27,45,761136,tzinfo=h.timezone.utc).timestamp()
+        h.validate_owner_approval(receipt,owner,boundary,plan)
+        late=h.datetime(2026,10,29,13,27,45,761137,tzinfo=h.timezone.utc).timestamp()
+        future=h.datetime(2026,10,29,13,17,45,761135,tzinfo=h.timezone.utc).timestamp()
+        for now in [late,future]:
+            with self.subTest(now=now),self.assertRaises(h.ScopeError):h.exercise_injected(self.f,receipt,lambda:now,plan,owner_approval=owner)
+        regenerated=h.approval_receipt(owner,plan,late)
+        with self.assertRaises(h.ScopeError):h.exercise_injected(self.f,regenerated,lambda:late,plan,owner_approval=owner)
+        self.assertEqual(self.f.events,[])
+
+    def test_attempt003_slow_preflight_rechecks_ten_minute_age_before_reservation(self):
+        plan=h.plan_for('attempt003')
+        owner=h.OwnerApproval('Sentinel_'+'4'*32,'1970-01-01T00:16:40Z',h.scope_digest(plan))
+        receipt=h.approval_receipt(owner,plan,1000)
+        for end in [1061,1600,1600.000001]:
+            fake=FakeRuntime();fake.proof.update(database=plan.database,project=plan.project)
+            original=fake.preflight
+            def slow(p):
+                proof=original(p);fake.clock=end;return proof
+            fake.preflight=slow
+            if end<=1600:
+                result=h.exercise_injected(fake,receipt,lambda:fake.clock,plan,owner_approval=owner)
+                self.assertTrue(result['assertions_passed']);self.assertTrue(result['cleanup_verified'])
+                self.assertEqual(result['started'],end);self.assertEqual(result['deadline']-result['started'],3600)
+            else:
+                with self.assertRaises(h.ScopeError):h.exercise_injected(fake,receipt,lambda:fake.clock,plan,owner_approval=owner)
+                self.assertEqual(fake.events,['preflight'])
+
+    def test_expired_attempt003_message_cannot_be_rebound_to_v2_or_refreshed(self):
+        plan=h.plan_for('attempt003');message='Sentinel_754d4f4bf350819194caab16f4119f8b'
+        stamp,digest=h.CLOSED_OWNER_APPROVALS[message]
+        self.assertEqual(stamp,'2026-10-29T13:17:45.761136Z')
+        owner=h.OwnerApproval(message,stamp,digest)
+        for change in [{'scope_sha256':h.scope_digest(plan)},{'approved_at_utc':'2026-10-29T13:51:58Z'}]:
+            with self.subTest(change=change),self.assertRaises(h.ScopeError):replace(owner,**change)
+        with self.assertRaises(h.ScopeError):h.validate_owner_approval({},owner,owner.epoch,plan)
+        self.assertEqual(self.f.events,[])
+
+    def test_source_only_policy_approval_cannot_authorize_runtime(self):
+        plan=h.plan_for('attempt003')
+        owner=h.OwnerApproval('Sentinel_6c15d89054c08191b4923a8313c5552b','2026-10-29T13:51:58Z',h.scope_digest(plan))
+        receipt=h.approval_receipt(owner,plan,owner.epoch)
+        with self.assertRaises(h.ScopeError):h.exercise_injected(self.f,receipt,lambda:owner.epoch,plan,owner_approval=owner)
+        self.assertEqual(self.f.events,[])
 
     def test_profile_registry_cannot_add_or_rebind_arbitrary_targets(self):
         original=h.json.loads(h.Path(h.__file__).with_name('checkpoint-auth-profiles.json').read_text())

@@ -1,0 +1,17 @@
+# Attempt003 approval admission window, version 2
+
+Status: source implemented and injected tests passed; no runtime launch authorized by this record.
+
+The owner approved the source-policy change in `Sentinel_6c15d89054c08191b4923a8313c5552b` at exactly `2026-10-29T13:51:58Z`. The approval-to-launch limit for the unused attempt003 profile is now **600 seconds**, inclusive, measured from the authentic owner message time. Receipt creation is a separate audit time and cannot renew approval. Fractional timestamp text and microsecond precision remain unchanged.
+
+The attempt003 proposal now includes `scope_version: 2` and `owner_approval_max_age_seconds: 600`. Its new scope SHA256 is `2ea73394604160d80746e9c50d499b25c361ec6c430195899dfb5e18b263dfd6`. The old version 1 digest `fa9c9ff5dd44fd4627b8da3d06e76d548dc7748b94fc05c824602f74712342ad` is invalid for this launch path, including when a matching old receipt is otherwise fresh. The expired message `Sentinel_754d4f4bf350819194caab16f4119f8b`, with its exact old timestamp and scope, is pinned as closed. It cannot be reassigned to version 2. The source-policy approval message is also rejected as a runtime grant.
+
+Historical attempt001/002 policies and scope digests retain their original 60-second bound. Their closed grants remain closed. The strict lease-read check is unchanged; no old-digest exception or old-data access was added. Historical cleanup retains its original immutable copied source. No old runtime root, data, permissions, service or evidence was changed.
+
+Before and immediately after read-only preflight, the controller validates the independent immutable owner tuple against its receipt, exact current scope, and observed clock. Future, expired, closed, reassigned, missing and wrong-scope evidence rejects before reservation. The new limit permits admission through exactly 600 seconds; 600 seconds plus one microsecond rejects. Preflight does not restart the clock. Admission still requires an exact separately fresh runtime approval after source review.
+
+All runtime limits remain unchanged: at most 3600 seconds after issuance, cleanup begins 180 seconds early, independent deadline/parent-loss protection, least privilege, loopback-only bindings, scoped migrations, two synthetic learners, protected retained evidence/data, and no renewal. This source change does not authorize keys, accounts, SQL execution, services or a launch. No Run, grading, invitations or Raid scope was added.
+
+Verification: **73 Python injected tests and 28 Node injected tests passed**. Coverage includes both new boundary cases, fractional precision/raw binding, old receipts at age zero and 59 seconds, post-60-second admission, stale/future/closed grants, regenerated receipt rejection, and slow preflight on either side of the new boundary. Python tests patch subprocess/socket access; Node tests use injected adapters. No live Auth/database/browser assertions are claimed. No TypeScript or application UI changed; a production app build is not evidence for this Python admission change and was not rerun.
+
+The current read-only resource/browser preflight is still required before the parent asks for a fresh runtime approval. Earlier availability checks are stale. The prior expired dispatch remains failure evidence; its timestamp must not be refreshed or turned into a new receipt. See [the exact attempt003 proposal](CHECKPOINT_AUTH_ATTEMPT003_PROPOSAL.md).

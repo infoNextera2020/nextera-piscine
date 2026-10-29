@@ -65,9 +65,18 @@ def profile_for_plan(plan):
     raise ScopeError('Scope changed; review a new proposal before runtime approval.')
 
 
+ATTEMPT003_APPROVAL_MAX_AGE_SECONDS = 600
+
+
+def approval_max_age_seconds(plan):
+    # Closed historical profiles retain their original policy and scope digests.
+    return ATTEMPT003_APPROVAL_MAX_AGE_SECONDS if profile_for_plan(plan) == 'attempt003' else 60
+
+
 def proposal(plan=Plan()):
     profile_for_plan(plan)
-    return {'status': 'proposed_not_authorized', 'plan': asdict(plan),
+    policy = {'scope_version': 2, 'owner_approval_max_age_seconds': approval_max_age_seconds(plan)} if profile_for_plan(plan) == 'attempt003' else {}
+    return {**policy, 'status': 'proposed_not_authorized', 'plan': asdict(plan),
             'gates': ['pinned_images_and_template_verified', 'fresh_resources',
                       'permitted_authenticated_browser_target', 'new_action_time_approval',
                       'independent_deadline_and_parent_loss_guard', 'real_runtime_adapter_review'],
@@ -84,7 +93,10 @@ def scope_digest(plan=Plan()):
 # A closed grant cannot be relabeled as a new action-time approval.
 CLOSED_OWNER_APPROVALS = MappingProxyType({
     'Sentinel_7b5ec1bcc1cc819187d19f16ccc96f4a': ('2026-10-29T09:17:11Z', 'a267f057515c96963d1c44ae2125f68b41521c822ec62fc7be48c36507724b72'),
+    'Sentinel_754d4f4bf350819194caab16f4119f8b': ('2026-10-29T13:17:45.761136Z', 'fa9c9ff5dd44fd4627b8da3d06e76d548dc7748b94fc05c824602f74712342ad'),
 })
+# This message approved source-policy changes only, never a runtime launch.
+SOURCE_ONLY_OWNER_MESSAGES = frozenset({'Sentinel_6c15d89054c08191b4923a8313c5552b'})
 _OWNER_BINDINGS = dict(CLOSED_OWNER_APPROVALS)
 
 
@@ -134,6 +146,8 @@ def approval_receipt(owner, plan, receipt_created_at_epoch):
 def validate_owner_approval(receipt, owner, observed_at, plan):
     if not isinstance(owner, OwnerApproval):
         raise ScopeError('Immutable owner message/time input is required separately from the receipt.')
+    if owner.message_id in SOURCE_ONLY_OWNER_MESSAGES:
+        raise ScopeError('Source-policy approval is not runtime launch approval.')
     if owner.message_id in CLOSED_OWNER_APPROVALS:
         raise ScopeError('Closed owner approval cannot be reused; new owner approval is required.')
     if receipt.get('browser_origin') != 'http://127.0.0.1:3151':
@@ -147,7 +161,7 @@ def validate_owner_approval(receipt, owner, observed_at, plan):
     created = receipt.get('receipt_created_at_epoch')
     if type(created) not in (int, float) or not owner.epoch <= created <= observed_at:
         raise ScopeError('Invalid receipt creation audit time.')
-    if not 0 <= observed_at - owner.epoch <= 60:
+    if not 0 <= observed_at - owner.epoch <= approval_max_age_seconds(plan):
         raise ScopeError('Owner approval is expired or from the future; receipt creation cannot renew it.')
 
 

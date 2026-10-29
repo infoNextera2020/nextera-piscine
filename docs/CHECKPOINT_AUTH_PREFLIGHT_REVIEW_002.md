@@ -23,3 +23,7 @@ Both old runtime targets remain occupied by retained evidence. A future test nee
 Persisted Quest peer/mentor assignment and review queues, admin people/schedule management and full invitation/Checkpoint/public Run integration still need implementation or operational verification. Existing roles remain scalar learner/operator/admin; there is no new multi-role switch or privilege grant. Scheduled access remains independent of mentor mastery/XP.
 
 Approved content is not immutable catalog publication. Exact release timestamps, retry/partial-credit rules, complete question banks and publication/test-pack readiness remain explicit gates. Exam 1 is 180 minutes with >=60 total and >=45 coding; its mixed coding/trace/debug presentation needs an approved coherent delivery contract. The ATM needs a reviewed multi-file/interactive input evaluation contract and immutable business test pack before automatic evaluation; mentor demonstration cannot substitute for server-required automated PASS.
+
+## Later approved attempt003 admission policy
+
+The 60-second statements above describe the source at this historical milestone. The owner later approved a source-only change to 600 seconds for attempt003, with a new versioned scope digest. Historical attempt001/002 bindings and policy remain unchanged. See [the version 2 policy and verification](CHECKPOINT_AUTH_APPROVAL_WINDOW_002.md). This update is not a launch authorization and does not refresh any old grant.

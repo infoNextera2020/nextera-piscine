@@ -41,3 +41,7 @@ The source now explicitly supplies the three expected DB bootstrap variables wit
 The later attempt003 approval was `Sentinel_754d4f4bf350819194caab16f4119f8b` at exactly `2026-10-29T13:17:45.761136Z`. The first local clock check was 13:19:59 UTC, after the unchanged 60-second cutoff at 13:18:45.761136 UTC. No launch, runtime target, credential, owner receipt or lease was created. The approval was not refreshed or reused.
 
 Source inspection also found that OwnerApproval accepted only whole-second timestamps. The parser now accepts one through six fractional digits while retaining the exact trusted text and microsecond epoch. It does not round, truncate, derive approval from receipt creation or alter the age guard. Tests cover the exact 60-second boundary, one microsecond late, expired regenerated receipts, malformed precision and raw binding reassignment. 68 Python and 28 Node injected tests pass. This is source verification, not a runtime retry; a genuinely new approval is still required after review/preparation.
+
+## Later approved attempt003 admission policy
+
+The 60-second statements above describe the source at this historical milestone. The owner later approved a source-only change to 600 seconds for attempt003, with a new versioned scope digest. Historical attempt001/002 bindings and policy remain unchanged. See [the version 2 policy and verification](CHECKPOINT_AUTH_APPROVAL_WINDOW_002.md). This update is not a launch authorization and does not refresh any old grant.
