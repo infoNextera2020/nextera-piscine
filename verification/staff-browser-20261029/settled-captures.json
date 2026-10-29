@@ -1,0 +1,44 @@
+[
+  {
+    "screen": "mentor",
+    "width": 1440,
+    "clientWidth": 1425,
+    "imagesReady": true,
+    "scrollWidth": 1425
+  },
+  {
+    "screen": "raid-detail",
+    "width": 1440,
+    "clientWidth": 1425,
+    "imagesReady": true,
+    "scrollWidth": 1425
+  },
+  {
+    "screen": "admin",
+    "width": 1440,
+    "clientWidth": 1425,
+    "imagesReady": true,
+    "scrollWidth": 1425
+  },
+  {
+    "screen": "mentor",
+    "width": 390,
+    "clientWidth": 375,
+    "imagesReady": true,
+    "scrollWidth": 375
+  },
+  {
+    "screen": "raid-detail",
+    "width": 390,
+    "clientWidth": 375,
+    "imagesReady": true,
+    "scrollWidth": 375
+  },
+  {
+    "screen": "admin",
+    "width": 390,
+    "clientWidth": 375,
+    "imagesReady": true,
+    "scrollWidth": 375
+  }
+]

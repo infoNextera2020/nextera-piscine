@@ -1,0 +1,31 @@
+{
+  "fixtureOnly": true,
+  "liveAuthDbRunner": false,
+  "checks": {
+    "keyboardSkipFocus": "staff-main",
+    "visibleButtonFocus": true,
+    "minimumMeasuredReviewButtonsCssPixels": [157, 45],
+    "failedReviewRetainsFeedback": true,
+    "repeatedClickBusyDisabledObserved": true,
+    "requestCountOrPayloadCapture": "not available through read-only browser evaluate",
+    "accessDenialRemovesProtectedHistoryAndControls": true,
+    "accessDenialTextboxCount": 0,
+    "accessDenialArtifactLinkCount": 0,
+    "failedRefreshApproveEnabled": false,
+    "failedRefreshChangesEnabled": false,
+    "failedRefreshRetainsFeedback": true,
+    "adminPreviewReviewButtonCount": 0,
+    "adminPreviewArtifactLinkCount": 0,
+    "expandedDisclosures320NoHorizontalOverflow": true,
+    "emptyAndUnavailableStatesDistinct": true,
+    "backForwardTeamNavigation": true,
+    "consoleWarnErrorEntries": 0,
+    "temporaryViewportReset": true
+  },
+  "limitations": [
+    "No real approval or Storage download; fixture mutations return503.",
+    "No live authorization, persistence, SMTP, Runner or learner progress.",
+    "Reduced-motion emulation and zoom were not changed.",
+    "A full-page screenshot call timed out; standard viewport screenshots succeeded on the same supported browser."
+  ]
+}

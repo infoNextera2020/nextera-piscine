@@ -1,0 +1,19 @@
+{
+  "listener_pid": 52589,
+  "listener": "127.0.0.1:3118",
+  "listener_restarted": false,
+  "new_listener": false,
+  "fixture_only": true,
+  "auth_db_runner": false,
+  "source_head": "20b9c700654bc72fa1021da559a1e27e933cb7fc",
+  "components": [
+    "StaffShell",
+    "MentorOverview",
+    "AdminOverview",
+    "StaffRaidQueue",
+    "StaffRaidReviewDetail"
+  ],
+  "bundle_sha256": "bf77c982e75aa6bd830de29f1d5cc66405ac4b6f254944bb69d7b59e9b4f3941",
+  "css_sha256": "0bf14269c375b5e8b545af39ef696343336f802ea30d2200c33b5f6fb23a1451",
+  "simulated": "queue and GET Raid fixture data only; mutating actions return503"
+}

@@ -1,0 +1,47 @@
+{
+  "checked_at": "2026-10-29T12:02:14.094056+00:00",
+  "browser": "connected supported Chrome extension, verified localhost context; no denied route or security setting change",
+  "http": [
+    {
+      "url": "http://127.0.0.1:3118/operator?state=raid-mentor",
+      "status": 200
+    },
+    {
+      "url": "http://127.0.0.1:3118/operator/raids?team=33333333-3333-4333-8333-333333333333&state=raid-mentor",
+      "status": 200
+    },
+    {
+      "url": "http://127.0.0.1:3118/operator?state=raid-owner",
+      "status": 200
+    }
+  ],
+  "responsive_cases": 12,
+  "widths": [1440, 768, 390, 320],
+  "normal_horizontal_overflow_cases": 0,
+  "images": 14,
+  "fixture_only": true,
+  "live_auth_db_storage": false,
+  "console_warn_error_entries": 0,
+  "listener": {
+    "pid": 52589,
+    "bind": "127.0.0.1:3118",
+    "existing_process_unchanged": true,
+    "new_listener_started": false
+  },
+  "viewport_reset": true,
+  "full_page_capture": "one CDP capture timeout, outcome checked; viewport captures succeeded without changing browser route",
+  "performance_request_capture": "read-only browser performance API unavailable; no request count or latency claim",
+  "library_delivery": {
+    "state": "blocked_before_upload",
+    "uploaded": false,
+    "helper_file_created": false,
+    "reason": "Automatic approval review rejected adding Library upload helper; screenshot-specific private destination authority requested. No alternate/direct upload attempted."
+  },
+  "not_run": [
+    "real staff authorization",
+    "persisted mentor approval",
+    "real Storage artifact download",
+    "zoom or screen-reader audit",
+    "reduced-motion emulation"
+  ]
+}

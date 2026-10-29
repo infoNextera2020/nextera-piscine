@@ -1,0 +1,114 @@
+[
+  {
+    "file": "admin-1440.jpg",
+    "bytes": 69615,
+    "sha256": "420717bbc29c068ea5628123cbc8e7e38f274d2e2ce41c4193dcee9ccbc48313",
+    "dimensions": [1425, 891],
+    "local_directory": "C:/Users/lap/Documents/Codex/2026-10-24/task/verification/staff-browser-20261029",
+    "content": "actual browser screenshot of sample-data components; no live account or result"
+  },
+  {
+    "file": "admin-320.jpg",
+    "bytes": 29396,
+    "sha256": "cd59c6c443a34ce3f5b9031c0754578b71e01d5fdeed91a819c47a2eb00b19a9",
+    "dimensions": [305, 705],
+    "local_directory": "C:/Users/lap/Documents/Codex/2026-10-24/task/verification/staff-browser-20261029",
+    "content": "actual browser screenshot of sample-data components; no live account or result"
+  },
+  {
+    "file": "admin-390.jpg",
+    "bytes": 35877,
+    "sha256": "dc90cdca014c1ff9a2b11382846099776869df859e9550cf8ca0385d5d7628ec",
+    "dimensions": [375, 812],
+    "local_directory": "C:/Users/lap/Documents/Codex/2026-10-24/task/verification/staff-browser-20261029",
+    "content": "actual browser screenshot of sample-data components; no live account or result"
+  },
+  {
+    "file": "admin-768.jpg",
+    "bytes": 61485,
+    "sha256": "54464003a5faf1041e577fb3299007334a1b01173e39f6a764ff76da8d5b6b82",
+    "dimensions": [753, 1004],
+    "local_directory": "C:/Users/lap/Documents/Codex/2026-10-24/task/verification/staff-browser-20261029",
+    "content": "actual browser screenshot of sample-data components; no live account or result"
+  },
+  {
+    "file": "mentor-1440.jpg",
+    "bytes": 56217,
+    "sha256": "71544f2170af7c23941485df3c9b5d1a2bf0910e25a49c54d8903d2484963f39",
+    "dimensions": [1425, 891],
+    "local_directory": "C:/Users/lap/Documents/Codex/2026-10-24/task/verification/staff-browser-20261029",
+    "content": "actual browser screenshot of sample-data components; no live account or result"
+  },
+  {
+    "file": "mentor-320.jpg",
+    "bytes": 29713,
+    "sha256": "92408cfa6f4fd627742822d6ba0c63207f35c58f89540ad6f92ff7d72dcdb55d",
+    "dimensions": [305, 705],
+    "local_directory": "C:/Users/lap/Documents/Codex/2026-10-24/task/verification/staff-browser-20261029",
+    "content": "actual browser screenshot of sample-data components; no live account or result"
+  },
+  {
+    "file": "mentor-390.jpg",
+    "bytes": 34557,
+    "sha256": "e5ac19c1cb7880d602343fe0a365312aedb7bc6c268970afe6474feb943f0fd8",
+    "dimensions": [375, 812],
+    "local_directory": "C:/Users/lap/Documents/Codex/2026-10-24/task/verification/staff-browser-20261029",
+    "content": "actual browser screenshot of sample-data components; no live account or result"
+  },
+  {
+    "file": "mentor-768.jpg",
+    "bytes": 54565,
+    "sha256": "1cb554c7902a9c1fb5671ab2c2ac503b7805c8b9af9b1fcb331eb36ffbdc7a76",
+    "dimensions": [753, 1004],
+    "local_directory": "C:/Users/lap/Documents/Codex/2026-10-24/task/verification/staff-browser-20261029",
+    "content": "actual browser screenshot of sample-data components; no live account or result"
+  },
+  {
+    "file": "raid-access-390.jpg",
+    "bytes": 34939,
+    "sha256": "b46bbec304c81d0a4fb94757a810d6258d25e2631211e403afc7f36ea1845af2",
+    "dimensions": [375, 812],
+    "local_directory": "C:/Users/lap/Documents/Codex/2026-10-24/task/verification/staff-browser-20261029",
+    "content": "actual browser screenshot of sample-data components; no live account or result"
+  },
+  {
+    "file": "raid-detail-1440.jpg",
+    "bytes": 75394,
+    "sha256": "7e1da88ab0e2487ac6b0e22c2d2d379d1123475df9bb6357c59ba0816aca9272",
+    "dimensions": [1425, 891],
+    "local_directory": "C:/Users/lap/Documents/Codex/2026-10-24/task/verification/staff-browser-20261029",
+    "content": "actual browser screenshot of sample-data components; no live account or result"
+  },
+  {
+    "file": "raid-detail-320.jpg",
+    "bytes": 30532,
+    "sha256": "46d5d0269d39a1055233b20a0a500e6a03e0974c506bc408fb8680a04138d907",
+    "dimensions": [305, 705],
+    "local_directory": "C:/Users/lap/Documents/Codex/2026-10-24/task/verification/staff-browser-20261029",
+    "content": "actual browser screenshot of sample-data components; no live account or result"
+  },
+  {
+    "file": "raid-detail-390.jpg",
+    "bytes": 36190,
+    "sha256": "a3c0c461feba154c9a76ed9d3027b05a191d8a3372bafe53bc3ca3ffe29e2b22",
+    "dimensions": [375, 812],
+    "local_directory": "C:/Users/lap/Documents/Codex/2026-10-24/task/verification/staff-browser-20261029",
+    "content": "actual browser screenshot of sample-data components; no live account or result"
+  },
+  {
+    "file": "raid-detail-768.jpg",
+    "bytes": 56984,
+    "sha256": "55fdce21acf8d6864dd2a0139ad25c09d0ee320b8ac5a70daf652f54e3d78669",
+    "dimensions": [753, 1004],
+    "local_directory": "C:/Users/lap/Documents/Codex/2026-10-24/task/verification/staff-browser-20261029",
+    "content": "actual browser screenshot of sample-data components; no live account or result"
+  },
+  {
+    "file": "raid-form-320.jpg",
+    "bytes": 27810,
+    "sha256": "7a3e631663f2fbac969e5d2b0fcab184b00d441846ebbba52114aca095fbb752",
+    "dimensions": [305, 705],
+    "local_directory": "C:/Users/lap/Documents/Codex/2026-10-24/task/verification/staff-browser-20261029",
+    "content": "actual browser screenshot of sample-data components; no live account or result"
+  }
+]

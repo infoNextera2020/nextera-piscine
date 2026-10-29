@@ -1,0 +1,98 @@
+[
+  {
+    "screen": "mentor",
+    "brokenImages": 0,
+    "clientWidth": 1425,
+    "h1": "Your review queue",
+    "scrollWidth": 1425,
+    "viewport": [1440, 900]
+  },
+  {
+    "screen": "raid-detail",
+    "brokenImages": 0,
+    "clientWidth": 1425,
+    "h1": "Review the work.",
+    "scrollWidth": 1425,
+    "viewport": [1440, 900]
+  },
+  {
+    "screen": "admin",
+    "brokenImages": 0,
+    "clientWidth": 1425,
+    "h1": "Keep the cohort moving.",
+    "scrollWidth": 1425,
+    "viewport": [1440, 900]
+  },
+  {
+    "screen": "mentor",
+    "brokenImages": 0,
+    "clientWidth": 753,
+    "h1": "Your review queue",
+    "scrollWidth": 753,
+    "viewport": [768, 1024]
+  },
+  {
+    "screen": "raid-detail",
+    "brokenImages": 0,
+    "clientWidth": 753,
+    "h1": "Review the work.",
+    "scrollWidth": 753,
+    "viewport": [768, 1024]
+  },
+  {
+    "screen": "admin",
+    "brokenImages": 0,
+    "clientWidth": 753,
+    "h1": "Keep the cohort moving.",
+    "scrollWidth": 753,
+    "viewport": [768, 1024]
+  },
+  {
+    "screen": "mentor",
+    "brokenImages": 0,
+    "clientWidth": 375,
+    "h1": "Your review queue",
+    "scrollWidth": 375,
+    "viewport": [390, 844]
+  },
+  {
+    "screen": "raid-detail",
+    "brokenImages": 0,
+    "clientWidth": 375,
+    "h1": "Review the work.",
+    "scrollWidth": 375,
+    "viewport": [390, 844]
+  },
+  {
+    "screen": "admin",
+    "brokenImages": 0,
+    "clientWidth": 375,
+    "h1": "Keep the cohort moving.",
+    "scrollWidth": 375,
+    "viewport": [390, 844]
+  },
+  {
+    "screen": "mentor",
+    "brokenImages": 0,
+    "clientWidth": 305,
+    "h1": "Your review queue",
+    "scrollWidth": 305,
+    "viewport": [320, 740]
+  },
+  {
+    "screen": "raid-detail",
+    "brokenImages": 0,
+    "clientWidth": 305,
+    "h1": "Review the work.",
+    "scrollWidth": 305,
+    "viewport": [320, 740]
+  },
+  {
+    "screen": "admin",
+    "brokenImages": 0,
+    "clientWidth": 305,
+    "h1": "Keep the cohort moving.",
+    "scrollWidth": 305,
+    "viewport": [320, 740]
+  }
+]
