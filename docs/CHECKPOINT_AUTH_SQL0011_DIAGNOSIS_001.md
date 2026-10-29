@@ -11,7 +11,7 @@ Cleanup completed at 14:34:56.221742 UTC. Independent metadata verification at 1
 ## Why the earlier test did not cover this principal
 
 - SQL0011 and SQL0014 initial guards require an existing isolated safe nextera_checkpoint_owner, nextera_web, and pg_has_role(current_user,'nextera_checkpoint_owner','SET').
-- Registered SQL0007 temporarily grants that owner membership when required for ownership transfer, then revokes only its introduced grant. It does not promise later migrations permanent owner access.
+- Registered SQL0007 temporarily grants that owner membership when required for ownership transfer, then revokes its own grantor membership when marked temporary; it does not snapshot arbitrary preexisting options. It does not promise later migrations permanent owner access.
 - The co-resident broker connects as supabase_admin and directly executes the drafts without supplying or checking that owner context.
 - The earlier 17-case private-socket suite creates PostgreSQL 16 with the OS user as its initdb administrator and uses that principal for migrations. Its administrator context did not validate the co-resident provider principal.
 

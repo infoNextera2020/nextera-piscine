@@ -1,0 +1,121 @@
+{
+  "recorded_at_utc": "2026-10-29T15:18:35.442139+00:00",
+  "base_head": "e35daac0260193ccae1fdcaa2fdf8d30be10b53f",
+  "status": "source_only_unwired_injected_contract",
+  "node_tests": 73,
+  "python_tests": 74,
+  "checks": [
+    {
+      "name": "format_write",
+      "command": [
+        "/home/anas/nextera-piscine/.tools/node-v24.19.0-linux-x64/bin/node",
+        "node_modules/prettier/bin/prettier.cjs",
+        "--write",
+        "scripts/checkpoint-migration-context.mjs",
+        "scripts/tests/checkpoint-migration-context.node-unit.mjs",
+        "docs/CHECKPOINT_MIGRATION_CONTEXT_PROPOSAL_001.md",
+        "docs/CHECKPOINT_AUTH_SQL0011_DIAGNOSIS_001.md"
+      ],
+      "exit_code": 0
+    },
+    {
+      "name": "node_injected",
+      "command": [
+        "/home/anas/nextera-piscine/.tools/node-v24.19.0-linux-x64/bin/node",
+        "--test",
+        "scripts/tests/checkpoint-auth-runtime.node-unit.mjs",
+        "scripts/tests/checkpoint-migration-context.node-unit.mjs"
+      ],
+      "exit_code": 0
+    },
+    {
+      "name": "python_injected",
+      "command": [
+        "python3",
+        "-B",
+        "-m",
+        "unittest",
+        "discover",
+        "-s",
+        "scripts/tests",
+        "-p",
+        "test_checkpoint_auth*.py"
+      ],
+      "exit_code": 0
+    },
+    {
+      "name": "lint",
+      "command": [
+        "/home/anas/nextera-piscine/.tools/node-v24.19.0-linux-x64/bin/node",
+        "node_modules/eslint/bin/eslint.js",
+        "scripts/checkpoint-migration-context.mjs",
+        "scripts/tests/checkpoint-migration-context.node-unit.mjs"
+      ],
+      "exit_code": 0
+    },
+    {
+      "name": "module_syntax",
+      "command": [
+        "/home/anas/nextera-piscine/.tools/node-v24.19.0-linux-x64/bin/node",
+        "--check",
+        "scripts/checkpoint-migration-context.mjs"
+      ],
+      "exit_code": 0
+    },
+    {
+      "name": "test_syntax",
+      "command": [
+        "/home/anas/nextera-piscine/.tools/node-v24.19.0-linux-x64/bin/node",
+        "--check",
+        "scripts/tests/checkpoint-migration-context.node-unit.mjs"
+      ],
+      "exit_code": 0
+    },
+    {
+      "name": "format_check",
+      "command": [
+        "/home/anas/nextera-piscine/.tools/node-v24.19.0-linux-x64/bin/node",
+        "node_modules/prettier/bin/prettier.cjs",
+        "--check",
+        "scripts/checkpoint-migration-context.mjs",
+        "scripts/tests/checkpoint-migration-context.node-unit.mjs",
+        "docs/CHECKPOINT_MIGRATION_CONTEXT_PROPOSAL_001.md",
+        "docs/CHECKPOINT_AUTH_SQL0011_DIAGNOSIS_001.md"
+      ],
+      "exit_code": 0
+    },
+    {
+      "name": "diff",
+      "command": ["git", "diff", "--check"],
+      "exit_code": 0
+    }
+  ],
+  "independent_review": "findings addressed: direct ADMIN row, numeric transaction identity, closed error codes, historical grant wording",
+  "sql_hashes_unchanged": {
+    "0011_checkpoint_drafts.DRAFT.sql": "08234e3b628de71cca7be786d6bd21a4c5d1f463b548abe9b285c068fcb5d548",
+    "0014_checkpoint_editor_context.DRAFT.sql": "0e3684165279ba8458651889ae51ced169555163bde40b7713353202001c9911"
+  },
+  "original_dirty_hashes_unchanged": {
+    "apps/web/public/ASSETS.md": "feca5ebec9df9b3842afadb1c0a6442e24b38ad479c9445e1f1d26f2cd9a3cf9",
+    "apps/web/components/learning/home-next-action.module.css": "4eaa849950b223af5c220b8330ca6e3f732c865e907a66a454798dff22916d87",
+    "apps/web/public/piscine/official-logo.svg": "0fde8181d16ceb17ac55e6d52e8cab523c3f75976a9aaa81b8695942c7336e54",
+    "docs/RELEASE_CANDIDATE_001_REPORT.md": "95e04b9accaf10d922e5acac157d8d5d7ae33ef17284ccef042558fa0fbca2fd"
+  },
+  "new_database_connection": false,
+  "grants_or_revocations_executed": false,
+  "runtime_restart": false,
+  "new_profile_or_resources": false,
+  "catalog_authority_attested": false,
+  "actual_attempt003_exception_recovered": false,
+  "remaining": [
+    "concrete database adapter",
+    "proven transaction/role-graph serialization",
+    "policy binding to a separately approved fresh scope",
+    "separately approved disposable SQL test"
+  ],
+  "not_run": [
+    "new_postgresql_test",
+    "authenticated_http_or_browser",
+    "application_typecheck_build_unaffected"
+  ]
+}
