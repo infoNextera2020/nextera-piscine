@@ -1,3 +1,5 @@
+> CLOSED / HISTORICAL: attempt 002 staged with an incorrect regenerated approval timestamp and was stopped. Do not use either existing target, approval receipt or old launch instructions. See `docs/CHECKPOINT_AUTH_APPROVAL_CORRECTION_001.md`; no restart or attempt 003 is authorized.
+
 # Authenticated Checkpoint adapter 001
 
 Source implementation and fake verification are complete. Attempt 001 created isolated instance keys but failed before application SQL or learner creation and is closed with all owned services stopped. Its approval cannot be renewed or reused; attempt 002 requires fresh exact approval. The owner manually accepted the current auth UI on 29 October; that is not a live Auth or full-device test.

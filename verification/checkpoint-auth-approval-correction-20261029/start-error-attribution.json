@@ -1,0 +1,13 @@
+{
+  "observed_error_attribution": [
+    {
+      "category": "syntax error",
+      "public_script": "/docker-entrypoint-initdb.d/init-scripts/99-jwt.sql",
+      "line": 4,
+      "public_syntax_token": ":"
+    }
+  ],
+  "raw_logs_disclosed": false,
+  "database_files_read": false,
+  "services_started": false
+}

@@ -318,7 +318,7 @@ class LiveAdapter:
 
 
 def main():
-    parser=argparse.ArgumentParser();mode=parser.add_mutually_exclusive_group();mode.add_argument('--plan',action='store_true');mode.add_argument('--execute',action='store_true');mode.add_argument('--watch',action='store_true');mode.add_argument('--cleanup',action='store_true');parser.add_argument('--approval-file');parser.add_argument('--browser-context');parser.add_argument('--template');parser.add_argument('--profile',choices=['attempt001','attempt002'],default='attempt001');args=parser.parse_args();plan=scope.plan_for(args.profile)
+    parser=argparse.ArgumentParser();mode=parser.add_mutually_exclusive_group();mode.add_argument('--plan',action='store_true');mode.add_argument('--execute',action='store_true');mode.add_argument('--watch',action='store_true');mode.add_argument('--cleanup',action='store_true');parser.add_argument('--approval-file');parser.add_argument('--browser-context');parser.add_argument('--template');parser.add_argument('--profile',choices=['attempt001','attempt002'],default='attempt001');parser.add_argument('--owner-message-id');parser.add_argument('--owner-approved-at');parser.add_argument('--owner-scope-sha256');args=parser.parse_args();plan=scope.plan_for(args.profile)
     repo=Path(__file__).resolve().parents[1]
     if not (args.execute or args.watch or args.cleanup):print(json.dumps({**scope.proposal(plan),'profile':args.profile,'scope_sha256':scope.scope_digest(plan)},indent=2));return
     if args.watch or args.cleanup:
@@ -332,13 +332,14 @@ def main():
             if (run/'cleanup.json').exists():return
         adapter.revoke_and_stop(str(run),adapter.plan)
         return
-    if not (args.approval_file and args.browser_context and args.template):parser.error('Explicit fresh approval, browser context and pinned template are required.')
+    if not (args.approval_file and args.browser_context and args.template and args.owner_message_id and args.owner_approved_at and args.owner_scope_sha256):parser.error('Exact trusted owner message/time, matching receipt, browser context and pinned template are required.')
+    owner_approval=scope.OwnerApproval(args.owner_message_id,args.owner_approved_at,args.owner_scope_sha256)
     approval_path=Path(args.approval_file)
     if approval_path.is_symlink() or approval_path.stat().st_uid!=os.getuid() or stat.S_IMODE(approval_path.stat().st_mode)!=0o600:raise scope.ScopeError('Approval receipt must be private and owned')
     approval=json.loads(approval_path.read_text())
     if approval.get('browser_origin')!='http://127.0.0.1:3151':raise scope.ScopeError('New authenticated origin must be explicitly approved')
     adapter=LiveAdapter(repo,args.template,json.loads(Path(args.browser_context).read_text()),profile=args.profile)
-    outcome=scope.exercise_injected(adapter,approval,time.time,plan);protected(adapter.run/'outcome.json',outcome)
+    outcome=scope.exercise_injected(adapter,approval,time.time,plan,owner_approval=owner_approval);protected(adapter.run/'outcome.json',outcome)
     print(json.dumps(outcome))
 
 

@@ -1,0 +1,25 @@
+{
+  "status": "corrective_source_only_no_runtime_authorization",
+  "prepared_at": "2026-10-29T09:57:53.890691+00:00",
+  "based_on_commit": "4aaf9f0bf3294e1ae1eef356bc7d8291b80c3595",
+  "source_sha256": {
+    "scripts/checkpoint-auth-rehearsal.py": "d745770bd705331cba09a616289e8567a67c555dfe49da0f5a35af3359488cee",
+    "scripts/checkpoint-auth-live-adapter.py": "ef6ffb5cb9f1c5b7c3a38a9df57eed26be2b873553c6665cf91c9fb69acebdce",
+    "scripts/checkpoint-auth-runtime.mjs": "9fc035cc88c7a72dda502e12b2daa5707ee5d30920b3a67e117317c27192eb72",
+    "scripts/checkpoint-auth-profiles.json": "ab4a1847089066b8dc9028782fc9724d9130a33e500a657dee6b953e126e4791",
+    "scripts/tests/test_checkpoint_auth_rehearsal.py": "ebac6af0993046d3b6d7c993ee6ba32ce46ba1a6c24e80200497fd2db9da0e98",
+    "scripts/tests/test_checkpoint_auth_live_adapter.py": "7cb03286a5bec215516e07e1e35bee41d252c9749307c6daa5bbb61cf8125f77",
+    "scripts/tests/checkpoint-auth-runtime.node-unit.mjs": "5ba77234e2040e626b05a887d1c06f16f69f215e706f62bdbe9e1d71b71eb936"
+  },
+  "approval_guard_seconds": 60,
+  "old_approval_reusable": false,
+  "new_runtime_created": false,
+  "attempt003_created": false,
+  "checks": {
+    "python_injected": 34,
+    "node_injected": 19,
+    "targeted_eslint": "pass",
+    "live_startup_after_fix": "not_run",
+    "authenticated_http_browser": "not_run"
+  }
+}

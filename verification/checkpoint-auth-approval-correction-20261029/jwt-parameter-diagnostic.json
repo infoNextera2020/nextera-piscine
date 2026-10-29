@@ -1,0 +1,10 @@
+{
+  "expected_environment_name_present": {
+    "POSTGRES_DB": true,
+    "JWT_SECRET": false,
+    "JWT_EXP": true
+  },
+  "filtered_parameter_diagnostics": [],
+  "raw_values_or_logs_returned": false,
+  "runtime_operations": false
+}

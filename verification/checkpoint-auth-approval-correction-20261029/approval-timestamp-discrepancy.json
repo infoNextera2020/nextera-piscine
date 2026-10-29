@@ -1,0 +1,16 @@
+{
+  "owner_approval_at": "2026-10-29T09:17:11Z",
+  "source_guard_requires_approval_age_seconds": [0, 60],
+  "launch_metadata_timestamp_regenerated": true,
+  "authentic_owner_timestamp_preserved_for_guard": false,
+  "lease_started_at": "2026-10-29T09:26:21.079297+00:00",
+  "lease_cleanup_cutoff": "2026-10-29T10:23:21.079297+00:00",
+  "lease_deadline": "2026-10-29T10:26:21.079297+00:00",
+  "response_to_parent_clarification": "Immediately requested scoped cleanup; no further assertion work permitted with regenerated timestamp.",
+  "manual_cleanup_command": "failed Wsl/Service/0x8007274c; execution outcome not relied on",
+  "controller_outcome": "assertions_passed=false; cleanup_verified=true; phase_failed_or_window_expired",
+  "last_completed_phase": "stage",
+  "authenticated_http_assertions_run": false,
+  "browser_assertions_run": false,
+  "next_action": "No restart. Preserve original and regenerated receipts and data for audit. Any future execution must preserve authentic owner approval time and pass unchanged freshness guard."
+}

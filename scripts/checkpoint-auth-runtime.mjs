@@ -160,6 +160,15 @@ function publicTemplateMode(name, verifiedPublicSource = false) {
   );
   return name.endsWith('.sh') ? 0o755 : 0o644;
 }
+function databaseBootstrapEnvironment(environment) {
+  return {
+    ...environment,
+    POSTGRES_DB: DB,
+    PGDATABASE: DB,
+    JWT_SECRET: '${JWT_SECRET}',
+    JWT_EXP: '${JWT_EXPIRY}',
+  };
+}
 function appEnvironment(repo, credentials) {
   return {
     PATH:
@@ -366,8 +375,7 @@ async function execute(mode, run, repo) {
         if (typeof v === 'string')
           service.environment[k] = v.replace(/\/postgres(?=\?|$)/g, '/' + DB);
     }
-    c.services.db.environment.POSTGRES_DB = DB;
-    c.services.db.environment.PGDATABASE = DB;
+    c.services.db.environment = databaseBootstrapEnvironment(c.services.db.environment);
     c.services.auth.environment.GOTRUE_DB_DATABASE_URL =
       'postgres://supabase_auth_admin:${POSTGRES_PASSWORD}@db:5432/' + DB;
     c.services.auth.environment.GOTRUE_DISABLE_SIGNUP = 'true';
@@ -801,6 +809,7 @@ SELECT format('ALTER DATABASE %I SET "app.settings.jwt_exp" TO %L', :'db', :'exp
   }
 }
 export {
+  databaseBootstrapEnvironment,
   profileFor,
   validateConfig,
   publicTemplateMode,

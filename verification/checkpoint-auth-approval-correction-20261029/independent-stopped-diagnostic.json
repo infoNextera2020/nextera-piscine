@@ -1,0 +1,77 @@
+{
+  "observed_at": "2026-10-29T09:35:08.026927+00:00",
+  "services": [
+    {
+      "service": "storage",
+      "running": false,
+      "status": "created"
+    },
+    {
+      "service": "auth",
+      "running": false,
+      "status": "created"
+    },
+    {
+      "service": "meta",
+      "running": false,
+      "status": "created"
+    },
+    {
+      "service": "rest",
+      "running": false,
+      "status": "created"
+    },
+    {
+      "service": "api-gw",
+      "running": false,
+      "status": "exited"
+    },
+    {
+      "service": "db",
+      "running": false,
+      "status": "exited"
+    },
+    {
+      "service": "studio",
+      "running": false,
+      "status": "exited"
+    },
+    {
+      "service": "imgproxy",
+      "running": false,
+      "status": "exited"
+    }
+  ],
+  "listeners_gone": {
+    "56531": true,
+    "56532": true,
+    "3151": true
+  },
+  "guard_running": false,
+  "cleanup_receipt": {
+    "access_disabled": true,
+    "retained": true,
+    "no_permanent_deletion": true,
+    "stopped_at": 1793266052.525077
+  },
+  "controller_outcome": {
+    "scope_sha256": "a267f057515c96963d1c44ae2125f68b41521c822ec62fc7be48c36507724b72",
+    "started": 1793265981.0792973,
+    "deadline": 1793269581.0792973,
+    "assertions_passed": false,
+    "cleanup_verified": true,
+    "runtime_kind": "local_docker_auth_db_http",
+    "failure": "phase_failed_or_window_expired"
+  },
+  "sql_marker_exists": false,
+  "learner_marker_exists": false,
+  "filtered_database_log_issue_labels": {
+    "syntax error": 1,
+    "ERROR:": 1,
+    "database_error_category:syntax error": 1
+  },
+  "runtime_operations_performed": false,
+  "protected_database_contents_read": false,
+  "attempt001_accessed": false,
+  "head": "4aaf9f0bf3294e1ae1eef356bc7d8291b80c3595"
+}

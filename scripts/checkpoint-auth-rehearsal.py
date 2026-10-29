@@ -5,6 +5,9 @@ Runtime implementation and fresh action-time authorization are separate gates.
 """
 from dataclasses import asdict, dataclass, replace
 from pathlib import Path
+from datetime import datetime, timezone
+from types import MappingProxyType
+import re
 import hashlib
 import json
 
@@ -77,6 +80,77 @@ def scope_digest(plan=Plan()):
     return hashlib.sha256(json.dumps(proposal(plan), sort_keys=True, separators=(',', ':')).encode()).hexdigest()
 
 
+# The incident's real message/time binding is retained permanently in source.
+# A closed grant cannot be relabeled as a new action-time approval.
+CLOSED_OWNER_APPROVALS = MappingProxyType({
+    'Sentinel_7b5ec1bcc1cc819187d19f16ccc96f4a': ('2026-10-29T09:17:11Z', 'a267f057515c96963d1c44ae2125f68b41521c822ec62fc7be48c36507724b72'),
+})
+_OWNER_BINDINGS = dict(CLOSED_OWNER_APPROVALS)
+
+
+@dataclass(frozen=True)
+class OwnerApproval:
+    message_id: str
+    approved_at_utc: str
+    scope_sha256: str
+
+    def __post_init__(self):
+        if not isinstance(self.message_id, str) or not re.fullmatch(r'Sentinel_[0-9a-f]{32}', self.message_id):
+            raise ScopeError('Exact owner message ID is required.')
+        if not isinstance(self.approved_at_utc, str) or not re.fullmatch(r'\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}Z', self.approved_at_utc):
+            raise ScopeError('Exact owner UTC timestamp is required; no current-time default.')
+        try:
+            datetime.strptime(self.approved_at_utc, '%Y-%m-%dT%H:%M:%SZ')
+        except ValueError as error:
+            raise ScopeError('Invalid owner timestamp.') from error
+        if not isinstance(self.scope_sha256, str) or not re.fullmatch(r'[0-9a-f]{64}', self.scope_sha256):
+            raise ScopeError('Exact owner-approved scope digest is required.')
+        binding = (self.approved_at_utc, self.scope_sha256)
+        bound = _OWNER_BINDINGS.setdefault(self.message_id, binding)
+        if bound != binding:
+            raise ScopeError('Owner message timestamp/scope cannot be reassigned.')
+
+    @property
+    def epoch(self):
+        return datetime.strptime(self.approved_at_utc, '%Y-%m-%dT%H:%M:%SZ').replace(tzinfo=timezone.utc).timestamp()
+
+    def binding_digest(self, plan):
+        if self.scope_sha256 != scope_digest(plan):
+            raise ScopeError('Owner evidence is bound to a different approved scope.')
+        value = {'message_id': self.message_id, 'approved_at_utc': self.approved_at_utc, 'scope_sha256': scope_digest(plan)}
+        return hashlib.sha256(json.dumps(value, sort_keys=True, separators=(',', ':')).encode()).hexdigest()
+
+
+def approval_receipt(owner, plan, receipt_created_at_epoch):
+    """Pure audit structure. The creation time never supplies/renews owner time."""
+    if not isinstance(owner, OwnerApproval):
+        raise ScopeError('Immutable owner evidence must be supplied separately.')
+    return {'scope_sha256': scope_digest(plan), 'confirmed_at_action_time': True, 'browser_origin': 'http://127.0.0.1:3151',
+            'owner_message_id': owner.message_id, 'owner_approved_at_utc': owner.approved_at_utc,
+            'owner_binding_sha256': owner.binding_digest(plan),
+            'receipt_created_at_epoch': receipt_created_at_epoch}
+
+
+def validate_owner_approval(receipt, owner, observed_at, plan):
+    if not isinstance(owner, OwnerApproval):
+        raise ScopeError('Immutable owner message/time input is required separately from the receipt.')
+    if owner.message_id in CLOSED_OWNER_APPROVALS:
+        raise ScopeError('Closed owner approval cannot be reused; new owner approval is required.')
+    if receipt.get('browser_origin') != 'http://127.0.0.1:3151':
+        raise ScopeError('Exact approved browser origin is required.')
+    if 'utc_epoch' in receipt:
+        raise ScopeError('Legacy receipt timestamp is not owner approval evidence.')
+    if (receipt.get('scope_sha256') != scope_digest(plan) or receipt.get('confirmed_at_action_time') is not True or
+        receipt.get('owner_message_id') != owner.message_id or receipt.get('owner_approved_at_utc') != owner.approved_at_utc or
+        receipt.get('owner_binding_sha256') != owner.binding_digest(plan)):
+        raise ScopeError('Receipt does not match exact immutable owner message/time and scope.')
+    created = receipt.get('receipt_created_at_epoch')
+    if type(created) not in (int, float) or not owner.epoch <= created <= observed_at:
+        raise ScopeError('Invalid receipt creation audit time.')
+    if not 0 <= observed_at - owner.epoch <= 60:
+        raise ScopeError('Owner approval is expired or from the future; receipt creation cannot renew it.')
+
+
 def validate_preflight(proof, plan=Plan()):
     proposal(plan)
     required = {'fresh_directory', 'fresh_project', 'fresh_volumes', 'ports_available',
@@ -96,25 +170,26 @@ def validate_preflight(proof, plan=Plan()):
         raise ScopeError('Service scope mismatch.')
 
 
-def exercise_injected(runtime, approval, now, plan=Plan()):
+def exercise_injected(runtime, approval, now, plan=Plan(), *, owner_approval=None):
     """Fake-testable contract. The optional sibling runtime requires fresh exact approval; no implicit enable switch.
 
     Adapter obligations: persist the journal atomically/protected, reserve fresh targets
     exclusively, independently enforce expiry/parent loss, and retain evidence on failure.
     Never return secrets through these methods or include them in exceptions/reports.
     """
-    if approval.get('scope_sha256') != scope_digest(plan) or approval.get('confirmed_at_action_time') is not True:
-        raise ScopeError('Fresh exact-scope approval is missing.')
-    approved_at = approval.get('utc_epoch')
-    if type(approved_at) not in (int, float) or not 0 <= now() - approved_at <= 60:
-        raise ScopeError('Approval is expired or from the future.')
+    validate_owner_approval(approval, owner_approval, now(), plan)
     proof = runtime.preflight(plan)
     validate_preflight(proof, plan)
+    # Preflight may be slow. Recheck the real owner time immediately before reservation.
+    validate_owner_approval(approval, owner_approval, now(), plan)
     started = now()
     deadline = started + plan.maximum_seconds
     outcome = {'scope_sha256': scope_digest(plan), 'started': started,
                'deadline': deadline, 'assertions_passed': False,
-               'cleanup_verified': False, 'runtime_kind': runtime.kind}
+               'cleanup_verified': False, 'runtime_kind': runtime.kind,
+               'owner_message_id': owner_approval.message_id, 'owner_approved_at_utc': owner_approval.approved_at_utc,
+               'owner_approved_scope_sha256': owner_approval.scope_sha256,
+               'receipt_created_at_epoch': approval['receipt_created_at_epoch']}
     # Exclusive reservation and its no-reuse journal precede all mutations. An adapter
     # that cannot journal uncertain outcomes must refuse before creating a resource.
     reservation = runtime.reserve_fresh(plan, outcome)

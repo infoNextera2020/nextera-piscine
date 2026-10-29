@@ -2,6 +2,7 @@ import process from 'node:process';
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import {
+  databaseBootstrapEnvironment,
   validateConfig,
   publicTemplateMode,
   validateOwnedEndpoints,
@@ -225,4 +226,13 @@ test('attempt002 validates only its own target and identities without executing 
     if (before === undefined) delete process.env.CHECKPOINT_REHEARSAL_PROFILE;
     else process.env.CHECKPOINT_REHEARSAL_PROFILE = before;
   }
+});
+
+test('public JWT init script receives all required instance-local environment placeholders', () => {
+  const env = databaseBootstrapEnvironment({ PUBLIC_TEMPLATE_SETTING: 'unchanged' });
+  assert.equal(env.POSTGRES_DB, 'foundation_test_checkpoint_browser_20261028');
+  assert.equal(env.PGDATABASE, env.POSTGRES_DB);
+  assert.equal(env.JWT_SECRET, '${JWT_SECRET}');
+  assert.equal(env.JWT_EXP, '${JWT_EXPIRY}');
+  assert.equal(env.PUBLIC_TEMPLATE_SETTING, 'unchanged');
 });

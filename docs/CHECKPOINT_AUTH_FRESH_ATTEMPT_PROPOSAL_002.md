@@ -1,3 +1,5 @@
+> CLOSED / HISTORICAL: attempt 002 staged with an incorrect regenerated approval timestamp and was stopped. Do not use either existing target, approval receipt or old launch instructions. See `docs/CHECKPOINT_AUTH_APPROVAL_CORRECTION_001.md`; no restart or attempt 003 is authorized.
+
 # Authenticated Checkpoint rehearsal: fresh attempt proposal 002
 
 Status: proposed only. No resources, keys, accounts or database have been created for this target. The closed source profile and fake tests are complete. A new exact action-time approval is required before execution. This does not renew the previous lease.

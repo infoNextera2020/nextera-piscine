@@ -102,4 +102,11 @@ class AdapterTests(unittest.TestCase):
         self.assertEqual(guard,{'deadline':4600,'independent':True,'parent_loss':True})
 
 
+    def test_execute_requires_separate_trusted_owner_fields_before_receipt_or_adapter(self):
+        argv=['checkpoint-auth-live-adapter.py','--execute','--approval-file','/not-read','--browser-context','/not-read','--template','/not-read']
+        with patch.object(h.sys,'argv',argv),patch.object(h,'LiveAdapter') as adapter,patch.object(h.sys,'stderr'):
+            with self.assertRaises(SystemExit) as error:h.main()
+        self.assertEqual(error.exception.code,2);adapter.assert_not_called()
+
+
 if __name__=='__main__':unittest.main()
