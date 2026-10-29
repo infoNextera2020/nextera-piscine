@@ -1,18 +1,17 @@
-import Link from 'next/link';
-import { authorizePage } from '../../lib/auth/server';
+import { readRaidQueue } from '@nextera/db/raids';
+import { authorizePage, getDatabase } from '../../lib/auth/server';
+import { AdminOverview, MentorOverview } from '../../components/operator/staff-overview';
+import { StaffShell } from '../../components/operator/staff-shell';
 
 export default async function OperatorPage() {
   const user = await authorizePage(['operator', 'admin']);
+  const queue = await readRaidQueue(getDatabase(), user.authUserId).catch(() => null);
   return (
-    <main className="mx-auto max-w-xl space-y-6 px-6 py-16">
-      <h1 className="text-3xl font-semibold">Operator access</h1>
-      <p>
-        {user.displayName} · {user.role}
-      </p>
-      <Link href="/operator/raids">Raid teams and mentor reviews</Link>
-      <Link href="/app" className="text-teal-300">
-        Return to app
-      </Link>
-    </main>
+    <StaffShell
+      user={{ displayName: user.displayName, role: user.role === 'admin' ? 'admin' : 'operator' }}
+      active={user.role === 'admin' ? 'overview' : 'reviews'}
+    >
+      {user.role === 'admin' ? <AdminOverview queue={queue} /> : <MentorOverview queue={queue} />}
+    </StaffShell>
   );
 }
