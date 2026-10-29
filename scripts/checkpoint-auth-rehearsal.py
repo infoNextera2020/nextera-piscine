@@ -30,6 +30,7 @@ class Plan:
     draft_receipts: int = 64
     draft_total_source_bytes: int = 65536
     draft_retention_seconds: int = 600
+    cleanup_authentication: str = 'existing_test_accounts_inside_original_window_only'
     offline_recovery: bool = False
     retain_evidence_and_data: bool = True
     upstream_commit: str = 'bc27d2661edd09a5d0b8d76ce33da6d4071a756e'
@@ -71,7 +72,7 @@ def validate_preflight(proof, plan=Plan()):
 
 
 def exercise_injected(runtime, approval, now, plan=Plan()):
-    """Fake-testable contract. No built-in runtime exists; no implicit enable switch.
+    """Fake-testable contract. The optional sibling runtime requires fresh exact approval; no implicit enable switch.
 
     Adapter obligations: persist the journal atomically/protected, reserve fresh targets
     exclusively, independently enforce expiry/parent loss, and retain evidence on failure.

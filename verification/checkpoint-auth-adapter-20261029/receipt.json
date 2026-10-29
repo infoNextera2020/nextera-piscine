@@ -1,0 +1,86 @@
+{
+  "utc": "2026-10-29T07:22:56.723019+00:00",
+  "source_only": true,
+  "live_adapter_executed": false,
+  "credentials_created": false,
+  "sql_applied": false,
+  "runtime_directory_absent": true,
+  "base_checks": [
+    {
+      "name": "format-owned",
+      "exitCode": 0,
+      "seconds": 6.8
+    },
+    {
+      "name": "python-fakes",
+      "exitCode": 0,
+      "seconds": 0.44
+    },
+    {
+      "name": "node-fakes",
+      "exitCode": 0,
+      "seconds": 0.45
+    },
+    {
+      "name": "source-tests",
+      "exitCode": 0,
+      "seconds": 30.2
+    },
+    {
+      "name": "typecheck",
+      "exitCode": 0,
+      "seconds": 39.89
+    },
+    {
+      "name": "lint",
+      "exitCode": 0,
+      "seconds": 17.22
+    },
+    {
+      "name": "format",
+      "exitCode": 0,
+      "seconds": 28.53
+    },
+    {
+      "name": "build",
+      "exitCode": 0,
+      "seconds": 42.3
+    }
+  ],
+  "final_checks": [
+    {
+      "name": "final-owned-format",
+      "exitCode": 0
+    },
+    {
+      "name": "final-python-fakes",
+      "exitCode": 0
+    },
+    {
+      "name": "final-node-fakes",
+      "exitCode": 0
+    },
+    {
+      "name": "final-lint",
+      "exitCode": 0
+    },
+    {
+      "name": "final-format",
+      "exitCode": 0
+    }
+  ],
+  "python_fake_tests": 20,
+  "node_fake_tests": 16,
+  "source_tests": 1102,
+  "scope_sha256": "c59bed18ea9a12306cc6b59b0cb31cba7f094f209834bb12d1f5c53c761cb4fc",
+  "browser": {
+    "read_only_supported_extension_context_verified": true,
+    "existing_url": "http://127.0.0.1:3118/review/auth/login",
+    "authenticated_3151_access_verified": false,
+    "denied_routes_retried": false
+  },
+  "owner_auth_ui_acceptance": "recorded separately; does not prove all-viewports or live Auth",
+  "preserved_four_dirty_files": true,
+  "unchanged_preview_http": 200,
+  "runtime_approval": "pending; no old approval renewed"
+}

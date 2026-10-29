@@ -1,0 +1,15 @@
+{
+  "event": "owner_manual_validation",
+  "utc": "2026-10-29T06:29:00Z",
+  "source_message": "Sentinel_2f100da1cf0481919ed98243fb875cee",
+  "owner_statement": "ok i tested it and its working properly",
+  "accepted_scope": "requested current auth preview UI",
+  "does_not_prove": [
+    "all-device browser matrix",
+    "live Auth",
+    "checkpoint runtime",
+    "new endpoint access"
+  ],
+  "supported_browser_readonly_inventory": "2026-10-29: existing Chrome extension tab 906735108 safely bound at http://127.0.0.1:3118/review/auth/login; no navigation/input",
+  "new_authenticated_origin_verified": false
+}

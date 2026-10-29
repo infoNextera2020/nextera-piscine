@@ -26,3 +26,5 @@ Invitation activation, Run/Submit/evaluation, offline local retention, dynamic e
 ## Source verification
 
 Run `python3 -m unittest discover -s scripts/tests -p test_checkpoint_auth_rehearsal.py -v`. These are fake lifecycle checks, not PostgreSQL, managed Auth, HTTP or browser integration evidence. The genuine earlier 17 SQL assertions remain separately documented and stopped.
+
+Later source update: `docs/CHECKPOINT_AUTH_ADAPTER_001.md` describes the now-written opt-in adapter, fake tests and precise fresh approval scope. The earlier adapter-missing list above records the previous preparation milestone, not current implementation status. No live execution is implied.
