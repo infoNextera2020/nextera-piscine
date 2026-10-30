@@ -175,6 +175,22 @@ LANGUAGE plpgsql SECURITY DEFINER SET search_path=pg_catalog AS $$ DECLARE remov
  GET DIAGNOSTICS removed=ROW_COUNT;RETURN removed;
 END $$;
 
+-- Finalize ACLs while the migration actor still owns these NEW objects.
+-- SET-only membership permits transfer, not inherited ACL administration afterward.
+REVOKE ALL ON FUNCTION app.checkpoint_draft_record(app.checkpoint_draft_revisions),app.guard_checkpoint_draft_revision(),app.guard_checkpoint_draft_policy(),app.checkpoint_draft_context(uuid,uuid,text),app.read_checkpoint_draft(uuid,uuid,text,text,uuid),app.save_checkpoint_draft(uuid,uuid,text,text,uuid,bigint,bytea,text),app.purge_expired_checkpoint_drafts(timestamptz,integer) FROM PUBLIC;
+-- Remove unexpected deployment default privileges on these NEW objects only.
+DO $$ DECLARE obj record; grantee record; BEGIN
+ FOR obj IN SELECT c.oid,c.oid::regclass AS name,c.relowner AS owner FROM pg_catalog.pg_class c JOIN pg_catalog.pg_namespace n ON n.oid=c.relnamespace
+ WHERE n.nspname='app' AND c.relname IN ('checkpoint_draft_policies','checkpoint_draft_revisions') LOOP
+ FOR grantee IN SELECT DISTINCT r.rolname FROM pg_catalog.pg_class c CROSS JOIN LATERAL pg_catalog.aclexplode(coalesce(c.relacl,pg_catalog.acldefault('r',c.relowner))) a JOIN pg_catalog.pg_roles r ON r.oid=a.grantee WHERE c.oid=obj.oid AND a.grantee<>obj.owner LOOP
+ EXECUTE format('REVOKE ALL ON TABLE %s FROM %I',obj.name,grantee.rolname); END LOOP; END LOOP;
+ FOR obj IN SELECT p.oid,p.oid::regprocedure AS name,p.proowner AS owner FROM pg_catalog.pg_proc p JOIN pg_catalog.pg_namespace n ON n.oid=p.pronamespace
+ WHERE p.oid IN ('app.checkpoint_draft_record(app.checkpoint_draft_revisions)'::regprocedure,'app.guard_checkpoint_draft_revision()'::regprocedure,'app.guard_checkpoint_draft_policy()'::regprocedure,'app.checkpoint_draft_context(uuid,uuid,text)'::regprocedure,'app.read_checkpoint_draft(uuid,uuid,text,text,uuid)'::regprocedure,'app.save_checkpoint_draft(uuid,uuid,text,text,uuid,bigint,bytea,text)'::regprocedure,'app.purge_expired_checkpoint_drafts(timestamptz,integer)'::regprocedure) LOOP
+ FOR grantee IN SELECT DISTINCT r.rolname FROM pg_catalog.pg_proc p CROSS JOIN LATERAL pg_catalog.aclexplode(coalesce(p.proacl,pg_catalog.acldefault('f',p.proowner))) a JOIN pg_catalog.pg_roles r ON r.oid=a.grantee WHERE p.oid=obj.oid AND a.grantee<>obj.owner LOOP
+ EXECUTE format('REVOKE ALL ON FUNCTION %s FROM %I',obj.name,grantee.rolname); END LOOP; END LOOP;
+END $$;
+GRANT EXECUTE ON FUNCTION app.checkpoint_draft_context(uuid,uuid,text),app.read_checkpoint_draft(uuid,uuid,text,text,uuid),app.save_checkpoint_draft(uuid,uuid,text,text,uuid,bigint,bytea,text) TO nextera_web;
+
 -- Owner is an existing isolated NOLOGIN role. No membership or login creation here.
 GRANT CREATE ON SCHEMA app TO nextera_checkpoint_owner;
 ALTER TABLE app.checkpoint_draft_policies OWNER TO nextera_checkpoint_owner;
@@ -187,17 +203,4 @@ ALTER FUNCTION app.read_checkpoint_draft(uuid,uuid,text,text,uuid) OWNER TO next
 ALTER FUNCTION app.save_checkpoint_draft(uuid,uuid,text,text,uuid,bigint,bytea,text) OWNER TO nextera_checkpoint_owner;
 ALTER FUNCTION app.purge_expired_checkpoint_drafts(timestamptz,integer) OWNER TO nextera_checkpoint_owner;
 REVOKE CREATE ON SCHEMA app FROM nextera_checkpoint_owner;
-REVOKE ALL ON FUNCTION app.checkpoint_draft_record(app.checkpoint_draft_revisions),app.guard_checkpoint_draft_revision(),app.guard_checkpoint_draft_policy(),app.checkpoint_draft_context(uuid,uuid,text),app.read_checkpoint_draft(uuid,uuid,text,text,uuid),app.save_checkpoint_draft(uuid,uuid,text,text,uuid,bigint,bytea,text),app.purge_expired_checkpoint_drafts(timestamptz,integer) FROM PUBLIC;
--- Remove unexpected deployment default privileges on these NEW objects only.
-DO $$ DECLARE obj record; grantee record; BEGIN
- FOR obj IN SELECT c.oid,c.oid::regclass AS name,c.relowner AS owner FROM pg_catalog.pg_class c JOIN pg_catalog.pg_namespace n ON n.oid=c.relnamespace
- WHERE n.nspname='app' AND c.relname IN ('checkpoint_draft_policies','checkpoint_draft_revisions') LOOP
- FOR grantee IN SELECT DISTINCT r.rolname FROM pg_catalog.pg_class c CROSS JOIN LATERAL pg_catalog.aclexplode(coalesce(c.relacl,pg_catalog.acldefault('r',c.relowner))) a JOIN pg_catalog.pg_roles r ON r.oid=a.grantee WHERE c.oid=obj.oid AND a.grantee<>obj.owner LOOP
- EXECUTE format('REVOKE ALL ON TABLE %s FROM %I',obj.name,grantee.rolname); END LOOP; END LOOP;
- FOR obj IN SELECT p.oid,p.oid::regprocedure AS name,p.proowner AS owner FROM pg_catalog.pg_proc p JOIN pg_catalog.pg_namespace n ON n.oid=p.pronamespace
- WHERE n.nspname='app' AND p.proname IN ('checkpoint_draft_record','guard_checkpoint_draft_revision','guard_checkpoint_draft_policy','checkpoint_draft_context','read_checkpoint_draft','save_checkpoint_draft','purge_expired_checkpoint_drafts') LOOP
- FOR grantee IN SELECT DISTINCT r.rolname FROM pg_catalog.pg_proc p CROSS JOIN LATERAL pg_catalog.aclexplode(coalesce(p.proacl,pg_catalog.acldefault('f',p.proowner))) a JOIN pg_catalog.pg_roles r ON r.oid=a.grantee WHERE p.oid=obj.oid AND a.grantee<>obj.owner LOOP
- EXECUTE format('REVOKE ALL ON FUNCTION %s FROM %I',obj.name,grantee.rolname); END LOOP; END LOOP;
-END $$;
-GRANT EXECUTE ON FUNCTION app.checkpoint_draft_context(uuid,uuid,text),app.read_checkpoint_draft(uuid,uuid,text,text,uuid),app.save_checkpoint_draft(uuid,uuid,text,text,uuid,bigint,bytea,text) TO nextera_web;
 COMMIT;

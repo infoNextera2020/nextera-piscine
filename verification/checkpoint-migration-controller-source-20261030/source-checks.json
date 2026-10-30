@@ -1,0 +1,67 @@
+{
+  "kind": "source_only_controller_and_draft_acl_repair",
+  "checkedAtUtc": "2026-10-30T07:28:28.690907+00:00",
+  "baselineHead": "523ee4df9a44a603f6457f23c3826aff2e73843d",
+  "node": {
+    "tests": 172,
+    "passed": 172,
+    "failed": 0,
+    "newControllerTests": 29
+  },
+  "python": {
+    "testsAcrossTwoRuns": 86,
+    "passed": 86,
+    "failed": 0,
+    "existingAuthControllerTests": 74,
+    "newControllerTests": 12
+  },
+  "static": {
+    "eslint": true,
+    "nodeSyntax": true,
+    "pythonCompilation": true,
+    "prettier": true,
+    "gitDiffCheck": true
+  },
+  "independentReview": {
+    "mode": "read_only",
+    "newSourceBlockers": 0,
+    "remainingRuntimeBlocker": "registered_prerequisite_acl_authority_requires_review"
+  },
+  "preservation": {
+    "registered0000Through0010ByteIdenticalToHead": true,
+    "fourOriginalDirtyFilesSha256Unchanged": true,
+    "historicalReceiptsAndClosedAttemptsUntouched": true
+  },
+  "draftChanges": {
+    "reason": "Finalize exact new-object ACLs before owner transfer under SET-only membership",
+    "extraMembershipOrRoleAuthority": false,
+    "old0011Sha256": "08234e3b628de71cca7be786d6bd21a4c5d1f463b548abe9b285c068fcb5d548",
+    "old0014Sha256": "0e3684165279ba8458651889ae51ced169555163bde40b7713353202001c9911"
+  },
+  "sha256": {
+    "scripts/test-checkpoint-migration-adapter.py": "be7318b1687d13aeeb17a1ea3b3e49ee05a8c18e6de58ede7d175c21c5ff82f4",
+    "scripts/test-checkpoint-migration-adapter.mjs": "f27426bed12674bd8b356d3d32197388e1c3dd7bf8191978a31652af7126bf34",
+    "scripts/tests/test_checkpoint_migration_adapter.py": "587b54128ed70e1953136cd288f9d47e0c6ed973e772d96a0a74ab8daeb8cd84",
+    "scripts/tests/checkpoint-migration-rehearsal.node-unit.mjs": "aa188c518710548dc5de5529d7b3e6d24e5ce4775d0d31c7ae27febe834e7ca2",
+    "docs/CHECKPOINT_MIGRATION_ADAPTER_REHEARSAL_001.md": "0cf89c41304b01f9ff0dcd57ba3f5740284f231d61c05a55915e527cc792591f",
+    "packages/db/migration-drafts/0011_checkpoint_drafts.DRAFT.sql": "eaf3f7e95589fddf081f73084700ee994e9d87a775187d76f0d39d8d89e5a1e6",
+    "packages/db/migration-drafts/0014_checkpoint_editor_context.DRAFT.sql": "8146ae6be34adfeacdbcaf3fb9e22b4a3516b9202eeee8cfaf3fbd88e81b78c3"
+  },
+  "runtime": {
+    "ready": false,
+    "scopeSha256": "25d7f6f1acca68b774261c06462542d9d470cf160baff9992871287ce25783b4",
+    "newTargetCreated": false,
+    "databaseConnections": false,
+    "sqlExecuted": false,
+    "rolesOrCredentialsCreated": false,
+    "servicesStarted": false
+  },
+  "notRun": [
+    "real PostgreSQL or driver wire-protocol assertions",
+    "SQL parsing/application",
+    "real lock/rollback/ACL behavior",
+    "application typecheck/build/browser QA; no application code changed"
+  ],
+  "nextSourceTask": "Review append-only 27-edge prerequisite EXECUTE repair under explicit existing owner/DBA authority; do not broaden actor or rewrite history",
+  "approvalBoundary": "All earlier runtime approvals closed. Rebuild/review revised scope after prerequisite strategy, then obtain fresh specific owner approval."
+}

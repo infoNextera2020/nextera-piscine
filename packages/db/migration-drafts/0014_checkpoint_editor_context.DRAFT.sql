@@ -57,10 +57,8 @@ BEGIN
  'submitAllowed',a.status='active' AND at_time<a.deadline_at AND NOT passed AND reserved<3);
 END $$;
 
--- Same existing owner and narrow web EXECUTE convention as0007; no new role or broad grant.
-GRANT CREATE ON SCHEMA app TO nextera_checkpoint_owner;
-ALTER FUNCTION app.checkpoint_editor_context(uuid,uuid,text) OWNER TO nextera_checkpoint_owner;
-REVOKE CREATE ON SCHEMA app FROM nextera_checkpoint_owner;
+-- Finalize ACLs while the migration actor still owns these NEW objects.
+-- SET-only membership permits transfer, not inherited ACL administration afterward.
 REVOKE ALL ON FUNCTION app.checkpoint_editor_context(uuid,uuid,text) FROM PUBLIC;
 DO $$ DECLARE entry record; BEGIN
  FOR entry IN SELECT DISTINCT r.rolname FROM pg_proc p
@@ -71,4 +69,9 @@ DO $$ DECLARE entry record; BEGIN
  END LOOP;
 END $$;
 GRANT EXECUTE ON FUNCTION app.checkpoint_editor_context(uuid,uuid,text) TO nextera_web;
+
+-- Same existing owner and narrow web EXECUTE convention as0007; no new role or broad grant.
+GRANT CREATE ON SCHEMA app TO nextera_checkpoint_owner;
+ALTER FUNCTION app.checkpoint_editor_context(uuid,uuid,text) OWNER TO nextera_checkpoint_owner;
+REVOKE CREATE ON SCHEMA app FROM nextera_checkpoint_owner;
 COMMIT;

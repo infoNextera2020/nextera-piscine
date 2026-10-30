@@ -2,6 +2,25 @@
 
 Status: implemented source and injected tests only. This document is a proposal, not execution approval. No connection, grant, SQL application, new runtime directory, service, credential or attempt was created for this work. The adapter is not imported by the live broker.
 
+## 2026-10-30 source correction and blocked runtime status
+
+The runnable Python controller and Node assertion runner are now prepared, with injected tests. Both real entrypoints deliberately fail before target creation or client construction because registered prerequisite ACL authority is unresolved. Do not request launch approval or remove these blocks merely to obtain a passing rehearsal.
+
+The old one-time pool identity switch was replaced with a per-transaction wrapper: Postgres.js binds the transaction callback to one physical connection; before any callback or prerequisite SQL, the wrapper uses SET LOCAL SESSION AUTHORIZATION and verifies both current and session user. Every newly reconnected transaction repeats this setup. This uses only the already proposed private-cluster bootstrap authority and restores identity on transaction completion. It is not a web authentication feature. See [PostgreSQL session authorization](https://www.postgresql.org/docs/16/sql-set-session-authorization.html).
+
+Draft 0011 and 0014 had a confirmed source bug: ownership transfer preceded ACL cleanup/grants, although SET-only membership does not supply inherited owner ACL authority afterward. Their current reviewed source now finalizes exact new-object ACLs before transfer. No INHERIT, SET ROLE, ADMIN or other actor privilege was added. Draft 0011 cleanup also targets exact function signatures rather than unrelated overloads. These are unregistered draft source corrections, not migration execution or a rewrite of prior evidence:
+
+- Current 0011 SHA256: eaf3f7e95589fddf081f73084700ee994e9d87a775187d76f0d39d8d89e5a1e6.
+- Current 0014 SHA256: 8146ae6be34adfeacdbcaf3fb9e22b4a3516b9202eeee8cfaf3fbd88e81b78c3.
+
+The runner checks exact owners, PUBLIC denial, web EXECUTE and other intended grantees on eight draft functions and 25 prerequisite functions representing 27 intended EXECUTE edges, plus owner-only table ACLs and RLS. Object existence alone cannot establish success. Simulated reconnect, identity mismatch, ACL mismatch, case ordering and pre-runtime blocking are covered by fake tests; actual SQL remains unexecuted.
+
+Registered 0003 and 0007 grant function execution after transfer; 0008 grants access to helpers transferred by 0003; 0009 grants after transfer and temporary-membership removal. The restricted NOINHERIT actor therefore cannot reliably establish the intended 27 edges. Registered 0000–0010 remain byte-for-byte unchanged. The skipped 0010 Storage branch is not covered by this native test.
+
+The next source task is a separately reviewed append-only prerequisite ACL repair and explicit owner/DBA authority plan, with exact pre/post owner/ACL/role-graph assertions. A fixed bootstrap/DBA repair in the fresh private cluster would avoid broadening the actor, but is not authorized or implemented by this milestone. Do not silently add INHERIT, SET ROLE, SUPERUSER or arbitrary grants, rewrite registered history, or repair retained databases. The exact runtime proposal below remains blocked until that source plan is complete and reviewed; any later added repair SQL requires a revised scope and fresh approval.
+
+Controller lifecycle: immutable approval metadata (trusted outer caller must verify the real human message), source-hash-bound private snapshot, watchdog-ready handshake before initdb, parent identity, wall and monotonic deadlines, startup/shutdown serialization, verified owned-process cleanup and retained evidence. CLI metadata validation checks freshness/scope; it does not authenticate a human message itself. Planned case order is negatives/forced rollback before one committed success. The plan command reads source only and reports `runtime_ready: false`; the run command cannot proceed in this version.
+
 ## Implemented boundary
 
 `scripts/checkpoint-migration-postgres.mjs` accepts an already configured Postgres.js client (`prepare: false`), explicit scope/database/actor/draft hashes, reviewed guard parameters, required time limits and injected wall/monotonic clocks. Construction is pure. It does not read environment files, instantiate a client, authenticate owner approval or install its guard.
@@ -26,7 +45,7 @@ Setup uses one transaction and fresh object names, failing if they already exist
 
 `checkpointBudgetMs` and `deadlineMs` bound admission and checks between queries, including before returning the transaction callback. They do not cancel an active SQL batch or the driver's initial connection/begin wait. PostgreSQL 16 applies `statement_timeout` separately to statements in a multi-statement simple query, so a draft batch can remain active beyond that checkpoint budget. Statement/lock/idle timeouts are supplemental, not a hard total transaction bound. [PostgreSQL timeout rules](https://www.postgresql.org/docs/16/runtime-config-client.html)
 
-No live enablement should occur without a separately supervised outer deadline and verified cleanup. The disposable proposal below requires an independent process guard that stops only its identified cluster at the deadline or parent loss. This source milestone has not implemented or executed that new test controller.
+No live enablement should occur without a separately supervised outer deadline and verified cleanup. The disposable proposal below requires an independent process guard that stops only its identified cluster at the deadline or parent loss. The controller source is now implemented, but its real entrypoint is blocked as explained above; it has not been executed.
 
 ## Exact smallest proposed real PostgreSQL test
 
@@ -59,7 +78,7 @@ Required local test settings, proposed only: guard statement/idle ceilings 5000 
 
 ## Assertions and retained evidence
 
-- Validate fresh target/data directory/socket identity and no TCP listener before any SQL. Record immutable owner approval identity/time/scope in a controller that rejects expired, reused or closed approval; no timestamp refresh. The new harness must be prepared, fake-tested and reviewed before asking for runtime approval.
+- Validate fresh target/data directory/socket identity and no TCP listener before any SQL. Record immutable owner approval identity/time/scope in a controller that rejects expired, reused or closed approval; no timestamp refresh. The prepared harness remains blocked until the prerequisite repair source and authority plan are completed and independently reviewed; only then ask for fresh runtime approval.
 - On real PostgreSQL, verify the existing ADMIN row and absent SET right, the exact temporary grant delta/grantor/options, both draft schemas, unchanged guards/source hashes, audit order, original role graph after commit, and no effective web access to guard/audit.
 - Order cases explicitly: permission negatives, contention and forced-rollback cases first; one acknowledged committed migration success last. Never reapply unchanged non-idempotent draft bodies after that commit in the retained database. No reset, schema drop, extra database or role-fixture change is implicitly authorized.
 - On the real database, use only the explicitly proposed probe ACL mutations above to test rejection and exact ACL restoration, plus wrong-identity rejection before DDL. Web reachability, default-ACL cleanup simulation, existing-SET and missing-ADMIN alternatives remain source/fake-tested in this smallest scope; live variants need a separate precise fixture plan and authority. Do not alter the actor's original ADMIN/SET row or add web reachability just to manufacture a negative case.
@@ -75,4 +94,4 @@ Excluded: attempt001/002/003 data or services, SQL replay against their uncertai
 
 ## Verification labels
 
-Current evidence is static review and injected Postgres.js-client tests. Existing private-socket draft tests and stopped authenticated attempt003 are separate historical evidence. No actual SQL syntax, catalog-lock, default-ACL, transactional grant, driver wire protocol or timeout behavior is newly proven by this source-only milestone. Original draft0011/0014 hashes remain the pinned values; real verification requires the specifically approved isolated test above after its controller is ready.
+Current evidence is static review and injected Postgres.js-client tests. Existing private-socket draft tests and stopped authenticated attempt003 are separate historical evidence. No actual SQL syntax, catalog-lock, default-ACL, transactional grant, driver wire protocol or timeout behavior is newly proven by this source-only milestone. Current draft0011/0014 hashes are the reviewed corrected values above; historical receipts retain their original hashes. Real verification requires a revised, specifically approved isolated scope after the prerequisite authority blocker is resolved.
