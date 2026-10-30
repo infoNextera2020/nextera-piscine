@@ -3,6 +3,7 @@ import { createInvitationAssembly, type InvitationAssemblySettings } from './ass
 import { invitationOwnershipProof } from './managed-auth';
 import type { ActivationScope } from './activation';
 import { POST as productionPOST } from '../../app/api/invitations/activate/route';
+import { POST as productionInspect } from '../../app/api/invitations/inspect/route';
 const id = '10000000-0000-4000-8000-000000000001',
   requestId = '20000000-0000-4000-8000-000000000001';
 const caller = 'a'.repeat(64);
@@ -136,7 +137,51 @@ function fixture() {
     },
   };
 }
+function inspectRequest() {
+  return new Request('http://localhost:3118/api/invitations/inspect', {
+    method: 'POST',
+    headers: {
+      host: 'localhost:3118',
+      origin: 'http://localhost:3118',
+      'content-type': 'application/json',
+    },
+    body: JSON.stringify({ token: 'A'.repeat(43) }),
+  });
+}
 describe('explicit source-only invitation HTTP assembly', () => {
+  it('keeps production inspection disabled and construction side-effect free', async () => {
+    const f = fixture();
+    createInvitationAssembly(f.config);
+    expect(f.unsafe).not.toHaveBeenCalled();
+    expect(f.createUser).not.toHaveBeenCalled();
+    const response = await productionInspect(inspectRequest());
+    expect(response.status).toBe(503);
+    expect(await response.json()).toEqual({ status: 'unavailable' });
+  });
+  it('inspects stored invitation without claiming, creating Auth, enrolling or consuming it', async () => {
+    const f = fixture(),
+      app = createInvitationAssembly(f.config);
+    for (let i = 0; i < 2; i++) {
+      const response = await app.INSPECT(inspectRequest());
+      expect(response.status).toBe(200);
+      expect(await response.json()).toEqual({ status: 'valid', email: scope.email });
+    }
+    expect(f.createUser).not.toHaveBeenCalled();
+    expect(f.getUserById).not.toHaveBeenCalled();
+    expect(
+      f.unsafe.mock.calls.some(([sql]) => /invitation_(claim|enroll|complete)\(/.test(sql)),
+    ).toBe(false);
+    expect((await app.POST(request())).status).toBe(200);
+    expect(f.createUser).toHaveBeenCalledTimes(1);
+  });
+  it('fails inspection closed for missing shared activation policy without queries', async () => {
+    const f = fixture();
+    expect(
+      (await createInvitationAssembly({ ...f.config, policy: null }).INSPECT(inspectRequest()))
+        .status,
+    ).toBe(503);
+    expect(f.unsafe).not.toHaveBeenCalled();
+  });
   it('leaves production route503, without constructing an environment client', async () => {
     const response = await productionPOST(request());
     expect(response.status).toBe(503);
