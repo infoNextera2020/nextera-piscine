@@ -197,10 +197,6 @@ BEGIN
  RETURN true;
 END $$;
 
-ALTER TABLE app.invitation_admission_policy OWNER TO nextera_invitation_owner;
-ALTER TABLE app.invitation_rate_profiles OWNER TO nextera_invitation_owner;
-ALTER TABLE app.invitation_rate_counters OWNER TO nextera_invitation_owner;
-ALTER TABLE app.invitation_enrollment_receipts OWNER TO nextera_invitation_owner;
 ALTER TABLE app.invitation_admission_policy ENABLE ROW LEVEL SECURITY;
 ALTER TABLE app.invitation_admission_policy FORCE ROW LEVEL SECURITY;
 ALTER TABLE app.invitation_rate_profiles ENABLE ROW LEVEL SECURITY;
@@ -217,12 +213,6 @@ CREATE POLICY invitation_rate_counter_owner ON app.invitation_rate_counters TO n
  USING(current_user='nextera_invitation_owner') WITH CHECK(current_user='nextera_invitation_owner');
 CREATE POLICY invitation_enrollment_owner ON app.invitation_enrollment_receipts TO nextera_invitation_owner
  USING(current_user='nextera_invitation_owner') WITH CHECK(current_user='nextera_invitation_owner');
-ALTER FUNCTION app.invitation_receipt_immutable() OWNER TO nextera_invitation_owner;
-ALTER FUNCTION app._invitation_admission_guard() OWNER TO nextera_invitation_owner;
-ALTER FUNCTION app.invitation_admission_ready(boolean) OWNER TO nextera_invitation_owner;
-ALTER FUNCTION app.invitation_scope_current(uuid,uuid,text,text,uuid) OWNER TO nextera_invitation_owner;
-ALTER FUNCTION app.invitation_enroll(uuid,bigint,uuid,text,text,uuid,uuid) OWNER TO nextera_invitation_owner;
-ALTER FUNCTION app.invitation_rate_consume(text,text,text,text) OWNER TO nextera_invitation_owner;
 -- Only the private NOLOGIN owner obtains narrowly bounded insertion privileges. No generic runtime table writes.
 GRANT INSERT(auth_user_id,display_name,role,active) ON app.users TO nextera_invitation_owner;
 GRANT INSERT(cohort_id,user_id,status,joined_at) ON app.cohort_memberships TO nextera_invitation_owner;
@@ -238,4 +228,19 @@ GRANT EXECUTE ON FUNCTION app.invitation_admission_ready(boolean),app.invitation
  app.invitation_enroll(uuid,bigint,uuid,text,text,uuid,uuid),app.invitation_rate_consume(text,text,text,text) TO nextera_invitation_runtime;
 -- No CREATE ROLE, issuance, policy inserts, self-enrollment, mail, registered migration or web/anon grants.
 -- Rate-counter expiry is metadata; an explicit reviewed purge/retention operation is still required before enablement.
+-- All ACL/RLS setup above precedes SET-only ownership handoff. Temporary schema CREATE is restored.
+DO $$ BEGIN IF has_schema_privilege('nextera_invitation_owner','app','CREATE') THEN RAISE EXCEPTION 'Unexpected prior owner CREATE'; END IF; END $$;
+GRANT CREATE ON SCHEMA app TO nextera_invitation_owner;
+ALTER TABLE app.invitation_admission_policy OWNER TO nextera_invitation_owner;
+ALTER TABLE app.invitation_rate_profiles OWNER TO nextera_invitation_owner;
+ALTER TABLE app.invitation_rate_counters OWNER TO nextera_invitation_owner;
+ALTER TABLE app.invitation_enrollment_receipts OWNER TO nextera_invitation_owner;
+ALTER FUNCTION app.invitation_receipt_immutable() OWNER TO nextera_invitation_owner;
+ALTER FUNCTION app._invitation_admission_guard() OWNER TO nextera_invitation_owner;
+ALTER FUNCTION app.invitation_admission_ready(boolean) OWNER TO nextera_invitation_owner;
+ALTER FUNCTION app.invitation_scope_current(uuid,uuid,text,text,uuid) OWNER TO nextera_invitation_owner;
+ALTER FUNCTION app.invitation_enroll(uuid,bigint,uuid,text,text,uuid,uuid) OWNER TO nextera_invitation_owner;
+ALTER FUNCTION app.invitation_rate_consume(text,text,text,text) OWNER TO nextera_invitation_owner;
+REVOKE CREATE ON SCHEMA app FROM nextera_invitation_owner;
+DO $$ BEGIN IF has_schema_privilege('nextera_invitation_owner','app','CREATE') THEN RAISE EXCEPTION 'Unexpected retained owner CREATE'; END IF; END $$;
 COMMIT;

@@ -116,13 +116,6 @@ BEGIN
  RETURN FOUND;
 END $$;
 
-ALTER FUNCTION app._invitation_operations_guard() OWNER TO nextera_invitation_owner;
-ALTER FUNCTION app.invitation_operations_ready() OWNER TO nextera_invitation_owner;
-ALTER FUNCTION app.invitation_find(text) OWNER TO nextera_invitation_owner;
-ALTER FUNCTION app.invitation_claim(text,uuid,integer) OWNER TO nextera_invitation_owner;
-ALTER FUNCTION app.invitation_advance(uuid,bigint,text,text,uuid) OWNER TO nextera_invitation_owner;
-ALTER FUNCTION app.invitation_complete(uuid,bigint,uuid,text,text,uuid) OWNER TO nextera_invitation_owner;
-ALTER FUNCTION app.invitation_release(uuid,bigint) OWNER TO nextera_invitation_owner;
 GRANT USAGE ON SCHEMA app TO nextera_invitation_owner,nextera_invitation_runtime;
 GRANT SELECT,UPDATE ON app.invitation_activations TO nextera_invitation_owner;
 GRANT SELECT(id,auth_user_id,display_name,role,active) ON app.users TO nextera_invitation_owner;
@@ -139,4 +132,16 @@ CREATE POLICY invitation_private_owner ON app.invitation_activations FOR ALL TO 
 REVOKE ALL ON FUNCTION app._invitation_operations_guard(),app.invitation_operations_ready(),app.invitation_find(text),app.invitation_claim(text,uuid,integer),app.invitation_advance(uuid,bigint,text,text,uuid),app.invitation_complete(uuid,bigint,uuid,text,text,uuid),app.invitation_release(uuid,bigint) FROM PUBLIC;
 GRANT EXECUTE ON FUNCTION app.invitation_operations_ready(),app.invitation_find(text),app.invitation_claim(text,uuid,integer),app.invitation_advance(uuid,bigint,text,text,uuid),app.invitation_complete(uuid,bigint,uuid,text,text,uuid),app.invitation_release(uuid,bigint) TO nextera_invitation_runtime;
 -- No grants to nextera_web, anon, authenticated or service_role; no issuance or accepted-record stub.
+-- All ACL/RLS setup above precedes SET-only ownership handoff. Temporary schema CREATE is restored.
+DO $$ BEGIN IF has_schema_privilege('nextera_invitation_owner','app','CREATE') THEN RAISE EXCEPTION 'Unexpected prior owner CREATE'; END IF; END $$;
+GRANT CREATE ON SCHEMA app TO nextera_invitation_owner;
+ALTER FUNCTION app._invitation_operations_guard() OWNER TO nextera_invitation_owner;
+ALTER FUNCTION app.invitation_operations_ready() OWNER TO nextera_invitation_owner;
+ALTER FUNCTION app.invitation_find(text) OWNER TO nextera_invitation_owner;
+ALTER FUNCTION app.invitation_claim(text,uuid,integer) OWNER TO nextera_invitation_owner;
+ALTER FUNCTION app.invitation_advance(uuid,bigint,text,text,uuid) OWNER TO nextera_invitation_owner;
+ALTER FUNCTION app.invitation_complete(uuid,bigint,uuid,text,text,uuid) OWNER TO nextera_invitation_owner;
+ALTER FUNCTION app.invitation_release(uuid,bigint) OWNER TO nextera_invitation_owner;
+REVOKE CREATE ON SCHEMA app FROM nextera_invitation_owner;
+DO $$ BEGIN IF has_schema_privilege('nextera_invitation_owner','app','CREATE') THEN RAISE EXCEPTION 'Unexpected retained owner CREATE'; END IF; END $$;
 COMMIT;

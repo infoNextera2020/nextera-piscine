@@ -1,11 +1,22 @@
 # Invitation admission and activation — prepared source, disabled runtime
 
-Sunday trial planning update (2026-10-30): owner-issued invitation is the acceptance decision; Anas manually sends a private email-bound, expiring, single-use link. Registration joins the fixed cohort without a second admin confirmation. Automated invitation delivery/management are deferred. See docs/SUNDAY_WEEK1_TRIAL_001.md for approved scope and inspected gaps. The missing private authority hook, issuer, policies and live wiring below remain source/runtime work; no token or account has been issued.
+Sunday trial planning update (2026-10-30): owner-issued invitation is the acceptance decision; Anas manually sends a private email-bound, expiring, single-use link. Registration joins the fixed cohort without a second admin confirmation. Automated invitation delivery/management are deferred. See docs/SUNDAY_WEEK1_TRIAL_001.md for approved scope and inspected gaps. Prepared private authority and issuance source now exist; policy configuration, SQL/provider verification and live UI wiring remain gated. No token or account has been issued.
 
 This slice extends the existing invitation activation service; it does not activate public signup.
 `app/api/invitations/activate/route.ts` supplies **null** configuration and returns503. `/signup`
 is unchanged and still shows unavailable. No environment client, SQL connection, provider request,
 cookie, session, invitation delivery or account is created by importing/constructing these factories.
+
+## Manual issuance preparation update (2026-10-30)
+
+The private acceptance hook and owner-authorized digest-only issuance now have source
+implementations in unregistered0020 and issuance*.ts. Installation order is0013 ->0020
+->0016 ->0018, not filename order. Exact owner/login/cohort/version policy is empty and
+required. Ownership/ACL ordering in0016/0018 is corrected as unregistered source only.
+Both production issue and activate routes remain503; signup remains a fixture. No
+invitation SQL/provider/browser integration is claimed. The historical preparation
+notes below describe the earlier slice; the current implementation, limitations and
+remaining gates are in docs/MANUAL_INVITATION_SOURCE_001.md. No live token was issued.
 
 ## Assembly and trust boundaries
 

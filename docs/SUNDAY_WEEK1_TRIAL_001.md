@@ -59,3 +59,13 @@ The smallest trial slice is one globally persisted, uniquely constrained number 
 5. Rehearse the complete flow Saturday, including retry, reload, access removal and service failure. Record passed, failed and unrun checks, then make the Sunday readiness decision.
 
 No live invitation, email, credential, provider configuration, database change or new runtime was created by this planning record.
+
+## Manual invitation source update — 2026-10-30
+
+The private owner-authorized issuer, locked acceptance hook, pinned cohort/version policy,
+digest-only atomic repository and disabled issuance HTTP route are now prepared in source.
+See docs/MANUAL_INVITATION_SOURCE_001.md for exact implemented files, limits and next gates.
+The former missing issuer/authority source gap is addressed; no invitation SQL, live provider,
+account, token, email or browser registration has been executed or enabled. Fresh SQL/provider
+verification and explicit settings remain required. Stable global student number remains a
+separate user-identity step with the previously approved private display rules.

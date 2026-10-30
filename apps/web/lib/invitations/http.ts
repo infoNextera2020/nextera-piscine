@@ -50,12 +50,12 @@ function origin(value: string) {
     return false;
   }
 }
-class BodyRejected extends Error {
+export class BodyRejected extends Error {
   constructor(readonly http: number) {
     super('Request body rejected.');
   }
 }
-async function jsonBody(request: Request, maxBytes: number, timeoutMs: number) {
+export async function jsonBody(request: Request, maxBytes: number, timeoutMs: number) {
   const length = request.headers.get('content-length');
   if (
     length !== null &&

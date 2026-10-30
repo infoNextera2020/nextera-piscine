@@ -1,0 +1,97 @@
+{
+  "kind": "source_and_injected_tests_only",
+  "checks": [
+    {
+      "check": "format_changed",
+      "exitCode": 0,
+      "startedAtUtc": "2026-10-30T09:48:25.119411+00:00",
+      "finishedAtUtc": "2026-10-30T09:48:27.434053+00:00"
+    },
+    {
+      "check": "unit",
+      "exitCode": 0,
+      "startedAtUtc": "2026-10-30T09:48:27.440702+00:00",
+      "finishedAtUtc": "2026-10-30T09:48:43.786787+00:00",
+      "numTotalTests": 1180,
+      "numPassedTests": 1180,
+      "numFailedTests": 0,
+      "numPendingTests": 0,
+      "success": true
+    },
+    {
+      "check": "domain_types",
+      "exitCode": 0,
+      "startedAtUtc": "2026-10-30T09:48:43.868438+00:00",
+      "finishedAtUtc": "2026-10-30T09:48:45.289098+00:00"
+    },
+    {
+      "check": "database_types",
+      "exitCode": 0,
+      "startedAtUtc": "2026-10-30T09:48:45.295053+00:00",
+      "finishedAtUtc": "2026-10-30T09:48:49.183766+00:00"
+    },
+    {
+      "check": "test_types",
+      "exitCode": 0,
+      "startedAtUtc": "2026-10-30T09:48:49.190411+00:00",
+      "finishedAtUtc": "2026-10-30T09:49:00.864617+00:00"
+    },
+    {
+      "check": "web_types",
+      "exitCode": 0,
+      "startedAtUtc": "2026-10-30T09:49:00.871107+00:00",
+      "finishedAtUtc": "2026-10-30T09:49:06.185396+00:00"
+    },
+    {
+      "check": "lint_all",
+      "exitCode": 0,
+      "startedAtUtc": "2026-10-30T09:49:06.191693+00:00",
+      "finishedAtUtc": "2026-10-30T09:49:17.211829+00:00"
+    },
+    {
+      "check": "format_all",
+      "exitCode": 0,
+      "startedAtUtc": "2026-10-30T09:49:17.218832+00:00",
+      "finishedAtUtc": "2026-10-30T09:49:34.563964+00:00"
+    },
+    {
+      "check": "domain_build",
+      "exitCode": 0,
+      "startedAtUtc": "2026-10-30T09:49:34.572282+00:00",
+      "finishedAtUtc": "2026-10-30T09:49:36.012445+00:00"
+    },
+    {
+      "check": "database_build",
+      "exitCode": 0,
+      "startedAtUtc": "2026-10-30T09:49:36.020620+00:00",
+      "finishedAtUtc": "2026-10-30T09:49:42.126572+00:00"
+    },
+    {
+      "check": "web_build",
+      "exitCode": 0,
+      "startedAtUtc": "2026-10-30T09:49:42.133659+00:00",
+      "finishedAtUtc": "2026-10-30T09:50:18.032502+00:00"
+    },
+    {
+      "check": "diff_check",
+      "exitCode": 0,
+      "startedAtUtc": "2026-10-30T09:50:18.048824+00:00",
+      "finishedAtUtc": "2026-10-30T09:50:18.201568+00:00"
+    }
+  ],
+  "independentReview": "cleared_after_UUID_canonicalization_fix",
+  "registeredMigrationBytesChanged": false,
+  "fourOriginalDirtyFilesSha256Unchanged": true,
+  "productionIssuanceEnabled": false,
+  "productionActivationEnabled": false,
+  "realInvitationsIssued": 0,
+  "sqlExecuted": false,
+  "authProviderCalled": false,
+  "newServicesStarted": false,
+  "notRun": [
+    "Invitation SQL parsing/ACL/transaction/concurrency under real PostgreSQL",
+    "Real managed Auth account creation/enrollment",
+    "Browser signup/fragment handling/live activation"
+  ],
+  "priorNativeCheckpointRehearsal": "Separate closed evidence commit0949dd9; not invitation integration coverage"
+}
