@@ -4,7 +4,7 @@ import { useEffect, useId, useRef, useState } from 'react';
 import { homeMotionEligible, type HomeMotionConditions } from './home-motion-policy';
 import s from './home-motion-artwork.module.css';
 
-const poster = '/piscine/home-animation/nextera_home_v9_final_poster.webp';
+const poster = '/piscine/home-animation/01-coding-home-v10-poster-black.webp';
 type Connection = EventTarget & { saveData?: boolean };
 /** Approved rendered loop, never WebGL. Browser gates keep initial and reduced-motion views static. */
 export function HomeMotionArtwork() {
@@ -106,7 +106,7 @@ export function HomeMotionArtwork() {
         <picture aria-hidden="true" className={s.poster}>
           <source type="image/webp" srcSet={poster} />
           <Image
-            src="/piscine/home-animation/nextera_home_v9_final_poster.png"
+            src="/piscine/home-animation/01-coding-home-v10-poster-black.png"
             width={600}
             height={660}
             alt=""
@@ -137,8 +137,14 @@ export function HomeMotionArtwork() {
               setPlaying(false);
             }}
           >
-            <source src="/piscine/home-animation/nextera_home_v9_final_5s.webm" type="video/webm" />
-            <source src="/piscine/home-animation/nextera_home_v9_final_5s.mp4" type="video/mp4" />
+            <source
+              src="/piscine/home-animation/01-coding-home-v10-black-5s.webm"
+              type="video/webm"
+            />
+            <source
+              src="/piscine/home-animation/01-coding-home-v10-black-5s.mp4"
+              type="video/mp4"
+            />
           </video>
         )}
       </div>

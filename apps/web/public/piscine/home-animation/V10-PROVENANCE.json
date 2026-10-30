@@ -1,0 +1,86 @@
+{
+  "version": "V10",
+  "trial_theme": "dark-only; black assets selected regardless of OS light preference",
+  "compositing": "Opaque black video composite, not alpha video. Transparent poster retained but not selected for the trial.",
+  "assets": {
+    "mp4": {
+      "filename": "01-coding-home-v10-black-5s.mp4",
+      "library_file_id": "libfile_8f0af5676f98819185e420b92b488d58",
+      "library_version": "0",
+      "bytes": 230295,
+      "sha256": "42f0168042686990f48187a8400a70c0a15077f43084ed3eb0fbaf991ab3cb12"
+    },
+    "webm": {
+      "filename": "01-coding-home-v10-black-5s.webm",
+      "library_file_id": "libfile_eaf6f13e95248191b37f0ec18cf74b1b",
+      "library_version": "0",
+      "bytes": 197396,
+      "sha256": "250b251f66e30c56bac54ac9f1c622b847c99bd5c92f710a9faa88ca5fccbb19"
+    },
+    "transparentPoster": {
+      "filename": "01-coding-home-v10-poster-transparent.webp",
+      "library_file_id": "libfile_6c84024e15d48191ab3aea5d3268c7e5",
+      "library_version": "0",
+      "bytes": 54674,
+      "sha256": "6cf8aa9846dfb4ac77daca2bee42acea33d3b88473065c26e066fc5d341d9c47",
+      "dimensions": [600, 660],
+      "mode": "RGBA",
+      "alpha_range": [0, 255],
+      "perimeter_rgb_max": 1,
+      "perimeter_alpha_range": [0, 0],
+      "static_frames": 1
+    },
+    "blackPoster": {
+      "filename": "01-coding-home-v10-poster-black.webp",
+      "library_file_id": "libfile_2409f8b9852c8191b0d5260faa1fc2cf",
+      "library_version": "0",
+      "bytes": 23210,
+      "sha256": "39eba7287f818d90a2b1c31b28ac7e8aab4074c2f20a3483a9434ec05a75ba2b",
+      "dimensions": [600, 660],
+      "mode": "RGB",
+      "alpha_range": [255, 255],
+      "perimeter_rgb_max": 0,
+      "perimeter_alpha_range": [255, 255],
+      "static_frames": 1
+    }
+  },
+  "png_fallback": {
+    "filename": "01-coding-home-v10-poster-black.png",
+    "bytes": 171191,
+    "sha256": "83bd233837e4fec0f9771daef61c67a0f42451a25d5c1050ba127e20a31beea1",
+    "derived_from_library_file_id": "libfile_2409f8b9852c8191b0d5260faa1fc2cf",
+    "decoded_pixels_identical": true,
+    "dimensions": [600, 660]
+  },
+  "preserved_v9_sha256": {
+    "nextera_home_v9_final_poster.webp": "33843ba4820e6128deb7e9340cba4179db06ae7964a31f9fdecaa06ce0e101ed",
+    "nextera_home_v9_final_5s.mp4": "58a1115d9f6489e8f06351090154578849c1257d61f8656e109d4ea980d66fbb",
+    "nextera_home_v9_final_5s.webm": "7f3eb680c2c8ca95eff72039fab6884ccae3ecb7894f36a6fd78c4d6901db169",
+    "nextera_home_v9_final_poster.png": "ad27eb0a40826a67964948f94dc6ea445c4548903fc0d4c7e3a149fb21f68cdc"
+  },
+  "selected": {
+    "webm": "01-coding-home-v10-black-5s.webm",
+    "mp4": "01-coding-home-v10-black-5s.mp4",
+    "poster": "01-coding-home-v10-poster-black.webp",
+    "fallback": "01-coding-home-v10-poster-black.png"
+  },
+  "preserved_behavior": [
+    "600x660 media canvas",
+    "automatic muted inline loop after existing eligibility",
+    "manual pause/retry",
+    "offscreen and page-hidden pause",
+    "reduced-motion and save-data static fallback",
+    "responsive/mobile fallback",
+    "mouse-only Hairline is separate and unchanged"
+  ],
+  "verification": {
+    "input_bytes_and_library_identity": true,
+    "poster_pixels_inspected": true,
+    "black_poster_perimeter_rgb_max": 0,
+    "black_poster_opaque": true,
+    "mp4_webm_file_signatures": true,
+    "local_video_decode": "Not run: ffmpeg/ffprobe absent from WSL/Windows PATH; no software installed.",
+    "browser_playback_and_seam": "Pending integration-owner checks on actual fixture.",
+    "source_geometry_camera_motion": "Supplier states preserved; no local rerender or modification performed."
+  }
+}
