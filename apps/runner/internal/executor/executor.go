@@ -26,6 +26,8 @@ import (
 type Executor struct {
 	Engine                *sandbox.Engine
 	StorageURL, TokenFile string
+	// Injected only by package tests; production uses the existing sandbox engine.
+	engine gradingEngine
 }
 type Result struct {
 	Verdict, Code string
@@ -60,7 +62,7 @@ func casesFor(files map[string][]byte, contract artifact.ExecutionContract) ([]j
 			if r.Expected == nil || len(r.Input) == 0 {
 				return nil, nil, artifact.ErrInvalid
 			}
-			if contract.Input == "string" {
+			if contract.Input == "string" || contract.Version == 2 {
 				var v string
 				if r.Input[0] != '"' || json.Unmarshal(r.Input, &v) != nil {
 					return nil, nil, artifact.ErrInvalid
@@ -156,7 +158,7 @@ func (e Executor) Evaluate(ctx context.Context, s protocol.Snapshot, layout stri
 	if err != nil {
 		return infrastructure("INCOMPATIBLE_ENVIRONMENT")
 	}
-	if e.Engine.VerifyImage(ctx, s.Sandbox) != nil {
+	if e.runtimeEngine().VerifyImage(ctx, s.Sandbox) != nil {
 		return infrastructure("ARTIFACT_UNAVAILABLE")
 	}
 	metrics := map[string]int64{}
@@ -174,17 +176,24 @@ func (e Executor) Evaluate(ctx context.Context, s protocol.Snapshot, layout stri
 	return Result{Verdict: feedback.Project(verdict).Verdict, Metrics: metrics}
 }
 func (e Executor) compile(ctx context.Context, s protocol.Snapshot, source []byte, metrics map[string]int64) ([]byte, string, error) {
-	c, err := e.Engine.Create(ctx, s.Sandbox, true)
+	files, command, planErr := compilationPlan(s, source)
+	if planErr != nil {
+		if errors.Is(planErr, errProgramSource) {
+			return nil, "compile_error", nil
+		}
+		return nil, "", planErr
+	}
+	c, err := e.runtimeEngine().Create(ctx, s.Sandbox, true)
 	if err != nil {
 		return nil, "", err
 	}
 	defer c.Close()
-	if c.Import(ctx, map[string][]byte{"solution.go": source, "transport.go": adapterFor(func() artifact.ExecutionContract { c, _ := artifact.ContractFor(s.PackID, s.Contract); return c }())}) != nil {
+	if c.Import(ctx, files) != nil {
 		return nil, "", sandbox.ErrInfrastructure
 	}
 	phase, cancel := context.WithTimeout(ctx, time.Duration(s.Resources.Compilation.Timeout)*time.Millisecond)
 	started := time.Now()
-	_, _, exit, err := c.Exec(phase, []string{"/bin/sh", "-c", "cp -as /opt/go-cache /workspace/cache && exec go build -trimpath -buildvcs=false -p=1 -ldflags=-buildid= -o /workspace/program /workspace/solution.go /workspace/transport.go"}, []string{"GOMEMLIMIT=384MiB"}, nil, 65536)
+	_, _, exit, err := c.Exec(phase, command, []string{"GOMEMLIMIT=384MiB"}, nil, 65536)
 	metrics["compilation_ms"] = time.Since(started).Milliseconds()
 	cancel()
 	if ctx.Err() != nil {
@@ -210,7 +219,10 @@ func (e Executor) compile(ctx context.Context, s protocol.Snapshot, source []byt
 	return program, "", nil
 }
 func (e Executor) execute(ctx context.Context, s protocol.Snapshot, program []byte, inputs []json.RawMessage, expected []string, metrics map[string]int64) (string, error) {
-	c, err := e.Engine.Create(ctx, s.Sandbox, false)
+	if s.Contract != nil && s.Contract.Version == 2 {
+		return e.executeProgram(ctx, s, program, inputs, expected, metrics)
+	}
+	c, err := e.runtimeEngine().Create(ctx, s.Sandbox, false)
 	if err != nil {
 		return "", err
 	}

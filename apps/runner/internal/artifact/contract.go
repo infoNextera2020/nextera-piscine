@@ -30,7 +30,24 @@ func ContractFor(id string, declared *ExecutionContract) (ExecutionContract, err
 		}
 	}
 	c := *declared
-	if c.Version != 1 || len(c.Item) > 100 || !itemPattern.MatchString(c.Item) || len(c.File) > 100 || !filePattern.MatchString(c.File) || c.File == "main.go" || !functionPattern.MatchString(c.Function) || (c.Input != "string" && c.Input != "int64") || c.Output != "string" {
+	if len(c.Item) > 100 || !itemPattern.MatchString(c.Item) || len(c.File) > 100 || !filePattern.MatchString(c.File) {
+		return ExecutionContract{}, ErrInvalid
+	}
+	switch c.Version {
+	case 1:
+		if c.File == "main.go" || !functionPattern.MatchString(c.Function) || (c.Input != "string" && c.Input != "int64") || c.Output != "string" {
+			return ExecutionContract{}, ErrInvalid
+		}
+	case 2:
+		if id == "hello-go-v1" || id == "even-or-odd-v1" {
+			return ExecutionContract{}, ErrInvalid
+		}
+		// Single complete Go program. No generated function adapter, wildcard
+		// source collection, extra file or implicit stdin/stdout conversion.
+		if c.File != "main.go" || c.Function != "" || c.Input != "stdin_utf8" || c.Output != "stdout_utf8_exact" {
+			return ExecutionContract{}, ErrInvalid
+		}
+	default:
 		return ExecutionContract{}, ErrInvalid
 	}
 	return c, nil
