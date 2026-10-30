@@ -1,3 +1,5 @@
+> Historical earlier baseline (1,304 tests). The later signup, mixed-answer and V10 source milestones are recorded in WEEK1_AUTH_RUNTIME_PREPARATION_002.md and commits be626c1, 175fd4f and e26c75e. V10 replaces the pending-background state described below; no live integration is inferred.
+
 # Sunday source milestone — 30 October 2026
 
 This receipt records source and fixture evidence. It does not establish a live learner journey.
