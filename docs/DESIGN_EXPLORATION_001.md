@@ -1,3 +1,5 @@
+> STATUS UPDATE —30October2026: Anas approved this direction globally in Sentinel_4dfc8e94325c8191959edeb2c3501b67. It is now canonical; see DESIGN_DIRECTION_002_CALM.md. The comparison-only statements below describe the original review phase. Progressive production rollout is not yet complete.
+
 # Home and GreetingCard comparison
 
 This is an opt-in visual proposal, not an approved replacement. Import `DesignExploration` only in the local fixture comparison and pass the existing actual component as its child:
