@@ -24,7 +24,7 @@ function fixture() {
   const inspect = vi.fn(async (_token: unknown, _caller: string): Promise<Outcome> => {
     void _token;
     void _caller;
-    return { status: 'valid', email: 'accepted@example.test' };
+    return { status: 'valid', email: 'accepted@example.test', displayName: 'Accepted learner' };
   });
   const consume = vi.fn(async (_caller: string) => {
     void _caller;
@@ -72,11 +72,15 @@ describe('invitation inspection HTTP — injected source boundary only', () => {
     expect(f.consume).not.toHaveBeenCalled();
     expect(f.inspect).not.toHaveBeenCalled();
   });
-  it('returns only the capability-authorized fixed email and never a cookie or capability', async () => {
+  it('returns only capability-authorized accepted identity, without cookie or capability', async () => {
     const f = fixture();
     const result = await f.POST(request());
     expect(result.status).toBe(200);
-    expect(await result.json()).toEqual({ status: 'valid', email: 'accepted@example.test' });
+    expect(await result.json()).toEqual({
+      status: 'valid',
+      email: 'accepted@example.test',
+      displayName: 'Accepted learner',
+    });
     expect(f.inspect).toHaveBeenCalledExactlyOnceWith(token, caller);
     expect(result.headers.get('cache-control')).toBe('private, no-store');
     expect(result.headers.get('referrer-policy')).toBe('no-referrer');
@@ -174,7 +178,11 @@ describe('invitation inspection HTTP — injected source boundary only', () => {
     ['unavailable', 503],
   ] as const)('maps %s without leaking an optional email', async (status, code) => {
     const f = fixture();
-    f.inspect.mockResolvedValue({ status, email: 'private@example.test' });
+    f.inspect.mockResolvedValue({
+      status,
+      email: 'private@example.test',
+      displayName: 'Private accepted name',
+    });
     const response = await f.POST(request());
     expect(response.status).toBe(code);
     expect(await response.json()).toEqual({ status });
@@ -183,7 +191,11 @@ describe('invitation inspection HTTP — injected source boundary only', () => {
     'never mistakes %s for valid inspection',
     async (status) => {
       const f = fixture();
-      f.inspect.mockResolvedValue({ status, email: 'private@example.test' });
+      f.inspect.mockResolvedValue({
+        status,
+        email: 'private@example.test',
+        displayName: 'Private accepted name',
+      });
       const response = await f.POST(request());
       expect(response.status).toBe(503);
       expect(await response.json()).toEqual({ status: 'unavailable' });
@@ -201,6 +213,36 @@ describe('invitation inspection HTTP — injected source boundary only', () => {
       expect(await response.json()).toEqual({ status: 'unavailable' });
     },
   );
+  it.each([
+    undefined,
+    '',
+    '   ',
+    'a'.repeat(121),
+    'Learner\nadmin',
+    'Learner' + String.fromCharCode(127),
+  ])('rejects malformed accepted name without identity disclosure: %j', async (displayName) => {
+    const f = fixture();
+    f.inspect.mockResolvedValue(
+      displayName === undefined
+        ? { status: 'valid', email: 'accepted@example.test' }
+        : { status: 'valid', email: 'accepted@example.test', displayName },
+    );
+    const response = await f.POST(request());
+    expect(response.status).toBe(503);
+    expect(await response.json()).toEqual({ status: 'unavailable' });
+  });
+  it('does not trim or normalize a valid accepted name or leak internal result fields', async () => {
+    const f = fixture();
+    const displayName = '  آمنة María 👩🏽‍💻  ';
+    f.inspect.mockResolvedValue({ status: 'valid', email: 'accepted@example.test', displayName });
+    const response = await f.POST(request());
+    expect(await response.json()).toEqual({
+      status: 'valid',
+      email: 'accepted@example.test',
+      displayName,
+    });
+    expect(response.headers.get('cache-control')).toBe('private, no-store');
+  });
   it('does not leak private transport errors', async () => {
     const f = fixture();
     f.inspect.mockRejectedValue(new Error('private token and storage DSN'));

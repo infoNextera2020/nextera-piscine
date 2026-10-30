@@ -25,8 +25,12 @@ const statuses = {
 } as const;
 type InspectionStatus = keyof typeof statuses;
 const CAPABILITY = /^[A-Za-z0-9_-]{43}$/;
-function reply(status: InspectionStatus, http: number = statuses[status], email?: string) {
-  return Response.json(status === 'valid' ? { status, email } : { status }, {
+function reply(
+  status: InspectionStatus,
+  http: number = statuses[status],
+  identity?: { email: string; displayName: string },
+) {
+  return Response.json(status === 'valid' ? { status, ...identity } : { status }, {
     status: http,
     headers: {
       'Cache-Control': 'private, no-store',
@@ -106,7 +110,15 @@ export function createInvitationInspectionHandler(
           [...outcome.email].some((c) => c.charCodeAt(0) < 32 || c.charCodeAt(0) === 127)
         )
           return reply('unavailable');
-        return reply('valid', 200, outcome.email);
+        // The accepted ledger name is the activation name; no client override or trimming.
+        if (
+          typeof outcome.displayName !== 'string' ||
+          !outcome.displayName.trim() ||
+          outcome.displayName.length > 120 ||
+          [...outcome.displayName].some((c) => c.charCodeAt(0) < 32 || c.charCodeAt(0) === 127)
+        )
+          return reply('unavailable');
+        return reply('valid', 200, { email: outcome.email, displayName: outcome.displayName });
       }
       return reply(outcome.status as InspectionStatus);
     } catch (error) {

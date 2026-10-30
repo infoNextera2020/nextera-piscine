@@ -164,7 +164,11 @@ describe('explicit source-only invitation HTTP assembly', () => {
     for (let i = 0; i < 2; i++) {
       const response = await app.INSPECT(inspectRequest());
       expect(response.status).toBe(200);
-      expect(await response.json()).toEqual({ status: 'valid', email: scope.email });
+      expect(await response.json()).toEqual({
+        status: 'valid',
+        email: scope.email,
+        displayName: scope.displayName,
+      });
     }
     expect(f.createUser).not.toHaveBeenCalled();
     expect(f.getUserById).not.toHaveBeenCalled();

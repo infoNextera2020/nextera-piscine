@@ -10,7 +10,11 @@ function fixture(overrides: Partial<InvitationClientSettings> = {}) {
   const requestId = vi.fn(() => operation);
   const transport = vi.fn<InvitationClientSettings['transport']>(async (path) =>
     path.endsWith('/inspect')
-      ? Response.json({ status: 'valid', email: 'accepted@example.test' })
+      ? Response.json({
+          status: 'valid',
+          email: 'accepted@example.test',
+          displayName: 'Accepted Learner',
+        })
       : Response.json({ status: 'activated' }),
   );
   const settings: InvitationClientSettings = {
@@ -48,7 +52,11 @@ describe('invitation browser lifecycle — fake transport only, no live Auth', (
     expect(f.transport).not.toHaveBeenCalled();
     expect(f.requestId).not.toHaveBeenCalled();
     expect(client.snapshot()).toEqual({ status: 'unverified' });
-    expect(await client.inspect()).toEqual({ status: 'ready', email: 'accepted@example.test' });
+    expect(await client.inspect()).toEqual({
+      status: 'ready',
+      email: 'accepted@example.test',
+      displayName: 'Accepted Learner',
+    });
     expect(events).toEqual(['removed', 'transport']);
     expect(JSON.stringify(client.snapshot())).not.toContain(token);
   });
@@ -137,8 +145,18 @@ describe('invitation browser lifecycle — fake transport only, no live Auth', (
     expect(f.client.inspect()).toBe(first);
     await Promise.resolve();
     expect(f.transport).toHaveBeenCalledTimes(1);
-    release(Response.json({ status: 'valid', email: 'accepted@example.test' }));
-    expect(await first).toEqual({ status: 'ready', email: 'accepted@example.test' });
+    release(
+      Response.json({
+        status: 'valid',
+        email: 'accepted@example.test',
+        displayName: 'Accepted Learner',
+      }),
+    );
+    expect(await first).toEqual({
+      status: 'ready',
+      email: 'accepted@example.test',
+      displayName: 'Accepted Learner',
+    });
     expect(Object.isFrozen(f.client.snapshot())).toBe(true);
   });
   it('does not open a duplicate request through a reentrant state subscriber', async () => {
@@ -264,16 +282,25 @@ describe('invitation browser lifecycle — fake transport only, no live Auth', (
       Response.json({
         status: 'valid',
         email: 'accepted@example.test',
+        displayName: 'Accepted Learner',
         token: 'secret',
         role: 'admin',
         cohortId: 'other',
       }),
     );
-    expect(await f.client.inspect()).toEqual({ status: 'ready', email: 'accepted@example.test' });
+    expect(await f.client.inspect()).toEqual({
+      status: 'ready',
+      email: 'accepted@example.test',
+      displayName: 'Accepted Learner',
+    });
   });
   it.each([
     () => Response.json({ status: 'activated' }),
-    () => Response.json({ status: 'valid', email: 'accepted@example.test' }, { status: 403 }),
+    () =>
+      Response.json(
+        { status: 'valid', email: 'accepted@example.test', displayName: 'Accepted Learner' },
+        { status: 403 },
+      ),
     () => Response.json({ status: 'valid' }),
     () => Response.json({ status: 'valid', email: 'a'.repeat(321) }),
     () => Response.json({ status: 'valid', email: 'private\n@example.test' }),
@@ -458,6 +485,44 @@ describe('invitation browser lifecycle — fake transport only, no live Auth', (
     expect(await f.client.activate(fields)).toEqual({ status: 'unavailable' });
     expect(f.transport).toHaveBeenCalledTimes(2);
     expect(f.requestId).toHaveBeenCalledTimes(1);
+  });
+  it.each([
+    undefined,
+    '',
+    '   ',
+    'x'.repeat(121),
+    'Accepted\nLearner',
+    'Accepted' + String.fromCharCode(127),
+  ])('rejects an incomplete or out-of-contract accepted name', async (displayName) => {
+    const f = fixture();
+    f.transport.mockResolvedValueOnce(
+      Response.json({ status: 'valid', email: 'accepted@example.test', displayName }),
+    );
+    expect(await f.client.inspect()).toEqual({ status: 'unavailable' });
+    expect(await f.client.activate(fields)).toEqual({ status: 'unavailable' });
+    expect(f.requestId).not.toHaveBeenCalled();
+  });
+  it('preserves exact accepted-name bytes and never sends a client name in activation', async () => {
+    const f = fixture();
+    f.transport.mockResolvedValueOnce(
+      Response.json({
+        status: 'valid',
+        email: 'accepted@example.test',
+        displayName: ' Accepted Learner ',
+      }),
+    );
+    expect(await f.client.inspect()).toEqual({
+      status: 'ready',
+      email: 'accepted@example.test',
+      displayName: ' Accepted Learner ',
+    });
+    await f.client.activate(fields);
+    expect(Object.keys(JSON.parse(f.transport.mock.calls[1]![1].body as string)).sort()).toEqual([
+      'confirmation',
+      'password',
+      'requestId',
+      'token',
+    ]);
   });
   it('supports unsubscribing without a hidden view callback or request', async () => {
     const f = fixture();

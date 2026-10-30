@@ -18,7 +18,11 @@ export type InvitationClientStatus =
   | 'invalid_input'
   | 'password_rejected'
   | 'recovery_required';
-export type InvitationClientState = Readonly<{ status: InvitationClientStatus; email?: string }>;
+export type InvitationClientState = Readonly<{
+  status: InvitationClientStatus;
+  email?: string;
+  displayName?: string;
+}>;
 type Endpoint = '/api/invitations/inspect' | '/api/invitations/activate';
 export type InvitationClientSettings = Readonly<{
   enabled: boolean;
@@ -62,6 +66,12 @@ const validEmail = (value: unknown): value is string =>
   !!value &&
   value.length <= 320 &&
   !/\s/.test(value) &&
+  ![...value].some((c) => c.charCodeAt(0) < 32 || c.charCodeAt(0) === 127);
+
+const validDisplayName = (value: unknown): value is string =>
+  typeof value === 'string' &&
+  !!value.trim() &&
+  value.length <= 120 &&
   ![...value].some((c) => c.charCodeAt(0) < 32 || c.charCodeAt(0) === 127);
 
 async function boundedResponse(response: Response, maxBytes: number, interrupted: Promise<never>) {
@@ -125,6 +135,7 @@ export function createInvitationClient(
   const fragment = consumeInvitationFragment(location, replaceUrl);
   let token = fragment.status === 'ready' ? fragment.token : null;
   let email: string | null = null;
+  let displayName: string | null = null;
   let operationId: string | null = null;
   let live = true;
   let controller: AbortController | null = null;
@@ -194,8 +205,9 @@ export function createInvitationClient(
       )
         throw new Error('Unusable response.');
       if (form.status === 'valid') {
-        if (!validEmail(form.email)) throw new Error('Unusable response.');
-        return { status: 'ready', email: form.email };
+        if (!validEmail(form.email) || !validDisplayName(form.displayName))
+          throw new Error('Unusable response.');
+        return { status: 'ready', email: form.email, displayName: form.displayName };
       }
       // Never copy token, provider errors, role, cohort or arbitrary response fields into UI state.
       return { status: form.status as InvitationClientStatus };
@@ -218,7 +230,9 @@ export function createInvitationClient(
       .finally(() => {
         pending = null;
       });
-    update(email && status === 'activating' ? { status, email } : { status });
+    update(
+      email && displayName && status === 'activating' ? { status, email, displayName } : { status },
+    );
     return pending;
   }
   return {
@@ -234,7 +248,10 @@ export function createInvitationClient(
       return flight('checking', async () => {
         try {
           const result = await request('/api/invitations/inspect', { token });
-          if (live) email = result.status === 'ready' ? result.email! : null;
+          if (live) {
+            email = result.status === 'ready' ? result.email! : null;
+            displayName = result.status === 'ready' ? result.displayName! : null;
+          }
           return result;
         } catch {
           return { status: 'unavailable' };
@@ -243,9 +260,10 @@ export function createInvitationClient(
     },
     activate(input: unknown) {
       if (pending) return pending;
-      if (!live || !configured || !token || !email) return Promise.resolve(snapshot());
+      if (!live || !configured || !token || !email || !displayName)
+        return Promise.resolve(snapshot());
       const invalid = () => {
-        update({ status: 'invalid_input', email: email! });
+        update({ status: 'invalid_input', email: email!, displayName: displayName! });
         return Promise.resolve(snapshot());
       };
       if (!input || typeof input !== 'object' || Array.isArray(input)) return invalid();
@@ -278,6 +296,7 @@ export function createInvitationClient(
           if (live && result.status === 'activated') {
             token = null;
             email = null;
+            displayName = null;
             operationId = null;
           }
           return result;
@@ -292,6 +311,7 @@ export function createInvitationClient(
       live = false;
       token = null;
       email = null;
+      displayName = null;
       operationId = null;
       state = Object.freeze({ status: 'unavailable' });
       const detached = [...listeners];

@@ -160,16 +160,28 @@ describe('source-only invitation activation', () => {
       ).toEqual({ status: 'unavailable' });
     }
   });
-  it('only reveals invite-bound email after a valid server-held admission check', async () => {
+  it('reveals only accepted email and name after a valid server-held admission check', async () => {
     const f = fixture();
     expect(await f.service.inspect('opaque-test-capability', 'caller')).toEqual({
       status: 'valid',
       email: 'accepted@example.test',
+      displayName: 'Accepted learner',
     });
     f.setEligible(false);
     expect(await f.service.inspect('opaque-test-capability', 'caller')).toEqual({
       status: 'forbidden',
     });
+  });
+  it('preserves the exact accepted name and excludes cohort and internal identities from inspection', async () => {
+    const f = fixture();
+    const accepted = '  آمنة María 👩🏽‍💻  ';
+    f.setRow({ displayName: accepted });
+    const result = await f.service.inspect('opaque-test-capability', 'caller');
+    expect(result).toEqual({ status: 'valid', email: f.row.email, displayName: accepted });
+    expect(Object.keys(result).sort()).toEqual(['displayName', 'email', 'status']);
+    expect(JSON.stringify(result)).not.toContain(f.row.cohortId);
+    expect(JSON.stringify(result)).not.toContain(f.row.admissionId);
+    expect(f.auth.begin).not.toHaveBeenCalled();
   });
   it.each([
     { revoked: true, status: 'invalid' },

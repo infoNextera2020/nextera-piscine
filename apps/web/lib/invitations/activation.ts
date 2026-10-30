@@ -108,6 +108,7 @@ export type Outcome = Readonly<{
     | 'recovery_required'
     | 'activated';
   email?: string;
+  displayName?: string;
 }>;
 const UUID = /^[a-f0-9]{8}(?:-[a-f0-9]{4}){3}-[a-f0-9]{12}$/i;
 const bytes = (value: string) => new TextEncoder().encode(value).byteLength;
@@ -177,7 +178,11 @@ export function createInvitationActivation(dependencies: ActivationDependencies)
       if (state) return { status: state };
       if (!(await d.eligibility!.current(scopeFor(found.invitation))))
         return { status: 'forbidden' };
-      return { status: 'valid', email: found.invitation.email };
+      return {
+        status: 'valid',
+        email: found.invitation.email,
+        displayName: found.invitation.displayName,
+      };
     } catch {
       return { status: 'unavailable' };
     }
