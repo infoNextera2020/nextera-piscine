@@ -1,18 +1,18 @@
 import 'server-only';
 import { createInvitationRequestConfiguration } from './runtime-configuration-core';
+import { createNativeInvitationDependenciesResolver } from './runtime-native-binding';
 
-/** No native protected loader/client binding is approved or installed.
- * Routes call these getters on EVERY request. Missing bindings always return null;
- * an environment JSON value cannot enable them. No file/client/secret is accessed.
- * A separately reviewed native binding must replace this null dependency, preserve
- * descriptor-based protected loading, independent source/lease anchors and bounded
- * client disposal, and supply narrow native policy/issuer-cohort-version readers without new grants. */
+// Reads only a public startup digest at construction. No file, credential or client opens here.
+// Missing/invalid configuration remains unavailable; a future approved broker must supply the
+// protected externally pinned anchor. Every request reloads and validates its active lease.
+const nativeDependencies = createNativeInvitationDependenciesResolver();
+
 export async function getInvitationActivationSettings(request: Request) {
-  return createInvitationRequestConfiguration(null).activation(request);
+  return createInvitationRequestConfiguration(await nativeDependencies()).activation(request);
 }
 export async function getInvitationIssuanceSettings(request: Request) {
-  return createInvitationRequestConfiguration(null).issuance(request);
+  return createInvitationRequestConfiguration(await nativeDependencies()).issuance(request);
 }
 export async function getInvitationSignupPublicPolicy() {
-  return createInvitationRequestConfiguration(null).publicPolicy();
+  return createInvitationRequestConfiguration(await nativeDependencies()).publicPolicy();
 }

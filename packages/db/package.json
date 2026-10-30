@@ -21,7 +21,8 @@
     "./visible-runs": "./queries/visible-runs.ts",
     "./checkpoint-editor-context": "./queries/checkpoint-editor-context.ts",
     "./checkpoint-answer-drafts": "./queries/checkpoint-answer-drafts.ts",
-    "./checkpoint-answer-submissions": "./queries/checkpoint-answer-submissions.ts"
+    "./checkpoint-answer-submissions": "./queries/checkpoint-answer-submissions.ts",
+    "./invitation-runtime-readers": "./queries/invitation-runtime-readers.ts"
   },
   "scripts": {
     "build": "tsc -p tsconfig.json",

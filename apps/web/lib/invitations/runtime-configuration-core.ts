@@ -309,7 +309,9 @@ function configuration(value: unknown): InvitationRuntimeConfiguration {
 }
 function ownerMicroseconds(value: string): bigint {
   const match =
-    /^([0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2})(?:\.([0-9]{1,6}))?Z$/.exec(value);
+    /^([0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2})(?:\.([0-9]{1,6}))?(?:Z|\+00:00)$/.exec(
+      value,
+    );
   if (!match) return reject();
   const seconds = Date.parse(match[1] + 'Z');
   if (!Number.isSafeInteger(seconds) || new Date(seconds).toISOString().slice(0, 19) !== match[1])
@@ -398,7 +400,7 @@ export async function validateInvitationRuntimeInput(
   if (
     !/^Sentinel_[a-f0-9]{32}$/.test(b.ownerMessageId) ||
     CLOSED_MESSAGES.has(b.ownerMessageId) ||
-    !/^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}(?:\.[0-9]{1,6})?Z$/.test(
+    !/^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}(?:\.[0-9]{1,6})?(?:Z|\+00:00)$/.test(
       b.ownerApprovedAt,
     ) ||
     ![b.started, b.deadline, b.cleanupAt, b.monotonicStarted, b.monotonicDeadline].every(

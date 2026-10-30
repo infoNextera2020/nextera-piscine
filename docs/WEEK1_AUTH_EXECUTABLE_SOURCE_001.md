@@ -1,6 +1,6 @@
 # Week 1 invitation/Auth executable-source assessment — 30 October 2026
 
-Status: SOURCE-ONLY; initial assessment below is supplemented by the implemented milestone at the end. This concrete profile and source handoff is not an executable broker, runtime approval, credential manifest or readiness receipt. No runtime directory, database, service, account, session, invitation, token, email or provider configuration was created or contacted. All historical approvals/profiles remain closed.
+Status: SOURCE-ONLY; historical assessment below is superseded by [the current native-source milestone](SUNDAY_SOURCE_BINDINGS_20261030.md). This concrete profile and source handoff is not an executable broker, runtime approval, credential manifest or readiness receipt. No runtime directory, database, service, account, session, invitation, token, email or provider configuration was created or contacted. All historical approvals/profiles remain closed.
 
 The smallest honest flow is authenticated manual issue API → private link → browser inspect/activation → explicit ordinary login → Checkpoint bootstrap/save/reload/CAS conflict → access revocation. Learners must be created and enrolled by invitation activation. The old broker's direct createUser/app.users/enrollLearner path cannot qualify.
 

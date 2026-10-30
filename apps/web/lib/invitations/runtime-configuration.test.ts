@@ -378,6 +378,21 @@ describe('injected request-time invitation configuration (no native I/O)', () =>
     expect(await exact.app().publicPolicy()).not.toBeNull();
     expect(exact.lease.ownerApprovedAt).toBe('2026-10-29T23:50:01.000000Z');
   });
+  it('preserves authentic +00:00 approval spelling and microsecond admission boundaries', async () => {
+    const exact = fixture((_, l) => {
+      (l as { ownerApprovedAt: string }).ownerApprovedAt = '2026-10-29T23:50:01.000000+00:00';
+    });
+    expect(await exact.app().publicPolicy()).not.toBeNull();
+    expect(exact.lease.ownerApprovedAt).toBe('2026-10-29T23:50:01.000000+00:00');
+    const expired = fixture((_, l) => {
+      (l as { ownerApprovedAt: string }).ownerApprovedAt = '2026-10-29T23:50:00.999999+00:00';
+    });
+    expect(await expired.app().publicPolicy()).toBeNull();
+    const future = fixture((_, l) => {
+      (l as { ownerApprovedAt: string }).ownerApprovedAt = '2026-10-30T00:00:01.000001+00:00';
+    });
+    expect(await future.app().publicPolicy()).toBeNull();
+  });
   it('rejects a native issuer/cohort/version authority mismatch without private table grants', async () => {
     const f = fixture();
     Object.assign(f.clients, { readAuthorityRows: vi.fn(async () => []) });
