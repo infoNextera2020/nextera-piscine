@@ -151,6 +151,17 @@ class BrokerSourceTests(unittest.TestCase):
             result = broker.exercise_injected(fake, p, owner(p), lambda: NOW + 1, lambda: 50)
             self.assertFalse(result['cleanupVerified'])
 
+    def test_live_guard_policy_vector_is_explicit_process_only_and_never_a_fake_test_authority(self):
+        command = broker.host_guard_install_command('process-RemoteSigned', 'fake-public-manifest')
+        self.assertEqual(command[:6], ['/mnt/c/Windows/System32/WindowsPowerShell/v1.0/powershell.exe',
+                                     '-NoProfile', '-NonInteractive', '-ExecutionPolicy', 'RemoteSigned', '-File'])
+        self.assertEqual(command[6], broker.HOST_GUARD_LOCAL_SOURCE)
+        self.assertNotIn('Bypass', command)
+        self.assertNotIn('Set-ExecutionPolicy', command)
+        for denied in [None, '', 'Bypass', 'RemoteSigned', 'persistent-RemoteSigned']:
+            with self.assertRaises(broker.ScopeError):
+                broker.host_guard_install_command(denied, 'fake-public-manifest')
+
     def test_default_proposal_does_not_call_native_ports_or_claim_e2e(self):
         with patch.object(broker, 'private_read', side_effect=AssertionError('NO RUNTIME FS')), patch.object(broker.subprocess, 'Popen', side_effect=AssertionError('NO SUBPROCESS')):
             p = broker.proposal()

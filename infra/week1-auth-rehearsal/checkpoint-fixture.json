@@ -1,0 +1,988 @@
+{
+  "version": 1,
+  "generator": {
+    "file": "tests/fixtures/checkpoints.ts",
+    "sha256": "e19f15a37ec56d5b6f0887bba8c47772362ccb8cbca99d1850574522946119bf"
+  },
+  "gitCommitSha": "3540b8727db0ca3bf48015ab1f3432d13426aa05",
+  "curriculum": {
+    "key": "foundation-test-only-c4f2ef32-f1a7-48ba-a733-d420945aa235",
+    "version": "0.1.0-test-c4f2ef32-f1a7-48ba-a733-d420945aa235",
+    "contentDigest": "b78e71d53f5ae191fc4792e390d25e7e6f45707ef5ebc99b28997c5cf3f7c889",
+    "digestFormatVersion": 1,
+    "quests": [
+      {
+        "key": "foundations",
+        "title": "Foundations",
+        "position": 1
+      }
+    ],
+    "nodes": [
+      {
+        "key": "hello-go",
+        "questKey": "foundations",
+        "kind": "challenge",
+        "title": "Hello Go",
+        "position": 1,
+        "difficulty": 1,
+        "subjectMarkdown": "# Hello Go\n\nCreate a function:\n\n```go\nfunc Hello(name string) string\n```\nThe function returns:\nHello, <name>!\n\nExamples\nHello(\"Anas\")\n// \"Hello, Anas!\"\n\nHello(\"NextEra\")\n// \"Hello, NextEra!\"\n\nRules\n- Do not print the result.\n- Return the string.\n- Do not modify the required function signature.",
+        "subjectDigest": "f1da807b1a5596ae1786827f5036e2b85bfca2c6a7569db20fa078a90a7d6ef3",
+        "configurationDigest": "67ec0fd155d4ca78c1502af8a458ed4fbc9c96ac2c09f440c07e166fbc0a8ad3",
+        "skills": ["go-syntax", "functions"],
+        "submissionRules": {
+          "required_files": ["hello.go"],
+          "allowed_extensions": [".go"],
+          "max_size_kb": 256
+        },
+        "testPackId": "hello-go-v1",
+        "declaredLimits": {
+          "timeout_ms": 2000,
+          "memory_mb": 64,
+          "output_kb": 64
+        }
+      },
+      {
+        "key": "even-or-odd",
+        "questKey": "foundations",
+        "kind": "challenge",
+        "title": "Even or Odd",
+        "position": 2,
+        "difficulty": 1,
+        "subjectMarkdown": "# Even or Odd\n\nCreate:\n\n```go\nfunc EvenOrOdd(n int) string\n```\nReturn:\neven when n is even.\nOtherwise return:\nodd\n\nExamples\nEvenOrOdd(10)\n// \"even\"\n\nEvenOrOdd(7)\n// \"odd\"\n\nNegative numbers and zero must also work.",
+        "subjectDigest": "5f9cbe23e349cfbb116d4a03c6f0f5b9725c94bca337476104ed5dce203a3a63",
+        "configurationDigest": "d49f424619a566a05e4d4c06096aef0525d86c807fa3ac9194c1b77db46592b9",
+        "skills": ["conditions", "integer-reasoning"],
+        "submissionRules": {
+          "required_files": ["even_or_odd.go"],
+          "allowed_extensions": [".go"],
+          "max_size_kb": 256
+        },
+        "testPackId": "even-or-odd-v1",
+        "declaredLimits": {
+          "timeout_ms": 2000,
+          "memory_mb": 64,
+          "output_kb": 64
+        }
+      },
+      {
+        "key": "transfer-checkpoint",
+        "questKey": "foundations",
+        "kind": "checkpoint",
+        "title": "Transfer checkpoint",
+        "position": 3,
+        "difficulty": 1,
+        "subjectMarkdown": "Four transfer tasks. Pass any three. You have 90 minutes.",
+        "subjectDigest": "36a4164f1a7e0c97d2a00c6f2c7afbf73efc631ebad76a0e72474f0800231cdf",
+        "configurationDigest": "f59f9e9637768df68f937aa92e92d3c9c64182b2cdd241f3304667cb8668c79f",
+        "skills": [],
+        "submissionRules": {
+          "required_files": ["normalize.go"],
+          "allowed_extensions": [".go"],
+          "max_size_kb": 256
+        },
+        "testPackId": "checkpoint-normalize-label-v1",
+        "declaredLimits": {
+          "timeout_ms": 2000,
+          "memory_mb": 64,
+          "output_kb": 64
+        },
+        "checkpoint": {
+          "policyVersion": 1,
+          "durationSeconds": 5400,
+          "tasks": [
+            {
+              "key": "normalize-label",
+              "title": "Normalize a label",
+              "subjectMarkdown": "Implement NormalizeLabel(value string) string: trim surrounding whitespace and return lowercase text.",
+              "subjectDigest": "f34fa4a5c380f41ffb27b1bdeaf63fc3c8f301bd515c6c87190f1bfbbb00dd01",
+              "configurationDigest": "dc996993cdbcac67f3644d3ad5f7cc89b6716be85323af130718c64c7d6a4dcb",
+              "submissionRules": {
+                "required_files": ["normalize.go"],
+                "allowed_extensions": [".go"],
+                "max_size_kb": 256
+              },
+              "testPackId": "checkpoint-normalize-label-v1",
+              "declaredLimits": {
+                "timeout_ms": 2000,
+                "memory_mb": 64,
+                "output_kb": 64
+              }
+            },
+            {
+              "key": "count-vowels",
+              "title": "Count vowels",
+              "subjectMarkdown": "Implement CountVowels(value string) string: count ASCII vowels a e i o u without regard to case and return the count as decimal text.",
+              "subjectDigest": "7a49fb1da4629851283f3b5da6152245d946eb4a8a3621c769970f66594d9a38",
+              "configurationDigest": "049a9f7197e709620baacbfb6c45bf43cae826bb6548a3b5049770c3e5bb2245",
+              "submissionRules": {
+                "required_files": ["vowels.go"],
+                "allowed_extensions": [".go"],
+                "max_size_kb": 256
+              },
+              "testPackId": "checkpoint-count-vowels-v1",
+              "declaredLimits": {
+                "timeout_ms": 2000,
+                "memory_mb": 64,
+                "output_kb": 64
+              }
+            },
+            {
+              "key": "digit-sum",
+              "title": "Sum decimal digits",
+              "subjectMarkdown": "Implement DigitSum(value int64) string: return the sum of the decimal digits of the absolute value, as decimal text.",
+              "subjectDigest": "c1fcb5fea6e086af1efd5a5a7d6782fbe31ed388ba55e25dd9e897a0e1f19a10",
+              "configurationDigest": "82d6e7c13ab3f16a081280583df2f4c08646bef50328f63cf81e8702034e164d",
+              "submissionRules": {
+                "required_files": ["digits.go"],
+                "allowed_extensions": [".go"],
+                "max_size_kb": 256
+              },
+              "testPackId": "checkpoint-digit-sum-v1",
+              "declaredLimits": {
+                "timeout_ms": 2000,
+                "memory_mb": 64,
+                "output_kb": 64
+              }
+            },
+            {
+              "key": "sign-label",
+              "title": "Classify a sign",
+              "subjectMarkdown": "Implement SignLabel(value int64) string: return negative, zero, or positive according to its sign.",
+              "subjectDigest": "99cc39025bff7c1de676a42ef6f5e9926803b92872af09e545d08b3a894e01bc",
+              "configurationDigest": "030b38216af3da2514ee862bf38629705525605be20bf76ae1b0f3a3692e6f99",
+              "submissionRules": {
+                "required_files": ["sign.go"],
+                "allowed_extensions": [".go"],
+                "max_size_kb": 256
+              },
+              "testPackId": "checkpoint-sign-label-v1",
+              "declaredLimits": {
+                "timeout_ms": 2000,
+                "memory_mb": 64,
+                "output_kb": 64
+              }
+            }
+          ]
+        }
+      },
+      {
+        "key": "after-checkpoint",
+        "questKey": "foundations",
+        "kind": "challenge",
+        "title": "After checkpoint",
+        "position": 4,
+        "difficulty": 1,
+        "subjectMarkdown": "Gate test fixture.",
+        "subjectDigest": "f8c77eb9f39e2ae738938db6bc3265ba91db187e960449b51d101537016f2f6f",
+        "configurationDigest": "47cf641a3a3d0fe770c92fa49a9577da53be18878b53e33db1ca9c1b66cac111",
+        "skills": ["go-syntax", "functions"],
+        "submissionRules": {
+          "required_files": ["hello.go"],
+          "allowed_extensions": [".go"],
+          "max_size_kb": 256
+        },
+        "testPackId": "hello-go-v1",
+        "declaredLimits": {
+          "timeout_ms": 2000,
+          "memory_mb": 64,
+          "output_kb": 64
+        }
+      }
+    ],
+    "prerequisites": [
+      {
+        "from": "hello-go",
+        "to": "even-or-odd",
+        "rule": "requires_pass"
+      },
+      {
+        "from": "transfer-checkpoint",
+        "to": "after-checkpoint",
+        "rule": "requires_pass"
+      }
+    ],
+    "roots": ["hello-go", "transfer-checkpoint"]
+  },
+  "evaluations": [
+    {
+      "nodeKey": "hello-go",
+      "spec": {
+        "test_only": true,
+        "curriculum_key": "foundation-test-only-c4f2ef32-f1a7-48ba-a733-d420945aa235",
+        "curriculum_version": "0.1.0-test-c4f2ef32-f1a7-48ba-a733-d420945aa235",
+        "content_digest": "b78e71d53f5ae191fc4792e390d25e7e6f45707ef5ebc99b28997c5cf3f7c889",
+        "node_key": "hello-go",
+        "subject_digest": "f1da807b1a5596ae1786827f5036e2b85bfca2c6a7569db20fa078a90a7d6ef3",
+        "configuration_digest": "67ec0fd155d4ca78c1502af8a458ed4fbc9c96ac2c09f440c07e166fbc0a8ad3",
+        "test_pack_id": "hello-go-v1",
+        "test_pack_digest": "3abcf8f31448547416b5dde68b831ea78769604c271e9e193dfdd400372af5bd",
+        "test_pack_artifact": "oci:///non-runnable-checkpoint-fixture/hello-go-v1@sha256:3abcf8f31448547416b5dde68b831ea78769604c271e9e193dfdd400372af5bd",
+        "runner_image_digest": "sha256:a0ba9f1a60e67a1fe87881deaa93189a0c08c4d3d56d312cfe8c26a5eb2e786b",
+        "sandbox_image_digest": "sha256:45adb63eb98a9eeafbc40d42266a9d48feb69961e99ee2982a76346e16643346",
+        "toolchain_version": "go0.0.0",
+        "target_platform": "linux/amd64",
+        "build_flags": [],
+        "dependency_policy": "offline",
+        "protocol_version": 1,
+        "snapshot_format_version": 1,
+        "resource_profile": "TEST-ONLY-NON-RUNNABLE",
+        "resource_limits": {
+          "compilation": {
+            "cpu_limit": 1,
+            "memory_bytes": 536870912,
+            "pid_limit": 32,
+            "timeout_ms": 20000,
+            "output_bytes": 65536,
+            "temporary_filesystem_bytes": 16777216,
+            "temporary_filesystem_inodes": 1024
+          },
+          "execution": {
+            "cpu_limit": 1,
+            "memory_bytes": 67108864,
+            "pid_limit": 32,
+            "timeout_ms": 2000,
+            "output_bytes": 65536,
+            "temporary_filesystem_bytes": 16777216,
+            "temporary_filesystem_inodes": 1024
+          }
+        },
+        "case_generation": {
+          "mode": "static"
+        }
+      },
+      "digest": "83e3310e31ee05ac0d81a9a15cc0aa99a50e22dda931cbdd4227d01ad26f6486"
+    },
+    {
+      "nodeKey": "even-or-odd",
+      "spec": {
+        "test_only": true,
+        "curriculum_key": "foundation-test-only-c4f2ef32-f1a7-48ba-a733-d420945aa235",
+        "curriculum_version": "0.1.0-test-c4f2ef32-f1a7-48ba-a733-d420945aa235",
+        "content_digest": "b78e71d53f5ae191fc4792e390d25e7e6f45707ef5ebc99b28997c5cf3f7c889",
+        "node_key": "even-or-odd",
+        "subject_digest": "5f9cbe23e349cfbb116d4a03c6f0f5b9725c94bca337476104ed5dce203a3a63",
+        "configuration_digest": "d49f424619a566a05e4d4c06096aef0525d86c807fa3ac9194c1b77db46592b9",
+        "test_pack_id": "even-or-odd-v1",
+        "test_pack_digest": "321f6e1c4e8ad81defbabf89984194e13ba1d867694a4eb30fe4fe74819cf289",
+        "test_pack_artifact": "oci:///non-runnable-checkpoint-fixture/even-or-odd-v1@sha256:321f6e1c4e8ad81defbabf89984194e13ba1d867694a4eb30fe4fe74819cf289",
+        "runner_image_digest": "sha256:a0ba9f1a60e67a1fe87881deaa93189a0c08c4d3d56d312cfe8c26a5eb2e786b",
+        "sandbox_image_digest": "sha256:45adb63eb98a9eeafbc40d42266a9d48feb69961e99ee2982a76346e16643346",
+        "toolchain_version": "go0.0.0",
+        "target_platform": "linux/amd64",
+        "build_flags": [],
+        "dependency_policy": "offline",
+        "protocol_version": 1,
+        "snapshot_format_version": 1,
+        "resource_profile": "TEST-ONLY-NON-RUNNABLE",
+        "resource_limits": {
+          "compilation": {
+            "cpu_limit": 1,
+            "memory_bytes": 536870912,
+            "pid_limit": 32,
+            "timeout_ms": 20000,
+            "output_bytes": 65536,
+            "temporary_filesystem_bytes": 16777216,
+            "temporary_filesystem_inodes": 1024
+          },
+          "execution": {
+            "cpu_limit": 1,
+            "memory_bytes": 67108864,
+            "pid_limit": 32,
+            "timeout_ms": 2000,
+            "output_bytes": 65536,
+            "temporary_filesystem_bytes": 16777216,
+            "temporary_filesystem_inodes": 1024
+          }
+        },
+        "case_generation": {
+          "mode": "static"
+        }
+      },
+      "digest": "de71cfa6835abcb961ba39581d608460a17ec10c57961e7022df4445f249939f"
+    },
+    {
+      "nodeKey": "transfer-checkpoint",
+      "spec": {
+        "test_only": true,
+        "curriculum_key": "foundation-test-only-c4f2ef32-f1a7-48ba-a733-d420945aa235",
+        "curriculum_version": "0.1.0-test-c4f2ef32-f1a7-48ba-a733-d420945aa235",
+        "content_digest": "b78e71d53f5ae191fc4792e390d25e7e6f45707ef5ebc99b28997c5cf3f7c889",
+        "node_key": "transfer-checkpoint",
+        "subject_digest": "36a4164f1a7e0c97d2a00c6f2c7afbf73efc631ebad76a0e72474f0800231cdf",
+        "configuration_digest": "f59f9e9637768df68f937aa92e92d3c9c64182b2cdd241f3304667cb8668c79f",
+        "test_pack_id": "checkpoint-normalize-label-v1",
+        "test_pack_digest": "5d0ee457851e6be858c62fa7b74109fe91af47bec63f7e804de25571b32db16c",
+        "test_pack_artifact": "oci:///non-runnable-checkpoint-fixture/checkpoint-normalize-label-v1@sha256:5d0ee457851e6be858c62fa7b74109fe91af47bec63f7e804de25571b32db16c",
+        "runner_image_digest": "sha256:a0ba9f1a60e67a1fe87881deaa93189a0c08c4d3d56d312cfe8c26a5eb2e786b",
+        "sandbox_image_digest": "sha256:45adb63eb98a9eeafbc40d42266a9d48feb69961e99ee2982a76346e16643346",
+        "toolchain_version": "go0.0.0",
+        "target_platform": "linux/amd64",
+        "build_flags": [],
+        "dependency_policy": "offline",
+        "protocol_version": 1,
+        "snapshot_format_version": 1,
+        "resource_profile": "TEST-ONLY-NON-RUNNABLE",
+        "resource_limits": {
+          "compilation": {
+            "cpu_limit": 1,
+            "memory_bytes": 536870912,
+            "pid_limit": 32,
+            "timeout_ms": 20000,
+            "output_bytes": 65536,
+            "temporary_filesystem_bytes": 16777216,
+            "temporary_filesystem_inodes": 1024
+          },
+          "execution": {
+            "cpu_limit": 1,
+            "memory_bytes": 67108864,
+            "pid_limit": 32,
+            "timeout_ms": 2000,
+            "output_bytes": 65536,
+            "temporary_filesystem_bytes": 16777216,
+            "temporary_filesystem_inodes": 1024
+          }
+        },
+        "case_generation": {
+          "mode": "static"
+        },
+        "execution_contract": {
+          "version": 1,
+          "item_key": "normalize-label",
+          "learner_file": "normalize.go",
+          "function": "NormalizeLabel",
+          "input_type": "string",
+          "output_type": "string"
+        },
+        "checkpoint_definition": {
+          "policyVersion": 1,
+          "durationSeconds": 5400,
+          "tasks": [
+            {
+              "key": "normalize-label",
+              "title": "Normalize a label",
+              "subjectMarkdown": "Implement NormalizeLabel(value string) string: trim surrounding whitespace and return lowercase text.",
+              "subjectDigest": "f34fa4a5c380f41ffb27b1bdeaf63fc3c8f301bd515c6c87190f1bfbbb00dd01",
+              "configurationDigest": "dc996993cdbcac67f3644d3ad5f7cc89b6716be85323af130718c64c7d6a4dcb",
+              "submissionRules": {
+                "required_files": ["normalize.go"],
+                "allowed_extensions": [".go"],
+                "max_size_kb": 256
+              },
+              "testPackId": "checkpoint-normalize-label-v1",
+              "declaredLimits": {
+                "timeout_ms": 2000,
+                "memory_mb": 64,
+                "output_kb": 64
+              },
+              "evaluationSpec": {
+                "test_only": true,
+                "curriculum_key": "foundation-test-only-c4f2ef32-f1a7-48ba-a733-d420945aa235",
+                "curriculum_version": "0.1.0-test-c4f2ef32-f1a7-48ba-a733-d420945aa235",
+                "content_digest": "b78e71d53f5ae191fc4792e390d25e7e6f45707ef5ebc99b28997c5cf3f7c889",
+                "node_key": "transfer-checkpoint",
+                "subject_digest": "f34fa4a5c380f41ffb27b1bdeaf63fc3c8f301bd515c6c87190f1bfbbb00dd01",
+                "configuration_digest": "dc996993cdbcac67f3644d3ad5f7cc89b6716be85323af130718c64c7d6a4dcb",
+                "test_pack_id": "checkpoint-normalize-label-v1",
+                "test_pack_digest": "5d0ee457851e6be858c62fa7b74109fe91af47bec63f7e804de25571b32db16c",
+                "test_pack_artifact": "oci:///non-runnable-checkpoint-fixture/checkpoint-normalize-label-v1@sha256:5d0ee457851e6be858c62fa7b74109fe91af47bec63f7e804de25571b32db16c",
+                "runner_image_digest": "sha256:a0ba9f1a60e67a1fe87881deaa93189a0c08c4d3d56d312cfe8c26a5eb2e786b",
+                "sandbox_image_digest": "sha256:45adb63eb98a9eeafbc40d42266a9d48feb69961e99ee2982a76346e16643346",
+                "toolchain_version": "go0.0.0",
+                "target_platform": "linux/amd64",
+                "build_flags": [],
+                "dependency_policy": "offline",
+                "protocol_version": 1,
+                "snapshot_format_version": 1,
+                "resource_profile": "TEST-ONLY-NON-RUNNABLE",
+                "resource_limits": {
+                  "compilation": {
+                    "cpu_limit": 1,
+                    "memory_bytes": 536870912,
+                    "pid_limit": 32,
+                    "timeout_ms": 20000,
+                    "output_bytes": 65536,
+                    "temporary_filesystem_bytes": 16777216,
+                    "temporary_filesystem_inodes": 1024
+                  },
+                  "execution": {
+                    "cpu_limit": 1,
+                    "memory_bytes": 67108864,
+                    "pid_limit": 32,
+                    "timeout_ms": 2000,
+                    "output_bytes": 65536,
+                    "temporary_filesystem_bytes": 16777216,
+                    "temporary_filesystem_inodes": 1024
+                  }
+                },
+                "case_generation": {
+                  "mode": "static"
+                },
+                "execution_contract": {
+                  "version": 1,
+                  "item_key": "normalize-label",
+                  "learner_file": "normalize.go",
+                  "function": "NormalizeLabel",
+                  "input_type": "string",
+                  "output_type": "string"
+                }
+              },
+              "evaluationDigest": "4ad1c4cd2a190aa486aad196a7abdd8ce1ac1db30b9747a723adfc675f4ec478"
+            },
+            {
+              "key": "count-vowels",
+              "title": "Count vowels",
+              "subjectMarkdown": "Implement CountVowels(value string) string: count ASCII vowels a e i o u without regard to case and return the count as decimal text.",
+              "subjectDigest": "7a49fb1da4629851283f3b5da6152245d946eb4a8a3621c769970f66594d9a38",
+              "configurationDigest": "049a9f7197e709620baacbfb6c45bf43cae826bb6548a3b5049770c3e5bb2245",
+              "submissionRules": {
+                "required_files": ["vowels.go"],
+                "allowed_extensions": [".go"],
+                "max_size_kb": 256
+              },
+              "testPackId": "checkpoint-count-vowels-v1",
+              "declaredLimits": {
+                "timeout_ms": 2000,
+                "memory_mb": 64,
+                "output_kb": 64
+              },
+              "evaluationSpec": {
+                "test_only": true,
+                "curriculum_key": "foundation-test-only-c4f2ef32-f1a7-48ba-a733-d420945aa235",
+                "curriculum_version": "0.1.0-test-c4f2ef32-f1a7-48ba-a733-d420945aa235",
+                "content_digest": "b78e71d53f5ae191fc4792e390d25e7e6f45707ef5ebc99b28997c5cf3f7c889",
+                "node_key": "transfer-checkpoint",
+                "subject_digest": "7a49fb1da4629851283f3b5da6152245d946eb4a8a3621c769970f66594d9a38",
+                "configuration_digest": "049a9f7197e709620baacbfb6c45bf43cae826bb6548a3b5049770c3e5bb2245",
+                "test_pack_id": "checkpoint-count-vowels-v1",
+                "test_pack_digest": "a241231c2d80e16316fa58ef69966b76df99512e1382db865f8968ee8038b6e9",
+                "test_pack_artifact": "oci:///non-runnable-checkpoint-fixture/checkpoint-count-vowels-v1@sha256:a241231c2d80e16316fa58ef69966b76df99512e1382db865f8968ee8038b6e9",
+                "runner_image_digest": "sha256:a0ba9f1a60e67a1fe87881deaa93189a0c08c4d3d56d312cfe8c26a5eb2e786b",
+                "sandbox_image_digest": "sha256:45adb63eb98a9eeafbc40d42266a9d48feb69961e99ee2982a76346e16643346",
+                "toolchain_version": "go0.0.0",
+                "target_platform": "linux/amd64",
+                "build_flags": [],
+                "dependency_policy": "offline",
+                "protocol_version": 1,
+                "snapshot_format_version": 1,
+                "resource_profile": "TEST-ONLY-NON-RUNNABLE",
+                "resource_limits": {
+                  "compilation": {
+                    "cpu_limit": 1,
+                    "memory_bytes": 536870912,
+                    "pid_limit": 32,
+                    "timeout_ms": 20000,
+                    "output_bytes": 65536,
+                    "temporary_filesystem_bytes": 16777216,
+                    "temporary_filesystem_inodes": 1024
+                  },
+                  "execution": {
+                    "cpu_limit": 1,
+                    "memory_bytes": 67108864,
+                    "pid_limit": 32,
+                    "timeout_ms": 2000,
+                    "output_bytes": 65536,
+                    "temporary_filesystem_bytes": 16777216,
+                    "temporary_filesystem_inodes": 1024
+                  }
+                },
+                "case_generation": {
+                  "mode": "static"
+                },
+                "execution_contract": {
+                  "version": 1,
+                  "item_key": "count-vowels",
+                  "learner_file": "vowels.go",
+                  "function": "CountVowels",
+                  "input_type": "string",
+                  "output_type": "string"
+                }
+              },
+              "evaluationDigest": "bdd397861d64ab3923dba0a58085f651dfd5765c581de512e5a8525d36be52b3"
+            },
+            {
+              "key": "digit-sum",
+              "title": "Sum decimal digits",
+              "subjectMarkdown": "Implement DigitSum(value int64) string: return the sum of the decimal digits of the absolute value, as decimal text.",
+              "subjectDigest": "c1fcb5fea6e086af1efd5a5a7d6782fbe31ed388ba55e25dd9e897a0e1f19a10",
+              "configurationDigest": "82d6e7c13ab3f16a081280583df2f4c08646bef50328f63cf81e8702034e164d",
+              "submissionRules": {
+                "required_files": ["digits.go"],
+                "allowed_extensions": [".go"],
+                "max_size_kb": 256
+              },
+              "testPackId": "checkpoint-digit-sum-v1",
+              "declaredLimits": {
+                "timeout_ms": 2000,
+                "memory_mb": 64,
+                "output_kb": 64
+              },
+              "evaluationSpec": {
+                "test_only": true,
+                "curriculum_key": "foundation-test-only-c4f2ef32-f1a7-48ba-a733-d420945aa235",
+                "curriculum_version": "0.1.0-test-c4f2ef32-f1a7-48ba-a733-d420945aa235",
+                "content_digest": "b78e71d53f5ae191fc4792e390d25e7e6f45707ef5ebc99b28997c5cf3f7c889",
+                "node_key": "transfer-checkpoint",
+                "subject_digest": "c1fcb5fea6e086af1efd5a5a7d6782fbe31ed388ba55e25dd9e897a0e1f19a10",
+                "configuration_digest": "82d6e7c13ab3f16a081280583df2f4c08646bef50328f63cf81e8702034e164d",
+                "test_pack_id": "checkpoint-digit-sum-v1",
+                "test_pack_digest": "15c7d08858dc49a1ef2687f8d076287949577a7df2a5de7d8b75a38f73fb7f38",
+                "test_pack_artifact": "oci:///non-runnable-checkpoint-fixture/checkpoint-digit-sum-v1@sha256:15c7d08858dc49a1ef2687f8d076287949577a7df2a5de7d8b75a38f73fb7f38",
+                "runner_image_digest": "sha256:a0ba9f1a60e67a1fe87881deaa93189a0c08c4d3d56d312cfe8c26a5eb2e786b",
+                "sandbox_image_digest": "sha256:45adb63eb98a9eeafbc40d42266a9d48feb69961e99ee2982a76346e16643346",
+                "toolchain_version": "go0.0.0",
+                "target_platform": "linux/amd64",
+                "build_flags": [],
+                "dependency_policy": "offline",
+                "protocol_version": 1,
+                "snapshot_format_version": 1,
+                "resource_profile": "TEST-ONLY-NON-RUNNABLE",
+                "resource_limits": {
+                  "compilation": {
+                    "cpu_limit": 1,
+                    "memory_bytes": 536870912,
+                    "pid_limit": 32,
+                    "timeout_ms": 20000,
+                    "output_bytes": 65536,
+                    "temporary_filesystem_bytes": 16777216,
+                    "temporary_filesystem_inodes": 1024
+                  },
+                  "execution": {
+                    "cpu_limit": 1,
+                    "memory_bytes": 67108864,
+                    "pid_limit": 32,
+                    "timeout_ms": 2000,
+                    "output_bytes": 65536,
+                    "temporary_filesystem_bytes": 16777216,
+                    "temporary_filesystem_inodes": 1024
+                  }
+                },
+                "case_generation": {
+                  "mode": "static"
+                },
+                "execution_contract": {
+                  "version": 1,
+                  "item_key": "digit-sum",
+                  "learner_file": "digits.go",
+                  "function": "DigitSum",
+                  "input_type": "int64",
+                  "output_type": "string"
+                }
+              },
+              "evaluationDigest": "4c6c32050b90f1cecb22512423dae9176b8ee6ad04d428040ec2778776900020"
+            },
+            {
+              "key": "sign-label",
+              "title": "Classify a sign",
+              "subjectMarkdown": "Implement SignLabel(value int64) string: return negative, zero, or positive according to its sign.",
+              "subjectDigest": "99cc39025bff7c1de676a42ef6f5e9926803b92872af09e545d08b3a894e01bc",
+              "configurationDigest": "030b38216af3da2514ee862bf38629705525605be20bf76ae1b0f3a3692e6f99",
+              "submissionRules": {
+                "required_files": ["sign.go"],
+                "allowed_extensions": [".go"],
+                "max_size_kb": 256
+              },
+              "testPackId": "checkpoint-sign-label-v1",
+              "declaredLimits": {
+                "timeout_ms": 2000,
+                "memory_mb": 64,
+                "output_kb": 64
+              },
+              "evaluationSpec": {
+                "test_only": true,
+                "curriculum_key": "foundation-test-only-c4f2ef32-f1a7-48ba-a733-d420945aa235",
+                "curriculum_version": "0.1.0-test-c4f2ef32-f1a7-48ba-a733-d420945aa235",
+                "content_digest": "b78e71d53f5ae191fc4792e390d25e7e6f45707ef5ebc99b28997c5cf3f7c889",
+                "node_key": "transfer-checkpoint",
+                "subject_digest": "99cc39025bff7c1de676a42ef6f5e9926803b92872af09e545d08b3a894e01bc",
+                "configuration_digest": "030b38216af3da2514ee862bf38629705525605be20bf76ae1b0f3a3692e6f99",
+                "test_pack_id": "checkpoint-sign-label-v1",
+                "test_pack_digest": "589c33e55d4d794ac4b208d93e5f6b6de901763b00554af6733e57df791cddd1",
+                "test_pack_artifact": "oci:///non-runnable-checkpoint-fixture/checkpoint-sign-label-v1@sha256:589c33e55d4d794ac4b208d93e5f6b6de901763b00554af6733e57df791cddd1",
+                "runner_image_digest": "sha256:a0ba9f1a60e67a1fe87881deaa93189a0c08c4d3d56d312cfe8c26a5eb2e786b",
+                "sandbox_image_digest": "sha256:45adb63eb98a9eeafbc40d42266a9d48feb69961e99ee2982a76346e16643346",
+                "toolchain_version": "go0.0.0",
+                "target_platform": "linux/amd64",
+                "build_flags": [],
+                "dependency_policy": "offline",
+                "protocol_version": 1,
+                "snapshot_format_version": 1,
+                "resource_profile": "TEST-ONLY-NON-RUNNABLE",
+                "resource_limits": {
+                  "compilation": {
+                    "cpu_limit": 1,
+                    "memory_bytes": 536870912,
+                    "pid_limit": 32,
+                    "timeout_ms": 20000,
+                    "output_bytes": 65536,
+                    "temporary_filesystem_bytes": 16777216,
+                    "temporary_filesystem_inodes": 1024
+                  },
+                  "execution": {
+                    "cpu_limit": 1,
+                    "memory_bytes": 67108864,
+                    "pid_limit": 32,
+                    "timeout_ms": 2000,
+                    "output_bytes": 65536,
+                    "temporary_filesystem_bytes": 16777216,
+                    "temporary_filesystem_inodes": 1024
+                  }
+                },
+                "case_generation": {
+                  "mode": "static"
+                },
+                "execution_contract": {
+                  "version": 1,
+                  "item_key": "sign-label",
+                  "learner_file": "sign.go",
+                  "function": "SignLabel",
+                  "input_type": "int64",
+                  "output_type": "string"
+                }
+              },
+              "evaluationDigest": "6b7660b4533b9eea71de9bcac51dece9885b1e210994adccdd79cc242283ba32"
+            }
+          ]
+        }
+      },
+      "digest": "0d895f92da769a36f02f7022370a3776cfe03ad519f29846c7e79a974b994cad",
+      "checkpoint": {
+        "policyVersion": 1,
+        "durationSeconds": 5400,
+        "tasks": [
+          {
+            "key": "normalize-label",
+            "title": "Normalize a label",
+            "subjectMarkdown": "Implement NormalizeLabel(value string) string: trim surrounding whitespace and return lowercase text.",
+            "subjectDigest": "f34fa4a5c380f41ffb27b1bdeaf63fc3c8f301bd515c6c87190f1bfbbb00dd01",
+            "configurationDigest": "dc996993cdbcac67f3644d3ad5f7cc89b6716be85323af130718c64c7d6a4dcb",
+            "submissionRules": {
+              "required_files": ["normalize.go"],
+              "allowed_extensions": [".go"],
+              "max_size_kb": 256
+            },
+            "testPackId": "checkpoint-normalize-label-v1",
+            "declaredLimits": {
+              "timeout_ms": 2000,
+              "memory_mb": 64,
+              "output_kb": 64
+            },
+            "evaluationSpec": {
+              "test_only": true,
+              "curriculum_key": "foundation-test-only-c4f2ef32-f1a7-48ba-a733-d420945aa235",
+              "curriculum_version": "0.1.0-test-c4f2ef32-f1a7-48ba-a733-d420945aa235",
+              "content_digest": "b78e71d53f5ae191fc4792e390d25e7e6f45707ef5ebc99b28997c5cf3f7c889",
+              "node_key": "transfer-checkpoint",
+              "subject_digest": "f34fa4a5c380f41ffb27b1bdeaf63fc3c8f301bd515c6c87190f1bfbbb00dd01",
+              "configuration_digest": "dc996993cdbcac67f3644d3ad5f7cc89b6716be85323af130718c64c7d6a4dcb",
+              "test_pack_id": "checkpoint-normalize-label-v1",
+              "test_pack_digest": "5d0ee457851e6be858c62fa7b74109fe91af47bec63f7e804de25571b32db16c",
+              "test_pack_artifact": "oci:///non-runnable-checkpoint-fixture/checkpoint-normalize-label-v1@sha256:5d0ee457851e6be858c62fa7b74109fe91af47bec63f7e804de25571b32db16c",
+              "runner_image_digest": "sha256:a0ba9f1a60e67a1fe87881deaa93189a0c08c4d3d56d312cfe8c26a5eb2e786b",
+              "sandbox_image_digest": "sha256:45adb63eb98a9eeafbc40d42266a9d48feb69961e99ee2982a76346e16643346",
+              "toolchain_version": "go0.0.0",
+              "target_platform": "linux/amd64",
+              "build_flags": [],
+              "dependency_policy": "offline",
+              "protocol_version": 1,
+              "snapshot_format_version": 1,
+              "resource_profile": "TEST-ONLY-NON-RUNNABLE",
+              "resource_limits": {
+                "compilation": {
+                  "cpu_limit": 1,
+                  "memory_bytes": 536870912,
+                  "pid_limit": 32,
+                  "timeout_ms": 20000,
+                  "output_bytes": 65536,
+                  "temporary_filesystem_bytes": 16777216,
+                  "temporary_filesystem_inodes": 1024
+                },
+                "execution": {
+                  "cpu_limit": 1,
+                  "memory_bytes": 67108864,
+                  "pid_limit": 32,
+                  "timeout_ms": 2000,
+                  "output_bytes": 65536,
+                  "temporary_filesystem_bytes": 16777216,
+                  "temporary_filesystem_inodes": 1024
+                }
+              },
+              "case_generation": {
+                "mode": "static"
+              },
+              "execution_contract": {
+                "version": 1,
+                "item_key": "normalize-label",
+                "learner_file": "normalize.go",
+                "function": "NormalizeLabel",
+                "input_type": "string",
+                "output_type": "string"
+              }
+            },
+            "evaluationDigest": "4ad1c4cd2a190aa486aad196a7abdd8ce1ac1db30b9747a723adfc675f4ec478"
+          },
+          {
+            "key": "count-vowels",
+            "title": "Count vowels",
+            "subjectMarkdown": "Implement CountVowels(value string) string: count ASCII vowels a e i o u without regard to case and return the count as decimal text.",
+            "subjectDigest": "7a49fb1da4629851283f3b5da6152245d946eb4a8a3621c769970f66594d9a38",
+            "configurationDigest": "049a9f7197e709620baacbfb6c45bf43cae826bb6548a3b5049770c3e5bb2245",
+            "submissionRules": {
+              "required_files": ["vowels.go"],
+              "allowed_extensions": [".go"],
+              "max_size_kb": 256
+            },
+            "testPackId": "checkpoint-count-vowels-v1",
+            "declaredLimits": {
+              "timeout_ms": 2000,
+              "memory_mb": 64,
+              "output_kb": 64
+            },
+            "evaluationSpec": {
+              "test_only": true,
+              "curriculum_key": "foundation-test-only-c4f2ef32-f1a7-48ba-a733-d420945aa235",
+              "curriculum_version": "0.1.0-test-c4f2ef32-f1a7-48ba-a733-d420945aa235",
+              "content_digest": "b78e71d53f5ae191fc4792e390d25e7e6f45707ef5ebc99b28997c5cf3f7c889",
+              "node_key": "transfer-checkpoint",
+              "subject_digest": "7a49fb1da4629851283f3b5da6152245d946eb4a8a3621c769970f66594d9a38",
+              "configuration_digest": "049a9f7197e709620baacbfb6c45bf43cae826bb6548a3b5049770c3e5bb2245",
+              "test_pack_id": "checkpoint-count-vowels-v1",
+              "test_pack_digest": "a241231c2d80e16316fa58ef69966b76df99512e1382db865f8968ee8038b6e9",
+              "test_pack_artifact": "oci:///non-runnable-checkpoint-fixture/checkpoint-count-vowels-v1@sha256:a241231c2d80e16316fa58ef69966b76df99512e1382db865f8968ee8038b6e9",
+              "runner_image_digest": "sha256:a0ba9f1a60e67a1fe87881deaa93189a0c08c4d3d56d312cfe8c26a5eb2e786b",
+              "sandbox_image_digest": "sha256:45adb63eb98a9eeafbc40d42266a9d48feb69961e99ee2982a76346e16643346",
+              "toolchain_version": "go0.0.0",
+              "target_platform": "linux/amd64",
+              "build_flags": [],
+              "dependency_policy": "offline",
+              "protocol_version": 1,
+              "snapshot_format_version": 1,
+              "resource_profile": "TEST-ONLY-NON-RUNNABLE",
+              "resource_limits": {
+                "compilation": {
+                  "cpu_limit": 1,
+                  "memory_bytes": 536870912,
+                  "pid_limit": 32,
+                  "timeout_ms": 20000,
+                  "output_bytes": 65536,
+                  "temporary_filesystem_bytes": 16777216,
+                  "temporary_filesystem_inodes": 1024
+                },
+                "execution": {
+                  "cpu_limit": 1,
+                  "memory_bytes": 67108864,
+                  "pid_limit": 32,
+                  "timeout_ms": 2000,
+                  "output_bytes": 65536,
+                  "temporary_filesystem_bytes": 16777216,
+                  "temporary_filesystem_inodes": 1024
+                }
+              },
+              "case_generation": {
+                "mode": "static"
+              },
+              "execution_contract": {
+                "version": 1,
+                "item_key": "count-vowels",
+                "learner_file": "vowels.go",
+                "function": "CountVowels",
+                "input_type": "string",
+                "output_type": "string"
+              }
+            },
+            "evaluationDigest": "bdd397861d64ab3923dba0a58085f651dfd5765c581de512e5a8525d36be52b3"
+          },
+          {
+            "key": "digit-sum",
+            "title": "Sum decimal digits",
+            "subjectMarkdown": "Implement DigitSum(value int64) string: return the sum of the decimal digits of the absolute value, as decimal text.",
+            "subjectDigest": "c1fcb5fea6e086af1efd5a5a7d6782fbe31ed388ba55e25dd9e897a0e1f19a10",
+            "configurationDigest": "82d6e7c13ab3f16a081280583df2f4c08646bef50328f63cf81e8702034e164d",
+            "submissionRules": {
+              "required_files": ["digits.go"],
+              "allowed_extensions": [".go"],
+              "max_size_kb": 256
+            },
+            "testPackId": "checkpoint-digit-sum-v1",
+            "declaredLimits": {
+              "timeout_ms": 2000,
+              "memory_mb": 64,
+              "output_kb": 64
+            },
+            "evaluationSpec": {
+              "test_only": true,
+              "curriculum_key": "foundation-test-only-c4f2ef32-f1a7-48ba-a733-d420945aa235",
+              "curriculum_version": "0.1.0-test-c4f2ef32-f1a7-48ba-a733-d420945aa235",
+              "content_digest": "b78e71d53f5ae191fc4792e390d25e7e6f45707ef5ebc99b28997c5cf3f7c889",
+              "node_key": "transfer-checkpoint",
+              "subject_digest": "c1fcb5fea6e086af1efd5a5a7d6782fbe31ed388ba55e25dd9e897a0e1f19a10",
+              "configuration_digest": "82d6e7c13ab3f16a081280583df2f4c08646bef50328f63cf81e8702034e164d",
+              "test_pack_id": "checkpoint-digit-sum-v1",
+              "test_pack_digest": "15c7d08858dc49a1ef2687f8d076287949577a7df2a5de7d8b75a38f73fb7f38",
+              "test_pack_artifact": "oci:///non-runnable-checkpoint-fixture/checkpoint-digit-sum-v1@sha256:15c7d08858dc49a1ef2687f8d076287949577a7df2a5de7d8b75a38f73fb7f38",
+              "runner_image_digest": "sha256:a0ba9f1a60e67a1fe87881deaa93189a0c08c4d3d56d312cfe8c26a5eb2e786b",
+              "sandbox_image_digest": "sha256:45adb63eb98a9eeafbc40d42266a9d48feb69961e99ee2982a76346e16643346",
+              "toolchain_version": "go0.0.0",
+              "target_platform": "linux/amd64",
+              "build_flags": [],
+              "dependency_policy": "offline",
+              "protocol_version": 1,
+              "snapshot_format_version": 1,
+              "resource_profile": "TEST-ONLY-NON-RUNNABLE",
+              "resource_limits": {
+                "compilation": {
+                  "cpu_limit": 1,
+                  "memory_bytes": 536870912,
+                  "pid_limit": 32,
+                  "timeout_ms": 20000,
+                  "output_bytes": 65536,
+                  "temporary_filesystem_bytes": 16777216,
+                  "temporary_filesystem_inodes": 1024
+                },
+                "execution": {
+                  "cpu_limit": 1,
+                  "memory_bytes": 67108864,
+                  "pid_limit": 32,
+                  "timeout_ms": 2000,
+                  "output_bytes": 65536,
+                  "temporary_filesystem_bytes": 16777216,
+                  "temporary_filesystem_inodes": 1024
+                }
+              },
+              "case_generation": {
+                "mode": "static"
+              },
+              "execution_contract": {
+                "version": 1,
+                "item_key": "digit-sum",
+                "learner_file": "digits.go",
+                "function": "DigitSum",
+                "input_type": "int64",
+                "output_type": "string"
+              }
+            },
+            "evaluationDigest": "4c6c32050b90f1cecb22512423dae9176b8ee6ad04d428040ec2778776900020"
+          },
+          {
+            "key": "sign-label",
+            "title": "Classify a sign",
+            "subjectMarkdown": "Implement SignLabel(value int64) string: return negative, zero, or positive according to its sign.",
+            "subjectDigest": "99cc39025bff7c1de676a42ef6f5e9926803b92872af09e545d08b3a894e01bc",
+            "configurationDigest": "030b38216af3da2514ee862bf38629705525605be20bf76ae1b0f3a3692e6f99",
+            "submissionRules": {
+              "required_files": ["sign.go"],
+              "allowed_extensions": [".go"],
+              "max_size_kb": 256
+            },
+            "testPackId": "checkpoint-sign-label-v1",
+            "declaredLimits": {
+              "timeout_ms": 2000,
+              "memory_mb": 64,
+              "output_kb": 64
+            },
+            "evaluationSpec": {
+              "test_only": true,
+              "curriculum_key": "foundation-test-only-c4f2ef32-f1a7-48ba-a733-d420945aa235",
+              "curriculum_version": "0.1.0-test-c4f2ef32-f1a7-48ba-a733-d420945aa235",
+              "content_digest": "b78e71d53f5ae191fc4792e390d25e7e6f45707ef5ebc99b28997c5cf3f7c889",
+              "node_key": "transfer-checkpoint",
+              "subject_digest": "99cc39025bff7c1de676a42ef6f5e9926803b92872af09e545d08b3a894e01bc",
+              "configuration_digest": "030b38216af3da2514ee862bf38629705525605be20bf76ae1b0f3a3692e6f99",
+              "test_pack_id": "checkpoint-sign-label-v1",
+              "test_pack_digest": "589c33e55d4d794ac4b208d93e5f6b6de901763b00554af6733e57df791cddd1",
+              "test_pack_artifact": "oci:///non-runnable-checkpoint-fixture/checkpoint-sign-label-v1@sha256:589c33e55d4d794ac4b208d93e5f6b6de901763b00554af6733e57df791cddd1",
+              "runner_image_digest": "sha256:a0ba9f1a60e67a1fe87881deaa93189a0c08c4d3d56d312cfe8c26a5eb2e786b",
+              "sandbox_image_digest": "sha256:45adb63eb98a9eeafbc40d42266a9d48feb69961e99ee2982a76346e16643346",
+              "toolchain_version": "go0.0.0",
+              "target_platform": "linux/amd64",
+              "build_flags": [],
+              "dependency_policy": "offline",
+              "protocol_version": 1,
+              "snapshot_format_version": 1,
+              "resource_profile": "TEST-ONLY-NON-RUNNABLE",
+              "resource_limits": {
+                "compilation": {
+                  "cpu_limit": 1,
+                  "memory_bytes": 536870912,
+                  "pid_limit": 32,
+                  "timeout_ms": 20000,
+                  "output_bytes": 65536,
+                  "temporary_filesystem_bytes": 16777216,
+                  "temporary_filesystem_inodes": 1024
+                },
+                "execution": {
+                  "cpu_limit": 1,
+                  "memory_bytes": 67108864,
+                  "pid_limit": 32,
+                  "timeout_ms": 2000,
+                  "output_bytes": 65536,
+                  "temporary_filesystem_bytes": 16777216,
+                  "temporary_filesystem_inodes": 1024
+                }
+              },
+              "case_generation": {
+                "mode": "static"
+              },
+              "execution_contract": {
+                "version": 1,
+                "item_key": "sign-label",
+                "learner_file": "sign.go",
+                "function": "SignLabel",
+                "input_type": "int64",
+                "output_type": "string"
+              }
+            },
+            "evaluationDigest": "6b7660b4533b9eea71de9bcac51dece9885b1e210994adccdd79cc242283ba32"
+          }
+        ]
+      }
+    },
+    {
+      "nodeKey": "after-checkpoint",
+      "spec": {
+        "test_only": true,
+        "curriculum_key": "foundation-test-only-c4f2ef32-f1a7-48ba-a733-d420945aa235",
+        "curriculum_version": "0.1.0-test-c4f2ef32-f1a7-48ba-a733-d420945aa235",
+        "content_digest": "b78e71d53f5ae191fc4792e390d25e7e6f45707ef5ebc99b28997c5cf3f7c889",
+        "node_key": "after-checkpoint",
+        "subject_digest": "f8c77eb9f39e2ae738938db6bc3265ba91db187e960449b51d101537016f2f6f",
+        "configuration_digest": "47cf641a3a3d0fe770c92fa49a9577da53be18878b53e33db1ca9c1b66cac111",
+        "test_pack_id": "hello-go-v1",
+        "test_pack_digest": "3abcf8f31448547416b5dde68b831ea78769604c271e9e193dfdd400372af5bd",
+        "test_pack_artifact": "oci:///non-runnable-checkpoint-fixture/hello-go-v1@sha256:3abcf8f31448547416b5dde68b831ea78769604c271e9e193dfdd400372af5bd",
+        "runner_image_digest": "sha256:a0ba9f1a60e67a1fe87881deaa93189a0c08c4d3d56d312cfe8c26a5eb2e786b",
+        "sandbox_image_digest": "sha256:45adb63eb98a9eeafbc40d42266a9d48feb69961e99ee2982a76346e16643346",
+        "toolchain_version": "go0.0.0",
+        "target_platform": "linux/amd64",
+        "build_flags": [],
+        "dependency_policy": "offline",
+        "protocol_version": 1,
+        "snapshot_format_version": 1,
+        "resource_profile": "TEST-ONLY-NON-RUNNABLE",
+        "resource_limits": {
+          "compilation": {
+            "cpu_limit": 1,
+            "memory_bytes": 536870912,
+            "pid_limit": 32,
+            "timeout_ms": 20000,
+            "output_bytes": 65536,
+            "temporary_filesystem_bytes": 16777216,
+            "temporary_filesystem_inodes": 1024
+          },
+          "execution": {
+            "cpu_limit": 1,
+            "memory_bytes": 67108864,
+            "pid_limit": 32,
+            "timeout_ms": 2000,
+            "output_bytes": 65536,
+            "temporary_filesystem_bytes": 16777216,
+            "temporary_filesystem_inodes": 1024
+          }
+        },
+        "case_generation": {
+          "mode": "static"
+        }
+      },
+      "digest": "1bd6083bf22dc07e143298258cb86a0216f2432a7f6ccaa8a8a9cb4fe4d96b4e"
+    }
+  ]
+}

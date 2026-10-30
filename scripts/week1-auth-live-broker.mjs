@@ -46,6 +46,20 @@ export const WEEK1_SERVICES = Object.freeze([
   'studio',
   'api-gw',
 ]);
+export const WEEK1_CHECKPOINT = Object.freeze({
+  fixtureFile: 'tests/fixtures/checkpoints.ts',
+  snapshotFile: 'infra/week1-auth-rehearsal/checkpoint-fixture.json',
+  nodeKey: 'transfer-checkpoint',
+  taskKey: 'normalize-label',
+  durationSeconds: 5400,
+  draftPolicy: Object.freeze({
+    maxSourceBytes: 1024,
+    maxReceiptsPerTask: 64,
+    maxBytesPerTask: 65536,
+    retentionAfterDeadlineSeconds: 600,
+    offlineRecovery: false,
+  }),
+});
 export const WEEK1_SQL_ORDER = Object.freeze([
   ...Object.keys(REGISTERED_SOURCES).sort(),
   '0019_prerequisite_execute_repair.DRAFT.sql',
@@ -192,7 +206,26 @@ export const WEEK1_LEARNERS = Object.freeze([
     displayName: 'Week 1 Synthetic Learner B',
   }),
 ]);
+function combinedCheckpointMode(spec) {
+  check(
+    ['auth-invitation-only', 'auth-invitation-checkpoint'].includes(spec?.rehearsalChecks),
+    'REHEARSAL_CHECKS',
+  );
+  return spec.rehearsalChecks === 'auth-invitation-checkpoint';
+}
+export function week1LearnerSessionCount(spec, index) {
+  const enabled = combinedCheckpointMode(spec);
+  check(index === 0 || index === 1, 'LEARNER_SESSION_SCOPE');
+  return enabled && index === 0 ? 2 : 1;
+}
+export async function runWeek1SelectedCheckpoint(spec, operation) {
+  const enabled = combinedCheckpointMode(spec);
+  check(typeof operation === 'function', 'CHECKPOINT_OPERATION');
+  return enabled ? await operation() : null;
+}
 export function prepareWeek1AuthBroker(spec) {
+  combinedCheckpointMode(spec);
+  check(spec.hostGuardExecutionPolicy === 'process-RemoteSigned', 'HOST_GUARD_EXECUTION_POLICY');
   check(spec?.version === 1 && same(spec.target, WEEK1_TARGET), 'TARGET');
   check(
     HASH.test(spec.scopeSha256 ?? '') &&
@@ -202,6 +235,26 @@ export function prepareWeek1AuthBroker(spec) {
   );
   check(spec.scopeSha256 === week1ScopeSha256(spec), 'SCOPE_CONTENT');
   check(same(spec.learners, WEEK1_LEARNERS), 'LEARNERS');
+  check(
+    spec.checkpoint &&
+      same(
+        Object.fromEntries(Object.keys(WEEK1_CHECKPOINT).map((k) => [k, spec.checkpoint[k]])),
+        WEEK1_CHECKPOINT,
+      ) &&
+      HASH.test(spec.checkpoint.fixtureSha256 ?? '') &&
+      HASH.test(spec.checkpoint.snapshotSha256 ?? '') &&
+      HASH.test(spec.checkpoint.contentDigest ?? '') &&
+      same(
+        Object.keys(spec.checkpoint).sort(),
+        [
+          ...Object.keys(WEEK1_CHECKPOINT),
+          'fixtureSha256',
+          'snapshotSha256',
+          'contentDigest',
+        ].sort(),
+      ),
+    'CHECKPOINT_FIXTURE_SCOPE',
+  );
   check(
     spec.bounds?.ownerApprovalStartSeconds === 600 &&
       spec.bounds?.maximumSeconds === 3600 &&
@@ -1074,6 +1127,370 @@ export function createWeek1AuthHttpPort({
   });
 }
 
+/** Existing synthetic four-question/90-minute fixture only. Its packs are deliberately
+ * non-runnable; this rehearsal never submits, grades, or tests natural expiry. */
+export function parseWeek1CheckpointSnapshot(bytes, binding, sources) {
+  check(
+    binding.snapshotFile === WEEK1_CHECKPOINT.snapshotFile &&
+      digest(bytes) === binding.snapshotSha256 &&
+      sources[binding.snapshotFile] === binding.snapshotSha256 &&
+      sources[binding.fixtureFile] === binding.fixtureSha256,
+    'CHECKPOINT_SNAPSHOT_SOURCE',
+  );
+  const value = JSON.parse(new TextDecoder('utf8', { fatal: true }).decode(bytes));
+  check(
+    value?.version === 1 &&
+      same(
+        Object.keys(value).sort(),
+        ['version', 'generator', 'gitCommitSha', 'curriculum', 'evaluations'].sort(),
+      ) &&
+      value.generator &&
+      same(Object.keys(value.generator).sort(), ['file', 'sha256']) &&
+      value.generator.file === WEEK1_CHECKPOINT.fixtureFile &&
+      value.generator.sha256 === binding.fixtureSha256 &&
+      /^[a-f0-9]{40}$/.test(value.gitCommitSha ?? '') &&
+      Array.isArray(value.evaluations),
+    'CHECKPOINT_SNAPSHOT',
+  );
+  validateWeek1CheckpointFixture(value, binding);
+  return value;
+}
+export function validateWeek1CheckpointFixture(fixture, binding) {
+  const node = fixture?.curriculum?.nodes?.find((n) => n.key === WEEK1_CHECKPOINT.nodeKey),
+    projection = fixture?.evaluations?.find((e) => e.nodeKey === WEEK1_CHECKPOINT.nodeKey);
+  check(
+    fixture?.curriculum?.contentDigest === binding.contentDigest &&
+      node?.kind === 'checkpoint' &&
+      projection?.checkpoint?.policyVersion === 1 &&
+      projection.checkpoint.durationSeconds === WEEK1_CHECKPOINT.durationSeconds &&
+      projection.checkpoint.tasks?.length === 4 &&
+      same(
+        projection.checkpoint.tasks.map((t) => t.key),
+        ['normalize-label', 'count-vowels', 'digit-sum', 'sign-label'],
+      ) &&
+      projection.checkpoint.tasks.every(
+        (t) =>
+          t.evaluationSpec?.test_only === true &&
+          String(t.evaluationSpec?.test_pack_artifact).startsWith(
+            'oci:///non-runnable-checkpoint-fixture/',
+          ),
+      ) &&
+      HASH.test(projection.digest ?? ''),
+    'CHECKPOINT_FIXTURE',
+  );
+  return projection;
+}
+export async function seedWeek1CheckpointDraftPolicy(
+  client,
+  { versionId, definitionDigest, rehearsalChecks },
+  checkTime,
+  journal,
+) {
+  check(
+    rehearsalChecks === 'auth-invitation-checkpoint' &&
+      UUID.test(versionId ?? '') &&
+      HASH.test(definitionDigest ?? '') &&
+      client.options?.prepare === false,
+    'CHECKPOINT_POLICY_SCOPE',
+  );
+  const p = WEEK1_CHECKPOINT.draftPolicy;
+  await journal({ kind: 'checkpoint_draft_policy', state: 'intent' });
+  let receipt;
+  const result = await client.begin('isolation level read committed', async (sql) => {
+    checkTime();
+    await identity(sql, WEEK1_TARGET.dba);
+    const definitions = await sql.unsafe(
+      'SELECT definition_digest,definition FROM app.checkpoint_definitions WHERE curriculum_version_id=$1::uuid AND node_key=$2 FOR SHARE',
+      [versionId, WEEK1_CHECKPOINT.nodeKey],
+    );
+    check(
+      definitions.length === 1 &&
+        definitions[0].definition_digest === definitionDigest &&
+        definitions[0].definition?.durationSeconds === 5400 &&
+        definitions[0].definition?.tasks?.length === 4,
+      'CHECKPOINT_POLICY_DEFINITION',
+    );
+    checkTime();
+    await sql.unsafe(
+      'INSERT INTO app.checkpoint_draft_policies(curriculum_version_id,node_key,definition_digest,enabled,max_source_bytes,max_receipts_per_task,max_bytes_per_task,retention_after_deadline_seconds) VALUES($1::uuid,$2,$3,true,$4::integer,$5::integer,$6::bigint,$7::integer)',
+      [
+        versionId,
+        WEEK1_CHECKPOINT.nodeKey,
+        definitionDigest,
+        p.maxSourceBytes,
+        p.maxReceiptsPerTask,
+        p.maxBytesPerTask,
+        p.retentionAfterDeadlineSeconds,
+      ],
+    );
+    const rows = await sql.unsafe(
+      'SELECT definition_digest,enabled,max_source_bytes,max_receipts_per_task,max_bytes_per_task::text,retention_after_deadline_seconds FROM app.checkpoint_draft_policies WHERE curriculum_version_id=$1::uuid AND node_key=$2',
+      [versionId, WEEK1_CHECKPOINT.nodeKey],
+    );
+    check(
+      rows.length === 1 &&
+        same(
+          { ...rows[0] },
+          {
+            definition_digest: definitionDigest,
+            enabled: true,
+            max_source_bytes: 1024,
+            max_receipts_per_task: 64,
+            max_bytes_per_task: '65536',
+            retention_after_deadline_seconds: 600,
+          },
+        ),
+      'CHECKPOINT_POLICY_READBACK',
+    );
+    checkTime();
+    receipt = Object.freeze({ definitionDigest, sourceBytes: 1024, offlineRecovery: false });
+    return receipt;
+  });
+  check(result === receipt, 'CHECKPOINT_POLICY_COMMIT_UNCERTAIN');
+  await journal({ kind: 'checkpoint_draft_policy', state: 'commit_acknowledged' });
+  return receipt;
+}
+
+/** Real future calls use ordinary learner cookies and the existing HTTP routes.
+ * Unit tests inject the entire transport/native readbacks; they create no sessions. */
+export async function verifyWeek1CheckpointHttp({
+  rehearsalChecks,
+  fetch: send,
+  learners,
+  secondSession,
+  cohortId,
+  definitionDigest,
+  uuid,
+  checkTime,
+  revoke,
+  counts,
+  receiptCount,
+  journal,
+}) {
+  check(
+    rehearsalChecks === 'auth-invitation-checkpoint' &&
+      learners?.length === 2 &&
+      learners.every(
+        (p) =>
+          UUID.test(p.authId ?? '') &&
+          UUID.test(p.userId ?? '') &&
+          UUID.test(p.sessionId ?? '') &&
+          typeof p.cookie === 'string' &&
+          p.cookie,
+      ) &&
+      UUID.test(cohortId ?? '') &&
+      HASH.test(definitionDigest ?? '') &&
+      secondSession?.authId === learners[0].authId &&
+      UUID.test(secondSession.sessionId ?? '') &&
+      secondSession.sessionId !== learners[0].sessionId &&
+      learners[0].authId !== learners[1].authId &&
+      learners[0].userId !== learners[1].userId &&
+      typeof secondSession.cookie === 'string' &&
+      secondSession.cookie &&
+      secondSession.cookie !== learners[0].cookie,
+    'CHECKPOINT_HTTP_SCOPE',
+  );
+  const [a, b] = learners,
+    source = '\uFEFFpackage piscine\r\n// café exact draft\n',
+    task = WEEK1_CHECKPOINT.taskKey;
+  const request = async (person, url, init = {}) => {
+    checkTime();
+    const response = await send(WEEK1_TARGET.origin + url, {
+      ...init,
+      cache: 'no-store',
+      redirect: 'error',
+      headers: { ...(init.headers ?? {}), ...(person ? { cookie: person.cookie } : {}) },
+      signal: globalThis.AbortSignal.timeout(10000),
+    });
+    check(
+      !response.redirected && response.headers.get('content-type')?.startsWith('application/json'),
+      'CHECKPOINT_HTTP_JSON',
+    );
+    check(
+      /no-store/.test(response.headers.get('cache-control') ?? '') || url === '/api/checkpoints',
+      'CHECKPOINT_HTTP_CACHE',
+    );
+    const reader = response.body?.getReader();
+    check(reader, 'CHECKPOINT_HTTP_BODY');
+    const parts = [];
+    let size = 0;
+    try {
+      while (true) {
+        const part = await reader.read();
+        if (part.done) break;
+        size += part.value.byteLength;
+        check(size <= 1024 * 6 + 8192, 'CHECKPOINT_HTTP_SIZE');
+        parts.push(Buffer.from(part.value));
+      }
+    } finally {
+      void reader.cancel().catch(() => {});
+      reader.releaseLock();
+    }
+    const body = JSON.parse(
+      new TextDecoder('utf8', { fatal: true }).decode(Buffer.concat(parts, size)),
+    );
+    checkTime();
+    return { status: response.status, body };
+  };
+  const initialCounts = await counts();
+  checkTime();
+  check(
+    same(initialCounts, { submissions: '0', jobs: '0', outcomes: '0' }),
+    'CHECKPOINT_OFFICIAL_BASELINE',
+  );
+  const attempts = [];
+  for (const person of learners) {
+    const requestId = uuid();
+    check(UUID.test(requestId), 'CHECKPOINT_REQUEST_ID');
+    await journal({ kind: 'checkpoint_start', state: 'intent', authId: person.authId, requestId });
+    checkTime();
+    const started = await request(person, '/api/checkpoints', {
+      method: 'POST',
+      headers: {
+        origin: WEEK1_TARGET.origin,
+        'x-action': 'start',
+        'x-cohort-id': cohortId,
+        'x-node-key': WEEK1_CHECKPOINT.nodeKey,
+        'idempotency-key': requestId,
+      },
+    });
+    check(started.status === 202 && UUID.test(started.body.id ?? ''), 'CHECKPOINT_START');
+    attempts.push(started.body.id);
+  }
+  check(attempts[0] !== attempts[1], 'CHECKPOINT_ATTEMPT_ISOLATION');
+  const editor = (person, attempt) =>
+    request(person, '/api/checkpoints/editor?' + new URLSearchParams({ attempt, task }));
+  const boot = await editor(a, attempts[0]),
+    scope = boot.body?.window?.scope;
+  check(
+    boot.status === 200 &&
+      boot.body.schema === 1 &&
+      same(scope, {
+        learnerId: a.userId,
+        cohortId,
+        attemptId: attempts[0],
+        taskKey: task,
+        definitionDigest,
+      }) &&
+      boot.body.window.access === 'confirmed' &&
+      boot.body.window.attempt === 'active' &&
+      Date.parse(boot.body.window.serverNow) < Date.parse(boot.body.window.deadline) &&
+      boot.body.sourceBytes === 1024 &&
+      boot.body.filename === 'normalize.go' &&
+      boot.body.draft === null &&
+      boot.body.offlineRecovery === null &&
+      boot.body.window.capabilities.draftsV1 === true &&
+      typeof boot.body.window.capabilities.officialSubmit === 'boolean' &&
+      boot.body.window.capabilities.visibleRun === null,
+    'CHECKPOINT_BOOTSTRAP',
+  );
+  check((await editor(null, attempts[0])).status === 401, 'CHECKPOINT_ANONYMOUS');
+  check((await editor(b, attempts[0])).status === 403, 'CHECKPOINT_CROSS_LEARNER_READ');
+  const secondBoot = await editor(secondSession, attempts[0]);
+  check(
+    secondBoot.status === 200 &&
+      secondBoot.body.draft === null &&
+      same(secondBoot.body.window.scope, scope),
+    'CHECKPOINT_SECOND_SESSION',
+  );
+  const write = (person, base, text, requestId = uuid(), definition = definitionDigest) =>
+    request(person, '/api/checkpoints/drafts', {
+      method: 'POST',
+      headers: {
+        origin: WEEK1_TARGET.origin,
+        'content-type': 'application/octet-stream',
+        'x-attempt-id': attempts[0],
+        'x-task-key': task,
+        'x-definition-digest': definition,
+        'idempotency-key': requestId,
+        'x-base-version': String(base),
+      },
+      body: Buffer.from(text, 'utf8'),
+    });
+  const saveId = uuid();
+  await journal({ kind: 'checkpoint_draft_save', state: 'intent', requestId: saveId });
+  const saved = await write(a, 0, source, saveId);
+  check(
+    saved.status === 200 &&
+      same(saved.body, { source, version: 1, requestId: saveId, definitionDigest }),
+    'CHECKPOINT_SAVE',
+  );
+  const retry = await write(secondSession, 0, source, saveId);
+  check(retry.status === 200 && same(retry.body, saved.body), 'CHECKPOINT_SAVE_RETRY');
+  const reload = await request(
+    secondSession,
+    '/api/checkpoints/drafts?' + new URLSearchParams({ attempt: attempts[0], task }),
+  );
+  check(reload.status === 200 && same(reload.body, saved.body), 'CHECKPOINT_EXACT_RELOAD');
+  const concurrent = await Promise.all([
+    write(a, 1, 'session one'),
+    write(secondSession, 1, 'session two'),
+  ]);
+  check(same(concurrent.map((r) => r.status).sort(), [200, 409]), 'CHECKPOINT_CAS');
+  const winner = concurrent.find((r) => r.status === 200),
+    loser = concurrent.find((r) => r.status === 409);
+  check(
+    winner.body.version === 2 &&
+      loser.body.error === 'DRAFT_CONFLICT' &&
+      same(loser.body.current, winner.body),
+    'CHECKPOINT_CONFLICT_CURRENT',
+  );
+  const final = await editor(a, attempts[0]);
+  check(
+    final.status === 200 &&
+      final.body.draft?.version === 2 &&
+      final.body.draft?.source === winner.body.source,
+    'CHECKPOINT_CONFLICT_RELOAD',
+  );
+  check((await write(b, 2, 'forbidden')).status === 403, 'CHECKPOINT_CROSS_LEARNER_WRITE');
+  check(
+    (await write(a, 2, 'stale', uuid(), '0'.repeat(64))).status === 412,
+    'CHECKPOINT_STALE_DEFINITION',
+  );
+  check((await write(a, 2, 'x'.repeat(1025))).status === 413, 'CHECKPOINT_SOURCE_CEILING');
+  checkTime();
+  await journal({ kind: 'checkpoint_access_revoke', state: 'intent', userId: a.userId });
+  await revoke(a);
+  checkTime();
+  check(
+    (await editor(a, attempts[0])).status === 403 &&
+      (await editor(secondSession, attempts[0])).status === 403,
+    'CHECKPOINT_REVOKED_READ',
+  );
+  check(
+    (await write(a, 2, 'revoked')).status === 403 &&
+      (await write(secondSession, 2, 'revoked')).status === 403,
+    'CHECKPOINT_REVOKED_WRITE',
+  );
+  check((await editor(b, attempts[1])).status === 200, 'CHECKPOINT_OTHER_LEARNER_UNCHANGED');
+  const finalCounts = await counts();
+  checkTime();
+  check(same(finalCounts, initialCounts), 'CHECKPOINT_SAVE_NOT_SUBMIT');
+  check((await receiptCount(attempts[0], task)) === 2, 'CHECKPOINT_RECEIPTS');
+  checkTime();
+  return {
+    synthetic: true,
+    browserVerified: false,
+    naturalDeadlineTested: false,
+    legacyDurationSeconds: 5400,
+    checks: [
+      'ordinary_authenticated_start',
+      'authoritative_bootstrap',
+      'two_independent_sessions',
+      'exact_save_reload',
+      'idempotent_save',
+      'two_session_cas_conflict',
+      'cross_learner_read_write_denied',
+      'stale_definition',
+      'source_ceiling',
+      'revocation_read_write_denied',
+      'other_learner_unchanged',
+      'save_not_official_submit',
+    ],
+    nativeCounts: finalCounts,
+  };
+}
+
 export async function exerciseWeek1AuthInjected(io, plan) {
   const p = prepareWeek1AuthBroker(plan);
   await io.admit(p);
@@ -1677,25 +2094,28 @@ export async function executePhase(phase, run, repo) {
       return;
     }
     if (phase === 'bootstrap') {
-      // Use the existing reviewed import/publication operations. An explicit
-      // evaluation catalog is mandatory; no synthetic executable-pack default.
+      // The separately scope-bound existing synthetic legacy fixture is the only
+      // catalog here. It cannot be mistaken for the approved real Exam1 or grading.
       const { drizzle } = req('drizzle-orm/postgres-js'),
         schema = req(source + '/packages/db/schema/index.ts'),
         domain = drizzle(admin, { schema });
-      const { loadGitCurriculum } = req(source + '/scripts/curriculum/load.ts'),
-        { parseEvaluationCatalog, resolveEvaluations } = req(
-          source + '/scripts/curriculum/evaluation.ts',
-        );
-      check(HASH.test(spec.curriculumCatalogSha256 ?? ''), 'CATALOG_REQUIRED');
-      const catalog = fs.readFileSync(source + '/' + spec.curriculumCatalogFile);
-      check(digest(catalog) === spec.curriculumCatalogSha256, 'CATALOG_SOURCE');
-      const loaded = loadGitCurriculum(repo, spec.reviewedHead);
-      check(loaded.curriculum.contentDigest === spec.curriculumContentDigest, 'CURRICULUM_SOURCE');
+      const fixtureBytes = fs.readFileSync(source + '/' + WEEK1_CHECKPOINT.fixtureFile);
+      check(
+        digest(fixtureBytes) === spec.checkpoint.fixtureSha256 &&
+          lock.sources[WEEK1_CHECKPOINT.fixtureFile] === spec.checkpoint.fixtureSha256,
+        'CHECKPOINT_FIXTURE_SOURCE',
+      );
+      const loaded = parseWeek1CheckpointSnapshot(
+          fs.readFileSync(source + '/' + WEEK1_CHECKPOINT.snapshotFile),
+          spec.checkpoint,
+          lock.sources,
+        ),
+        checkpointProjection = validateWeek1CheckpointFixture(loaded, spec.checkpoint);
       const version = await req(source + '/packages/db/operations/curriculum.ts').importCurriculum(
         domain,
         loaded.curriculum,
         loaded.gitCommitSha,
-        resolveEvaluations(loaded.curriculum, parseEvaluationCatalog(catalog.toString('utf8'))),
+        loaded.evaluations,
       );
       const cohort = await req(source + '/packages/db/operations/cohorts.ts').createCohort(domain, {
         slug: WEEK1_TARGET.profile,
@@ -1703,6 +2123,18 @@ export async function executePhase(phase, run, repo) {
         curriculumVersionId: version.id,
         startsAt: new Date(control.started),
       });
+      await runWeek1SelectedCheckpoint(spec, () =>
+        seedWeek1CheckpointDraftPolicy(
+          admin,
+          {
+            versionId: String(version.id),
+            definitionDigest: checkpointProjection.digest,
+            rehearsalChecks: spec.rehearsalChecks,
+          },
+          checkTime,
+          journal,
+        ),
+      );
       const issuerAuthId = await http.createIssuer(credentials.issuer);
       const [issuer] = await admin.unsafe(
         "INSERT INTO app.users(auth_user_id,display_name,role,active) VALUES($1::uuid,'Week 1 Synthetic Issuer','admin',true) RETURNING id",
@@ -1736,6 +2168,7 @@ export async function executePhase(phase, run, repo) {
         issuerId: String(issuer.id),
         cohortId: String(cohort.id),
         curriculumVersionId: String(version.id),
+        checkpointDefinitionDigest: checkpointProjection.digest,
       });
       await seedWeek1AuthPolicies(
         admin,
@@ -1849,33 +2282,50 @@ export async function executePhase(phase, run, repo) {
         cookie: cookies.map((c) => c.name + '=' + c.value).join('; '),
       });
       for (const [index, person] of credentials.learners.entries()) {
-        const authId = await http.activateLearner(person),
-          jar = [];
-        const client = createServerClient(WEEK1_TARGET.authOrigin, credentials.ANON_KEY, {
-          cookieOptions: { name: spec.cookieName },
-          cookies: {
-            getAll: () => jar,
-            setAll: (items) => {
-              for (const item of items) {
-                const old = jar.find((v) => v.name === item.name);
-                if (old) old.value = item.value;
-                else jar.push({ name: item.name, value: item.value });
-              }
-            },
-          },
-        });
-        const login = await client.auth.signInWithPassword({
-          email: person.email,
-          password: person.password,
-        });
-        check(
-          !login.error && login.data.user?.id === authId && login.data.session,
-          'LEARNER_COOKIE_SIGNIN',
+        const authId = await http.activateLearner(person);
+        const users = await admin.unsafe(
+          "SELECT u.id::text AS id FROM app.users u JOIN app.cohort_memberships m ON m.user_id=u.id WHERE u.auth_user_id=$1::uuid AND u.role='learner' AND u.active AND m.cohort_id=$2::uuid AND m.status='active'",
+          [authId, config.cohortId],
         );
-        save('learner-' + index + '-session.private.json', {
-          authId,
-          cookie: jar.map((c) => c.name + '=' + c.value).join('; '),
-        });
+        check(users.length === 1 && UUID.test(users[0].id), 'CHECKPOINT_LEARNER_BINDING');
+        // The second login creates a distinct provider session for learner A;
+        // it is never a copied cookie pretending to be a second device.
+        for (let session = 0; session < week1LearnerSessionCount(spec, index); session++) {
+          const jar = [];
+          const client = createServerClient(WEEK1_TARGET.authOrigin, credentials.ANON_KEY, {
+            cookieOptions: { name: spec.cookieName },
+            cookies: {
+              getAll: () => jar,
+              setAll: (items) => {
+                for (const item of items) {
+                  const old = jar.find((v) => v.name === item.name);
+                  if (old) old.value = item.value;
+                  else jar.push({ name: item.name, value: item.value });
+                }
+              },
+            },
+          });
+          const login = await client.auth.signInWithPassword({
+            email: person.email,
+            password: person.password,
+          });
+          check(
+            !login.error && login.data.user?.id === authId && login.data.session,
+            'LEARNER_COOKIE_SIGNIN',
+          );
+          const claims = JSON.parse(
+            Buffer.from(login.data.session.access_token.split('.')[1] ?? '', 'base64url').toString(
+              'utf8',
+            ),
+          );
+          check(claims.sub === authId && UUID.test(claims.session_id ?? ''), 'LEARNER_SESSION_ID');
+          save('learner-' + index + (session === 1 ? '-second' : '') + '-session.private.json', {
+            sessionId: claims.session_id,
+            authId,
+            userId: users[0].id,
+            cookie: jar.map((c) => c.name + '=' + c.value).join('; '),
+          });
+        }
       }
       return;
     }
@@ -1915,12 +2365,57 @@ export async function executePhase(phase, run, repo) {
           same({ ...rows[0] }, { auth_users: 3, admins: 1, receipts: 2, memberships: 2 }),
         'GENUINE_INVITATION_COUNTS',
       );
+      const fixture = privateRead('fixture.private.json');
+      const checkpointEvidence = await runWeek1SelectedCheckpoint(spec, () =>
+        verifyWeek1CheckpointHttp({
+          rehearsalChecks: spec.rehearsalChecks,
+          fetch: globalThis.fetch,
+          learners: [
+            privateRead('learner-0-session.private.json'),
+            privateRead('learner-1-session.private.json'),
+          ],
+          secondSession: privateRead('learner-0-second-session.private.json'),
+          cohortId: config.cohortId,
+          definitionDigest: fixture.checkpointDefinitionDigest,
+          uuid: () => crypto.randomUUID(),
+          checkTime,
+          journal,
+          revoke: async (person) => {
+            await identity(admin, WEEK1_TARGET.dba);
+            const revoked = await admin.unsafe(
+              "UPDATE app.users SET active=false WHERE id=$1::uuid AND auth_user_id=$2::uuid AND role='learner' AND active RETURNING id::text",
+              [person.userId, person.authId],
+            );
+            check(
+              revoked.length === 1 && revoked[0].id === person.userId,
+              'CHECKPOINT_REVOKE_BINDING',
+            );
+          },
+          counts: async () => {
+            const r = await admin.unsafe(
+              'SELECT (SELECT count(*)::text FROM app.submissions) AS submissions,(SELECT count(*)::text FROM judge.jobs) AS jobs,(SELECT count(*)::text FROM app.checkpoint_outcomes) AS outcomes',
+            );
+            check(r.length === 1, 'CHECKPOINT_COUNTS');
+            return { ...r[0] };
+          },
+          receiptCount: async (attempt, task) => {
+            const r = await admin.unsafe(
+              'SELECT count(*)::integer AS n FROM app.checkpoint_draft_revisions WHERE attempt_id=$1::uuid AND task_key=$2',
+              [attempt, task],
+            );
+            check(r.length === 1 && Number.isSafeInteger(r[0].n), 'CHECKPOINT_RECEIPT_COUNT');
+            return r[0].n;
+          },
+        }),
+      );
       save('http-evidence.private.json', {
         ordinaryIssuerIssued: true,
         learnersActivatedThroughApi: 2,
         learnerAndAnonymousIssuanceDenied: true,
         nativeCounts: rows.map((r) => ({ ...r })),
         browserVerified: false,
+        rehearsalChecks: spec.rehearsalChecks,
+        checkpoint: checkpointEvidence,
       });
       return;
     }

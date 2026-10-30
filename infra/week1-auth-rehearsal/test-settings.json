@@ -1,0 +1,56 @@
+{
+  "version": 1,
+  "status": "proposed_test_settings_not_runtime_approval",
+  "policy": {
+    "emailConfirmed": true,
+    "passwordContract": "ascii-synthetic-v1",
+    "minPasswordBytes": 20,
+    "maxPasswordBytes": 96,
+    "maxTokenBytes": 43,
+    "claimLeaseMs": 30000,
+    "maxLifetimeMs": 900000,
+    "maxBodyBytes": 4096,
+    "bodyTimeoutMs": 5000,
+    "publicTimeoutMs": 10000,
+    "maxResponseBytes": 4096,
+    "publicMaxPasswordBytes": 96,
+    "rates": {
+      "ingress": {
+        "profile": "week1_ingress_20261030_invitation1",
+        "windowMs": 60000,
+        "maxRequests": 120,
+        "retentionMs": 3600000
+      },
+      "inspect": {
+        "profile": "week1_inspect_20261030_invitation1",
+        "windowMs": 60000,
+        "maxRequests": 30,
+        "retentionMs": 3600000
+      },
+      "activate": {
+        "profile": "week1_activate_20261030_invitation1",
+        "windowMs": 60000,
+        "maxRequests": 10,
+        "retentionMs": 3600000
+      },
+      "issueIngress": {
+        "profile": "week1_issueingress_20261030_invitation1",
+        "windowMs": 60000,
+        "maxRequests": 20,
+        "retentionMs": 3600000
+      },
+      "issuer": {
+        "profile": "week1_issuer_20261030_invitation1",
+        "windowMs": 60000,
+        "maxRequests": 4,
+        "retentionMs": 3600000
+      }
+    }
+  },
+  "maxLimiterReceipts": 256,
+  "authJwtSeconds": 300,
+  "cookieName": "sb-127-auth-token",
+  "maxCookieBytes": 65536,
+  "hostGuardExecutionPolicy": "process-RemoteSigned",
+  "rehearsalChecks": "auth-invitation-only"
+}

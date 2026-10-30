@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import fs from 'node:fs';
+import crypto from 'node:crypto';
 import { Buffer } from 'node:buffer';
 import { URL } from 'node:url';
 import {
@@ -9,6 +10,13 @@ import {
   WEEK1_LEARNERS,
   WEEK1_SQL_ORDER,
   WEEK1_DRAFT_ACLS,
+  WEEK1_CHECKPOINT,
+  runWeek1SelectedCheckpoint,
+  week1LearnerSessionCount,
+  validateWeek1CheckpointFixture,
+  parseWeek1CheckpointSnapshot,
+  seedWeek1CheckpointDraftPolicy,
+  verifyWeek1CheckpointHttp,
   prepareWeek1AuthBroker,
   week1ScopeSha256,
   validateWeek1Lease,
@@ -27,10 +35,18 @@ const id = (n) => '10000000-0000-4000-8000-' + String(n).padStart(12, '0');
 const spec = () => {
   const value = {
     version: 1,
+    rehearsalChecks: 'auth-invitation-checkpoint',
+    hostGuardExecutionPolicy: 'process-RemoteSigned',
     target: WEEK1_TARGET,
     sourceLockSha256: 'a'.repeat(64),
     reviewedHead: 'b'.repeat(40),
     learners: WEEK1_LEARNERS,
+    checkpoint: {
+      ...WEEK1_CHECKPOINT,
+      fixtureSha256: 'e'.repeat(64),
+      snapshotSha256: '8'.repeat(64),
+      contentDigest: 'f'.repeat(64),
+    },
     bounds: { ownerApprovalStartSeconds: 600, maximumSeconds: 3600, cleanupReserveSeconds: 180 },
     policy: {
       emailConfirmed: true,
@@ -70,6 +86,271 @@ const spec = () => {
   return { ...value, scopeSha256: week1ScopeSha256(value) };
 };
 const resign = (value) => ({ ...value, scopeSha256: week1ScopeSha256(value) });
+test('checkpoint scope retains only the fixed existing synthetic fixture and explicit draft limits', () => {
+  const s = spec();
+  for (const checkpoint of [
+    undefined,
+    { ...s.checkpoint, durationSeconds: 180 * 60 },
+    { ...s.checkpoint, fixtureFile: 'content/real-exam.ts' },
+    { ...s.checkpoint, draftPolicy: { ...WEEK1_CHECKPOINT.draftPolicy, offlineRecovery: true } },
+  ])
+    assert.throws(
+      () => prepareWeek1AuthBroker(resign({ ...s, checkpoint })),
+      /CHECKPOINT_FIXTURE_SCOPE/,
+    );
+});
+
+function checkpointHttpFake(fault) {
+  const events = [],
+    a = { authId: id(21), userId: id(31), sessionId: id(51), cookie: 'a-session-one' },
+    b = { authId: id(22), userId: id(32), sessionId: id(52), cookie: 'b-session-one' },
+    second = { ...a, sessionId: id(53), cookie: 'a-session-two' },
+    attempts = [id(41), id(42)],
+    definitionDigest = '9'.repeat(64),
+    cohortId = id(4),
+    receipts = new Map();
+  let serial = 100,
+    record = null,
+    revoked = false,
+    official = 0;
+  const reply = (body, status = 200) =>
+    globalThis.Response.json(body, { status, headers: { 'cache-control': 'private, no-store' } });
+  const fetch = async (url, init) => {
+    const u = new URL(url),
+      cookie = init.headers.cookie,
+      who =
+        cookie === a.cookie || cookie === second.cookie ? 'a' : cookie === b.cookie ? 'b' : null;
+    events.push({ url: u.pathname, cookie, headers: init.headers, body: init.body });
+    assert.equal(init.redirect, 'error');
+    assert.equal(init.cache, 'no-store');
+    if (u.pathname === '/api/checkpoints') {
+      assert.equal(init.method, 'POST');
+      assert.equal(init.body, undefined);
+      assert.equal(init.headers['x-action'], 'start');
+      assert.equal(init.headers['x-node-key'], WEEK1_CHECKPOINT.nodeKey);
+      return reply({ id: attempts[who === 'a' ? 0 : 1] }, 202);
+    }
+    const attempt = init.headers['x-attempt-id'] ?? u.searchParams.get('attempt'),
+      task = init.headers['x-task-key'] ?? u.searchParams.get('task');
+    assert.equal(task, WEEK1_CHECKPOINT.taskKey);
+    if (!who) return reply({ error: 'UNAUTHENTICATED' }, 401);
+    if (revoked && who === 'a' && fault !== 'revocation') return reply({ error: 'FORBIDDEN' }, 403);
+    if ((who === 'b' && attempt === attempts[0]) || (who === 'a' && attempt === attempts[1])) {
+      if (fault !== 'cross-learner') return reply({ error: 'FORBIDDEN' }, 403);
+    }
+    if (u.pathname === '/api/checkpoints/editor')
+      return reply({
+        schema: 1,
+        window: {
+          scope: {
+            learnerId: who === 'a' ? a.userId : b.userId,
+            cohortId,
+            attemptId: attempt,
+            taskKey: task,
+            definitionDigest,
+          },
+          access: 'confirmed',
+          attempt: 'active',
+          serverNow: '2026-10-30T12:00:00Z',
+          deadline: fault === 'deadline' ? '2026-10-30T12:00:00Z' : '2026-10-30T13:30:00Z',
+          capabilities: { draftsV1: true, officialSubmit: true, visibleRun: null },
+        },
+        filename: 'normalize.go',
+        sourceBytes: 1024,
+        draft: who === 'a' ? record : null,
+        offlineRecovery: null,
+      });
+    assert.equal(u.pathname, '/api/checkpoints/drafts');
+    if (init.method !== 'POST')
+      return record ? reply(record) : reply({ error: 'DRAFT_NOT_FOUND' }, 404);
+    assert.equal(init.headers.origin, WEEK1_TARGET.origin);
+    assert.equal(init.headers['content-type'], 'application/octet-stream');
+    if (init.headers['x-definition-digest'] !== definitionDigest)
+      return reply({ error: 'DEFINITION_MISMATCH' }, 412);
+    if (init.body.byteLength > 1024) return reply({ error: 'SOURCE_TOO_LARGE' }, 413);
+    const requestId = init.headers['idempotency-key'];
+    if (receipts.has(requestId)) return reply(receipts.get(requestId));
+    const base = Number(init.headers['x-base-version']);
+    if (base !== (record?.version ?? 0) && fault !== 'cas')
+      return reply({ error: 'DRAFT_CONFLICT', current: record }, 409);
+    record = {
+      source: Buffer.from(init.body).toString('utf8'),
+      version: (record?.version ?? 0) + 1,
+      requestId,
+      definitionDigest,
+    };
+    if (fault === 'bytes') record.source += 'changed';
+    receipts.set(requestId, record);
+    if (fault === 'official') official++;
+    return reply(record);
+  };
+  return {
+    events,
+    port: {
+      fetch,
+      learners: [a, b],
+      rehearsalChecks: 'auth-invitation-checkpoint',
+      secondSession: second,
+      cohortId,
+      definitionDigest,
+      uuid: () => id(++serial),
+      checkTime: () => {},
+      journal: async (value) => events.push(value),
+      revoke: async () => {
+        revoked = true;
+      },
+      counts: async () => ({ submissions: String(official), jobs: '0', outcomes: '0' }),
+      receiptCount: async () => (fault === 'receipts' ? 3 : receipts.size),
+    },
+  };
+}
+test('actual future Checkpoint HTTP calls cover two-session save/reload/CAS, isolation, revocation and Save != Submit using only fake transport', async () => {
+  const f = checkpointHttpFake(),
+    result = await verifyWeek1CheckpointHttp(f.port);
+  assert.equal(result.naturalDeadlineTested, false);
+  assert.equal(result.browserVerified, false);
+  assert.equal(result.legacyDurationSeconds, 5400);
+  assert.deepEqual(result.nativeCounts, { submissions: '0', jobs: '0', outcomes: '0' });
+  assert.ok(
+    f.events.some((e) => e.cookie === 'a-session-two' && e.url === '/api/checkpoints/drafts'),
+  );
+  assert.equal(f.events.filter((e) => e.url === '/api/checkpoints').length, 2);
+  assert.ok(f.events.every((e) => !e.url?.includes('/submissions') && !e.url?.includes('/runs')));
+});
+for (const fault of [
+  'deadline',
+  'cross-learner',
+  'revocation',
+  'cas',
+  'bytes',
+  'official',
+  'receipts',
+])
+  test(
+    'Checkpoint protocol rejects ' + fault + ' failure without claiming conformance',
+    async () => {
+      await assert.rejects(verifyWeek1CheckpointHttp(checkpointHttpFake(fault).port));
+    },
+  );
+test('Checkpoint refuses copied sessions and expired local lease before HTTP', async () => {
+  let f = checkpointHttpFake();
+  f.port.secondSession.cookie = f.port.learners[0].cookie;
+  await assert.rejects(verifyWeek1CheckpointHttp(f.port), /CHECKPOINT_HTTP_SCOPE/);
+  assert.equal(f.events.length, 0);
+  f = checkpointHttpFake();
+  f.port.checkTime = () => {
+    throw Error('fake original deadline');
+  };
+  await assert.rejects(verifyWeek1CheckpointHttp(f.port), /fake original deadline/);
+  assert.equal(f.events.length, 0);
+});
+test('source fixture validation cannot substitute real exam content or runnable evaluation packs', () => {
+  const projection = {
+      nodeKey: 'transfer-checkpoint',
+      digest: '9'.repeat(64),
+      checkpoint: {
+        policyVersion: 1,
+        durationSeconds: 5400,
+        tasks: ['normalize-label', 'count-vowels', 'digit-sum', 'sign-label'].map((key) => ({
+          key,
+          evaluationSpec: {
+            test_only: true,
+            test_pack_artifact: 'oci:///non-runnable-checkpoint-fixture/' + key,
+          },
+        })),
+      },
+    },
+    f = {
+      curriculum: {
+        contentDigest: 'f'.repeat(64),
+        nodes: [{ key: 'transfer-checkpoint', kind: 'checkpoint' }],
+      },
+      evaluations: [projection],
+    };
+  assert.equal(validateWeek1CheckpointFixture(f, spec().checkpoint), projection);
+  projection.checkpoint.tasks[0].evaluationSpec.test_only = false;
+  assert.throws(() => validateWeek1CheckpointFixture(f, spec().checkpoint), /CHECKPOINT_FIXTURE/);
+});
+test('draft policy concrete SQL is parameterized, read back before commit, and rollback/ack failures never attest success', async () => {
+  for (const fault of [null, 'readback', 'ack']) {
+    const events = [],
+      sql = {
+        unsafe: async (text, args) => {
+          events.push([text, args]);
+          if (text.startsWith('SELECT current_database'))
+            return [
+              {
+                database: WEEK1_TARGET.database,
+                actor: WEEK1_TARGET.dba,
+                session_actor: WEEK1_TARGET.dba,
+                super: true,
+              },
+            ];
+          if (text.startsWith('SELECT definition_digest,definition'))
+            return [
+              {
+                definition_digest: '9'.repeat(64),
+                definition: { durationSeconds: 5400, tasks: [1, 2, 3, 4] },
+              },
+            ];
+          if (text.startsWith('SELECT definition_digest,enabled'))
+            return [
+              {
+                definition_digest: '9'.repeat(64),
+                enabled: true,
+                max_source_bytes: fault === 'readback' ? 1025 : 1024,
+                max_receipts_per_task: 64,
+                max_bytes_per_task: '65536',
+                retention_after_deadline_seconds: 600,
+              },
+            ];
+          assert.ok(text.startsWith('INSERT INTO app.checkpoint_draft_policies'));
+          assert.deepEqual(args, [
+            id(7),
+            'transfer-checkpoint',
+            '9'.repeat(64),
+            1024,
+            64,
+            65536,
+            600,
+          ]);
+          return [];
+        },
+      },
+      client = {
+        options: { prepare: false },
+        begin: async (_, fn) => {
+          try {
+            const result = await fn(sql);
+            events.push(['commit']);
+            return fault === 'ack' ? globalThis.structuredClone(result) : result;
+          } catch (error) {
+            events.push(['rollback']);
+            throw error;
+          }
+        },
+      },
+      invoke = () =>
+        seedWeek1CheckpointDraftPolicy(
+          client,
+          {
+            versionId: id(7),
+            definitionDigest: '9'.repeat(64),
+            rehearsalChecks: 'auth-invitation-checkpoint',
+          },
+          () => {},
+          async (value) => events.push([value.state]),
+        );
+    if (!fault) {
+      assert.equal((await invoke()).sourceBytes, 1024);
+      assert.ok(events.some((e) => e[0] === 'commit_acknowledged'));
+    } else {
+      await assert.rejects(invoke());
+      assert.ok(!events.some((e) => e[0] === 'commit_acknowledged'));
+      if (fault === 'readback') assert.ok(events.some((e) => e[0] === 'rollback'));
+    }
+  }
+});
 const lease = () => ({
   profile: WEEK1_TARGET.profile,
   scopeSha256: 'a'.repeat(64),
@@ -725,4 +1006,144 @@ test('only public JWT SQL keeps container-readable mode; secrets cannot use this
       ),
     /PUBLIC_SQL_READBACK/,
   );
+});
+
+test('frozen Checkpoint snapshot binds source hashes and strict provenance without rerunning Git/random fixture creation', () => {
+  const fixture = {
+    version: 1,
+    generator: { file: WEEK1_CHECKPOINT.fixtureFile, sha256: 'e'.repeat(64) },
+    gitCommitSha: 'b'.repeat(40),
+    curriculum: {
+      contentDigest: 'f'.repeat(64),
+      nodes: [{ key: 'transfer-checkpoint', kind: 'checkpoint' }],
+    },
+    evaluations: [
+      {
+        nodeKey: 'transfer-checkpoint',
+        digest: '9'.repeat(64),
+        checkpoint: {
+          policyVersion: 1,
+          durationSeconds: 5400,
+          tasks: ['normalize-label', 'count-vowels', 'digit-sum', 'sign-label'].map((key) => ({
+            key,
+            evaluationSpec: {
+              test_only: true,
+              test_pack_artifact: 'oci:///non-runnable-checkpoint-fixture/' + key,
+            },
+          })),
+        },
+      },
+    ],
+  };
+  const check = (value) => {
+    const bytes = Buffer.from(JSON.stringify(value)),
+      h = crypto.createHash('sha256').update(bytes).digest('hex'),
+      binding = { ...spec().checkpoint, snapshotSha256: h },
+      sources = {
+        [WEEK1_CHECKPOINT.snapshotFile]: h,
+        [WEEK1_CHECKPOINT.fixtureFile]: binding.fixtureSha256,
+      };
+    return { bytes, binding, sources };
+  };
+  const good = check(fixture);
+  assert.equal(
+    parseWeek1CheckpointSnapshot(good.bytes, good.binding, good.sources).curriculum.contentDigest,
+    'f'.repeat(64),
+  );
+  assert.throws(
+    () => parseWeek1CheckpointSnapshot(good.bytes, good.binding, {}),
+    /CHECKPOINT_SNAPSHOT_SOURCE/,
+  );
+  for (const change of [
+    (v) => {
+      v.extra = 'unreviewed';
+    },
+    (v) => {
+      v.generator.sha256 = '1'.repeat(64);
+    },
+    (v) => {
+      v.curriculum.contentDigest = '1'.repeat(64);
+    },
+    (v) => {
+      v.evaluations[0].checkpoint.durationSeconds = 10800;
+    },
+  ]) {
+    const changed = globalThis.structuredClone(fixture);
+    change(changed);
+    const bad = check(changed);
+    assert.throws(() => parseWeek1CheckpointSnapshot(bad.bytes, bad.binding, bad.sources));
+  }
+});
+test('a different cookie cannot masquerade as a distinct provider session', async () => {
+  const f = checkpointHttpFake();
+  f.port.secondSession.sessionId = f.port.learners[0].sessionId;
+  await assert.rejects(verifyWeek1CheckpointHttp(f.port), /CHECKPOINT_HTTP_SCOPE/);
+  assert.equal(f.events.length, 0);
+});
+
+test('required scope-bound rehearsal mode and host guard policy cannot be absent or silently changed', () => {
+  for (const patch of [
+    { rehearsalChecks: undefined },
+    { rehearsalChecks: 'checkpoint-only' },
+    { hostGuardExecutionPolicy: undefined },
+    { hostGuardExecutionPolicy: 'Bypass' },
+  ])
+    assert.throws(() => prepareWeek1AuthBroker(resign({ ...spec(), ...patch })));
+  const original = spec(),
+    changed = { ...original, rehearsalChecks: 'auth-invitation-only' };
+  assert.throws(() => prepareWeek1AuthBroker(changed), /SCOPE_CONTENT/);
+  assert.equal(prepareWeek1AuthBroker(resign(changed)).rehearsalChecks, 'auth-invitation-only');
+});
+test('Auth-only mode invokes zero Checkpoint seed/start/save/revoke/assertion operations and no second test session', async () => {
+  const authOnly = resign({ ...spec(), rehearsalChecks: 'auth-invitation-only' }),
+    events = [];
+  prepareWeek1AuthBroker(authOnly);
+  const forbidden = async () => {
+    events.push('checkpoint');
+    throw Error('Checkpoint must not run in auth-only mode');
+  };
+  assert.equal(await runWeek1SelectedCheckpoint(authOnly, forbidden), null);
+  assert.equal(await runWeek1SelectedCheckpoint(authOnly, forbidden), null);
+  assert.deepEqual(
+    [0, 1].map((index) => week1LearnerSessionCount(authOnly, index)),
+    [1, 1],
+  );
+  const f = checkpointHttpFake();
+  f.port.rehearsalChecks = 'auth-invitation-only';
+  await assert.rejects(verifyWeek1CheckpointHttp(f.port), /CHECKPOINT_HTTP_SCOPE/);
+  await assert.rejects(
+    seedWeek1CheckpointDraftPolicy(
+      { options: { prepare: false } },
+      {
+        versionId: id(7),
+        definitionDigest: '9'.repeat(64),
+        rehearsalChecks: 'auth-invitation-only',
+      },
+      () => {},
+      forbidden,
+    ),
+    /CHECKPOINT_POLICY_SCOPE/,
+  );
+  assert.deepEqual(events, []);
+  assert.equal(f.events.length, 0);
+});
+test('combined mode keeps the full Checkpoint HTTP coverage and two distinct learner-A sessions', async () => {
+  const combined = spec(),
+    f = checkpointHttpFake();
+  let calls = 0;
+  const result = await runWeek1SelectedCheckpoint(combined, async () => {
+    calls++;
+    return verifyWeek1CheckpointHttp(f.port);
+  });
+  assert.equal(calls, 1);
+  assert.ok(result.checks.includes('two_session_cas_conflict'));
+  assert.deepEqual(
+    [0, 1].map((index) => week1LearnerSessionCount(combined, index)),
+    [2, 1],
+  );
+  await assert.rejects(
+    runWeek1SelectedCheckpoint({ rehearsalChecks: 'unknown' }, async () => calls++),
+    /REHEARSAL_CHECKS/,
+  );
+  assert.equal(calls, 1);
 });

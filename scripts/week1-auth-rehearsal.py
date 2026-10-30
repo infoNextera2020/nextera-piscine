@@ -176,6 +176,24 @@ def process_identity(pid):
             'ticks': (proc / 'stat').read_text().rsplit(')', 1)[1].split()[19]}
 
 
+SOURCE_SPEC_VALIDATE_JS = """import fs from 'node:fs';
+import {prepareWeek1AuthBroker} from './scripts/week1-auth-live-broker.mjs';
+const p=prepareWeek1AuthBroker(JSON.parse(fs.readFileSync(0,'utf8')));
+process.stdout.write(JSON.stringify({status:'validated_not_authorized',scopeSha256:p.scopeSha256,runtimeReady:false}));
+"""
+
+HOST_GUARD_LOCAL_SOURCE = r'C:\Users\lap\Documents\Codex\2026-10-24\task\verification\host-guard-unit-20261030\week1-auth-host-guard.ps1'
+HOST_GUARD_MOUNTED_SOURCE = '/mnt/c/Users/lap/Documents/Codex/2026-10-24/task/verification/host-guard-unit-20261030/week1-auth-host-guard.ps1'
+
+def host_guard_install_command(policy, manifest_base64):
+    # Source preparation only. A future exact live approval must explicitly cover
+    # this installer and its inherited child-process policy, not just fake tests.
+    if policy != 'process-RemoteSigned':
+        raise ScopeError('Explicit scope-bound process-only host policy required.')
+    return ['/mnt/c/Windows/System32/WindowsPowerShell/v1.0/powershell.exe',
+            '-NoProfile', '-NonInteractive', '-ExecutionPolicy', 'RemoteSigned',
+            '-File', HOST_GUARD_LOCAL_SOURCE, '-Install', '-ManifestJsonBase64', manifest_base64]
+
 class LiveBroker:
     """Concrete future launch/shutdown adapter; construction itself is inert.
 
@@ -229,6 +247,12 @@ class LiveBroker:
 
     def preflight(self):
         admit(self.spec, self.owner, self.now())
+        if self.spec.get('hostGuardExecutionPolicy') != 'process-RemoteSigned':
+            raise ScopeError('Live process-only host guard policy not scope-bound.')
+        host_source = Path(HOST_GUARD_MOUNTED_SOURCE)
+        if (host_source.is_symlink() or not host_source.is_file() or
+                sha(host_source.read_bytes()) != self.lock['sources'].get('scripts/week1-auth-host-guard.ps1')):
+            raise ScopeError('Reviewed local Windows guard source mismatch.')
         if self.run.exists() or any(p.is_symlink() for p in [self.run, *self.run.parents]):
             raise ScopeError('Fresh unused root required; never adopt uncertain state.')
         if (self.browser.get('origin') != 'http://127.0.0.1:3151' or self.browser.get('transport') != 'Chrome extension' or
@@ -247,6 +271,12 @@ class LiveBroker:
             p = self.repo / name
             if Path(name).is_absolute() or '..' in Path(name).parts or p.is_symlink() or sha(p.read_bytes()) != expected:
                 raise ScopeError('Source lock mismatch.')
+        # Validate the FULL public broker policy/mode before reserving any target,
+        # starting either guard or minting secrets. Module import performs no I/O.
+        validated = json.loads(self.command([self.node, '--input-type=module', '-e', SOURCE_SPEC_VALIDATE_JS],
+                                           data=json.dumps(self.spec).encode(), timeout=10))
+        if validated != {'status': 'validated_not_authorized', 'scopeSha256': self.spec['scopeSha256'], 'runtimeReady': False}:
+            raise ScopeError('Public broker source validation failed.')
         for name, expected in self.lock['templates'].items():
             p = self.template / name
             if p.is_symlink() or not p.resolve().is_relative_to(self.template) or sha(p.read_bytes()) != expected:
@@ -343,9 +373,10 @@ class LiveBroker:
                     'dockerCliSha256': docker_hash.decode().strip(), 'services': self.spec['images'],
                     'startedUtc': stamp(c['started']), 'deadlineUtc': stamp(c['deadline']),
                     'cleanupAtUtc': stamp(c['cleanupAt']), 'baselineContainerIds': c['baselineContainers']}
-        script = self.command(['wslpath', '-w', str(self.run / 'adapter-code/week1-auth-host-guard.ps1')]).decode().strip()
-        receipt = json.loads(self.command([powershell, '-NoProfile', '-NonInteractive', '-File', script,
-                                          '-Install', '-ManifestJsonBase64', base64.b64encode(json.dumps(manifest).encode()).decode()], timeout=30))
+        if sha(Path(HOST_GUARD_MOUNTED_SOURCE).read_bytes()) != self.lock['sources'].get('scripts/week1-auth-host-guard.ps1'):
+            raise ScopeError('Reviewed local host guard changed before installer dispatch.')
+        receipt = json.loads(self.command(host_guard_install_command(
+            self.spec.get('hostGuardExecutionPolicy'), base64.b64encode(json.dumps(manifest).encode()).decode()), timeout=30))
         if receipt.get('ready') is not True or receipt.get('engineId') != engine or receipt.get('scopeSha256') != c['scopeSha256']:
             raise ScopeError('Independent Windows host guard not ready.')
         private_write(self.run / 'host-guard.private.json', receipt, True)
