@@ -62,7 +62,7 @@ export type AnswerSubmissionCommit =
   | Readonly<{ kind: 'accepted'; receipt: OfficialAnswerReceipt; replayed: boolean }>
   | Readonly<{ kind: AnswerSubmissionRejection }>;
 /**
- * No official typed-answer SQL adapter/RPC exists in this slice. A future implementation MUST:
+ * DRAFT0022 and injected query/app adapters are unverified natively. An enabled implementation MUST:
  * - bind verified auth identity to active learner/cohort/attempt/question and frozen kind/contract;
  * - recheck live access, server clock, routing and definition atomically even for receipt replay;
  * - replay only the exact actor/scope/request/payload/contract/evaluator identity, otherwise conflict;

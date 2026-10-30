@@ -12,6 +12,8 @@ export default defineConfig({
       'packages/db/tests/checkpoint-drafts.test.ts',
       'packages/db/tests/checkpoint-answer-drafts.test.ts',
       'packages/db/tests/checkpoint-answer-draft-proposal.test.ts',
+      'packages/db/tests/checkpoint-answer-submissions.test.ts',
+      'packages/db/tests/checkpoint-answer-submission-proposal.test.ts',
       'packages/db/tests/quest-reviews.test.ts',
       'packages/db/tests/checkpoint-editor-context.test.ts',
       'packages/db/tests/checkpoint-policy-v2.test.ts',

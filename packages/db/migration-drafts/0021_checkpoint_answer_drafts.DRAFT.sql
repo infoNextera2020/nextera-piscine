@@ -121,25 +121,25 @@ BEGIN
  'answerContract',jsonb_build_object('version',1,'kind',kind,'maxBytes',maximum,'digest',contract_hash));
 END $$;
 
--- Validate typed canonical JSON, retain the original bytes, never trim or rewrite answer fields.
--- UNRESOLVED: jsonb rejects escaped U+0000. This validator rejects such drafts instead of rewriting bytes.
--- This DRAFT is not complete exact-text persistence support and must not be activated while this remains unresolved.
--- A json-only replacement must prove shape and canonical escape handling without decoding NUL or using a custom parser.
--- PostgreSQL canonical/escape parity requires a later authorized review/rehearsal; no database proof is claimed here.
+-- Validate only the two frozen JSON.stringify object shapes; retain the original bytes.
+-- The string grammar permits raw UTF-8 scalars except quote/backslash/U+0001..001F.
+-- Only canonical short escapes and lowercase control escapes are accepted. Raw NUL and
+-- malformed UTF-8 cannot become PostgreSQL text; escaped NUL stays ASCII and is never decoded.
+-- Dollar quoting and C collation keep escape spelling and ASCII ranges explicit.
+-- SOURCE REVIEW ONLY: pure grammar vectors do not prove PostgreSQL regex/UTF-8 behavior.
+-- Must not be activated before a separately authorized native PostgreSQL parity/ACL rehearsal.
 CREATE FUNCTION app.checkpoint_answer_payload_valid(payload bytea,kind text) RETURNS boolean
 LANGUAGE plpgsql IMMUTABLE STRICT SET search_path=pg_catalog AS $$
-DECLARE body jsonb; canonical text; BEGIN
- body:=convert_from(payload,'UTF8')::jsonb;
- IF jsonb_typeof(body) IS DISTINCT FROM 'object' THEN RETURN false; END IF;
- IF body->'version' IS DISTINCT FROM '1'::jsonb OR jsonb_typeof(body->'kind') IS DISTINCT FROM 'string' OR body->>'kind' IS DISTINCT FROM kind THEN RETURN false; END IF;
+DECLARE body text; canonical_pattern text;
+ string_pattern constant text:=$json_string$"(?:[^"\\\u0001-\u001f]|\\(?:["\\bfnrt]|u00(?:0[0-7bef]|1[0-9a-f])))*"$json_string$;
+BEGIN
+ body:=convert_from(payload,'UTF8');
  IF kind='trace_with_reason' THEN
- IF (SELECT count(*) FROM jsonb_object_keys(body))<>4 OR jsonb_typeof(body->'output') IS DISTINCT FROM 'string' OR jsonb_typeof(body->'reason') IS DISTINCT FROM 'string' THEN RETURN false; END IF;
- canonical:='{"version":1,"kind":"trace_with_reason","output":'||(body->'output')::text||',"reason":'||(body->'reason')::text||'}';
+ canonical_pattern:=replace($trace$\A\{"version":1,"kind":"trace_with_reason","output":@STRING@,"reason":@STRING@\}\Z$trace$,'@STRING@',string_pattern);
  ELSIF kind='debug_with_reason' THEN
- IF (SELECT count(*) FROM jsonb_object_keys(body))<>5 OR jsonb_typeof(body->'source') IS DISTINCT FROM 'string' OR jsonb_typeof(body->'explanation') IS DISTINCT FROM 'string' OR jsonb_typeof(body->'counterexample') IS DISTINCT FROM 'string' THEN RETURN false; END IF;
- canonical:='{"version":1,"kind":"debug_with_reason","source":'||(body->'source')::text||',"explanation":'||(body->'explanation')::text||',"counterexample":'||(body->'counterexample')::text||'}';
+ canonical_pattern:=replace($debug$\A\{"version":1,"kind":"debug_with_reason","source":@STRING@,"explanation":@STRING@,"counterexample":@STRING@\}\Z$debug$,'@STRING@',string_pattern);
  ELSE RETURN false; END IF;
- RETURN convert_to(canonical,'UTF8')=payload;
+ RETURN body COLLATE pg_catalog."C" ~ canonical_pattern;
  EXCEPTION WHEN OTHERS THEN RETURN false;
 END $$;
 CREATE FUNCTION app.checkpoint_answer_draft_record(r app.checkpoint_answer_draft_revisions) RETURNS jsonb

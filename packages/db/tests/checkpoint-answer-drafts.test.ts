@@ -4,6 +4,7 @@ import { PgDialect } from 'drizzle-orm/pg-core';
 import type { OperationalDatabase } from '../operations/curriculum';
 import {
   CHECKPOINT_ANSWER_DRAFT_READINESS_SQL,
+  CHECKPOINT_ANSWER_PAYLOAD_VALIDATOR_READINESS_SQL,
   checkpointAnswerContractDigest,
   encodeCheckpointAnswerDraft,
   readCheckpointAnswerDraftContext,
@@ -49,7 +50,13 @@ const input = {
   sha256: encoded.sha256,
   byteLength: encoded.byteLength,
 };
-const ready = { contract: true, isolated_tables: true, web_caller: true, guards: true };
+const ready = {
+  contract: true,
+  isolated_tables: true,
+  web_caller: true,
+  guards: true,
+  canonical_validator: true,
+};
 function wire(value = payload, version = 1) {
   const bytes = Buffer.from(value);
   return {
@@ -73,7 +80,38 @@ function setup(data: unknown, ctx: unknown = context) {
   return { execute, db: { execute } as unknown as OperationalDatabase };
 }
 describe('Structured draft readiness and frozen contract authority', () => {
-  it.each(['contract', 'isolated_tables', 'web_caller', 'guards'])(
+  it.each([false, undefined, null, 'true', 1])(
+    'rejects an absent or unproven canonical validator attestation %s before any draft RPC',
+    async (canonical_validator) => {
+      const execute = vi.fn().mockResolvedValue([{ ...ready, canonical_validator }]);
+      await expect(
+        readCheckpointAnswerDraftContext(
+          { execute } as unknown as OperationalDatabase,
+          id,
+          id,
+          'trace-one',
+        ),
+      ).rejects.toMatchObject({ code: 'unavailable' });
+      expect(execute).toHaveBeenCalledOnce();
+    },
+  );
+  it('rejects the old same-signature jsonb helper and a catalog row missing its body pin', async () => {
+    for (const row of [
+      { ...ready, canonical_validator: false },
+      { contract: true, isolated_tables: true, web_caller: true, guards: true },
+    ]) {
+      const execute = vi.fn().mockResolvedValue([row]);
+      expect(
+        await readCheckpointAnswerDraftReadiness({ execute } as unknown as OperationalDatabase),
+      ).toEqual({ ready: false, livePersistenceVerified: false });
+      expect(execute).toHaveBeenCalledOnce();
+    }
+    expect(CHECKPOINT_ANSWER_DRAFT_READINESS_SQL).toContain(
+      CHECKPOINT_ANSWER_PAYLOAD_VALIDATOR_READINESS_SQL + ' AS canonical_validator',
+    );
+  });
+
+  it.each(['contract', 'isolated_tables', 'web_caller', 'guards', 'canonical_validator'])(
     'fails closed without %s and never uses legacy source RPCs',
     async (key) => {
       const execute = vi.fn().mockResolvedValue([{ ...ready, [key]: false }]);
@@ -381,15 +419,15 @@ describe('Structured storage error isolation', () => {
 });
 
 /** All execute calls above/below are mocks. NUL assertions prove JS encoding/query projection only;
- * DRAFT0021's PostgreSQL escaped-NUL limitation remains unresolved and no persistence is claimed. */
+ * the DRAFT0021 source grammar has pure coverage, but native PostgreSQL parity/persistence is unproven. */
 describe('Both explicit answer kinds and the hard UTF-8 wire bound', () => {
   it('round-trips a debug draft without using a source-only context or losing its explanation', async () => {
     const value = JSON.stringify({
       version: 1,
       kind: 'debug_with_reason',
-      source: '\uFEFFpackage piscine\r\n',
-      explanation: ' explanation\r\n',
-      counterexample: ' counterexample and expected result ',
+      source: '\uFEFFpackage piscine\r\n\u0000',
+      explanation: '\uFEFF explanation\r\n\u0000',
+      counterexample: '\uFEFF counterexample and expected result \r\n\u0000',
     });
     const prepared = encodeCheckpointAnswerDraft(value);
     const debugContract = { ...contract, kind: 'debug_with_reason' as const };

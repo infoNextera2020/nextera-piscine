@@ -109,7 +109,9 @@ export function checkpointAnswerContractDigest(
     )
     .digest('hex');
 }
-/** Strict fixed-order JSON. It accepts incomplete drafts, not grading answers or completion claims. */
+/** Strict fixed-order JSON, including escaped NUL; no field trim, Unicode or newline rewrite.
+ * DRAFT0021's matching text grammar still requires separately authorized native PostgreSQL proof.
+ * It accepts incomplete drafts, not grading answers or completion claims. */
 export function encodeCheckpointAnswerDraft(payload: string) {
   if (typeof payload !== 'string') return fail();
   const bytes = Buffer.from(payload, 'utf8');
@@ -165,6 +167,26 @@ export function encodeCheckpointAnswerDraft(payload: string) {
     byteLength: bytes.byteLength,
   });
 }
+/** Exact source/catalog pin only. It is not native parity or persistence evidence. */
+export const CHECKPOINT_ANSWER_PAYLOAD_VALIDATOR_SHA256 =
+  'dfaeffc7bdcee0bee7d28a0182ba5184ee72bcb9d5763db7b9a15e88f9b20816';
+/** Boolean catalog predicate shared by the draft and proposed official adapters. */
+export const CHECKPOINT_ANSWER_PAYLOAD_VALIDATOR_READINESS_SQL = `EXISTS(
+ SELECT FROM pg_catalog.pg_proc p
+ JOIN pg_catalog.pg_namespace n ON n.oid=p.pronamespace
+ JOIN pg_catalog.pg_roles o ON o.oid=p.proowner
+ JOIN pg_catalog.pg_language l ON l.oid=p.prolang
+ WHERE n.nspname='app' AND p.proname='checkpoint_answer_payload_valid'
+ AND pg_catalog.replace(pg_catalog.oidvectortypes(p.proargtypes),' ','')='bytea,text'
+ AND p.prorettype='pg_catalog.bool'::pg_catalog.regtype AND p.prokind='f'
+ AND l.lanname='plpgsql' AND p.provolatile='i' AND p.proisstrict AND NOT p.prosecdef
+ AND p.proconfig=ARRAY['search_path=pg_catalog']
+ AND o.rolname='nextera_checkpoint_owner' AND NOT o.rolcanlogin AND NOT o.rolsuper
+ AND NOT o.rolbypassrls AND NOT o.rolcreatedb AND NOT o.rolcreaterole AND NOT o.rolreplication
+ AND pg_catalog.sha256(pg_catalog.convert_to(p.prosrc,'UTF8'))=pg_catalog.decode('${CHECKPOINT_ANSWER_PAYLOAD_VALIDATOR_SHA256}','hex')
+ AND NOT EXISTS(SELECT FROM pg_catalog.aclexplode(coalesce(p.proacl,pg_catalog.acldefault('f',p.proowner))) a
+ WHERE a.grantee<>p.proowner AND a.privilege_type='EXECUTE'))`;
+
 /** Catalog attestation only; no connection is opened or schema inferred at module import. */
 export const CHECKPOINT_ANSWER_DRAFT_READINESS_SQL = `SELECT
  pg_catalog.current_setting('server_encoding')='UTF8' AND NOT EXISTS(SELECT FROM (VALUES
@@ -185,14 +207,17 @@ export const CHECKPOINT_ANSWER_DRAFT_READINESS_SQL = `SELECT
  AND pg_catalog.pg_has_role(current_user,'nextera_web','USAGE') AND NOT pg_catalog.pg_has_role(current_user,'nextera_checkpoint_owner','USAGE') AND NOT pg_catalog.pg_has_role(current_user,'nextera_checkpoint_owner','SET')) AS web_caller,
  (SELECT count(*) FROM pg_catalog.pg_trigger t JOIN pg_catalog.pg_class c ON c.oid=t.tgrelid JOIN pg_catalog.pg_namespace n ON n.oid=c.relnamespace
  WHERE n.nspname='app' AND NOT t.tgisinternal AND t.tgenabled='O' AND ((c.relname='checkpoint_answer_draft_revisions' AND t.tgname='checkpoint_answer_draft_revision_immutable')
- OR (c.relname='checkpoint_answer_draft_policies' AND t.tgname='checkpoint_answer_draft_policy_immutable')))=2 AS guards`;
+ OR (c.relname='checkpoint_answer_draft_policies' AND t.tgname='checkpoint_answer_draft_policy_immutable')))=2 AS guards,
+ ${CHECKPOINT_ANSWER_PAYLOAD_VALIDATOR_READINESS_SQL} AS canonical_validator`;
 export async function readCheckpointAnswerDraftReadiness(db: OperationalDatabase) {
   try {
     const [row] = await db.execute(sql.raw(CHECKPOINT_ANSWER_DRAFT_READINESS_SQL));
     return {
       ready:
         !!row &&
-        ['contract', 'isolated_tables', 'web_caller', 'guards'].every((key) => row[key] === true),
+        ['contract', 'isolated_tables', 'web_caller', 'guards', 'canonical_validator'].every(
+          (key) => row[key] === true,
+        ),
       livePersistenceVerified: false as const,
     };
   } catch {
