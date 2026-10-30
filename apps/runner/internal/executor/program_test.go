@@ -27,24 +27,32 @@ type programResponse struct {
 	err         error
 }
 type fakeProgramPhase struct {
-	files     map[string][]byte
-	commands  [][]string
-	inputs    [][]byte
-	caps      []int
-	deadlines []time.Time
-	responses []programResponse
-	build     programResponse
-	compile   bool
-	closed    int
-	resource  string
-	onProbe   func()
+	files          map[string][]byte
+	commands       [][]string
+	inputs         [][]byte
+	caps           []int
+	deadlines      []time.Time
+	responses      []programResponse
+	build          programResponse
+	compile        bool
+	closed         int
+	stopErr        error
+	stopDeadline   time.Time
+	stopContextErr error
+	resource       string
+	onProbe        func()
 }
 
 func (p *fakeProgramPhase) Import(_ context.Context, files map[string][]byte) error {
 	p.files = files
 	return nil
 }
-func (p *fakeProgramPhase) Close() { p.closed++ }
+func (p *fakeProgramPhase) CloseVerified(ctx context.Context) error {
+	p.closed++
+	p.stopDeadline, _ = ctx.Deadline()
+	p.stopContextErr = ctx.Err()
+	return p.stopErr
+}
 func (p *fakeProgramPhase) Exec(ctx context.Context, command, env []string, input []byte, limit int) ([]byte, []byte, int, error) {
 	p.commands = append(p.commands, command)
 	if len(command) > 0 && command[0] == "/bin/sh" {
@@ -292,5 +300,60 @@ func TestProgramParentExpiryDuringResourceProbeIsNotLearnerTimeout(t *testing.T)
 		if verdict != "" || !errors.Is(err, failure) || p.closed != 1 {
 			t.Fatal("parent expiry became a learner outcome", verdict, err, p.closed)
 		}
+	}
+}
+
+func TestUnconfirmedGradingStopDiscardsAllLearnerOutcomes(t *testing.T) {
+	for _, version := range []int{1, 2} {
+		for _, learner := range []string{"passed", "failed", "runtime_error", "timeout"} {
+			s := programSnapshot()
+			if version == 1 {
+				s.PackID = "hello-go-v1"
+				s.Contract = nil
+			}
+			r := programResponse{out: []byte("ok")}
+			if version == 1 {
+				r.out = []byte(`["ok"]`)
+			}
+			if learner == "failed" {
+				r.out = []byte("wrong")
+			}
+			if learner == "runtime_error" {
+				r.exit = 1
+			}
+			if learner == "timeout" {
+				r.err = context.DeadlineExceeded
+			}
+			p := &fakeProgramPhase{responses: []programResponse{r}, stopErr: errors.New("unit-only uncertain stop")}
+			e := Executor{engine: &fakeProgramEngine{phase: p}}
+			verdict, err := e.execute(context.Background(), s, nil, rawInputs(""), []string{"ok"}, map[string]int64{})
+			if verdict != "" || !errors.Is(err, sandbox.ErrInfrastructure) || p.closed != 1 {
+				t.Fatal("unconfirmed stop released a learner verdict", version, learner, verdict, err)
+			}
+			if p.stopContextErr != nil || p.stopDeadline.IsZero() || !p.stopDeadline.After(time.Now()) {
+				t.Fatal("cleanup lacks a fresh bounded context")
+			}
+		}
+	}
+}
+
+func TestUnconfirmedCompilerStopDiscardsBinaryAndCompileVerdict(t *testing.T) {
+	for _, build := range []programResponse{{}, {exit: 1}, {err: context.DeadlineExceeded}} {
+		p := &fakeProgramPhase{compile: true, build: build, stopErr: errors.New("unit-only ambiguous deletion")}
+		e := Executor{engine: &fakeProgramEngine{phase: p}}
+		binary, verdict, err := e.compile(context.Background(), programSnapshot(), []byte("package main\nfunc main() {}\n"), map[string]int64{})
+		if binary != nil || verdict != "" || !errors.Is(err, sandbox.ErrInfrastructure) || p.closed != 1 {
+			t.Fatal("unconfirmed compiler stop released output", verdict, err)
+		}
+	}
+}
+
+func TestGradingStopRemainsIndependentAfterParentExpiry(t *testing.T) {
+	ctx := &probeExpiredContext{Context: context.Background(), done: make(chan struct{}), failure: context.DeadlineExceeded}
+	p := &fakeProgramPhase{responses: []programResponse{{}}, onProbe: ctx.expire}
+	e := Executor{engine: &fakeProgramEngine{phase: p}}
+	verdict, err := e.execute(ctx, programSnapshot(), nil, rawInputs(""), []string{""}, map[string]int64{})
+	if verdict != "" || !errors.Is(err, context.DeadlineExceeded) || p.closed != 1 || p.stopContextErr != nil || p.stopDeadline.IsZero() {
+		t.Fatal("parent deadline prevented independent verified cleanup", verdict, err, p.stopContextErr)
 	}
 }

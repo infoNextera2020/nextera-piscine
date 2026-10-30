@@ -175,7 +175,7 @@ func (e Executor) Evaluate(ctx context.Context, s protocol.Snapshot, layout stri
 	}
 	return Result{Verdict: feedback.Project(verdict).Verdict, Metrics: metrics}
 }
-func (e Executor) compile(ctx context.Context, s protocol.Snapshot, source []byte, metrics map[string]int64) ([]byte, string, error) {
+func (e Executor) compile(ctx context.Context, s protocol.Snapshot, source []byte, metrics map[string]int64) (program []byte, verdict string, err error) {
 	files, command, planErr := compilationPlan(s, source)
 	if planErr != nil {
 		if errors.Is(planErr, errProgramSource) {
@@ -187,7 +187,11 @@ func (e Executor) compile(ctx context.Context, s protocol.Snapshot, source []byt
 	if err != nil {
 		return nil, "", err
 	}
-	defer c.Close()
+	defer func() {
+		if stopGradingPhase(c) != nil {
+			program, verdict, err = nil, "", sandbox.ErrInfrastructure
+		}
+	}()
 	if c.Import(ctx, files) != nil {
 		return nil, "", sandbox.ErrInfrastructure
 	}
@@ -211,14 +215,14 @@ func (e Executor) compile(ctx context.Context, s protocol.Snapshot, source []byt
 	if err != nil || exit != 0 {
 		return nil, "", sandbox.ErrInfrastructure
 	}
-	program, err := sandbox.Compiled(raw)
+	program, err = sandbox.Compiled(raw)
 	if err != nil {
 		return nil, "", err
 	}
 	metrics["compiled_bytes"] = int64(len(program))
 	return program, "", nil
 }
-func (e Executor) execute(ctx context.Context, s protocol.Snapshot, program []byte, inputs []json.RawMessage, expected []string, metrics map[string]int64) (string, error) {
+func (e Executor) execute(ctx context.Context, s protocol.Snapshot, program []byte, inputs []json.RawMessage, expected []string, metrics map[string]int64) (verdict string, err error) {
 	if s.Contract != nil && s.Contract.Version == 2 {
 		return e.executeProgram(ctx, s, program, inputs, expected, metrics)
 	}
@@ -226,7 +230,11 @@ func (e Executor) execute(ctx context.Context, s protocol.Snapshot, program []by
 	if err != nil {
 		return "", err
 	}
-	defer c.Close()
+	defer func() {
+		if stopGradingPhase(c) != nil {
+			verdict, err = "", sandbox.ErrInfrastructure
+		}
+	}()
 	if c.Import(ctx, map[string][]byte{"program": program}) != nil {
 		return "", sandbox.ErrInfrastructure
 	}

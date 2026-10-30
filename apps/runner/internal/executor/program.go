@@ -43,7 +43,7 @@ func compilationPlan(s protocol.Snapshot, source []byte) (map[string][]byte, []s
 // One aggregate execution deadline and output budget cover every case, not a
 // fresh allowance per case. The original engine's no-network/non-root/tempfs
 // enforcement remains unchanged. No multi-file or interactive protocol exists.
-func (e Executor) executeProgram(ctx context.Context, s protocol.Snapshot, program []byte, inputs []json.RawMessage, expected []string, metrics map[string]int64) (string, error) {
+func (e Executor) executeProgram(ctx context.Context, s protocol.Snapshot, program []byte, inputs []json.RawMessage, expected []string, metrics map[string]int64) (verdict string, err error) {
 	contract, err := artifact.ContractFor(s.PackID, s.Contract)
 	if err != nil || contract.Version != 2 || len(inputs) == 0 || len(inputs) != len(expected) || !s.Environment.Valid() {
 		return "", artifact.ErrInvalid
@@ -61,7 +61,11 @@ func (e Executor) executeProgram(ctx context.Context, s protocol.Snapshot, progr
 	if err != nil {
 		return "", err
 	}
-	defer c.Close()
+	defer func() {
+		if stopGradingPhase(c) != nil {
+			verdict, err = "", sandbox.ErrInfrastructure
+		}
+	}()
 	if c.Import(ctx, map[string][]byte{"program": program}) != nil {
 		return "", sandbox.ErrInfrastructure
 	}
