@@ -1,0 +1,60 @@
+{
+  "aggregate": {
+    "typecheck": {
+      "exit_code": 0,
+      "seconds": 58.6
+    },
+    "tests": {
+      "exit_code": 0,
+      "seconds": 56.86
+    },
+    "build": {
+      "exit_code": 0,
+      "seconds": 284.29
+    },
+    "lint": {
+      "exit_code": 0,
+      "seconds": 144.19
+    },
+    "format": {
+      "exit_code": 0,
+      "seconds": 178.83
+    }
+  },
+  "vitest_files": 75,
+  "vitest_tests": 1246,
+  "runner": {
+    "tests": {
+      "exit_code": 0,
+      "seconds": 3.94
+    },
+    "vet": {
+      "exit_code": 0,
+      "seconds": 0.82
+    },
+    "test_cases_passed": 73,
+    "test_cases_skipped": ["TestActualEngineStreamAndCancellation"],
+    "packages_passed": 7,
+    "toolchain": "go version go1.27.2 linux/amd64",
+    "owned_file_sha256": {
+      "apps/runner/internal/artifact/contract.go": "b9b2c845dc79eeab766389041f0f01a243f882713e585640fc4b9adfa17ec5f0",
+      "apps/runner/internal/artifact/program_contract_test.go": "fb5ef4f6e8d50286d25de1aee087a59c6b5bf6e726430e1fc801f3b92b2525ea",
+      "apps/runner/internal/executor/executor.go": "b58c950ee2d79ac2e8aa345b144100450517c9f01329468b86f803425d61a0fc",
+      "apps/runner/internal/executor/program.go": "4b0441ceb8af7f0e280803a8202995698d2491d8ac0d4673c534d6c7bf436896",
+      "apps/runner/internal/executor/runtime.go": "ec1ce640e876100eb0e6ffedae8be69149ffec01ce8a88466a7829908574f2fd",
+      "apps/runner/internal/executor/program_test.go": "c248a7fe5f335b7aa5191567d68057737849ac45c55ad8a427a0b3a06453f02e"
+    },
+    "unrelated_originals_preserved": true
+  },
+  "migration_fake_tests": {
+    "new": 54,
+    "existing": 180
+  },
+  "runtime_created": false,
+  "four_original_sha256": {
+    "apps/web/public/ASSETS.md": "feca5ebec9df9b3842afadb1c0a6442e24b38ad479c9445e1f1d26f2cd9a3cf9",
+    "apps/web/components/learning/home-next-action.module.css": "4eaa849950b223af5c220b8330ca6e3f732c865e907a66a454798dff22916d87",
+    "apps/web/public/piscine/official-logo.svg": "0fde8181d16ceb17ac55e6d52e8cab523c3f75976a9aaa81b8695942c7336e54",
+    "docs/RELEASE_CANDIDATE_001_REPORT.md": "95e04b9accaf10d922e5acac157d8d5d7ae33ef17284ccef042558fa0fbca2fd"
+  }
+}
