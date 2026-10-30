@@ -1,0 +1,10 @@
+{
+  "library_file_id": "libfile_12ea486fa78c8191aef1a20bafe35594",
+  "version": 0,
+  "archive_sha256": "07212dd4491690c41cec51a6633e56dee85629678ec8fc6adad0c536df204607",
+  "figure_sha256": "bfefd6eef8d03186b7ddd9c7868acfeb1ff9995647242317ba241c5f9fc69c2f",
+  "kernel_sha256": "3f8df7ea3e5354ce5e50f2fdb9bc30c7fb0c459798f04ad3a3c3290863d37316",
+  "geometry_matches_before": true,
+  "host": "Curated figure only; no supplied bench/build/check scripts. Static SVG is rendered from the same rest geometry.",
+  "publication": "Artwork only; no curriculum or grading publication."
+}

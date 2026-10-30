@@ -1,0 +1,73 @@
+{
+  "originals_sha256_verified": {
+    "apps/web/public/ASSETS.md": "feca5ebec9df9b3842afadb1c0a6442e24b38ad479c9445e1f1d26f2cd9a3cf9",
+    "apps/web/components/learning/home-next-action.module.css": "4eaa849950b223af5c220b8330ca6e3f732c865e907a66a454798dff22916d87",
+    "apps/web/public/piscine/official-logo.svg": "0fde8181d16ceb17ac55e6d52e8cab523c3f75976a9aaa81b8695942c7336e54",
+    "docs/RELEASE_CANDIDATE_001_REPORT.md": "95e04b9accaf10d922e5acac157d8d5d7ae33ef17284ccef042558fa0fbca2fd"
+  },
+  "library_input": {
+    "id": "libfile_12ea486fa78c8191aef1a20bafe35594",
+    "version": 0,
+    "sha256": "07212dd4491690c41cec51a6633e56dee85629678ec8fc6adad0c536df204607"
+  },
+  "fixture_pid_last_verified": 90255,
+  "fixture_port": 3118,
+  "browser_complete": [
+    "desktop Home render",
+    "Home to GreetingCard navigation",
+    "desktop GreetingCard static render",
+    "no horizontal overflow",
+    "read-only intake"
+  ],
+  "browser_blocked": [
+    "mobile responsive matrix",
+    "keyboard",
+    "reduced-motion emulation",
+    "fine-pointer motion",
+    "GreetingCard screenshot save"
+  ],
+  "browser_stop_reason": "Current Windows browser URL could not be determined confidently; CUA stopped for this turn.",
+  "upload_status": "saved through native host single-file API; official native identity writeback succeeded",
+  "deliverable": {
+    "library_file_id": "libfile_aaa433a30f948191b7cfb4f1b7d68bb9",
+    "file_id": "file_00000000cce081f583c61151dc5714cf",
+    "file_name": "01-coding-home-greeting-card-desktop.jpg",
+    "version": 0,
+    "bytes": 97855,
+    "sha256": "89daa93cb79cd2eaffd73c6c535c338931455f338eef7387d13c5d2a7fa70d53"
+  },
+  "source_tests": {
+    "files": 72,
+    "passed": 1186,
+    "failed": 0
+  },
+  "final_checks": {
+    "tests": {
+      "exit_code": 0,
+      "seconds": 45.7
+    },
+    "build": {
+      "exit_code": 0,
+      "seconds": 100.35
+    },
+    "lint": {
+      "exit_code": 0,
+      "seconds": 55.4
+    },
+    "test-types": {
+      "exit_code": 0,
+      "seconds": 32.23
+    },
+    "changed-format": {
+      "exit_code": 0,
+      "seconds": 2.6
+    }
+  },
+  "final_listener": "State  Recv-Q Send-Q Local Address:Port Peer Address:PortProcess\nLISTEN 0      511        127.0.0.1:3118      0.0.0.0:*    users:((\"MainThread\",pid=90255,fd=22))",
+  "http_status": {
+    "/app?fixture=week1-review": 200,
+    "/app/cohorts/ui-verification-cohort/challenges/greeting-card?fixture=week1-review&view=focused": 200,
+    "/piscine/hairline/greeting-card/rest.svg": 200,
+    "/piscine/hairline/greeting-card/figure.html": 200
+  }
+}

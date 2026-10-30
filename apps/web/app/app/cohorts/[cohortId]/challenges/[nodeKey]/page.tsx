@@ -67,7 +67,8 @@ export default async function SubjectPage({
           )
         : null;
     const rules = subject!.submissionRules as unknown as SubmissionRules;
-    const focused = query.view === 'focused' && subject!.kind === 'challenge';
+    const focused =
+      subject!.kind === 'challenge' && (nodeKey === 'greeting-card' || query.view === 'focused');
     const challenge = (
       <Challenge
         key={cohort.id + ':' + nodeKey}

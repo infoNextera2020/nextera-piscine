@@ -32,3 +32,8 @@ content/source-baselines/quest2-standard-go-v3/q2-learner-en.md
 content/source-baselines/quest2-standard-go-v3/review-ar.md
 content/source-baselines/quest2-standard-go-v3/review-question-bank.md
 content/source-baselines/quest2-standard-go-v3/source-map.md
+
+# Supplied GreetingCard geometry and generated isolated host/static rest are integrity checked.
+apps/web/public/piscine/hairline/greeting-card/figure.html
+apps/web/public/piscine/hairline/greeting-card/greeting-heart.js
+apps/web/public/piscine/hairline/greeting-card/rest.svg

@@ -488,3 +488,23 @@
   outline: 2px solid #78e7bd;
   outline-offset: 3px;
 }
+
+.heading[data-illustrated] {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 260px;
+  align-items: center;
+  gap: 32px;
+}
+.headingCopy {
+  min-width: 0;
+}
+@media (max-width: 50rem) {
+  .heading[data-illustrated] {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 16px;
+  }
+  .heading[data-illustrated] > [data-greeting-card-artwork] {
+    width: 200px;
+    justify-self: center;
+  }
+}

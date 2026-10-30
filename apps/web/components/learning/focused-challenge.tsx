@@ -4,6 +4,7 @@ import type { ReactNode, Ref } from 'react';
 import type { SubmissionRules, UserRole } from '@nextera/domain';
 import type { LearningNode } from '../../lib/learning/types';
 import { displayState } from '../../lib/learning/display';
+import { GreetingCardArtwork } from './greeting-card-artwork';
 import s from './focused-challenge.module.css';
 
 /** Presentation only. The existing Challenge controller owns intake, polling and access. */
@@ -71,17 +72,23 @@ export function FocusedChallenge({
           <Link className={s.back} href={quest}>
             <span aria-hidden="true">←</span> Back to quest
           </Link>
-          <header className={s.heading}>
-            <p className={s.eyebrow}>{current.questTitle}</p>
-            <div className={s.titleRow}>
-              <h1>{current.title}</h1>
-              {current.state !== null && (
-                <span className={s.state} data-state={current.state}>
-                  {displayState(current.state)}
-                </span>
-              )}
+          <header
+            className={s.heading}
+            data-illustrated={current.key === 'greeting-card' || undefined}
+          >
+            <div className={s.headingCopy}>
+              <p className={s.eyebrow}>{current.questTitle}</p>
+              <div className={s.titleRow}>
+                <h1>{current.title}</h1>
+                {current.state !== null && (
+                  <span className={s.state} data-state={current.state}>
+                    {displayState(current.state)}
+                  </span>
+                )}
+              </div>
+              <p className={s.intro}>Read the brief. Build locally. Submit your solution.</p>
             </div>
-            <p className={s.intro}>Read the brief. Build locally. Submit your solution.</p>
+            {current.key === 'greeting-card' && <GreetingCardArtwork />}
           </header>
           {notice && <div className={s.notice}>{notice}</div>}
           <div className={s.layout}>
