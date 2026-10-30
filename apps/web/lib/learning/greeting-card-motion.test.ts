@@ -168,6 +168,7 @@ describe('Original GreetingCard engine deterministic lifecycle — not browser e
   it('changes actual SVG path geometry automatically over time without a pointer', () => {
     const s = scene(),
       samples = new Set([s.snapshot()]);
+    expect(s.stage.attrs['data-hairline']).toBe('greeting-heart');
     for (let n = 0; n < 7; n++) {
       s.advance(1800);
       samples.add(s.snapshot());

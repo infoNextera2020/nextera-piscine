@@ -1,4 +1,4 @@
-<!doctype html><html lang="en" data-theme="dark"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'sha256-P4336j5TVM5eUPL9ubwwx/sMRZeY8ErTo8MpCGPTcxY=' 'sha256-x9Ln/7fBWwbuTPXuz7sDMGepelYM5uD64qv+zxKxBDU=' 'sha256-v+/W7vjQMYa33dnHhorP6x/5mVZHJCMXuiQcX5/GnC8='; style-src 'unsafe-inline'; base-uri 'none'; form-action 'none'; connect-src 'none'"><title>Decorative greeting card</title><style>html,body{margin:0;width:100%;height:100%;overflow:hidden;background:transparent}#stage{width:100%;height:100%;aspect-ratio:5/4;pointer-events:auto}@media(prefers-reduced-motion:reduce){#stage{pointer-events:none}}#stage>svg{background:var(--hairline-plate,#000)}/* Public Hairline host tokens. No geometry, stroke-width or fill overrides. */
+<!doctype html><html lang="en" data-theme="dark"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'sha256-P4336j5TVM5eUPL9ubwwx/sMRZeY8ErTo8MpCGPTcxY=' 'sha256-DjOzy+NILRWUGcfSWHA3G9CNJIilck8CWIrZVZ5TA3o=' 'sha256-v+/W7vjQMYa33dnHhorP6x/5mVZHJCMXuiQcX5/GnC8='; style-src 'unsafe-inline'; base-uri 'none'; form-action 'none'; connect-src 'none'"><title>Decorative greeting card</title><style>html,body{margin:0;width:100%;height:100%;overflow:hidden;background:transparent}#stage{width:100%;height:100%;aspect-ratio:5/4;pointer-events:auto}@media(prefers-reduced-motion:reduce){#stage{pointer-events:none}}#stage>svg{background:var(--hairline-plate,#000)}/* Public Hairline host tokens. No geometry, stroke-width or fill overrides. */
 :root[data-theme="dark"] {
   --ground: #000000;
   --hairline-plate: #000000;
@@ -741,7 +741,7 @@ function clear() {
   handle?.destroy(); handle = null;
   stage.replaceChildren();
 }
-window.hairline = (figure) => { definition = figure; HL.inject(document); reset(); };
+window.hairline = (figure) => { definition = figure; stage.setAttribute('data-hairline', figure.name); HL.inject(document); reset(); };
 function reset() {
   clear();
   if (!definition || document.visibilityState !== 'visible') return;

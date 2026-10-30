@@ -1,0 +1,215 @@
+{
+  "kind": "actual Chrome component fixture, no live Auth/DB/Runner",
+  "homeVideoSamples": [
+    {
+      "duration": 5,
+      "loop": true,
+      "muted": true,
+      "paused": false,
+      "ready": 4,
+      "time": 0.3046
+    },
+    {
+      "duration": 5,
+      "loop": true,
+      "muted": true,
+      "paused": false,
+      "ready": 4,
+      "time": 1.5188
+    },
+    {
+      "duration": 5,
+      "loop": true,
+      "muted": true,
+      "paused": false,
+      "ready": 4,
+      "time": 2.7184
+    },
+    {
+      "duration": 5,
+      "loop": true,
+      "muted": true,
+      "paused": false,
+      "ready": 4,
+      "time": 3.8869
+    },
+    {
+      "duration": 5,
+      "loop": true,
+      "muted": true,
+      "paused": false,
+      "ready": 4,
+      "time": 0.0443
+    },
+    {
+      "duration": 5,
+      "loop": true,
+      "muted": true,
+      "paused": false,
+      "ready": 4,
+      "time": 1.2056
+    },
+    {
+      "duration": 5,
+      "loop": true,
+      "muted": true,
+      "paused": false,
+      "ready": 4,
+      "time": 2.3815
+    }
+  ],
+  "responsive": [
+    {
+      "page": "Home",
+      "requested": {
+        "width": 1440,
+        "height": 900
+      },
+      "metrics": {
+        "body": 1425,
+        "client": 1425,
+        "height": 900,
+        "reduced": false,
+        "scroll": 1425,
+        "video": true,
+        "width": 1440
+      }
+    },
+    {
+      "page": "Home",
+      "requested": {
+        "width": 768,
+        "height": 1024
+      },
+      "metrics": {
+        "body": 753,
+        "client": 753,
+        "height": 1024,
+        "reduced": false,
+        "scroll": 753,
+        "video": true,
+        "width": 768
+      }
+    },
+    {
+      "page": "Home",
+      "requested": {
+        "width": 390,
+        "height": 844
+      },
+      "metrics": {
+        "body": 375,
+        "client": 375,
+        "height": 844,
+        "reduced": false,
+        "scroll": 375,
+        "video": false,
+        "width": 390
+      }
+    },
+    {
+      "page": "Home",
+      "requested": {
+        "width": 320,
+        "height": 740
+      },
+      "metrics": {
+        "body": 305,
+        "client": 305,
+        "height": 740,
+        "reduced": false,
+        "scroll": 305,
+        "video": false,
+        "width": 320
+      }
+    },
+    {
+      "page": "GreetingCard",
+      "requested": {
+        "width": 1440,
+        "height": 900
+      },
+      "metrics": {
+        "bg": "rgb(9, 11, 10)",
+        "body": 1425,
+        "client": 1425,
+        "frame": 1,
+        "height": 900,
+        "scroll": 1425,
+        "width": 1440
+      }
+    },
+    {
+      "page": "GreetingCard",
+      "requested": {
+        "width": 768,
+        "height": 1024
+      },
+      "metrics": {
+        "bg": "rgb(9, 11, 10)",
+        "body": 753,
+        "client": 753,
+        "frame": 1,
+        "height": 1024,
+        "scroll": 753,
+        "width": 768
+      }
+    },
+    {
+      "page": "GreetingCard",
+      "requested": {
+        "width": 390,
+        "height": 844
+      },
+      "metrics": {
+        "bg": "rgb(9, 11, 10)",
+        "body": 375,
+        "client": 375,
+        "frame": 1,
+        "height": 844,
+        "scroll": 375,
+        "width": 390
+      }
+    },
+    {
+      "page": "GreetingCard",
+      "requested": {
+        "width": 320,
+        "height": 740
+      },
+      "metrics": {
+        "bg": "rgb(9, 11, 10)",
+        "body": 305,
+        "client": 305,
+        "frame": 1,
+        "height": 740,
+        "scroll": 305,
+        "width": 320
+      }
+    }
+  ],
+  "greetingPhysical": {
+    "heldStable": true,
+    "positionChangedPose": true,
+    "resumedDistinct": 5,
+    "sampleCount": 5
+  },
+  "keyboard": {
+    "greetingPauseFrameCount": 0,
+    "greetingResumeFrameCount": 1,
+    "focus": {
+      "label": "Play artwork",
+      "outline": "solid",
+      "tag": "BUTTON"
+    }
+  },
+  "lifecycle": {
+    "offscreenFrameCount": 0,
+    "returnedFrameCount": 1
+  },
+  "remainingBrowserChecks": [
+    "prefers-reduced-motion emulation not available through advertised browser capabilities; native DevTools shortcuts had no visible effect",
+    "OS light-scheme preference not changed; approved focused challenge is intentionally black"
+  ],
+  "viewportReset": true
+}
