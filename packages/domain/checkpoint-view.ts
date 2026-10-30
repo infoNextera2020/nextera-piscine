@@ -1,3 +1,8 @@
+export type CheckpointAnswerFormat = Readonly<{
+  version: 1;
+  kind: 'coding' | 'trace_with_reason' | 'debug_with_reason';
+}>;
+
 export type CheckpointView = {
   policy?: CheckpointScoringMetadata | null;
   server_now: string;
@@ -18,6 +23,8 @@ export type CheckpointView = {
     passed: boolean;
     reserved: number;
     subject: string;
+    /** Omitted only for the existing source-only contract. No question type is inferred from copy. */
+    answer_format?: CheckpointAnswerFormat;
     rules: { required_files: string[]; max_size_kb: number };
   }[];
   submissions: {
@@ -89,6 +96,22 @@ export function checkpointScoringMetadata(value: unknown): CheckpointScoringMeta
     pass_points: p.pass_points,
   });
 }
+const codingAnswerFormat = Object.freeze({ version: 1 as const, kind: 'coding' as const });
+/** Response shape only; this does not enable persistence, submission, Run or scoring. */
+export function checkpointAnswerFormat(value: unknown): CheckpointAnswerFormat {
+  if (value === undefined) return codingAnswerFormat;
+  const format = object(value);
+  if (
+    Reflect.ownKeys(format).length !== 2 ||
+    !Object.hasOwn(format, 'version') ||
+    !Object.hasOwn(format, 'kind') ||
+    format.version !== 1 ||
+    typeof format.kind !== 'string' ||
+    !['coding', 'trace_with_reason', 'debug_with_reason'].includes(format.kind)
+  )
+    return fail();
+  return Object.freeze({ version: 1, kind: format.kind as CheckpointAnswerFormat['kind'] });
+}
 function attemptFields(row: Record<string, unknown>) {
   if (
     !text(row.id) ||
@@ -117,7 +140,8 @@ export function parseCheckpointView(value: unknown): CheckpointView {
   const keys = new Set<string>();
   for (const raw of row.tasks) {
     const t = object(raw),
-      rules = object(t.rules);
+      rules = object(t.rules),
+      format = checkpointAnswerFormat(t.answer_format);
     if (
       !text(t.key) ||
       keys.has(t.key) ||
@@ -126,7 +150,8 @@ export function parseCheckpointView(value: unknown): CheckpointView {
       typeof t.passed !== 'boolean' ||
       !integer(t.reserved) ||
       !Array.isArray(rules.required_files) ||
-      rules.required_files.length === 0 ||
+      (format.kind !== 'trace_with_reason' && rules.required_files.length === 0) ||
+      (format.kind === 'trace_with_reason' && rules.required_files.length !== 0) ||
       !rules.required_files.every(text) ||
       !integer(rules.max_size_kb, 1)
     )

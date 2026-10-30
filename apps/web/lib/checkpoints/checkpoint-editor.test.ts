@@ -95,3 +95,44 @@ describe('Checkpoint internal editor presentation', () => {
     expect(markup).not.toContain('Start checkpoint');
   });
 });
+
+describe('mixed answers reuse the internal Checkpoint workspace without source-only writes', () => {
+  it('renders exact output and reason fields with unavailable Save and Submit', () => {
+    const raw = view(2);
+    raw.tasks[0]!.answer_format = { version: 1, kind: 'trace_with_reason' };
+    raw.tasks[0]!.rules.required_files = [];
+    const markup = html(raw);
+    expect(markup).toContain('aria-label="Internal answer editor"');
+    expect(markup).toContain('name="output"');
+    expect(markup).toContain('name="reason"');
+    expect(markup).not.toContain('name="source"');
+    expect(markup).toContain('Mixed-answer saving unavailable');
+    expect(markup).toContain('This answer stays on this page only');
+    expect(markup).toContain('Run not applicable');
+    expect(markup).toMatch(/<button[^>]*disabled=""[^>]*>Submit this question/);
+    expect(markup).toContain('Authored brief');
+    expect(markup).toContain('Official submission history');
+    expect(markup).not.toContain('Saved to server');
+    expect(markup).not.toContain('180 minutes');
+    expect(markup).not.toContain('60/100');
+  });
+  it('keeps the debug source, explanation and counterexample in the same editor column', () => {
+    const raw = view(1);
+    raw.tasks[0]!.answer_format = { version: 1, kind: 'debug_with_reason' };
+    const markup = html(raw);
+    for (const name of ['source', 'explanation', 'counterexample'])
+      expect(markup).toContain('name="' + name + '"');
+    expect(markup).toContain('Counterexample and expected result');
+    expect(markup).toContain('answer.go');
+    expect(markup).not.toContain('Saved to server');
+    expect(markup).toContain('Official submission is unavailable for this answer type');
+  });
+  it('keeps every mixed field read-only after the authoritative attempt closes', () => {
+    const raw = view(1, 'evaluating');
+    raw.tasks[0]!.answer_format = { version: 1, kind: 'debug_with_reason' };
+    const markup = html(raw);
+    expect((markup.match(/readOnly=""/g) ?? []).length).toBe(3);
+    expect(markup).toContain('aria-label="Checkpoint questions"');
+    expect(markup).not.toContain('Review &amp; finish');
+  });
+});

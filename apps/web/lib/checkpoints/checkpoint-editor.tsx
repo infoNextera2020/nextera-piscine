@@ -1,5 +1,6 @@
 'use client';
 import { useEffect, useRef, useState } from 'react';
+import { checkpointAnswerFormat } from '@nextera/domain';
 import type { CheckpointPresentation } from '../learning/checkpoint-presentation';
 import { displayState } from '../learning/display';
 import { SubmissionIntents } from '../submissions/retry-intent';
@@ -18,6 +19,15 @@ import {
 import e from './checkpoint-editor.module.css';
 import { useEditorSession } from './use-editor-session';
 import type { QuestionSession } from './editor-session';
+import { CheckpointAnswerInput } from './checkpoint-answer-input';
+import {
+  checkpointAnswerActionBlock,
+  checkpointSourceTaskKey,
+  editMixedAnswer,
+  hasMixedAnswerDrafts,
+  mixedAnswerDraft,
+  type MixedAnswerDrafts,
+} from './checkpoint-answer';
 
 function questionStatus(task: CheckpointPresentation['display']['tasks'][number] | undefined) {
   if (!task) return 'Closed';
@@ -52,11 +62,14 @@ export function CheckpointEditor({
   const [selected, setSelected] = useState(view.tasks[0]?.key ?? '');
   const [panel, setPanel] = useState<'statement' | 'editor' | 'history'>('editor');
   const [acceptedSources, setAcceptedSources] = useState<Record<string, string>>({});
+  const [mixedDrafts, setMixedDrafts] = useState<MixedAnswerDrafts>({});
+  const selectedTask = view.tasks.find((task) => task.key === selected) ?? view.tasks[0];
   const { session, drafts: questionSessions } = useEditorSession({
     learnerId,
     cohortId: cohort,
     attemptId: view.attempt?.id ?? '',
-    selected,
+    // Mixed responses must never load or autosave through the source-only transport.
+    selected: checkpointSourceTaskKey(selectedTask),
     paused,
     expired,
     serverNow: view.server_now,
@@ -89,7 +102,10 @@ export function CheckpointEditor({
       mounted.current = false;
     };
   }, []);
-  const unsaved = hasUnsubmittedDrafts(drafts) || Object.keys(pending).length > 0;
+  const unsaved =
+    hasUnsubmittedDrafts(drafts) ||
+    hasMixedAnswerDrafts(mixedDrafts) ||
+    Object.keys(pending).length > 0;
   useEffect(() => {
     onDraftWarning(unsaved);
     const warn = (event: BeforeUnloadEvent) => {
@@ -113,10 +129,15 @@ export function CheckpointEditor({
   const taskState = view.display.tasks[index];
   const draft = questionDraft(drafts, item.key);
   const intake = !paused && !expired && view.display.intakeOpen;
-  const submitAllowed = intake && !!taskState?.submitAvailable;
+  const format = checkpointAnswerFormat(item.answer_format);
+  const mixed =
+    format.kind === 'coding' ? null : mixedAnswerDraft(mixedDrafts, item.key, format.kind);
+  const submitAllowed =
+    intake && !!taskState?.submitAvailable && !checkpointAnswerActionBlock(format, 'submit');
   const ambiguous = Object.hasOwn(pending, item.key) ? pending[item.key] : undefined;
   async function submit(retry?: OfficialSnapshot) {
-    if (busy.current || !submitAllowed || !item || !view.attempt) return;
+    if (busy.current || !submitAllowed || format.kind !== 'coding' || !item || !view.attempt)
+      return;
     busy.current = true;
     setSending(item.key);
     setFeedback((old) => ({ ...old, [item.key]: 'Preparing an immutable submission…' }));
@@ -141,6 +162,9 @@ export function CheckpointEditor({
         current.expired ||
         !current.view.display.intakeOpen ||
         current.view.attempt?.id !== snapshot.attemptId ||
+        checkpointSourceTaskKey(
+          current.view.tasks.find((task) => task.key === snapshot!.taskKey),
+        ) !== snapshot.taskKey ||
         !current.view.display.tasks.find((t) => t.key === snapshot!.taskKey)?.submitAvailable
       ) {
         setFeedback((old) => ({
@@ -200,12 +224,19 @@ export function CheckpointEditor({
           {view.tasks.map((t, i) => {
             const label = questionStatus(view.display.tasks[i]);
             const local = questionDraft(drafts, t.key);
+            const taskFormat = checkpointAnswerFormat(t.answer_format);
+            const dirty =
+              taskFormat.kind === 'coding'
+                ? isQuestionDraftDirty(local)
+                : hasMixedAnswerDrafts({
+                    answer: mixedAnswerDraft(mixedDrafts, t.key, taskFormat.kind),
+                  });
             return (
               <button
                 key={t.key}
                 className={e.question}
                 aria-pressed={t.key === item.key}
-                aria-label={`Question ${i + 1}: ${t.title}. ${label}${isQuestionDraftDirty(local) ? '. Unsaved draft' : ''}`}
+                aria-label={`Question ${i + 1}: ${t.title}. ${label}${dirty ? '. Unsaved draft' : ''}`}
                 onClick={() => setSelected(t.key)}
               >
                 <span className={e.number}>{String(i + 1).padStart(2, '0')}</span>
@@ -213,7 +244,7 @@ export function CheckpointEditor({
                   <strong>{t.title}</strong>
                   <small>
                     {label}
-                    {isQuestionDraftDirty(local) ? ' · Draft' : ''}
+                    {dirty ? ' · Draft' : ''}
                   </small>
                 </span>
               </button>
@@ -256,9 +287,20 @@ export function CheckpointEditor({
         <div className={e.requirements}>
           <span className={e.eyebrow}>Submission requirements</span>
           <p>
-            <code>{item.rules.required_files.join(', ')}</code> · {item.rules.max_size_kb} KiB
-            maximum
+            {format.kind === 'trace_with_reason' ? (
+              'Exact output and brief reason'
+            ) : (
+              <code>{item.rules.required_files.join(', ')}</code>
+            )}{' '}
+            · {item.rules.max_size_kb} KiB{' '}
+            {format.kind === 'coding' ? 'maximum' : 'response maximum'}
           </p>
+          {format.kind === 'debug_with_reason' && (
+            <p>
+              Include the corrected function, explanation, and counterexample with its expected
+              result.
+            </p>
+          )}
           <p>
             {item.reserved} submission slots used or pending. The server controls the remaining
             allowance.
@@ -269,52 +311,81 @@ export function CheckpointEditor({
         id="checkpoint-editor"
         className={e.editorColumn}
         data-visible={panel === 'editor'}
-        aria-label="Internal code editor"
+        aria-label={format.kind === 'coding' ? 'Internal code editor' : 'Internal answer editor'}
       >
-        <div className={e.editorFrame}>
-          <div className={e.editorHeader}>
-            <HairlineIcon name="code" size={28} />
-            <label htmlFor="checkpoint-code">
-              {item.rules.required_files[0] ?? 'Question source'}
-            </label>
-            <span>Go</span>
-          </div>
-          <textarea
-            ref={textarea}
-            id="checkpoint-code"
-            key={item.key}
-            className={e.code}
-            value={draft.source}
-            aria-label={`Source code for ${item.title}`}
-            aria-describedby="checkpoint-save-status checkpoint-code-help"
-            autoComplete="off"
-            autoCapitalize="off"
-            spellCheck={false}
-            wrap="off"
-            readOnly={expired || !view.display.intakeOpen}
-            onChange={(event) => session.edit(item.key, event.target.value)}
-          />
-          <div id="checkpoint-code-help" className={e.editorFooter}>
-            <span>Plain code editor</span>
-            <span>
-              {draft.source === draft.acceptedSource
-                ? 'Submitted snapshot unchanged'
-                : 'Draft / not submitted'}
-            </span>
-          </div>
-        </div>
-        <DraftSyncStatus
-          state={questionSessions[item.key]}
-          paused={paused || expired}
-          canLoad={!!learnerId}
-          onRetry={() =>
-            void (questionSessions[item.key]?.phase === 'unavailable'
-              ? session.load(item.key, true)
-              : session.save(item.key))
-          }
-          onConflict={(choice) => session.resolve(item.key, choice)}
-          onRecovery={(choice) => session.chooseRecovery(item.key, choice)}
-        />
+        {mixed ? (
+          <>
+            <CheckpointAnswerInput
+              key={item.key + ':' + format.kind}
+              taskKey={item.key}
+              title={item.title}
+              filename={item.rules.required_files[0]}
+              answer={mixed}
+              maxBytes={Math.min(262144, item.rules.max_size_kb * 1024)}
+              readOnly={expired || !view.display.intakeOpen}
+              onChange={(answer) => setMixedDrafts((old) => editMixedAnswer(old, item.key, answer))}
+            />
+            <div className={e.saveStatus} data-phase="unavailable">
+              <span className={e.eyebrow}>Draft status</span>
+              <strong role="status">Mixed-answer saving unavailable</strong>
+              <p id="checkpoint-mixed-status">
+                This answer stays on this page only. The server does not support saving or official
+                submission for this answer type. Leaving or refreshing can lose it. No answer has
+                been saved or submitted from this page.
+              </p>
+              <button className={e.button} disabled aria-describedby="checkpoint-mixed-status">
+                Save draft
+              </button>
+            </div>
+          </>
+        ) : (
+          <>
+            <div className={e.editorFrame}>
+              <div className={e.editorHeader}>
+                <HairlineIcon name="code" size={28} />
+                <label htmlFor="checkpoint-code">
+                  {item.rules.required_files[0] ?? 'Question source'}
+                </label>
+                <span>Go</span>
+              </div>
+              <textarea
+                ref={textarea}
+                id="checkpoint-code"
+                key={item.key}
+                className={e.code}
+                value={draft.source}
+                aria-label={`Source code for ${item.title}`}
+                aria-describedby="checkpoint-save-status checkpoint-code-help"
+                autoComplete="off"
+                autoCapitalize="off"
+                spellCheck={false}
+                wrap="off"
+                readOnly={expired || !view.display.intakeOpen}
+                onChange={(event) => session.edit(item.key, event.target.value)}
+              />
+              <div id="checkpoint-code-help" className={e.editorFooter}>
+                <span>Plain code editor</span>
+                <span>
+                  {draft.source === draft.acceptedSource
+                    ? 'Submitted snapshot unchanged'
+                    : 'Draft / not submitted'}
+                </span>
+              </div>
+            </div>
+            <DraftSyncStatus
+              state={questionSessions[item.key]}
+              paused={paused || expired}
+              canLoad={!!learnerId}
+              onRetry={() =>
+                void (questionSessions[item.key]?.phase === 'unavailable'
+                  ? session.load(item.key, true)
+                  : session.save(item.key))
+              }
+              onConflict={(choice) => session.resolve(item.key, choice)}
+              onRecovery={(choice) => session.chooseRecovery(item.key, choice)}
+            />
+          </>
+        )}
         <div className={e.editorActions}>
           <button className={e.button} disabled aria-describedby="checkpoint-run-status">
             Run <HairlineIcon name="arrow" />
@@ -339,7 +410,7 @@ export function CheckpointEditor({
             </button>
           )}
         </div>
-        {!submitAllowed && (
+        {!submitAllowed && format.kind === 'coding' && (
           <p className={e.notice}>
             Official intake is paused, closed, passed, or has no available slot. Refresh confirms
             current server access and allowance.
@@ -347,7 +418,9 @@ export function CheckpointEditor({
         )}
         <p className={e.feedback} role="status">
           {(Object.hasOwn(feedback, item.key) ? feedback[item.key] : undefined) ??
-            'Submit evaluates a fixed snapshot. Editing does not submit your work.'}
+            (mixed
+              ? 'Official submission is unavailable for this answer type. Editing does not submit your work.'
+              : 'Submit evaluates a fixed snapshot. Editing does not submit your work.')}
         </p>
         {ambiguous && (
           <details className={e.snapshot}>
@@ -360,10 +433,13 @@ export function CheckpointEditor({
         )}
         <div id="checkpoint-run-status" className={e.runOutput}>
           <span className={e.eyebrow}>Run output</span>
-          <strong>Run unavailable</strong>
+          <strong>
+            {format.kind === 'trace_with_reason' ? 'Run not applicable' : 'Run unavailable'}
+          </strong>
           <p>
-            The visible-example execution service is not enabled. No Run has been started. Run is
-            separate from official grading and submission allowance.
+            {format.kind === 'trace_with_reason'
+              ? 'Trace the published program without changing or running it here. No Run has been started.'
+              : 'The visible-example execution service is not enabled. No Run has been started. Run is separate from official grading and submission allowance.'}
           </p>
         </div>
       </section>

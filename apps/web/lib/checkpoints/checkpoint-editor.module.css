@@ -709,3 +709,52 @@
     outline-offset: -3px;
   }
 }
+
+.answerFields {
+  min-width: 0;
+  margin: 0;
+  padding: var(--learning-space-5, 1.25rem);
+  border: 0;
+}
+.answerFields legend {
+  padding: var(--learning-space-4, 1rem) 0 0;
+  color: var(--workspace-muted);
+  font-size: var(--learning-body-small, 0.875rem);
+}
+.answerFields label {
+  display: block;
+  margin-block: var(--learning-space-4, 1rem) var(--learning-space-2, 0.5rem);
+  color: var(--workspace-text);
+  font-size: var(--learning-body-small, 0.875rem);
+  font-weight: 500;
+}
+.answerText,
+.answerOutput {
+  box-sizing: border-box;
+  display: block;
+  width: 100%;
+  padding: var(--learning-space-4, 1rem);
+  resize: vertical;
+  overflow: auto;
+  overscroll-behavior: contain;
+  border: 1px solid var(--workspace-border);
+  border-radius: var(--learning-radius-compact, 1rem);
+  background: var(--workspace-bg);
+  color: var(--workspace-text);
+  font: inherit;
+  font-size: var(--learning-body, 1rem);
+  line-height: 1.8;
+}
+.answerOutput {
+  font-family: ui-monospace, SFMono-Regular, Consolas, monospace;
+  tab-size: 2;
+}
+.answerText[readonly],
+.answerOutput[readonly] {
+  color: var(--workspace-muted);
+}
+.answerHelp {
+  color: var(--workspace-muted);
+  font-size: var(--learning-body-small, 0.875rem);
+  line-height: 1.75;
+}

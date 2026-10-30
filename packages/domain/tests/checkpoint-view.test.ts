@@ -1,6 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import {
   parseCheckpointView,
+  checkpointAnswerFormat,
   checkpointScoringMetadata,
   type CheckpointView,
 } from '../checkpoint-view';
@@ -140,5 +141,75 @@ describe('versioned checkpoint read projection', () => {
         submissions: [{ ...f.submissions[0], feedback: { message: 1 } }],
       }),
     ).toThrow();
+  });
+});
+
+describe('explicit Checkpoint answer formats preserve source-only legacy reads', () => {
+  it('accepts explicit coding, trace and debugging shapes without adding assessment policy', () => {
+    const current = fixture(3);
+    current.tasks[0]!.answer_format = { version: 1, kind: 'coding' };
+    current.tasks[1]!.answer_format = { version: 1, kind: 'trace_with_reason' };
+    current.tasks[1]!.rules.required_files = [];
+    current.tasks[2]!.answer_format = { version: 1, kind: 'debug_with_reason' };
+    expect(parseCheckpointView(current)).toEqual(current);
+    expect(parseCheckpointView(current).policy).toBeUndefined();
+    expect(checkpointAnswerFormat(undefined)).toEqual({ version: 1, kind: 'coding' });
+  });
+  it.each([
+    null,
+    {},
+    { version: 2, kind: 'trace_with_reason' },
+    { version: 1, kind: 'trace' },
+    { version: 1, kind: 'trace_with_reason', grader: true },
+  ])('rejects unsupported answer format %#', (answer_format) => {
+    const current = fixture(1);
+    expect(() =>
+      parseCheckpointView({
+        ...current,
+        tasks: [{ ...current.tasks[0], answer_format }],
+      }),
+    ).toThrow('CHECKPOINT_VIEW_UNAVAILABLE');
+  });
+  it('does not give trace responses a source file or accept a missing debug file', () => {
+    const current = fixture(1);
+    current.tasks[0]!.answer_format = { version: 1, kind: 'trace_with_reason' };
+    expect(() => parseCheckpointView(current)).toThrow();
+    current.tasks[0]!.answer_format = { version: 1, kind: 'debug_with_reason' };
+    current.tasks[0]!.rules.required_files = [];
+    expect(() => parseCheckpointView(current)).toThrow();
+  });
+});
+
+describe('answer format accepts exact own fields without kind coercion', () => {
+  it.each([
+    ['coding'],
+    ['trace_with_reason'],
+    ['debug_with_reason'],
+    [],
+    {},
+    { toString: () => 'coding' },
+    1,
+    true,
+    null,
+  ])('rejects a non-string kind %#', (kind) => {
+    expect(() => checkpointAnswerFormat({ version: 1, kind })).toThrow(
+      'CHECKPOINT_VIEW_UNAVAILABLE',
+    );
+  });
+  it.each(['version', 'kind'])(
+    'rejects inherited %s even with the expected own-key count',
+    (field) => {
+      const format: Record<string, unknown> = { version: 1, kind: 'coding' };
+      const inherited = { [field]: format[field] };
+      delete format[field];
+      const candidate = Object.assign(Object.create(inherited), format, { unknown: true });
+      expect(() => checkpointAnswerFormat(candidate)).toThrow('CHECKPOINT_VIEW_UNAVAILABLE');
+    },
+  );
+  it('rejects unknown non-enumerable and symbol own fields', () => {
+    for (const key of ['unknown', Symbol('unknown')]) {
+      const candidate = Object.defineProperty({ version: 1, kind: 'coding' }, key, { value: true });
+      expect(() => checkpointAnswerFormat(candidate)).toThrow('CHECKPOINT_VIEW_UNAVAILABLE');
+    }
   });
 });
