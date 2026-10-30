@@ -53,7 +53,8 @@ CREATE TRIGGER invitation_acceptance_immutable BEFORE UPDATE OR DELETE ON app.in
 FOR EACH ROW EXECUTE FUNCTION app.guard_invitation_acceptance();
 
 -- Private same-transaction hook required by0016. Callers already lock the ledger;
--- lock acceptance -> cohort -> issuer/policy, matching issuance's post-insert order.
+-- lock acceptance -> cohort -> issuer/policy. Take the cohort UPDATE lock from
+-- the outset, avoiding SHARE-to-UPDATE upgrade deadlocks between two enrollments.
 CREATE FUNCTION app.invitation_admission_current(admission uuid,invited_email text,accepted_name text,cohort uuid)
 RETURNS boolean LANGUAGE plpgsql VOLATILE SECURITY DEFINER SET search_path=pg_catalog AS $$
 DECLARE a app.invitation_acceptances; BEGIN
@@ -62,7 +63,7 @@ DECLARE a app.invitation_acceptances; BEGIN
  THEN RETURN false; END IF;
  PERFORM 1 FROM app.cohorts c JOIN app.curriculum_versions v ON v.id=c.curriculum_version_id
  WHERE c.id=cohort AND c.curriculum_version_id=a.curriculum_version_id AND c.status='active' AND v.status='published'
- FOR SHARE OF c;
+ FOR UPDATE OF c;
  IF NOT FOUND THEN RETURN false; END IF;
  PERFORM 1 FROM app.users u WHERE u.id=a.issuer_id AND u.active AND u.role='admin' FOR SHARE;
  IF NOT FOUND THEN RETURN false; END IF;

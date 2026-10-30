@@ -36,3 +36,13 @@ Source tests cover the new issuance interface, private repository protocol and H
 The stable global student number is deliberately separate from the cohort-scoped invitation record. The minimum next source change is a unique immutable user-level number, collision-safe allocation and separate projections: own account settings only for learners, authorized staff beside the name (with email/cohort where permitted), no peer exposure. No number/schema/identity is assigned by invitation issuance here.
 
 No runtime, credentials, accounts, emails, secrets, grants, published curriculum, push or deployment was performed. The four pre-existing unrelated dirty files remain outside this work.
+
+## Prepared SQL rehearsal follow-up
+
+The source-only guarded harness is now prepared in docs/INVITATION_SQL_REHEARSAL_001.md.
+Its new target is uncreated and requires fresh exact execution approval. Preparing distinct
+invitation concurrency exposed a SHARE-to-UPDATE cohort lock-upgrade deadlock risk;0020
+now takes the cohort UPDATE lock from its initial admission read, preserving eligibility
+and actor permissions. Static coverage and planned same/distinct enrollment cases are
+included; real SQL verification is still unrun. The completed checkpoint SQL rehearsal
+remains closed and is not reused.

@@ -1,0 +1,102 @@
+{
+  "kind": "source_preparation_only",
+  "checks": [
+    {
+      "check": "format_changed",
+      "exitCode": 0,
+      "startedAtUtc": "2026-10-30T10:13:20.846618+00:00",
+      "finishedAtUtc": "2026-10-30T10:13:22.817975+00:00"
+    },
+    {
+      "check": "node_fake",
+      "exitCode": 0,
+      "startedAtUtc": "2026-10-30T10:13:22.824964+00:00",
+      "finishedAtUtc": "2026-10-30T10:13:23.211800+00:00"
+    },
+    {
+      "check": "python_fake",
+      "exitCode": 0,
+      "startedAtUtc": "2026-10-30T10:13:23.218496+00:00",
+      "finishedAtUtc": "2026-10-30T10:13:26.825084+00:00"
+    },
+    {
+      "check": "python_regression",
+      "exitCode": 0,
+      "startedAtUtc": "2026-10-30T10:13:26.832885+00:00",
+      "finishedAtUtc": "2026-10-30T10:13:28.746477+00:00"
+    },
+    {
+      "check": "unit",
+      "exitCode": 0,
+      "startedAtUtc": "2026-10-30T10:13:28.753188+00:00",
+      "finishedAtUtc": "2026-10-30T10:13:44.167821+00:00",
+      "numTotalTests": 1181,
+      "numPassedTests": 1181,
+      "numFailedTests": 0,
+      "numPendingTests": 0,
+      "success": true
+    },
+    {
+      "check": "domain_types",
+      "exitCode": 0,
+      "startedAtUtc": "2026-10-30T10:13:44.250097+00:00",
+      "finishedAtUtc": "2026-10-30T10:13:46.126826+00:00"
+    },
+    {
+      "check": "database_types",
+      "exitCode": 0,
+      "startedAtUtc": "2026-10-30T10:13:46.133880+00:00",
+      "finishedAtUtc": "2026-10-30T10:13:53.041576+00:00"
+    },
+    {
+      "check": "test_types",
+      "exitCode": 0,
+      "startedAtUtc": "2026-10-30T10:13:53.049895+00:00",
+      "finishedAtUtc": "2026-10-30T10:14:02.652492+00:00"
+    },
+    {
+      "check": "web_types",
+      "exitCode": 0,
+      "startedAtUtc": "2026-10-30T10:14:02.660041+00:00",
+      "finishedAtUtc": "2026-10-30T10:14:17.568299+00:00"
+    },
+    {
+      "check": "lint_all",
+      "exitCode": 0,
+      "startedAtUtc": "2026-10-30T10:14:17.573669+00:00",
+      "finishedAtUtc": "2026-10-30T10:14:28.942023+00:00"
+    },
+    {
+      "check": "format_all",
+      "exitCode": 0,
+      "startedAtUtc": "2026-10-30T10:14:28.949246+00:00",
+      "finishedAtUtc": "2026-10-30T10:14:49.679475+00:00"
+    },
+    {
+      "check": "diff_check",
+      "exitCode": 0,
+      "startedAtUtc": "2026-10-30T10:14:49.715829+00:00",
+      "finishedAtUtc": "2026-10-30T10:14:49.809875+00:00"
+    }
+  ],
+  "nodeFakeTests": 23,
+  "pythonFakeTests": 23,
+  "previousControllerRegressionTests": 12,
+  "independentRunnerAndScopeReview": "cleared",
+  "controllerReviewedByIntegrationOwner": true,
+  "scopeSha256": "bba46cdb225fc4b435f4630e4cf1a2602a4d9bda07336cbc880c4abe75465089",
+  "runtimeTargetCreated": false,
+  "approvalReceiptCreated": false,
+  "realPostgresExecuted": false,
+  "credentialsCreated": false,
+  "authProviderAccessed": false,
+  "registeredMigrationBytesChanged": false,
+  "originalFourDirtyFilesSha256Unchanged": true,
+  "studentNumberImplementation": "separate_global_identity_step",
+  "notRun": [
+    "Real invitation PostgreSQL schema/ACL/rollback/concurrency assertions",
+    "Real Auth invitation activation/enrollment",
+    "Browser invitation registration"
+  ],
+  "applicationBuild": "Not repeated for this harness/static-SQL-only slice; prior7ccd7b7 source build passed"
+}

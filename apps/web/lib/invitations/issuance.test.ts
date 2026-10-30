@@ -387,3 +387,24 @@ describe('canonical UUID receipt binding', () => {
     expect(unsafe.mock.calls[0]![1].slice(0, 3)).toEqual(Array(3).fill(alpha.toLowerCase()));
   });
 });
+
+describe('cohort admission serialization (static SQL assertion only)', () => {
+  it('takes the cohort UPDATE lock before enrollment can upgrade a shared lock', () => {
+    const sql = readFileSync(
+      new URL(
+        '../../../../packages/db/migration-drafts/0020_invitation_issuance.DRAFT.sql',
+        import.meta.url,
+      ),
+      'utf8',
+    );
+    const hook = sql.slice(
+      sql.indexOf('CREATE FUNCTION app.invitation_admission_current'),
+      sql.indexOf('COMMENT ON FUNCTION app.invitation_admission_current'),
+    );
+    expect(hook).toContain('FOR UPDATE OF c');
+    expect(hook).not.toContain('FOR SHARE OF c');
+    expect(hook.indexOf('FOR UPDATE OF c')).toBeLessThan(
+      hook.indexOf("u.active AND u.role='admin'"),
+    );
+  });
+});
