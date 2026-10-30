@@ -29,4 +29,6 @@ Full light-theme support, advanced assignment, exception administration and expa
 
 ## Current source verification
 
-The follow-up passed 1,634 tests across 88 files, full typecheck, repository lint, formatting, production build and diff checks. Independent review passed 205 focused tests, including the exact-byte and whitespace corpora. Four original unrelated dirty-file hashes remained unchanged. PostgreSQL syntax/parity/ACL/concurrency/atomicity and authenticated browser/evaluator/Runner/project integration were not executed by this slice.
+The typed-answer follow-up passed 1,634 tests across 88 files, full typecheck, repository lint, formatting, production build and diff checks. Independent review passed 205 focused tests, including the exact-byte and whitespace corpora. Four original unrelated dirty-file hashes remained unchanged. PostgreSQL syntax/parity/ACL/concurrency/atomicity and authenticated browser/evaluator/Runner/project integration were not executed by this slice.
+
+The later invitation guard milestone passed 1,661 tests across 89 files plus all source/static/build checks. This adds request-time guard and fake-port evidence; protected loading, real clients/cancellation, native authority/policy readers and a fresh broker are still absent. No real invitation-registration or native0021/0022 rehearsal was started.

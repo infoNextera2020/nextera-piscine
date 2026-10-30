@@ -6,10 +6,10 @@ import { getInvitationSignupPolicy } from '../../lib/invitations/signup-settings
 export const dynamic = 'force-dynamic';
 
 /** A fragment is consumed only after mount; server props contain reviewed public bounds only. */
-export default function SignupPage() {
+export default async function SignupPage() {
   return (
     <AuthSplitSurface>
-      <SignupInvitation policy={getInvitationSignupPolicy()} />
+      <SignupInvitation policy={await getInvitationSignupPolicy()} />
     </AuthSplitSurface>
   );
 }

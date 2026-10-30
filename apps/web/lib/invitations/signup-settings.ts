@@ -33,10 +33,10 @@ export function parseInvitationSignupPolicy(value: unknown): InvitationSignupPub
     return null;
   }
 }
-/** Server call site only. Reads one explicit public-policy value, never dotenv or provider secrets.
- * A future reviewed runtime assembly must bind these bounds to its activation transport policy.
- * Missing/incomplete policy leaves the actual signup path unavailable; nothing is enabled here.
- */
-export function getInvitationSignupPolicy(): InvitationSignupPublicPolicy | null {
-  return parseInvitationSignupPolicy(process.env.NEXTERA_INVITATION_BROWSER_POLICY);
+/** Request-time public projection from the same protected server configuration.
+ * Independent environment JSON cannot enable signup. The parser above remains
+ * a pure whitelist utility, never an activation switch. */
+export async function getInvitationSignupPolicy(): Promise<InvitationSignupPublicPolicy | null> {
+  const { getInvitationSignupPublicPolicy } = await import('./runtime-configuration');
+  return getInvitationSignupPublicPolicy();
 }

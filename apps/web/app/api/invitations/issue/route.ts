@@ -1,5 +1,12 @@
 import { createInvitationIssuanceAssembly } from '../../../../lib/invitations/issuance-assembly';
+import { getInvitationIssuanceSettings } from '../../../../lib/invitations/runtime-configuration';
 
 export const runtime = 'nodejs';
-// Prepared only: no private issuer credentials, policy or owner resolver is configured here.
-export const POST = createInvitationIssuanceAssembly(null).POST;
+export async function POST(request: Request) {
+  const acquired = await getInvitationIssuanceSettings(request);
+  try {
+    return await createInvitationIssuanceAssembly(acquired?.settings ?? null).POST(request);
+  } finally {
+    await acquired?.close();
+  }
+}

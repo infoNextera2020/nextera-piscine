@@ -4,6 +4,7 @@ import { invitationOwnershipProof } from './managed-auth';
 import type { ActivationScope } from './activation';
 import { POST as productionPOST } from '../../app/api/invitations/activate/route';
 import { POST as productionInspect } from '../../app/api/invitations/inspect/route';
+vi.mock('server-only', () => ({}));
 const id = '10000000-0000-4000-8000-000000000001',
   requestId = '20000000-0000-4000-8000-000000000001';
 const caller = 'a'.repeat(64);

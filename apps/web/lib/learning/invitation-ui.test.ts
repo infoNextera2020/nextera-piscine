@@ -1,6 +1,8 @@
 import { createElement } from 'react';
 import { renderToStaticMarkup } from 'react-dom/server';
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, vi } from 'vitest';
+// Unit-host server component rendering only; production retains its server-only boundary.
+vi.mock('server-only', () => ({}));
 import { invitationCopy, validateInvitationFields } from './invitation-ui';
 import { InvitationSignup } from '../../components/learning/invitation-signup';
 import SignupPage from '../../app/signup/page';
@@ -19,8 +21,8 @@ describe('invitation-only presentation', () => {
       expect(html).toContain('href="/login"');
     },
   );
-  it('does not derive a valid invitation from production URL state', () => {
-    const html = renderToStaticMarkup(createElement(SignupPage));
+  it('does not derive a valid invitation from production URL state', async () => {
+    const html = renderToStaticMarkup(await SignupPage());
     expect(html).toContain('Open your invitation');
     expect(html).not.toContain('<form');
     expect(html).not.toContain('learner@example.com');

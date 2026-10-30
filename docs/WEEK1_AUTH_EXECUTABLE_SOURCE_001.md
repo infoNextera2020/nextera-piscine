@@ -1,6 +1,6 @@
 # Week 1 invitation/Auth executable-source assessment — 30 October 2026
 
-Status: SOURCE-ONLY BLOCKED. This concrete profile and source handoff is not an executable broker, runtime approval, credential manifest or readiness receipt. No runtime directory, database, service, account, session, invitation, token, email or provider configuration was created or contacted. All historical approvals/profiles remain closed.
+Status: SOURCE-ONLY; initial assessment below is supplemented by the implemented milestone at the end. This concrete profile and source handoff is not an executable broker, runtime approval, credential manifest or readiness receipt. No runtime directory, database, service, account, session, invitation, token, email or provider configuration was created or contacted. All historical approvals/profiles remain closed.
 
 The smallest honest flow is authenticated manual issue API → private link → browser inspect/activation → explicit ordinary login → Checkpoint bootstrap/save/reload/CAS conflict → access revocation. Learners must be created and enrolled by invitation activation. The old broker's direct createUser/app.users/enrollLearner path cannot qualify.
 
@@ -101,3 +101,19 @@ Global sign-out does not invalidate all existing access JWTs immediately. Separa
 Read the named preparation/rehearsal/live/runtime/migration sources and invitation factory/route/provider/admission policy contracts. Inspected Git changed-path metadata solely to avoid overlap. Ran one pure in-memory envelope calculation with installed pinned Node 24.19.0: metadataBytes 138, worstEscapedEnvelopeBytes 1290, proposedMaxBodyBytes 4096.
 
 No SQL connection/execution or DB/Auth/HTTP/browser integration test ran. No runtime path was inspected/changed. This delegated slice owns only this new document; controllers/routes, original dirty assets, other agents' source and closed guards are preserved. Parent can now review exact proposed values and coordinate the missing concrete bindings without mislabeling an injected test as runtime readiness.
+
+## Implemented bounded source milestone (later 30 October)
+
+New runtime-configuration-core.ts provides dependency-injected protected snapshot validation, independently anchored immutable lease/source bindings, per-request and per-operation cutoff/revocation checks, exact profile/client role checks, native readiness calls, explicit policy/envelope coherence, fresh request identity lookup and client disposal. New server-only runtime-configuration.ts deliberately supplies null native dependencies. The three invitation routes now acquire/close settings per request; signup derives only the same getter's public whitelist, and independent environment JSON no longer enables signup.
+
+This supersedes earlier statements that this slice changed only the note or left those route call sites untouched. It does not implement native runtime wiring: descriptor-based protected loader, independent trusted review/guard anchors, actual bound and budgeted SQL/provider/cookie clients, persistent issuer/ingress limiters, narrow native private-policy reader and fresh migration/account/session cleanup broker remain absent. Restricted activation receives no private-table SELECT grant. Provider conformance remains a future runtime assertion.
+
+Focused tests use fake snapshots/process facts/native client rows only. No live configuration values, credentials, filesystem loader, SQL/Auth connection, process/service/account or token issuance is used by these tests. No end-to-end readiness or executable approval proposal is claimed.
+
+Independent review fixes preserve authentic owner approval fractions to microseconds with bigint admission comparisons; every native/provider/limiter/capability operation now requires a fresh remaining budget and the original absolute wall/monotonic cutoffs, with an after-call guard. The required native cancellation/abort implementation remains unbound. A sent mutation may have committed: a late reply becomes unknown/recovery_required and must be reconciled by the future owned broker, not relabeled as a known no-account failure.
+
+The required narrow native reader also binds exact issuer/cohort/curriculum version/login/lifetime; activation ledger replies are constrained to the reviewed synthetic learner/name/cohort scope. No private-table SELECT or role grant is added. Focused source evidence after review: all 270 invitation source tests pass, including 27 new core fake tests; scoped ESLint and apps/web no-emit TypeScript pass. No native runtime evidence is claimed.
+
+## Aggregate source verification
+
+The full source suite passed 1,661 tests across 89 files. Full typecheck, repository lint, formatting, production build and diff checks passed. An older presentation test was updated to await the async server signup page and use a unit-only server-component marker mock; production server-only protection remains intact. Independent review passed 67 affected fake tests. All four unrelated original dirty-file hashes were preserved. No native database, Auth provider, browser activation, real client, credential or service verification occurred.

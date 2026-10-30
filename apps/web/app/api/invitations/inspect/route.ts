@@ -1,4 +1,12 @@
 import { createInvitationAssembly } from '../../../../lib/invitations/assembly';
+import { getInvitationActivationSettings } from '../../../../lib/invitations/runtime-configuration';
+
 export const runtime = 'nodejs';
-/** Disabled until reviewed real clients and explicit admission/transport policies exist. */
-export const POST = createInvitationAssembly(null).INSPECT;
+export async function POST(request: Request) {
+  const acquired = await getInvitationActivationSettings(request);
+  try {
+    return await createInvitationAssembly(acquired?.settings ?? null).INSPECT(request);
+  } finally {
+    await acquired?.close();
+  }
+}

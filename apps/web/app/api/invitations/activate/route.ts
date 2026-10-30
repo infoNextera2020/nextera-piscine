@@ -1,6 +1,12 @@
 import { createInvitationAssembly } from '../../../../lib/invitations/assembly';
+import { getInvitationActivationSettings } from '../../../../lib/invitations/runtime-configuration';
 
 export const runtime = 'nodejs';
-// Reviewed source boundary only. No environment/client/credentials/default policy is instantiated.
-// Explicit admission, provider, storage, transport and policy setup remain separate gates.
-export const POST = createInvitationAssembly(null).POST;
+export async function POST(request: Request) {
+  const acquired = await getInvitationActivationSettings(request);
+  try {
+    return await createInvitationAssembly(acquired?.settings ?? null).POST(request);
+  } finally {
+    await acquired?.close();
+  }
+}

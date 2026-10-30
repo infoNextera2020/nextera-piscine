@@ -1,5 +1,6 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { getInvitationSignupPolicy, parseInvitationSignupPolicy } from './signup-settings';
+vi.mock('server-only', () => ({}));
 const policy = { enabled: true, timeoutMs: 500, maxResponseBytes: 4096, maxPasswordBytes: 512 };
 afterEach(() => vi.unstubAllEnvs());
 describe('explicit invitation signup public policy', () => {
@@ -37,11 +38,11 @@ describe('explicit invitation signup public policy', () => {
   ])('rejects incomplete, excessive or authority-bearing policy %j', (extra) => {
     expect(parseInvitationSignupPolicy(JSON.stringify({ ...policy, ...extra }))).toBeNull();
   });
-  it('does not borrow unrelated public or provider configuration', () => {
+  it('does not enable signup from independent environment JSON', async () => {
     vi.stubEnv('NEXTERA_INVITATION_BROWSER_POLICY', undefined);
     vi.stubEnv('NEXT_PUBLIC_SUPABASE_URL', 'https://synthetic.invalid');
-    expect(getInvitationSignupPolicy()).toBeNull();
+    expect(await getInvitationSignupPolicy()).toBeNull();
     vi.stubEnv('NEXTERA_INVITATION_BROWSER_POLICY', JSON.stringify(policy));
-    expect(getInvitationSignupPolicy()).toEqual(policy);
+    expect(await getInvitationSignupPolicy()).toBeNull();
   });
 });
