@@ -1,17 +1,12 @@
 export type HomeMotionConditions = Readonly<{
-  wide: boolean;
   reducedMotion: boolean;
   saveData: boolean;
   visible: boolean;
   inViewport: boolean;
 }>;
-/** Motion is optional; every gate must be positively satisfied before media sources mount. */
+/** Automatic looping requires positive visibility and accessibility/data eligibility. */
 export function homeMotionEligible(c: HomeMotionConditions) {
   return (
-    c.wide === true &&
-    c.reducedMotion === false &&
-    c.saveData === false &&
-    c.visible === true &&
-    c.inViewport === true
+    c.reducedMotion === false && c.saveData === false && c.visible === true && c.inViewport === true
   );
 }

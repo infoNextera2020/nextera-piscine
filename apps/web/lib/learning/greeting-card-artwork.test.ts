@@ -1,6 +1,5 @@
 import { createElement } from 'react';
 import { renderToStaticMarkup } from 'react-dom/server';
-import { runInNewContext } from 'node:vm';
 import { createHash } from 'node:crypto';
 import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
@@ -34,62 +33,6 @@ const props = {
 };
 
 describe('Supplied GreetingCard figure boundary', () => {
-  it('replaces the prior mounted SVG on visibility resets and never starts a tour', () => {
-    const bridge = [...read('figure.html').matchAll(/<script>([\s\S]*?)<\/script>/g)][1]![1]!;
-    let children = 0,
-      destroyed = 0,
-      mounted = 0;
-    const events: Record<string, () => void> = {};
-    const stage = {
-      replaceChildren: () => {
-        children = 0;
-      },
-    };
-    const window: {
-      hairline?: (definition: unknown) => void;
-      addEventListener: (name: string, callback: () => void) => void;
-    } = {
-      addEventListener: (name, callback) => {
-        events[name] = callback;
-      },
-    };
-    runInNewContext(bridge, {
-      window,
-      document: {
-        getElementById: () => stage,
-        addEventListener: (name: string, callback: () => void) => {
-          events[name] = callback;
-        },
-      },
-      HL: {
-        inject: () => {},
-        mk: () => {
-          children++;
-          return {};
-        },
-      },
-    });
-    window.hairline!({
-      range: [38, 62, 82],
-      mount: () => {
-        mounted++;
-        return {
-          destroy: () => {
-            destroyed++;
-          },
-        };
-      },
-    });
-    expect(children).toBe(1);
-    events.visibilitychange!();
-    events.visibilitychange!();
-    expect(children).toBe(1);
-    expect(mounted).toBe(3);
-    expect(destroyed).toBe(2);
-    events.pagehide!();
-    expect(destroyed).toBe(3);
-  });
-
   it('keeps the original figure bytes and the reviewed kernel, excluding bench execution', () => {
     const host = read('figure.html');
     const scripts = [...host.matchAll(/<script>([\s\S]*?)<\/script>/g)].map((match) => match[1]!);
@@ -99,7 +42,9 @@ describe('Supplied GreetingCard figure boundary', () => {
     );
     expect(scripts[2]).toBe(read('greeting-heart.js'));
     expect(createHash('sha256').update(scripts[0]!).digest('hex')).toBe(provenance.kernel_sha256);
-    expect(host).not.toMatch(/id="(hl-bench|intensity|play|name|read|means|rules)"|HL\.tour\(/);
+    expect(host).not.toMatch(/id="(hl-bench|intensity|play|name|read|means|rules)"/);
+    expect(host).toContain('HL.tour(stage, definition.tour)');
+    expect(host).toContain('#stage>svg{background:var(--hairline-plate,#000)}');
     expect(host).not.toMatch(/fetch\(|XMLHttpRequest|eval\(|localStorage|WebSocket/);
     expect(host).toContain("connect-src 'none'");
     for (const script of scripts)

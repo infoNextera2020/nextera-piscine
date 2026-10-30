@@ -1,0 +1,59 @@
+{
+  "source_tests_passed": 1189,
+  "full_checks": {
+    "typecheck": {
+      "exit_code": 0,
+      "seconds": 48.57
+    },
+    "tests": {
+      "exit_code": 0,
+      "seconds": 40.2
+    },
+    "build": {
+      "exit_code": 0,
+      "seconds": 79.77
+    },
+    "lint": {
+      "exit_code": 0,
+      "seconds": 38.98
+    },
+    "format": {
+      "exit_code": 0,
+      "seconds": 29.96
+    }
+  },
+  "final_regressions": {
+    "final-tests": {
+      "exit_code": 0,
+      "seconds": 32.78
+    },
+    "final-test-types": {
+      "exit_code": 0,
+      "seconds": 19.62
+    },
+    "final-lint": {
+      "exit_code": 0,
+      "seconds": 4.66
+    },
+    "final-format": {
+      "exit_code": 0,
+      "seconds": 0.89
+    }
+  },
+  "geometry_and_kernel_unchanged": true,
+  "originals_sha256_verified": {
+    "apps/web/public/ASSETS.md": "feca5ebec9df9b3842afadb1c0a6442e24b38ad479c9445e1f1d26f2cd9a3cf9",
+    "apps/web/components/learning/home-next-action.module.css": "4eaa849950b223af5c220b8330ca6e3f732c865e907a66a454798dff22916d87",
+    "apps/web/public/piscine/official-logo.svg": "0fde8181d16ceb17ac55e6d52e8cab523c3f75976a9aaa81b8695942c7336e54",
+    "docs/RELEASE_CANDIDATE_001_REPORT.md": "95e04b9accaf10d922e5acac157d8d5d7ae33ef17284ccef042558fa0fbca2fd"
+  },
+  "browser_status": "stopped by CUA URL-confidence policy; no retry/bypass",
+  "actual_browser_motion_verified": false,
+  "background_seam_browser_verified": false,
+  "existing_preview_listener": "State  Recv-Q Send-Q Local Address:Port Peer Address:PortProcess\nLISTEN 0      511        127.0.0.1:3118      0.0.0.0:*    users:((\"MainThread\",pid=90255,fd=22))",
+  "auth_status": "read-only inspection checkpoint; no Auth source/config/runtime changed in this priority fix",
+  "http_status": {
+    "/app?fixture=week1-review": 200,
+    "/piscine/hairline/greeting-card/figure.html": 200
+  }
+}

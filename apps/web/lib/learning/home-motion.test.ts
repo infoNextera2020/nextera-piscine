@@ -6,15 +6,14 @@ import {
   homeMotionEligible,
   type HomeMotionConditions,
 } from '../../components/learning/home-motion-policy';
-describe('Approved Home motion is poster-first and optional', () => {
+describe('Approved Home motion automatically loops after eligibility', () => {
   const allowed: HomeMotionConditions = {
-    wide: true,
     reducedMotion: false,
     saveData: false,
     visible: true,
     inViewport: true,
   };
-  it('has no video element or source URL before browser eligibility and user intent', () => {
+  it('has no video element or source URL before verified browser eligibility', () => {
     const html = renderToStaticMarkup(createElement(HomeMotionArtwork));
     expect(html).not.toContain('<video');
     expect(html).not.toContain('.webm');
@@ -26,10 +25,9 @@ describe('Approved Home motion is poster-first and optional', () => {
     expect(html).toContain('Static artwork');
     expect(html).toContain('disabled=""');
   });
-  it('permits motion only when all five conditions allow it', () => {
+  it('permits motion only when all four conditions allow it', () => {
     expect(homeMotionEligible(allowed)).toBe(true);
     for (const condition of [
-      { wide: false },
       { reducedMotion: true },
       { saveData: true },
       { visible: false },
@@ -39,7 +37,6 @@ describe('Approved Home motion is poster-first and optional', () => {
   });
   it('does not treat unknown/coerced browser conditions as permission', () => {
     for (const condition of [
-      { wide: 'true' },
       { reducedMotion: undefined },
       { saveData: undefined },
       { visible: 1 },

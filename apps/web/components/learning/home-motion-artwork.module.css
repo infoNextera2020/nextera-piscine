@@ -5,6 +5,28 @@
   aspect-ratio: 10 / 11;
   min-width: 0;
 }
+.frame {
+  container-type: size;
+  display: grid;
+  place-items: center;
+  background: transparent;
+}
+.canvas {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  width: min(100cqw, calc(100cqh * 10 / 11));
+  height: min(100cqh, calc(100cqw * 11 / 10));
+  /* Background margins only. The stationary base stays within the opaque centre. */
+  -webkit-mask-image:
+    linear-gradient(90deg, transparent, #000 3%, #000 97%, transparent),
+    linear-gradient(180deg, transparent, #000 8%, #000 94%, transparent);
+  mask-image:
+    linear-gradient(90deg, transparent, #000 3%, #000 97%, transparent),
+    linear-gradient(180deg, transparent, #000 8%, #000 94%, transparent);
+  -webkit-mask-composite: source-in;
+  mask-composite: intersect;
+}
 .poster,
 .image {
   display: block;

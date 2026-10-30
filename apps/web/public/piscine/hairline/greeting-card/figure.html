@@ -1,4 +1,4 @@
-<!doctype html><html lang="en" data-theme="dark"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'sha256-P4336j5TVM5eUPL9ubwwx/sMRZeY8ErTo8MpCGPTcxY=' 'sha256-tfZGiNEDQvsv4Lp0GayUODLdlRvXEn9r8ctNEPYmJPM=' 'sha256-v+/W7vjQMYa33dnHhorP6x/5mVZHJCMXuiQcX5/GnC8='; style-src 'unsafe-inline'; base-uri 'none'; form-action 'none'; connect-src 'none'"><title>Decorative greeting card</title><style>html,body{margin:0;width:100%;height:100%;overflow:hidden;background:transparent}#stage{width:100%;height:100%;aspect-ratio:5/4;pointer-events:auto}/* Public Hairline host tokens. No geometry, stroke-width or fill overrides. */
+<!doctype html><html lang="en" data-theme="dark"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'sha256-P4336j5TVM5eUPL9ubwwx/sMRZeY8ErTo8MpCGPTcxY=' 'sha256-x9Ln/7fBWwbuTPXuz7sDMGepelYM5uD64qv+zxKxBDU=' 'sha256-v+/W7vjQMYa33dnHhorP6x/5mVZHJCMXuiQcX5/GnC8='; style-src 'unsafe-inline'; base-uri 'none'; form-action 'none'; connect-src 'none'"><title>Decorative greeting card</title><style>html,body{margin:0;width:100%;height:100%;overflow:hidden;background:transparent}#stage{width:100%;height:100%;aspect-ratio:5/4;pointer-events:auto}@media(prefers-reduced-motion:reduce){#stage{pointer-events:none}}#stage>svg{background:var(--hairline-plate,#000)}/* Public Hairline host tokens. No geometry, stroke-width or fill overrides. */
 :root[data-theme="dark"] {
   --ground: #000000;
   --hairline-plate: #000000;
@@ -734,22 +734,25 @@ var HL = (() => {
 /* /hairline kernel */
 </script><script>
 const stage = document.getElementById('stage');
-let definition, handle;
-window.hairline = (figure) => {
-  definition = figure;
-  HL.inject(document);
-  mount();
-};
-function mount() {
-  handle?.destroy();
+const reduced = matchMedia('(prefers-reduced-motion: reduce)');
+let definition, handle, automatic;
+function clear() {
+  automatic?.stop(); automatic = null;
+  handle?.destroy(); handle = null;
   stage.replaceChildren();
+}
+window.hairline = (figure) => { definition = figure; HL.inject(document); reset(); };
+function reset() {
+  clear();
+  if (!definition || document.visibilityState !== 'visible') return;
   const svg = HL.mk('svg', {viewBox:'0 0 400 320', 'aria-hidden':'true'}, stage);
   handle = definition.mount({stage, svg, read:{textContent:''}}, definition.range[1]);
+  // Supplied tour yields to a real pointer, then resumes when it leaves.
+  if (!reduced.matches) automatic = HL.tour(stage, definition.tour);
 }
-function reset() { if (definition) mount(); }
-// No preview controls, tour, autoplay, status labels or application state.
 document.addEventListener('visibilitychange', reset);
-window.addEventListener('pagehide', () => handle?.destroy());
+reduced.addEventListener('change', reset);
+window.addEventListener('pagehide', clear);
 </script><script>/** A folded paper heart, carried by the opening of a rounded greeting card. */
 const {
   Cam, clamp, disposer, facing, fillet, fit, hull, mk, open, pointer, poly, prism,

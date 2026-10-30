@@ -1,8 +1,7 @@
 .figure {
   position: relative;
   width: min(100%, 260px);
-  aspect-ratio: 5 / 4;
-  background: #000;
+  background: var(--focus-bg, #000);
   isolation: isolate;
 }
 .rest,
@@ -20,4 +19,29 @@
   .interactive {
     display: none;
   }
+}
+
+.canvas {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 5 / 4;
+}
+.control {
+  position: relative;
+  display: block;
+  margin: 8px 0 0 auto;
+  min-height: 32px;
+  padding: 4px 8px;
+  border: 1px solid var(--focus-line, #282828);
+  background: var(--focus-bg, #000);
+  color: var(--focus-muted, #bdbdbd);
+  font: 10px/1.4 var(--workspace-font, sans-serif);
+  cursor: pointer;
+}
+.control:focus-visible {
+  outline: 2px solid var(--focus-accent, #50dfad);
+  outline-offset: 3px;
+}
+.control:disabled {
+  cursor: default;
 }

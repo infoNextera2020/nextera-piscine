@@ -1,5 +1,7 @@
 # Actual Home and GreetingCard visual review — 30 October 2026
 
+Historical no-autoplay snapshot: the owner subsequently approved automatic looping. See verification/artwork-motion-20261030 for the source correction and current verification limits. The original observations below are retained unchanged.
+
 This is an application-component fixture, not a live learner trial. No Auth, database, Runner, publication or progress changes were enabled.
 
 ## Implemented
