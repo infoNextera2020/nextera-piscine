@@ -10,3 +10,5 @@ export * from './quest-release-review.ts';
 export * from './checkpoint-view';
 
 export * from './piscine-pilot-policy';
+
+export * from './exam-scoring';

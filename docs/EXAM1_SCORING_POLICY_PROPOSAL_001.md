@@ -1,6 +1,6 @@
 # Exam1 scoring details — bounded owner proposal
 
-Status: recommendation only. No scoring, retry, role or runtime configuration is activated by this document. Do not use the separate mentor DSA rubric.
+Status: categories and Sunday submission/review/attempt rules approved on 30 October; see the owner-decision section below. Exact per-item semantic weights and output comparator remain unconfigured proposals. This document activates no runtime or role. Do not use the separate mentor DSA rubric.
 
 ## Already approved
 
@@ -8,7 +8,7 @@ Duration 180 minutes; five coding questions worth 15 each, two trace questions w
 
 Historical confirmation: owner Sentinel_aca60fa875708191811a326710929e80 accepted the partial-credit proposal with duration changed to 3 hours; Sentinel_78871a1ed7a88191a192fea8c9a69096 accepted edits followed by another Submit. The content baseline still has `fine_partial_credit_rubric:null` and `retry_policy:null` in `content/source-baselines/exam1-go-v3/assessment-policy-approved.json`: these are missing details, not a reversal of those approvals.
 
-## Recommended formulas — require owner decision
+## Approved categories; proposed per-item weights
 
 Use 13 functional plus 2 announced contract/method points per coding question. Each semantic group has fixed integer weight; duplicating raw test cases never changes its value.
 
@@ -28,7 +28,7 @@ For debugging, propose 9 repair plus 4 counterexample plus 2 explanation. Repair
 
 Propose the existing cohort's designated exam mentor for manual reasoning, counterexample, explanation and method assessment, recording exact submission, rubric revision, points and evidence. Another existing mentor handles disputes or threshold-changing judgement. This is a proposed responsibility, not a grant or an implemented exam-review UI.
 
-## Which submission and retakes — require owner decision
+## Submission and trial rules — proposal history, now approved below
 
 Recommend the best WHOLE finalized submission per question within the same 180-minute attempt, latest accepted submission on equal-score ties. Never combine fields or groups across snapshots. Accepted submissions may finish grading after the server deadline. Pending results remain provisional; infrastructure errors do not become zero or replace valid results, and reconciliation reuses the immutable submission without a new learner opportunity.
 
@@ -45,3 +45,13 @@ Native typed intake/outbox, evaluator delivery, terminal result/allowance reconc
 All 24 required coding/debug model functions across A–D compiled and passed their original selected tests as import-free subsets on Windows/amd64 Go 1.26.2 with downloads disabled. A/B/D each passed six top-level tests; C passed six with 25 successful events including subtests. Original function bodies needed no substitutions or helper dependencies. Private test imports and trace-model helpers were excluded from the learner-source subset. This is trusted reference compilation, not ABI3/Runner or adversarial security proof. B standalone student wording was absent from the inspected staging, so only its private criteria/model compatibility is attested there.
 
 Helpers, local variables/constants/types, loops, branches, pointers and slices can remain allowed. The proposed security profile would reject all imports, compiler/build/link/line directives, init functions, package variables and goroutines across every submitted source file before compile; enforce one exact original learner file plus only hash-bound trusted staging files, and bind the exact typed function signature. No archive/path or v1/v2 policy relaxation is proposed. Existing student wording permits the standard library, so this narrows accepted implementations and requires explicit owner approval/announcement despite all models fitting. The staged ABI patch remains unapplied.
+
+## Owner decision received — 30 October 2026
+
+The owner approved the presented categories and trial rules in message Sentinel_4f3e232daf84819194826b1721e16d1b (21:19:52 UTC): coding 13 functional + 2 published contract/method; trace 3 output + 2 reason; debugging 9 repair + 4 counterexample + 2 explanation; assigned exam mentor review with independent second review for disputes/verdict-changing judgements; best whole finalized submission with newest accepted tie; one Sunday attempt with same-attempt resubmission and no automatic retake. Runtime faults remain unresolved infrastructure results, never automatic zero. The original table of exact semantic group weights above and newline comparator are still proposals, not implicitly frozen runtime configuration.
+
+The learner can finish the exam and submit each question without waiting for a mentor. Manual completion or time expiry closes intake independently of review. Expiry never turns an unsent draft into an official submission. The final result remains provisional until required review/adjudication completes.
+
+The separate restricted-function profile and local ABI source/tests/security review were approved in Sentinel_f1b3c2267ea4819197049193d0c8a7b8 (21:20:41 UTC). Existing unqualified statements above that the decision is pending are retained as proposal history. They do not describe the latest owner decision. Source and native execution evidence must still be recorded separately.
+
+The pure scoring module requires a frozen form/question/rubric binding and positive case-group weights before it can score functional outcomes. It does not choose the remaining weights, seed a rubric, grant reviewer authority, publish content or enable grading. Approved responsibilities do not give any client a self-asserted reviewer role.
