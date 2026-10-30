@@ -8,7 +8,7 @@ The actual request-time `/signup` page mounts the invitation client. A valid pri
 
 The public browser policy is absent by default. Its exact whitelist contains only enabled/timeout/response/password byte bounds. No provider secret is passed into a client component. Production issue/inspect/activate routes still use disabled assembly until an approved instance supplies actual server clients and policy.
 
-The mixed Exam 1 input UI is prepared for the approved five coding, two trace/reason and one debugging response in the existing workspace. Versioned typed snapshots preserve exact text and question scope. Existing source-only endpoints cannot persist or officially submit structured responses; the UI reports that limitation and never converts them into source submissions. No scoring, retry, curriculum publication or policy activation is inferred from this UI.
+The mixed Exam 1 input UI is prepared for the approved five coding, two trace/reason and one debugging response in the existing workspace. Versioned typed snapshots preserve exact text and question scope. Separate typed-answer draft and official acceptance endpoints now have source-only assembly and injected tests. Their production dependencies remain null, so they cannot persist or officially submit structured responses; the UI still reports that limitation and never converts them into source submissions. No scoring, retry, curriculum publication or policy activation is inferred from this UI.
 
 ## Minimum coherent next runtime slice
 
@@ -48,6 +48,14 @@ The smallest real grading rehearsal is one reviewed legacy v1 challenge through 
 
 The approved all-flow Sunday target additionally needs real structured Exam 1 persistence/submission/scoring, project submission and exact-revision assigned mentor review, then a joined learner/mentor rehearsal. One successful source or fixture slice does not close those gates.
 
-## Blocked source review
+## Resolved source-read restriction
 
-Automatic approval review rejected a read-only index of `scripts/local-judge.ts`, `scripts/local-judge-fixture.ts`, `scripts/test-local-judge.ts`, `scripts/checkpoint-migration-postgres.mjs`, `scripts/checkpoint-migration-context.mjs`, `scripts/checkpoint-prerequisite-manifest.mjs` and `scripts/checkpoint-prerequisite-repair.mjs`. Its reason was an earlier first-audit restriction against Judge/database work. The operation did not execute, was not retried and was not accessed by an alternate route. Completing that deeper binding review needs authorization addressing this exact restriction. This source-read blocker is separate from any future permission to run databases, workers, credentials or accounts.
+The earlier read-only index denial covered seven named Judge and migration scripts. After the owner explicitly approved those reads in message `Sentinel_b75b23b7b60c8191babb5d4be69af5f9` at `2026-10-30T16:40:25.192948+00:00`, the exact denied operation was retried once and completed. This resolves the source-read restriction only. No runtime or data permission was inferred.
+
+The resulting review confirms that the existing prerequisite repair is bound to its historical database/DBA/actor. Preserve that closed scope and add a separately bound fresh instance. The parameterized PostgreSQL guard requires a verified actual superuser bootstrap owner, actor-only guard ACL, same-connection transactions and acknowledged prior-graph restoration; a provider role name alone proves none of these. The old broker's direct SQL loop is not the reviewed adapter.
+
+The local Judge tools discover ambient instance credentials, lack the new immutable-deadline bindings, and use an Auth stub or broad inherited environment in their fixture paths. They cannot be invoked unchanged as the genuine invitation rehearsal. The Runner needs a fresh owned-scope startup/cleanup mode, private worker bindings, a reviewed eligible v1 pack and result reconciliation evidence. ABI2 and multi-file ATM packaging remain separate.
+
+## Typed-answer source boundary
+
+See `CHECKPOINT_STRUCTURED_ANSWER_PREPARATION_001.md` for the new source contract, injected tests and unregistered DRAFT0021. The draft is not natively verified: escaped NUL is rejected by its proposed PostgreSQL jsonb validator, and SQL/JavaScript canonical escape parity is unproven. A concrete typed official acceptance/outbox adapter and reviewed structured evaluator are still absent. No new executable live-test scope or runtime approval is ready from these sources alone.
