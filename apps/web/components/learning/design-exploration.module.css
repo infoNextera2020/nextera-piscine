@@ -1,0 +1,511 @@
+/* Reversible comparison. No production route imports this surface by default. */
+.surface[data-design-exploration='calm'] {
+  --ease-out: cubic-bezier(0.23, 1, 0.32, 1);
+  --workspace-bg: #000;
+  --workspace-panel: #080c0a;
+  --workspace-text: #f3f7f4;
+  --workspace-muted: #b7c3bb;
+  --workspace-border: #28342d;
+  --workspace-accent: #62e7b1;
+  --workspace-ink: #032017;
+  min-width: 0;
+  min-height: 100svh;
+  background: #000;
+  color: #f3f7f4;
+  color-scheme: dark;
+  font-optical-sizing: auto;
+}
+.surface[data-design-exploration='calm'] :where(button, summary) {
+  min-height: 44px;
+}
+.surface[data-design-exploration='calm'] :where(a, button, summary):focus-visible {
+  outline: 2px solid #62e7b1;
+  outline-offset: 5px;
+  transition: none;
+}
+.surface[data-design-exploration='calm'][data-page='home']
+  :global([data-home-layout='focus-review']) {
+  max-width: 1280px;
+  padding: 3rem 3.5rem 4rem;
+}
+.surface[data-design-exploration='calm'][data-page='home'] :global([data-home-layout]) > header {
+  padding-bottom: 2.25rem;
+}
+.surface[data-design-exploration='calm'][data-page='home']
+  :global([data-home-layout])
+  > header
+  > p:first-child {
+  padding: 0;
+  margin: 0 0 0.75rem;
+  border: 0;
+  color: #9eada3;
+  letter-spacing: 0.13em;
+}
+.surface[data-design-exploration='calm'][data-page='home'] :global([data-home-layout]) > header h1 {
+  max-width: 100%;
+  margin-bottom: 0.75rem;
+  font-size: clamp(2rem, 3.2vw, 3rem);
+  font-weight: 500;
+  line-height: 1.12;
+  letter-spacing: -0.045em;
+}
+.surface[data-design-exploration='calm'][data-page='home']
+  :global([data-home-layout])
+  > header
+  h1
+  > span {
+  color: inherit;
+}
+.surface[data-design-exploration='calm'][data-page='home']
+  :global([data-home-layout])
+  > header
+  > p:last-child {
+  max-width: 45ch;
+  font-size: 0.9375rem;
+  line-height: 1.75;
+  color: #b7c3bb;
+}
+.surface[data-design-exploration='calm'][data-page='home'] :global([data-home-layout]) > div {
+  grid-template-columns: minmax(0, 1.35fr) minmax(280px, 1fr);
+  gap: 3rem;
+}
+.surface[data-design-exploration='calm'][data-page='home'] :global([data-home-next]) {
+  min-height: 28rem;
+  padding: 2.25rem;
+  border: 1px solid #28342d;
+  border-radius: 1.25rem;
+  background: #080c0a;
+}
+.surface[data-design-exploration='calm'][data-page='home']
+  :global([data-home-next])
+  > div:first-child {
+  margin-bottom: 2.25rem;
+  align-items: center;
+}
+.surface[data-design-exploration='calm'][data-page='home']
+  :global([data-home-next])
+  > div:first-child
+  > span {
+  border-radius: 999px;
+  padding-inline: 0.75rem;
+}
+.surface[data-design-exploration='calm'][data-page='home'] :global([data-home-next]) h2 {
+  font-size: clamp(2rem, 3.7vw, 3.5rem);
+  font-weight: 600;
+  letter-spacing: -0.055em;
+  line-height: 1.1;
+}
+.surface[data-design-exploration='calm'][data-page='home'] :global([data-home-next]) h2 + p {
+  margin-top: 0.875rem;
+  font-size: 1rem;
+  color: #c9d4cd;
+}
+.surface[data-design-exploration='calm'][data-page='home'] :global([data-home-next]) h2 + p + p {
+  margin-top: 1.5rem;
+  font-size: 0.9375rem;
+  line-height: 1.8;
+  max-width: 46ch;
+}
+.surface[data-design-exploration='calm'][data-page='home'] :global([data-home-next]) > p {
+  margin: 1.75rem 0;
+  padding-top: 1.25rem;
+  color: #b7c3bb;
+  font-size: 0.75rem;
+}
+.surface[data-design-exploration='calm'][data-page='home']
+  :global([data-home-next])
+  > div:last-child {
+  position: static;
+  padding: 0;
+  border: 0;
+  background: transparent;
+}
+.surface[data-design-exploration='calm'][data-page='home']
+  :global([data-home-next])
+  > div:last-child
+  > a {
+  min-height: 52px;
+  width: min(100%, 19rem);
+  border-radius: 999px;
+  padding: 0.875rem 1.25rem;
+  background: #62e7b1;
+  color: #032017;
+  font-size: 0.875rem;
+  filter: none;
+}
+.surface[data-design-exploration='calm'][data-page='home'] :global([data-home-artwork]) {
+  height: 340px;
+  margin-top: -9rem;
+  margin-bottom: 1.5rem;
+}
+.surface[data-design-exploration='calm'][data-page='home'] :global([data-home-latest]) {
+  padding: 1.5rem 0 0;
+  border: 0;
+  border-top: 1px solid #28342d;
+  border-radius: 0;
+  background: transparent;
+}
+.surface[data-design-exploration='calm'][data-page='home'] :global([data-home-latest]) h3 {
+  font-size: 1.375rem;
+  line-height: 1.4;
+  font-weight: 500;
+  letter-spacing: -0.025em;
+}
+.surface[data-design-exploration='calm'][data-page='home'] :global([data-home-latest]) p {
+  font-size: 0.8125rem;
+  max-width: 40ch;
+}
+.surface[data-design-exploration='calm'][data-page='home'] :global([data-home-milestone]) {
+  margin-top: 2.5rem;
+  padding: 1.5rem 1.75rem;
+  border: 1px solid #28342d;
+  border-radius: 1.25rem;
+  background: #050806;
+}
+.surface[data-design-exploration='calm'][data-page='home'] :global([data-home-milestone]) > div {
+  margin-top: 1rem;
+}
+.surface[data-design-exploration='calm'][data-page='home'] :global([data-home-milestone]) h2 {
+  font-size: 1.25rem;
+  letter-spacing: -0.025em;
+}
+.surface[data-design-exploration='calm'][data-page='challenge']
+  :global([data-focused-challenge])
+  > div {
+  max-width: 1280px;
+  padding-inline: 4rem;
+}
+.surface[data-design-exploration='calm'][data-page='challenge']
+  :global([data-focused-challenge])
+  > div
+  > header {
+  border-color: #242a26;
+}
+.surface[data-design-exploration='calm'][data-page='challenge']
+  :global([data-focused-challenge])
+  main
+  > header {
+  margin: 0.5rem 0 2.5rem;
+  grid-template-columns: minmax(0, 1fr) 280px;
+  gap: 3rem;
+}
+.surface[data-design-exploration='calm'][data-page='challenge']
+  :global([data-focused-challenge])
+  h1 {
+  font-size: clamp(2.25rem, 4.2vw, 3.75rem);
+  line-height: 1.08;
+  letter-spacing: -0.055em;
+  font-weight: 600;
+}
+.surface[data-design-exploration='calm'][data-page='challenge']
+  :global([data-focused-challenge])
+  main
+  > header
+  > div
+  > p:last-child {
+  max-width: 42ch;
+  font-size: 1rem;
+  line-height: 1.75;
+  margin-top: 1.25rem;
+}
+.surface[data-design-exploration='calm'][data-page='challenge']
+  :global([data-greeting-card-artwork]) {
+  width: 100%;
+  max-width: 280px;
+}
+.surface[data-design-exploration='calm'][data-page='challenge']
+  :global([data-greeting-card-artwork])
+  button {
+  min-height: 44px;
+  padding-inline: 0.75rem;
+  border-radius: 999px;
+}
+.surface[data-design-exploration='calm'][data-page='challenge']
+  :global([data-focused-challenge])
+  main
+  > div:last-child {
+  grid-template-columns: minmax(0, 1fr) 250px;
+  gap: 3rem;
+}
+.surface[data-design-exploration='calm'][data-page='challenge']
+  :global(section[aria-labelledby='focused-task-label']) {
+  padding: 2rem;
+  border: 1px solid #242a26;
+  border-radius: 1.25rem;
+  background: #070907;
+}
+.surface[data-design-exploration='calm'][data-page='challenge']
+  :global(section[aria-labelledby='focused-task-label'])
+  > h2 {
+  margin-bottom: 1.5rem;
+  color: #aab7af;
+  letter-spacing: 0.12em;
+}
+.surface[data-design-exploration='calm'][data-page='challenge']
+  :global(section[aria-labelledby='focused-task-label'])
+  article {
+  max-width: 64ch;
+  font-size: 0.9375rem;
+  line-height: 1.85;
+}
+.surface[data-design-exploration='calm'][data-page='challenge']
+  :global(section[aria-labelledby='focused-task-label'])
+  article
+  > h2 {
+  font-size: 1.5rem;
+  line-height: 1.35;
+  letter-spacing: -0.025em;
+}
+.surface[data-design-exploration='calm'][data-page='challenge']
+  :global(section[aria-labelledby='focused-task-label'])
+  article
+  > p
+  + p {
+  margin-top: 1.5rem;
+}
+.surface[data-design-exploration='calm'][data-page='challenge']
+  :global(aside[aria-label='Challenge support']) {
+  position: sticky;
+  top: 2rem;
+  padding: 1.25rem 1.25rem 0.25rem;
+  border: 1px solid #242a26;
+  border-radius: 1rem;
+  background: #050705;
+}
+.surface[data-design-exploration='calm'][data-page='challenge']
+  :global(aside[aria-label='Challenge support'])
+  > p {
+  margin-bottom: 0.75rem;
+  color: #aab7af;
+}
+.surface[data-design-exploration='calm'][data-page='challenge']
+  :global(aside[aria-label='Challenge support'])
+  a {
+  min-height: 44px;
+  display: inline-flex;
+  align-items: center;
+}
+.surface[data-design-exploration='calm'][data-page='challenge']
+  :global([data-focused-challenge])
+  summary {
+  min-height: 56px;
+  font-size: 0.875rem;
+}
+.surface[data-design-exploration='calm'][data-page='challenge']
+  :global(section[aria-labelledby='focused-history-heading']) {
+  margin-top: 2rem;
+  padding-top: 1.75rem;
+}
+.surface[data-design-exploration='calm'][data-page='home']
+  :global([data-home-layout])
+  > header
+  > p:first-child,
+.surface[data-design-exploration='calm'][data-page='home']
+  :global([data-home-next])
+  > div:first-child
+  > p,
+.surface[data-design-exploration='calm'][data-page='home'] :global([data-home-latest]) > h2,
+.surface[data-design-exploration='calm'][data-page='home']
+  :global([data-home-milestone])
+  > p:first-child,
+.surface[data-design-exploration='calm'][data-page='challenge']
+  :global([data-focused-challenge])
+  main
+  > header
+  > div
+  > p:first-child,
+.surface[data-design-exploration='calm'][data-page='challenge']
+  :global([data-greeting-card-artwork])
+  button,
+.surface[data-design-exploration='calm'][data-page='challenge']
+  :global(section[aria-labelledby='focused-task-label'])
+  > h2,
+.surface[data-design-exploration='calm'][data-page='challenge']
+  :global(aside[aria-label='Challenge support'])
+  > p {
+  font-size: 0.6875rem;
+}
+@media (hover: hover) and (pointer: fine) {
+  .surface[data-design-exploration='calm'] :where(a[href], button:enabled) {
+    transition: transform 160ms var(--ease-out);
+  }
+  .surface[data-design-exploration='calm']
+    :where(a[href], button:enabled):active:not(:focus-visible) {
+    transform: scale(0.98);
+  }
+  .surface[data-design-exploration='calm'] :where(a, button):focus-visible {
+    transition: none;
+  }
+}
+@media (max-width: 72rem) {
+  .surface[data-design-exploration='calm'][data-page='home']
+    :global([data-home-layout='focus-review']) {
+    padding-inline: 2rem;
+  }
+  .surface[data-design-exploration='calm'][data-page='home'] :global([data-home-layout]) > div {
+    gap: 2rem;
+    grid-template-columns: minmax(0, 1.2fr) minmax(260px, 1fr);
+  }
+  .surface[data-design-exploration='calm'][data-page='home'] :global([data-home-next]) {
+    padding: 1.75rem;
+  }
+  .surface[data-design-exploration='calm'][data-page='challenge']
+    :global([data-focused-challenge])
+    > div {
+    padding-inline: 2rem;
+  }
+}
+@media (max-width: 60rem) {
+  .surface[data-design-exploration='calm'][data-page='home'] :global([data-home-layout]) > div {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 2rem;
+  }
+  .surface[data-design-exploration='calm'][data-page='home'] :global([data-home-next]) {
+    min-height: 0;
+  }
+  .surface[data-design-exploration='calm'][data-page='home'] :global([data-home-next]) h2 {
+    font-size: 2.5rem;
+  }
+  .surface[data-design-exploration='calm'][data-page='home'] :global([data-home-artwork]) {
+    margin: 0 auto 1.5rem;
+    height: 330px;
+  }
+  .surface[data-design-exploration='calm'][data-page='challenge']
+    :global([data-focused-challenge])
+    main
+    > div:last-child {
+    gap: 2rem;
+    grid-template-columns: minmax(0, 1fr) 220px;
+  }
+}
+@media (max-width: 50rem) {
+  .surface[data-design-exploration='calm'][data-page='challenge']
+    :global([data-focused-challenge])
+    main
+    > header {
+    grid-template-columns: minmax(0, 1fr) 180px;
+    gap: 1.5rem;
+    margin-bottom: 1.75rem;
+  }
+  .surface[data-design-exploration='calm'][data-page='challenge']
+    :global([data-focused-challenge])
+    main
+    > div:last-child {
+    display: flex;
+    flex-direction: column;
+    gap: 2rem;
+  }
+  .surface[data-design-exploration='calm'][data-page='challenge']
+    :global(aside[aria-label='Challenge support']) {
+    position: static;
+    width: 100%;
+  }
+}
+@media (max-width: 35rem) {
+  .surface[data-design-exploration='calm'][data-page='home']
+    :global([data-home-layout='focus-review']) {
+    padding: 2rem 1.25rem 3rem;
+  }
+  .surface[data-design-exploration='calm'][data-page='home'] :global([data-home-layout]) > header {
+    padding-bottom: 1.5rem;
+  }
+  .surface[data-design-exploration='calm'][data-page='home']
+    :global([data-home-layout])
+    > header
+    h1 {
+    font-size: 1.875rem;
+  }
+  .surface[data-design-exploration='calm'][data-page='home']
+    :global([data-home-layout])
+    > header
+    > p:last-child {
+    font-size: 0.875rem;
+  }
+  .surface[data-design-exploration='calm'][data-page='home'] :global([data-home-next]) {
+    padding: 1.375rem;
+    border-radius: 1rem;
+  }
+  .surface[data-design-exploration='calm'][data-page='home'] :global([data-home-next]) h2 {
+    font-size: clamp(1.75rem, 7.5vw, 2.5rem);
+    letter-spacing: -0.045em;
+  }
+  .surface[data-design-exploration='calm'][data-page='home']
+    :global([data-home-next])
+    > div:first-child {
+    gap: 0.875rem;
+    margin-bottom: 1.75rem;
+    align-items: start;
+  }
+  .surface[data-design-exploration='calm'][data-page='home']
+    :global([data-home-next])
+    > div:last-child
+    > a {
+    width: 100%;
+  }
+  .surface[data-design-exploration='calm'][data-page='home'] :global([data-home-artwork]) {
+    height: 300px;
+  }
+  .surface[data-design-exploration='calm'][data-page='home'] :global([data-home-milestone]) {
+    padding: 1.25rem;
+  }
+  .surface[data-design-exploration='calm'][data-page='challenge']
+    :global([data-focused-challenge])
+    > div {
+    padding-inline: 1.25rem;
+  }
+  .surface[data-design-exploration='calm'][data-page='challenge']
+    :global([data-focused-challenge])
+    main
+    > header {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 1.25rem;
+    margin-top: 0;
+  }
+  .surface[data-design-exploration='calm'][data-page='challenge']
+    :global([data-focused-challenge])
+    h1 {
+    font-size: clamp(2rem, 8vw, 2.75rem);
+    letter-spacing: -0.045em;
+  }
+  .surface[data-design-exploration='calm'][data-page='challenge']
+    :global([data-focused-challenge])
+    main
+    > header
+    > div
+    > p:last-child {
+    font-size: 0.9375rem;
+  }
+  .surface[data-design-exploration='calm'][data-page='challenge']
+    :global([data-greeting-card-artwork]) {
+    max-width: 220px;
+    justify-self: center;
+  }
+  .surface[data-design-exploration='calm'][data-page='challenge']
+    :global(section[aria-labelledby='focused-task-label']) {
+    padding: 1.25rem;
+    border-radius: 1rem;
+  }
+  .surface[data-design-exploration='calm'][data-page='challenge']
+    :global(section[aria-labelledby='focused-task-label'])
+    article {
+    font-size: 0.875rem;
+    line-height: 1.85;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .surface[data-design-exploration='calm'] *,
+  .surface[data-design-exploration='calm'] *::before,
+  .surface[data-design-exploration='calm'] *::after {
+    animation: none !important;
+    transition: none !important;
+    scroll-behavior: auto !important;
+  }
+  .surface[data-design-exploration='calm'] :where(a, button):active {
+    transform: none;
+  }
+}
+@media (prefers-contrast: more), (forced-colors: active) {
+  .surface[data-design-exploration='calm'] :where(section, aside, summary, button) {
+    border-color: currentColor;
+  }
+}

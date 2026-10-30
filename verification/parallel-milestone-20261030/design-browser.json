@@ -1,0 +1,155 @@
+{
+  "kind": "Actual Chrome component fixtures, no live backend",
+  "viewports": [
+    {
+      "page": "Home",
+      "variant": "calm",
+      "requested": {
+        "width": 1440,
+        "height": 900
+      },
+      "metrics": {
+        "client": 1425,
+        "hasProposal": true,
+        "height": 900,
+        "scroll": 1425,
+        "target": "/app/cohorts/ui-verification-cohort/challenges/greeting-card?fixture=week1-review&design=calm&view=focused",
+        "width": 1440
+      }
+    },
+    {
+      "page": "Home",
+      "variant": "calm",
+      "requested": {
+        "width": 768,
+        "height": 1024
+      },
+      "metrics": {
+        "client": 753,
+        "hasProposal": true,
+        "height": 1024,
+        "scroll": 753,
+        "target": "/app/cohorts/ui-verification-cohort/challenges/greeting-card?fixture=week1-review&design=calm&view=focused",
+        "width": 768
+      }
+    },
+    {
+      "page": "Home",
+      "variant": "calm",
+      "requested": {
+        "width": 390,
+        "height": 844
+      },
+      "metrics": {
+        "client": 375,
+        "hasProposal": true,
+        "height": 844,
+        "scroll": 375,
+        "target": "/app/cohorts/ui-verification-cohort/challenges/greeting-card?fixture=week1-review&design=calm&view=focused",
+        "width": 390
+      }
+    },
+    {
+      "page": "Home",
+      "variant": "calm",
+      "requested": {
+        "width": 320,
+        "height": 740
+      },
+      "metrics": {
+        "client": 305,
+        "hasProposal": true,
+        "height": 740,
+        "scroll": 305,
+        "target": "/app/cohorts/ui-verification-cohort/challenges/greeting-card?fixture=week1-review&design=calm&view=focused",
+        "width": 320
+      }
+    },
+    {
+      "page": "GreetingCard",
+      "variant": "calm",
+      "requested": {
+        "width": 1440,
+        "height": 900
+      },
+      "metrics": {
+        "client": 1425,
+        "frames": 1,
+        "hasProposal": true,
+        "height": 900,
+        "scroll": 1425,
+        "width": 1440
+      }
+    },
+    {
+      "page": "GreetingCard",
+      "variant": "calm",
+      "requested": {
+        "width": 768,
+        "height": 1024
+      },
+      "metrics": {
+        "client": 753,
+        "frames": 1,
+        "hasProposal": true,
+        "height": 1024,
+        "scroll": 753,
+        "width": 768
+      }
+    },
+    {
+      "page": "GreetingCard",
+      "variant": "calm",
+      "requested": {
+        "width": 390,
+        "height": 844
+      },
+      "metrics": {
+        "client": 375,
+        "frames": 1,
+        "hasProposal": true,
+        "height": 844,
+        "scroll": 375,
+        "width": 390
+      }
+    },
+    {
+      "page": "GreetingCard",
+      "variant": "calm",
+      "requested": {
+        "width": 320,
+        "height": 740
+      },
+      "metrics": {
+        "client": 305,
+        "frames": 1,
+        "hasProposal": true,
+        "height": 740,
+        "scroll": 305,
+        "width": 320
+      }
+    }
+  ],
+  "calmHomeVideo": [
+    {
+      "loop": true,
+      "paused": false,
+      "time": 1.9338
+    },
+    {
+      "loop": true,
+      "paused": false,
+      "time": 3.1835
+    }
+  ],
+  "calmGreetingKeyboardPauseFrames": 0,
+  "resourceKeyboardOpen": true,
+  "calmGreetingMobileMotion": "Two actual 320px screenshot crops 2.1 seconds apart show distinct poses; source geometry unchanged",
+  "currentDefaultPreserved": true,
+  "backgroundIssue": "Owner still sees opaque Home video background as separate; unresolved, not seamless",
+  "remaining": [
+    "OS reduced-motion preference emulation not available in advertised capabilities",
+    "OS light preference not changed; intentionally black challenge"
+  ],
+  "viewportReset": true
+}

@@ -1,0 +1,85 @@
+{
+  "library": {
+    "default_adoption": false,
+    "actual_chrome_viewports": ["1440x900", "768x1024", "390x844", "320x740"],
+    "all_eight_proposal_document_scroll_widths_equal_client_widths": true,
+    "actual_home_video_advanced": true,
+    "actual_320px_greeting_motion": "Two screenshot crops 2.1 seconds apart show distinct poses",
+    "keyboard_pause_resume_and_resources": "passed",
+    "viewport_reset": true,
+    "home_background": "Owner still sees separate opaque video surface; unresolved, not seamless",
+    "remaining": [
+      "OS reduced-motion browser emulation unavailable",
+      "OS light preference not changed"
+    ],
+    "library_file_id": "libfile_4aaf2b0445e08191a0e6ac3efbc98778",
+    "file_id": "file_00000000e68482308f796979fbd484a8",
+    "version": 0,
+    "filename": "01-coding-current-vs-calm-review-windows.jpg",
+    "bytes": 584928,
+    "dimensions": [2160, 2800],
+    "sha256": "da86aa5b878e5cf79bf1b98daf7b1d5684080a8a3bf5ea0c315f2825ab6eb816",
+    "library_create": "confirmed successful; do not duplicate upload",
+    "local_identity_writeback": "failed: Windows Python os.setxattr unavailable; official helper not patched",
+    "home_url": "http://127.0.0.1:3118/app?fixture=week1-review&design=calm",
+    "challenge_url": "http://127.0.0.1:3118/app/cohorts/ui-verification-cohort/challenges/greeting-card?fixture=week1-review&view=focused&design=calm"
+  },
+  "screenshots": {
+    "calm-greeting-1440.jpg": {
+      "bytes": 156161,
+      "sha256": "efdfd9c2c4da577310af208300b3fec0ca3bff74ea5603d4930f0c768fc716e2"
+    },
+    "calm-greeting-320.jpg": {
+      "bytes": 126608,
+      "sha256": "7afcead9143bd56306a4e6af266465f00cb08dbbfde984550883f1334169b439"
+    },
+    "calm-greeting-390.jpg": {
+      "bytes": 126454,
+      "sha256": "060f89fec9cd59b0fdd918a4466d5ed4c9f1b4046bee08284229481674cf3eca"
+    },
+    "calm-greeting-768.jpg": {
+      "bytes": 141467,
+      "sha256": "b36afb927a1707925d98e08fb06339842f40d63d0ff88e621fb4e6f3ff0c3160"
+    },
+    "calm-home-1440.jpg": {
+      "bytes": 96186,
+      "sha256": "d442ad1b30887b113ffacd5d4b803986bf0352810522f21e560a2348592017bd"
+    },
+    "calm-home-320.jpg": {
+      "bytes": 67975,
+      "sha256": "330d2b0be9885a095ee2ce36e2a455beee2cb77b89ee15fc6eb2bad6b1576d04"
+    },
+    "calm-home-390.jpg": {
+      "bytes": 69352,
+      "sha256": "b09b5e43a7d6559f63a92b4777a2c1a248edda6130a7546c89a0f1fe77382944"
+    },
+    "calm-home-768.jpg": {
+      "bytes": 89161,
+      "sha256": "0bd78474346b456537798fd50506d0e2407d0d670bf1dc2799e4c99491231008"
+    },
+    "calm-mobile-motion-a.jpg": {
+      "bytes": 4315,
+      "sha256": "77b55240c25cb938b6313fa138cd2a16ba3a58ded299841ce126235057b75f3b"
+    },
+    "calm-mobile-motion-b.jpg": {
+      "bytes": 4356,
+      "sha256": "5516dcb47fb6b0ed1b6d6d0669cc02a64b6a8d8e310a26157f6b4116cc18b097"
+    },
+    "current-greeting-1440.jpg": {
+      "bytes": 162823,
+      "sha256": "f38eb99e2c779e2f57eec3cf3b828bc179ed8a429c90a4eb29938877430ee2fc"
+    },
+    "current-greeting-390.jpg": {
+      "bytes": 125101,
+      "sha256": "91c225486b3022fbc283035c842c9782cfd35558378de042846e893f7b4a1a62"
+    },
+    "current-home-1440.jpg": {
+      "bytes": 101101,
+      "sha256": "02226b04f77b69ec6c0461d6bf701356576b329cf38ec3361ad08317682d5cc7"
+    },
+    "current-home-390.jpg": {
+      "bytes": 69929,
+      "sha256": "fa9a70a1a51d1aff1263f62f9c536e383fd345581e2cb66328bb3380ce72f35c"
+    }
+  }
+}
