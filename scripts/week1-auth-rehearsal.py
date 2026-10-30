@@ -176,6 +176,15 @@ def process_identity(pid):
             'ticks': (proc / 'stat').read_text().rsplit(')', 1)[1].split()[19]}
 
 
+def isolated_build_plan(bundler, plan):
+    if bundler != 'webpack' or [step.get('package') for step in plan] != ['@nextera/domain', '@nextera/db', '@nextera/web']:
+        raise ScopeError('Explicit reviewed isolated build mode required.')
+    copied = [{**step, 'argv': list(step['argv'])} for step in plan]
+    if len(copied[-1]['argv']) != 3 or copied[-1]['argv'][-1] != 'build':
+        raise ScopeError('Installed reviewed Next build command changed.')
+    copied[-1]['argv'].append('--webpack')
+    return copied
+
 SOURCE_SPEC_VALIDATE_JS = """import fs from 'node:fs';
 import {prepareWeek1AuthBroker} from './scripts/week1-auth-live-broker.mjs';
 const p=prepareWeek1AuthBroker(JSON.parse(fs.readFileSync(0,'utf8')));
@@ -247,6 +256,8 @@ class LiveBroker:
 
     def preflight(self):
         admit(self.spec, self.owner, self.now())
+        if self.spec.get('buildBundler') != 'webpack':
+            raise ScopeError('Reviewed isolated Webpack build required.')
         if self.spec.get('hostGuardExecutionPolicy') != 'process-RemoteSigned':
             raise ScopeError('Live process-only host guard policy not scope-bound.')
         host_source = Path(HOST_GUARD_MOUNTED_SOURCE)
@@ -294,7 +305,7 @@ class LiveBroker:
                 probe.settimeout(1)
                 if probe.connect_ex(('127.0.0.1', port)) == 0:
                     raise ScopeError('Loopback port occupied.')
-        self.helpers().direct_build_plan(self.repo, node=self.node)
+        isolated_build_plan(self.spec['buildBundler'], self.helpers().direct_build_plan(self.repo, node=self.node))
         return {'status': 'preflight_only_not_authorized', 'runtimeReady': False}
 
     def reserve(self):
@@ -453,7 +464,7 @@ class LiveBroker:
                'NEXTERA_WEEK1_INVITATION_STARTUP_SHA256': sha(anchor)}
         source = self.run / 'app-source'
         self.helpers().validate_build_source_environment(source)
-        steps = self.helpers().direct_build_plan(self.repo, source, self.node)
+        steps = isolated_build_plan(self.spec['buildBundler'], self.helpers().direct_build_plan(self.repo, source, self.node))
         for step in steps:
             c = self.check_lease()
             remaining = min(c['cleanupAt'] - self.now(), c['monotonicDeadline'] - 180000 - self.monotonic()) / 1000 - 3

@@ -234,6 +234,7 @@ export function prepareWeek1AuthBroker(spec) {
     'REVIEW',
   );
   check(spec.scopeSha256 === week1ScopeSha256(spec), 'SCOPE_CONTENT');
+  check(spec.buildBundler === 'webpack', 'ISOLATED_BUILD_MODE');
   check(same(spec.learners, WEEK1_LEARNERS), 'LEARNERS');
   check(
     spec.checkpoint &&
@@ -1026,6 +1027,7 @@ export function createWeek1AuthHttpPort({
         email: person.email,
         state: 'intent',
       });
+      const expiresAt = Math.min(config.cleanupAt, config.now() + config.policy.maxLifetimeMs);
       const issued = await post(
         '/api/invitations/issue',
         {
@@ -1033,11 +1035,16 @@ export function createWeek1AuthHttpPort({
           cohortId: config.cohortId,
           email: person.email,
           displayName: person.displayName,
-          expiresAt: Math.min(config.cleanupAt, config.now() + config.policy.maxLifetimeMs),
+          expiresAt,
         },
         await issuerCookie(),
       );
-      check(issued.http === 201 && issued.value.status === 'issued', 'INVITATION_ISSUE_UNPROVEN');
+      check(
+        issued.http === 201 &&
+          issued.value.status === 'issued' &&
+          issued.value.expiresAt === expiresAt,
+        'INVITATION_ISSUE_UNPROVEN',
+      );
       const link = new URL(issued.value.link);
       check(
         link.origin === target.origin && link.pathname === '/signup' && !link.search,
@@ -1045,8 +1052,23 @@ export function createWeek1AuthHttpPort({
       );
       const token = new URLSearchParams(link.hash.slice(1)).get('invitation');
       check(/^[A-Za-z0-9_-]{43}$/.test(token ?? ''), 'INVITATION_TOKEN');
+      const inspected = await post('/api/invitations/inspect', { token });
+      check(
+        inspected.http === 200 &&
+          inspected.value.status === 'valid' &&
+          inspected.value.email === person.email &&
+          inspected.value.displayName === person.displayName &&
+          same(Object.keys(inspected.value).sort(), ['displayName', 'email', 'status']),
+        'INVITATION_INSPECTION_BINDING',
+      );
       const requestId = uuid();
-      await savePrivate({ kind: 'activation_operation', email: person.email, requestId, token });
+      // Persist only a one-way receipt digest, never the raw capability/link.
+      await savePrivate({
+        kind: 'activation_operation',
+        email: person.email,
+        requestId,
+        tokenSha256: digest(Buffer.from(token, 'utf8')),
+      });
       // This durable intent precedes the API which may create Auth, even if the
       // HTTP response/returned Auth ID is lost. Never retry/rotate on ambiguity.
       await journal({
@@ -1066,6 +1088,34 @@ export function createWeek1AuthHttpPort({
         activated.http === 200 && activated.value.status === 'activated',
         'AUTH_ACTIVATION_UNKNOWN',
       );
+      const used = await post('/api/invitations/inspect', { token });
+      check(
+        used.http === 409 && same(used.value, { status: 'used' }),
+        'INVITATION_USED_INSPECTION',
+      );
+      const replayRequestId = uuid();
+      check(replayRequestId !== requestId, 'INVITATION_REPLAY_ID');
+      await journal({
+        kind: 'invitation_replay_check',
+        state: 'intent',
+        requestId: replayRequestId,
+        email: person.email,
+      });
+      const replay = await post('/api/invitations/activate', {
+        token,
+        requestId: replayRequestId,
+        password: person.password,
+        confirmation: person.password,
+      });
+      check(
+        replay.http === 409 && same(replay.value, { status: 'used' }),
+        'INVITATION_REPLAY_DENIAL',
+      );
+      await journal({
+        kind: 'invitation_replay_check',
+        state: 'rejected_used',
+        requestId: replayRequestId,
+      });
       const signed = await ordinary(person).auth.signInWithPassword({
         email: person.email,
         password: person.password,

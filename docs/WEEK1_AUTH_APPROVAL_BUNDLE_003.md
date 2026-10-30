@@ -34,3 +34,7 @@ Live provider behavior and native SQL 0023 remain unverified. The registered mig
 ## Policy references
 
 Microsoft documents session policy storage and inheritance in [about Execution Policies](https://learn.microsoft.com/en-us/powershell/module/microsoft.powershell.core/about/about_execution_policies?view=powershell-5.1) and [Start-Process](https://learn.microsoft.com/en-us/powershell/module/microsoft.powershell.management/start-process?view=powershell-5.1). These references support the proposed process scope; they do not replace a fresh exact runtime approval or native guard verification.
+
+## Isolated source build evidence
+
+The clean source checkout passed source tests, typecheck, lint and formatting. Default Turbopack rejected vendor symlinks outside its workspace. The reviewed isolated Webpack build succeeded with installed dependencies and no download or runtime service. The controller now requires the explicit scope-bound buildBundler=webpack value and adds only --webpack to the already-validated direct Next build plan. Domain/DB commands, local workspace aliases, installed compiler pins and source-environment checks remain in force. No broad filesystem-root setting is needed.

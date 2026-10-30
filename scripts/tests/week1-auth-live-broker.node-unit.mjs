@@ -35,6 +35,7 @@ const id = (n) => '10000000-0000-4000-8000-' + String(n).padStart(12, '0');
 const spec = () => {
   const value = {
     version: 1,
+    buildBundler: 'webpack',
     rehearsalChecks: 'auth-invitation-checkpoint',
     hostGuardExecutionPolicy: 'process-RemoteSigned',
     target: WEEK1_TARGET,
@@ -375,6 +376,8 @@ test('pure preparation freezes exact source scope and never authorizes runtime',
   assert.equal(out.policy.rates.ingress.maxRequests, 5);
   assert.throws(() => prepareWeek1AuthBroker(input), /SCOPE_CONTENT/);
   for (const patch of [
+    { buildBundler: undefined },
+    { buildBundler: 'turbopack' },
     { cookieName: 'unbound-cookie' },
     { maxCookieBytes: 65537 },
     { maxLimiterReceipts: undefined },
@@ -472,11 +475,17 @@ test('failed preflight/admission cannot reserve or create Auth/resources', async
   }
 });
 
-function authFake({ ambiguous = false, unknown = false } = {}) {
+function authFake({
+  ambiguous = false,
+  unknown = false,
+  badInspect = false,
+  badReplay = false,
+} = {}) {
   const events = [],
     users = [];
   let serial = 10,
-    creates = 0;
+    creates = 0,
+    activated = false;
   const sessions = [];
   const admin = {
     listUsers: async () => ({ data: { users: [...users] }, error: null }),
@@ -512,12 +521,33 @@ function authFake({ ambiguous = false, unknown = false } = {}) {
     events.push({ url, input: JSON.parse(init.body) });
     if (url.endsWith('/issue'))
       return globalThis.Response.json(
-        { status: 'issued', link: WEEK1_TARGET.origin + '/signup#invitation=' + 'a'.repeat(43) },
+        {
+          status: 'issued',
+          link: WEEK1_TARGET.origin + '/signup#invitation=' + 'a'.repeat(43),
+          expiresAt: JSON.parse(init.body).expiresAt,
+        },
         { status: 201 },
+      );
+    if (url.endsWith('/inspect'))
+      return globalThis.Response.json(
+        activated
+          ? { status: 'used' }
+          : {
+              status: 'valid',
+              email: badInspect ? 'wrong@example.invalid' : WEEK1_LEARNERS[0].email,
+              displayName: WEEK1_LEARNERS[0].displayName,
+            },
+        { status: activated ? 409 : 200 },
+      );
+    if (activated)
+      return globalThis.Response.json(
+        { status: badReplay ? 'activated' : 'used' },
+        { status: badReplay ? 200 : 409 },
       );
     assert.equal(events.at(-2).kind, 'auth_create');
     assert.equal(events.at(-2).state, 'intent');
     const user = { id: id(++serial), email: WEEK1_LEARNERS[0].email };
+    activated = true;
     users.push(user);
     if (ambiguous) throw Error('fake ambiguous activation');
     return globalThis.Response.json({ status: 'activated' });

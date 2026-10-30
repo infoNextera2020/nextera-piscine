@@ -52,5 +52,6 @@
   "cookieName": "sb-127-auth-token",
   "maxCookieBytes": 65536,
   "hostGuardExecutionPolicy": "process-RemoteSigned",
-  "rehearsalChecks": "auth-invitation-only"
+  "rehearsalChecks": "auth-invitation-only",
+  "buildBundler": "webpack"
 }

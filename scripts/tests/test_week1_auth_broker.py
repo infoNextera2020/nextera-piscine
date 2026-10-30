@@ -151,6 +151,18 @@ class BrokerSourceTests(unittest.TestCase):
             result = broker.exercise_injected(fake, p, owner(p), lambda: NOW + 1, lambda: 50)
             self.assertFalse(result['cleanupVerified'])
 
+    def test_isolated_build_plan_changes_only_explicit_pinned_next_bundler_argument(self):
+        plan = [{'package': name, 'cwd': '/fake/' + name, 'argv': ['/fake/node', '/fake/tsc', '-p', 'tsconfig.json']} for name in ['@nextera/domain', '@nextera/db']]
+        plan.append({'package': '@nextera/web', 'cwd': '/fake/web', 'argv': ['/fake/node', '/fake/next', 'build']})
+        prepared = broker.isolated_build_plan('webpack', plan)
+        self.assertEqual(prepared[-1]['argv'], ['/fake/node', '/fake/next', 'build', '--webpack'])
+        self.assertEqual(plan[-1]['argv'], ['/fake/node', '/fake/next', 'build'])
+        self.assertEqual(prepared[:2], plan[:2])
+        with self.assertRaises(broker.ScopeError):
+            broker.isolated_build_plan('turbopack', plan)
+        with self.assertRaises(broker.ScopeError):
+            broker.isolated_build_plan('webpack', [])
+
     def test_live_guard_policy_vector_is_explicit_process_only_and_never_a_fake_test_authority(self):
         command = broker.host_guard_install_command('process-RemoteSigned', 'fake-public-manifest')
         self.assertEqual(command[:6], ['/mnt/c/Windows/System32/WindowsPowerShell/v1.0/powershell.exe',
