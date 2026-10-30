@@ -1,0 +1,2236 @@
+{
+  "windows": {
+    "label": "windows",
+    "platform": "Windows",
+    "skills_root": "C:\\Users\\lap\\.agents\\skills",
+    "verified": [
+      {
+        "name": "animate-expo",
+        "path": "C:\\Users\\lap\\.agents\\skills\\animate-expo",
+        "repo": "emilkowalski/skills",
+        "commit": "a81dbca07f2217b7103e510c0f13f8d5b017afc9",
+        "upstream_path": "skills/animate-expo",
+        "upstream_skill_sha256": "9a01a91701e6563c67677dde6b66ab30f066a5341d42c21a90ba51d99679274a",
+        "installed_skill_sha256": "9a01a91701e6563c67677dde6b66ab30f066a5341d42c21a90ba51d99679274a",
+        "local_changes": [],
+        "file_count": 2,
+        "files": [
+          {
+            "path": "RECIPES.md",
+            "bytes": 16808,
+            "sha256": "1193cb71334da2e2341778dd92bec9ac79d989cb07fd55d661f324ed5871e718"
+          },
+          {
+            "path": "SKILL.md",
+            "bytes": 17891,
+            "sha256": "9a01a91701e6563c67677dde6b66ab30f066a5341d42c21a90ba51d99679274a"
+          }
+        ],
+        "scripts_executed": []
+      },
+      {
+        "name": "animate",
+        "path": "C:\\Users\\lap\\.agents\\skills\\animate",
+        "repo": "emilkowalski/skills",
+        "commit": "a81dbca07f2217b7103e510c0f13f8d5b017afc9",
+        "upstream_path": "skills/animate",
+        "upstream_skill_sha256": "b8ede161270458e6ae2e45e8a1985373515d4c63de5568ddb0f9012d7634356c",
+        "installed_skill_sha256": "b8ede161270458e6ae2e45e8a1985373515d4c63de5568ddb0f9012d7634356c",
+        "local_changes": [],
+        "file_count": 2,
+        "files": [
+          {
+            "path": "RECIPES.md",
+            "bytes": 7957,
+            "sha256": "21ff63d84391db8d96ecdf9170095f55a42c836ccc36fd3269c4772bab031ba2"
+          },
+          {
+            "path": "SKILL.md",
+            "bytes": 11860,
+            "sha256": "b8ede161270458e6ae2e45e8a1985373515d4c63de5568ddb0f9012d7634356c"
+          }
+        ],
+        "scripts_executed": []
+      },
+      {
+        "name": "animation-performance",
+        "path": "C:\\Users\\lap\\.agents\\skills\\animation-performance",
+        "repo": "emilkowalski/skills",
+        "commit": "a81dbca07f2217b7103e510c0f13f8d5b017afc9",
+        "upstream_path": "skills/animation-performance",
+        "upstream_skill_sha256": "ceb9dd3fe912615830f725a0120ccf8d012d15a6218001a5cd6c15d38e39a957",
+        "installed_skill_sha256": "ceb9dd3fe912615830f725a0120ccf8d012d15a6218001a5cd6c15d38e39a957",
+        "local_changes": [],
+        "file_count": 1,
+        "files": [
+          {
+            "path": "SKILL.md",
+            "bytes": 13966,
+            "sha256": "ceb9dd3fe912615830f725a0120ccf8d012d15a6218001a5cd6c15d38e39a957"
+          }
+        ],
+        "scripts_executed": []
+      },
+      {
+        "name": "animation-vocabulary",
+        "path": "C:\\Users\\lap\\.agents\\skills\\animation-vocabulary",
+        "repo": "emilkowalski/skills",
+        "commit": "a81dbca07f2217b7103e510c0f13f8d5b017afc9",
+        "upstream_path": "skills/animation-vocabulary",
+        "upstream_skill_sha256": "40d2b27adfdfeb0570a9f20e7d0255109d9233c50603878bcd0dcd04c923fd94",
+        "installed_skill_sha256": "40d2b27adfdfeb0570a9f20e7d0255109d9233c50603878bcd0dcd04c923fd94",
+        "local_changes": [],
+        "file_count": 1,
+        "files": [
+          {
+            "path": "SKILL.md",
+            "bytes": 13425,
+            "sha256": "40d2b27adfdfeb0570a9f20e7d0255109d9233c50603878bcd0dcd04c923fd94"
+          }
+        ],
+        "scripts_executed": []
+      },
+      {
+        "name": "apple-design",
+        "path": "C:\\Users\\lap\\.agents\\skills\\apple-design",
+        "repo": "emilkowalski/skills",
+        "commit": "a81dbca07f2217b7103e510c0f13f8d5b017afc9",
+        "upstream_path": "skills/apple-design",
+        "upstream_skill_sha256": "77bb63b7043bb93aca2ff4ab040c249484eef35682bb6ff7163433c31d30adc7",
+        "installed_skill_sha256": "77bb63b7043bb93aca2ff4ab040c249484eef35682bb6ff7163433c31d30adc7",
+        "local_changes": [],
+        "file_count": 1,
+        "files": [
+          {
+            "path": "SKILL.md",
+            "bytes": 23036,
+            "sha256": "77bb63b7043bb93aca2ff4ab040c249484eef35682bb6ff7163433c31d30adc7"
+          }
+        ],
+        "scripts_executed": []
+      },
+      {
+        "name": "ask-sonner",
+        "path": "C:\\Users\\lap\\.agents\\skills\\ask-sonner",
+        "repo": "emilkowalski/skills",
+        "commit": "a81dbca07f2217b7103e510c0f13f8d5b017afc9",
+        "upstream_path": "skills/ask-sonner",
+        "upstream_skill_sha256": "39f3ee185b3aa2cf70a689052ff078953ce7ba5915ed7a9391d232e9d4dcf57f",
+        "installed_skill_sha256": "39f3ee185b3aa2cf70a689052ff078953ce7ba5915ed7a9391d232e9d4dcf57f",
+        "local_changes": [],
+        "file_count": 2,
+        "files": [
+          {
+            "path": "API.md",
+            "bytes": 4545,
+            "sha256": "4bb06f482c5757529e3d7a672a30fbeed42d24919a63e2571384a9ce1549aa7f"
+          },
+          {
+            "path": "SKILL.md",
+            "bytes": 7233,
+            "sha256": "39f3ee185b3aa2cf70a689052ff078953ce7ba5915ed7a9391d232e9d4dcf57f"
+          }
+        ],
+        "scripts_executed": []
+      },
+      {
+        "name": "break-ui",
+        "path": "C:\\Users\\lap\\.agents\\skills\\break-ui",
+        "repo": "emilkowalski/skills",
+        "commit": "a81dbca07f2217b7103e510c0f13f8d5b017afc9",
+        "upstream_path": "skills/break-ui",
+        "upstream_skill_sha256": "e7eec1d70ac56a04255e9c0dbe98084ea3d544cc04aaad34f32c95d6fa9dff5e",
+        "installed_skill_sha256": "e7eec1d70ac56a04255e9c0dbe98084ea3d544cc04aaad34f32c95d6fa9dff5e",
+        "local_changes": [],
+        "file_count": 2,
+        "files": [
+          {
+            "path": "CATALOG.md",
+            "bytes": 8268,
+            "sha256": "7358efcc6bb48e35187be1c064cf60022dcb18c72c18fab58b606dfc5f421f15"
+          },
+          {
+            "path": "SKILL.md",
+            "bytes": 14380,
+            "sha256": "e7eec1d70ac56a04255e9c0dbe98084ea3d544cc04aaad34f32c95d6fa9dff5e"
+          }
+        ],
+        "scripts_executed": []
+      },
+      {
+        "name": "emil-design-eng",
+        "path": "C:\\Users\\lap\\.agents\\skills\\emil-design-eng",
+        "repo": "emilkowalski/skills",
+        "commit": "a81dbca07f2217b7103e510c0f13f8d5b017afc9",
+        "upstream_path": "skills/emil-design-eng",
+        "upstream_skill_sha256": "ffbe68e6007fb42cb8149f089b400a1ca007d59ba23e8948e2be4476f3175939",
+        "installed_skill_sha256": "ffbe68e6007fb42cb8149f089b400a1ca007d59ba23e8948e2be4476f3175939",
+        "local_changes": [],
+        "file_count": 1,
+        "files": [
+          {
+            "path": "SKILL.md",
+            "bytes": 27123,
+            "sha256": "ffbe68e6007fb42cb8149f089b400a1ca007d59ba23e8948e2be4476f3175939"
+          }
+        ],
+        "scripts_executed": []
+      },
+      {
+        "name": "find-animation-opportunities",
+        "path": "C:\\Users\\lap\\.agents\\skills\\find-animation-opportunities",
+        "repo": "emilkowalski/skills",
+        "commit": "a81dbca07f2217b7103e510c0f13f8d5b017afc9",
+        "upstream_path": "skills/find-animation-opportunities",
+        "upstream_skill_sha256": "d52a377819b84a71930f0c822cfe2849f40301605a2d5c7eccbfa3b257700df2",
+        "installed_skill_sha256": "d52a377819b84a71930f0c822cfe2849f40301605a2d5c7eccbfa3b257700df2",
+        "local_changes": [],
+        "file_count": 1,
+        "files": [
+          {
+            "path": "SKILL.md",
+            "bytes": 9808,
+            "sha256": "d52a377819b84a71930f0c822cfe2849f40301605a2d5c7eccbfa3b257700df2"
+          }
+        ],
+        "scripts_executed": []
+      },
+      {
+        "name": "improve-animations",
+        "path": "C:\\Users\\lap\\.agents\\skills\\improve-animations",
+        "repo": "emilkowalski/skills",
+        "commit": "a81dbca07f2217b7103e510c0f13f8d5b017afc9",
+        "upstream_path": "skills/improve-animations",
+        "upstream_skill_sha256": "73962447464433476343e2c12cd08ab39cc99a9e5f3c118c5fb54ed897574ef6",
+        "installed_skill_sha256": "73962447464433476343e2c12cd08ab39cc99a9e5f3c118c5fb54ed897574ef6",
+        "local_changes": [],
+        "file_count": 3,
+        "files": [
+          {
+            "path": "AUDIT.md",
+            "bytes": 7387,
+            "sha256": "551c8473e20e5f4774680bc24d45e1c68e50992582720905c6b077756b7b5a55"
+          },
+          {
+            "path": "PLAN-TEMPLATE.md",
+            "bytes": 3100,
+            "sha256": "0a08ac8e23fd2082d7ffb86aeed7b789de77328c3cf874b16f1a755f2ef0a6ad"
+          },
+          {
+            "path": "SKILL.md",
+            "bytes": 8208,
+            "sha256": "73962447464433476343e2c12cd08ab39cc99a9e5f3c118c5fb54ed897574ef6"
+          }
+        ],
+        "scripts_executed": []
+      },
+      {
+        "name": "mobile-native",
+        "path": "C:\\Users\\lap\\.agents\\skills\\mobile-native",
+        "repo": "emilkowalski/skills",
+        "commit": "a81dbca07f2217b7103e510c0f13f8d5b017afc9",
+        "upstream_path": "skills/mobile-native",
+        "upstream_skill_sha256": "888b7651d66d66dbac4e72b7c554638eb19bd971d686d6cbdf030a5ef3788f55",
+        "installed_skill_sha256": "888b7651d66d66dbac4e72b7c554638eb19bd971d686d6cbdf030a5ef3788f55",
+        "local_changes": [],
+        "file_count": 1,
+        "files": [
+          {
+            "path": "SKILL.md",
+            "bytes": 16838,
+            "sha256": "888b7651d66d66dbac4e72b7c554638eb19bd971d686d6cbdf030a5ef3788f55"
+          }
+        ],
+        "scripts_executed": []
+      },
+      {
+        "name": "pick-ui-library",
+        "path": "C:\\Users\\lap\\.agents\\skills\\pick-ui-library",
+        "repo": "emilkowalski/skills",
+        "commit": "a81dbca07f2217b7103e510c0f13f8d5b017afc9",
+        "upstream_path": "skills/pick-ui-library",
+        "upstream_skill_sha256": "675fdce308683256ed617351a9b74d23457a5fbd0a562d9831b9c764b8c5e682",
+        "installed_skill_sha256": "675fdce308683256ed617351a9b74d23457a5fbd0a562d9831b9c764b8c5e682",
+        "local_changes": [],
+        "file_count": 1,
+        "files": [
+          {
+            "path": "SKILL.md",
+            "bytes": 4790,
+            "sha256": "675fdce308683256ed617351a9b74d23457a5fbd0a562d9831b9c764b8c5e682"
+          }
+        ],
+        "scripts_executed": []
+      },
+      {
+        "name": "prototype",
+        "path": "C:\\Users\\lap\\.agents\\skills\\prototype",
+        "repo": "emilkowalski/skills",
+        "commit": "a81dbca07f2217b7103e510c0f13f8d5b017afc9",
+        "upstream_path": "skills/prototype",
+        "upstream_skill_sha256": "bba39c955eb1871c5a02733976ceec5d0324198e0812e667604756489c89f7b9",
+        "installed_skill_sha256": "bba39c955eb1871c5a02733976ceec5d0324198e0812e667604756489c89f7b9",
+        "local_changes": [],
+        "file_count": 2,
+        "files": [
+          {
+            "path": "PICKER.md",
+            "bytes": 7548,
+            "sha256": "31a55eec94715cc79942e91e172e539e3031dcd5e2e5ee7c1446cf2caee960a6"
+          },
+          {
+            "path": "SKILL.md",
+            "bytes": 7830,
+            "sha256": "bba39c955eb1871c5a02733976ceec5d0324198e0812e667604756489c89f7b9"
+          }
+        ],
+        "scripts_executed": []
+      },
+      {
+        "name": "remove-animations",
+        "path": "C:\\Users\\lap\\.agents\\skills\\remove-animations",
+        "repo": "emilkowalski/skills",
+        "commit": "a81dbca07f2217b7103e510c0f13f8d5b017afc9",
+        "upstream_path": "skills/remove-animations",
+        "upstream_skill_sha256": "dea95b7a7ef81cba312c7f70a3c5c67d7e06a287cb16b16d2f90f2b1fb0afff9",
+        "installed_skill_sha256": "dea95b7a7ef81cba312c7f70a3c5c67d7e06a287cb16b16d2f90f2b1fb0afff9",
+        "local_changes": [],
+        "file_count": 1,
+        "files": [
+          {
+            "path": "SKILL.md",
+            "bytes": 11345,
+            "sha256": "dea95b7a7ef81cba312c7f70a3c5c67d7e06a287cb16b16d2f90f2b1fb0afff9"
+          }
+        ],
+        "scripts_executed": []
+      },
+      {
+        "name": "review-animations",
+        "path": "C:\\Users\\lap\\.agents\\skills\\review-animations",
+        "repo": "emilkowalski/skills",
+        "commit": "a81dbca07f2217b7103e510c0f13f8d5b017afc9",
+        "upstream_path": "skills/review-animations",
+        "upstream_skill_sha256": "6ff590d29e436766135aa3d137be1fac2a867165c7257fc315b189361f1873af",
+        "installed_skill_sha256": "6ff590d29e436766135aa3d137be1fac2a867165c7257fc315b189361f1873af",
+        "local_changes": [],
+        "file_count": 2,
+        "files": [
+          {
+            "path": "SKILL.md",
+            "bytes": 8407,
+            "sha256": "6ff590d29e436766135aa3d137be1fac2a867165c7257fc315b189361f1873af"
+          },
+          {
+            "path": "STANDARDS.md",
+            "bytes": 9801,
+            "sha256": "e7d3605034acda54ca13e43aec9e64d65b53de20f75b11b8d694e373012fbe07"
+          }
+        ],
+        "scripts_executed": []
+      },
+      {
+        "name": "write-swift",
+        "path": "C:\\Users\\lap\\.agents\\skills\\write-swift",
+        "repo": "emilkowalski/skills",
+        "commit": "a81dbca07f2217b7103e510c0f13f8d5b017afc9",
+        "upstream_path": "skills/write-swift",
+        "upstream_skill_sha256": "16a4b6adb74e338e55e704ce5753ad54d825438b8a63930eeaede9f3c04c9447",
+        "installed_skill_sha256": "16a4b6adb74e338e55e704ce5753ad54d825438b8a63930eeaede9f3c04c9447",
+        "local_changes": [],
+        "file_count": 1,
+        "files": [
+          {
+            "path": "SKILL.md",
+            "bytes": 42445,
+            "sha256": "16a4b6adb74e338e55e704ce5753ad54d825438b8a63930eeaede9f3c04c9447"
+          }
+        ],
+        "scripts_executed": []
+      },
+      {
+        "name": "apple-hig-review",
+        "path": "C:\\Users\\lap\\.agents\\skills\\apple-hig-review",
+        "repo": "dickwu/apple-design-skill",
+        "commit": "ff4ebddf0488598723a82bfdce1afb04de0b1c44",
+        "upstream_path": ".",
+        "upstream_skill_sha256": "55b47d4d93a366206bd8efea519fd78b6f4a4e5f66900f2fcff7ddac7a82e8fa",
+        "installed_skill_sha256": "9c55878a6aa49c4eed7ab568e0d168dcc672f2fb50ab3378968525e14dc28535",
+        "local_changes": [
+          "Frontmatter name only: apple-design -> apple-hig-review to avoid collision with Emil"
+        ],
+        "file_count": 135,
+        "files": [
+          {
+            "path": ".cursorrules",
+            "bytes": 1925,
+            "sha256": "c3f49f1fa2f5af5fccdf9114d098d02ad6e30cdf07516097074eefa677eb8e91"
+          },
+          {
+            "path": ".github/FUNDING.yml",
+            "bytes": 15,
+            "sha256": "6d2420f30900289d99e345b3ba4a96e9448e35a2e42f67084e4ebf9ec87c9659"
+          },
+          {
+            "path": ".gitignore",
+            "bytes": 39,
+            "sha256": "d807ff48d1f547f172c17203c8f6afe8647be04fe5565b54f45e11d0cf8bcbb9"
+          },
+          {
+            "path": "AGENTS.md",
+            "bytes": 6662,
+            "sha256": "979c368b18f3546be534b34c1145f89ed32730a620ec8e5fdbc7c1907ef0b63b"
+          },
+          {
+            "path": "GEMINI.md",
+            "bytes": 1925,
+            "sha256": "c3f49f1fa2f5af5fccdf9114d098d02ad6e30cdf07516097074eefa677eb8e91"
+          },
+          {
+            "path": "README.md",
+            "bytes": 10413,
+            "sha256": "37604579e4545bc2ad7e3062d438862c1185a21c30e8bdc6c20d0658febd2cc8"
+          },
+          {
+            "path": "SKILL.md",
+            "bytes": 28337,
+            "sha256": "9c55878a6aa49c4eed7ab568e0d168dcc672f2fb50ab3378968525e14dc28535"
+          },
+          {
+            "path": "references/code-audit.md",
+            "bytes": 12339,
+            "sha256": "9880d2a9af5444f44b310f4d4a8f202ddacbbcd6e150ae8c83ef33f3db9deb71"
+          },
+          {
+            "path": "references/cross-platform.md",
+            "bytes": 3079,
+            "sha256": "65b47876fd3320726efc80c75b3e07dc1ee2c7291573f0b047cdd3b1eebc17ed"
+          },
+          {
+            "path": "references/hig-lookup.md",
+            "bytes": 30559,
+            "sha256": "1d6e5eb942bd9f25863e5d2dafe8299f603d0b769e95c3ed4084be66a6be0a58"
+          },
+          {
+            "path": "references/hig/accessibility.md",
+            "bytes": 17044,
+            "sha256": "358960a892acd1164416af85c09aa8b95d1a995f0eea98d1e9d10a9da9df47e8"
+          },
+          {
+            "path": "references/hig/action-sheets.md",
+            "bytes": 3496,
+            "sha256": "6392f22a8a1b60811d8d123a5ce6f1e0f22a353a94c33a75a1de024b2e138f34"
+          },
+          {
+            "path": "references/hig/activity-views.md",
+            "bytes": 6596,
+            "sha256": "68bcb7eb0cfe225e27ad1e9aa2d288c7c28bd9c3c5f769cb32930dd770069cc8"
+          },
+          {
+            "path": "references/hig/airplay.md",
+            "bytes": 7052,
+            "sha256": "4be53d968269709fc77ce6989479cfe22176b50ea5d2924611694797c3ec4fbb"
+          },
+          {
+            "path": "references/hig/alerts.md",
+            "bytes": 9693,
+            "sha256": "596b06862a5519b605d58aee575495ae3f19112ae425ff6a898a991bec402326"
+          },
+          {
+            "path": "references/hig/app-clips.md",
+            "bytes": 30749,
+            "sha256": "ec76038c8d7074a25f081cd18a27f158b6fdea936f2c5fa163516436fe419660"
+          },
+          {
+            "path": "references/hig/app-icons.md",
+            "bytes": 13519,
+            "sha256": "ed874f36ab4e7078d5bfd6bd84e5f1bf57d03e44c44926b25715acf0023f0607"
+          },
+          {
+            "path": "references/hig/app-shortcuts.md",
+            "bytes": 9012,
+            "sha256": "7108cb538fa9035dcd4e264c5509e01b762cc61a03f10be5744e520d54291f7f"
+          },
+          {
+            "path": "references/hig/apple-in-app-purchase.md",
+            "bytes": 19494,
+            "sha256": "aac191290cbbf82d90dbe0a6116c3349db2627345a7bf6afdd1325e5a5a348aa"
+          },
+          {
+            "path": "references/hig/apple-pay.md",
+            "bytes": 31633,
+            "sha256": "5892171e543ca791e49c6472a6cd082db5f700961fd7bbbf60dc093bb60c3ea8"
+          },
+          {
+            "path": "references/hig/apple-pencil-and-scribble.md",
+            "bytes": 13856,
+            "sha256": "4190258208dd4c7c636d99f173641c13075bef0199eeb1157b2a5df1064d48b7"
+          },
+          {
+            "path": "references/hig/augmented-reality.md",
+            "bytes": 22653,
+            "sha256": "f657105682e0cb67da8148cee84f058c419dcf433738fc8c8ac0afe61abc1bba"
+          },
+          {
+            "path": "references/hig/boxes.md",
+            "bytes": 1812,
+            "sha256": "86aba58cc48a810665c8c652d3388878b6fc517d9ccea97a07f3feb41fe36ec2"
+          },
+          {
+            "path": "references/hig/branding.md",
+            "bytes": 4499,
+            "sha256": "755f3e0ab2d1d5dbc9c5c6ad9347658d70ccadf5d37cd97be085c6e8f3c29d12"
+          },
+          {
+            "path": "references/hig/buttons.md",
+            "bytes": 13196,
+            "sha256": "c1123cba00d693052d692fd6db3d9aeb0530b3cb90205010391877d4dd4a16a2"
+          },
+          {
+            "path": "references/hig/charting-data.md",
+            "bytes": 7208,
+            "sha256": "516d11509c901b8f27d628a06f14872547531e59d42736468877742e93054976"
+          },
+          {
+            "path": "references/hig/charts.md",
+            "bytes": 19534,
+            "sha256": "aa35ab7c113ad84325d02b8819ff1d56f523c0a79118faf89c0a0477013d6393"
+          },
+          {
+            "path": "references/hig/collaboration-and-sharing.md",
+            "bytes": 6279,
+            "sha256": "0fbf452d017b7644aa7bfd383c598d17f54d120ec8f00750d500db3bf88f2eaf"
+          },
+          {
+            "path": "references/hig/collections.md",
+            "bytes": 2186,
+            "sha256": "48d48e45c4887ac9b3708ebc121622c3b77582187498048fd5e2b7783674cee9"
+          },
+          {
+            "path": "references/hig/color-wells.md",
+            "bytes": 1425,
+            "sha256": "a755f786b4ef3aa64e6b8d959d4cb30c47c5240228918d31a6ef6917963d5a9b"
+          },
+          {
+            "path": "references/hig/color.md",
+            "bytes": 27304,
+            "sha256": "6ad99f66a2836487580a7d1857e82a70f8c532095c750766e3909fe969da6417"
+          },
+          {
+            "path": "references/hig/column-views.md",
+            "bytes": 2077,
+            "sha256": "5dfc26f02713fc653c96aecbb0a391985b7f06abb97a6326a4e7824762c623c6"
+          },
+          {
+            "path": "references/hig/combo-boxes.md",
+            "bytes": 1524,
+            "sha256": "dcc8fdd1fced9787abd1fedec6d7f7a897e980d6bc2aaa20ac1c1d853d158d86"
+          },
+          {
+            "path": "references/hig/context-menus.md",
+            "bytes": 7802,
+            "sha256": "8b664df2431cfc8e22c4a76af69858b04dacf819544c258d829d6c7f65278123"
+          },
+          {
+            "path": "references/hig/controls.md",
+            "bytes": 6861,
+            "sha256": "b5f6680744cde0f316356a00b57c67c58e86a11fa199c6421ebc694a9c2f84ca"
+          },
+          {
+            "path": "references/hig/dark-mode.md",
+            "bytes": 7891,
+            "sha256": "4bced5888c10557a4f7645c57ce9ac1125db7872859a7565ede696c48d783675"
+          },
+          {
+            "path": "references/hig/design-principles.md",
+            "bytes": 9420,
+            "sha256": "92106fd83fc15ac2b56b568ced1b36ae72060230d925cd76160f7d143e9aa004"
+          },
+          {
+            "path": "references/hig/designing-for-games.md",
+            "bytes": 12529,
+            "sha256": "7634cf490c32c4242935ce1167fc67119506ce7634a31b0d56416f5e1b5dbee0"
+          },
+          {
+            "path": "references/hig/designing-for-ios.md",
+            "bytes": 3320,
+            "sha256": "3fa9e7d98de8ed00058e65cff0d49b646b1825093d137d20853799403be937e8"
+          },
+          {
+            "path": "references/hig/designing-for-ipados.md",
+            "bytes": 2924,
+            "sha256": "22081179f6c6049ef459c5dc536329555209e954b2e9644874540598fb17e909"
+          },
+          {
+            "path": "references/hig/designing-for-iphone-duo.md",
+            "bytes": 17834,
+            "sha256": "62062c2b947dca76bacacd165caba877f5db330ee8d8422c44079df6328ae69e"
+          },
+          {
+            "path": "references/hig/designing-for-macos.md",
+            "bytes": 2989,
+            "sha256": "7349eaae524ce6326267a9910f515066cf35720ef7f6d61f82a4ff5a573e2e95"
+          },
+          {
+            "path": "references/hig/disclosure-controls.md",
+            "bytes": 3308,
+            "sha256": "dda30f8e20e548ef7a67ef580fe8d4a18f477a570fbc1ae450aee75b6c820622"
+          },
+          {
+            "path": "references/hig/dock-menus.md",
+            "bytes": 1871,
+            "sha256": "55af2a8a044d45abbdc75441b4f01496bbbce6dcecc82aff267c6d1e92900d2a"
+          },
+          {
+            "path": "references/hig/drag-and-drop.md",
+            "bytes": 13998,
+            "sha256": "b77b6e8c57f8ecb8d20798b619e0ca46be14e4b117b175fa6c09e2ab382273c7"
+          },
+          {
+            "path": "references/hig/edit-menus.md",
+            "bytes": 6115,
+            "sha256": "0ce8e29729946c252e5732c8fbaa0876969cbbc0189df0534618e6cc0108d70d"
+          },
+          {
+            "path": "references/hig/entering-data.md",
+            "bytes": 4698,
+            "sha256": "3a5cd88e73f56b1211ff0e7ba8dd44f7e8e12a9e55fb1f766c4959929f722954"
+          },
+          {
+            "path": "references/hig/feedback.md",
+            "bytes": 3600,
+            "sha256": "95ea1a5ac5e7d6e8a411071cfa4d633e23fb7b4b47b52a55d26e8e00abe92933"
+          },
+          {
+            "path": "references/hig/file-management.md",
+            "bytes": 11340,
+            "sha256": "b0b40ef7d2bb977cf10b4eb99740d9701f671c8d4e7fefb3c57f7aafa5b7b31b"
+          },
+          {
+            "path": "references/hig/focus-and-selection.md",
+            "bytes": 8303,
+            "sha256": "502f21df3ba42fae7ee8dd785a801d570773693a7efc3c6babb30fb56dac6d5c"
+          },
+          {
+            "path": "references/hig/game-controls.md",
+            "bytes": 11249,
+            "sha256": "ee5561840196b699df13f92a8c38526b8d0dfe2a8ff209ed22d46c1df3728d10"
+          },
+          {
+            "path": "references/hig/gauges.md",
+            "bytes": 3821,
+            "sha256": "6de299e5299a0f629d4442457de59a13bc893ada4cf7fa1fc9449f6f3b1d17c4"
+          },
+          {
+            "path": "references/hig/generative-ai.md",
+            "bytes": 17391,
+            "sha256": "22b3dae86797627067fdfd5a0d17c957fda9eeccdada454a6cfd460a7899adb7"
+          },
+          {
+            "path": "references/hig/gestures.md",
+            "bytes": 7760,
+            "sha256": "691ede486e3d2bc683482d78538ba6f37a11bffb3aa114e8423d3a4b2686849f"
+          },
+          {
+            "path": "references/hig/going-full-screen.md",
+            "bytes": 6735,
+            "sha256": "17cf3a009bbc713d7c16ab7befe25d51d8b83abe13ba972d65de6e07c412e020"
+          },
+          {
+            "path": "references/hig/gyro-and-accelerometer.md",
+            "bytes": 1690,
+            "sha256": "a83754b24b370388cf29e4451ee4e34b65981f215b44ce805aae397b3cf9b208"
+          },
+          {
+            "path": "references/hig/home-screen-quick-actions.md",
+            "bytes": 3281,
+            "sha256": "452bbb7ddd6902a73b7d16c784eea0b5d5874e9110919b88e7f7d5761181989d"
+          },
+          {
+            "path": "references/hig/icloud.md",
+            "bytes": 4822,
+            "sha256": "9ce1c33decc60aba4e15e5bac9dbdb69f88a384d34062ce66c0b49957f2c095c"
+          },
+          {
+            "path": "references/hig/icons.md",
+            "bytes": 14685,
+            "sha256": "624fc00f292a9a65c109e619f6e01d57169d809c55b7ef6fa6a4e4832d3546f6"
+          },
+          {
+            "path": "references/hig/image-views.md",
+            "bytes": 2887,
+            "sha256": "e96c59b5a5d9327d94201aac13dd8e60c9d3baddca62262d3003fe1ae706bb46"
+          },
+          {
+            "path": "references/hig/image-wells.md",
+            "bytes": 1084,
+            "sha256": "58a292e48ef5331ff41f2511d28e3eadc40695a5262288acd2adbf8b80730538"
+          },
+          {
+            "path": "references/hig/images.md",
+            "bytes": 3829,
+            "sha256": "edfa528e14fa70365eef2149fc0cf4a0b1e89f7eee54c63fae68ca555545adad"
+          },
+          {
+            "path": "references/hig/inclusion.md",
+            "bytes": 15133,
+            "sha256": "3d0480c02efc29cf432670a32e5264cd0091794ff6bfdf512b4f2173f68ad58e"
+          },
+          {
+            "path": "references/hig/keyboards.md",
+            "bytes": 16989,
+            "sha256": "e68d62122ced1c5532c9e2d89e0519023926b23e49f68b1f24367da9da8c2047"
+          },
+          {
+            "path": "references/hig/labels.md",
+            "bytes": 4088,
+            "sha256": "41d56214c14e2ec97b44434332e77e68444edcf91a8d5564604be4a42a808255"
+          },
+          {
+            "path": "references/hig/launching.md",
+            "bytes": 4141,
+            "sha256": "0dd56cdb1d16b16c432c069b765742c461cc6887420b30b3d5ada19bbccc305c"
+          },
+          {
+            "path": "references/hig/layout.md",
+            "bytes": 13510,
+            "sha256": "45b028d988d3e48495851ea41e26af2d5daf1e6f9efcf4467a62e928ee806a45"
+          },
+          {
+            "path": "references/hig/liquid-glass.md",
+            "bytes": 14283,
+            "sha256": "61d05ea762439960f06dda157e1ca101b4ee59aa8ef0dcc3d2dbaeb89d4d59b7"
+          },
+          {
+            "path": "references/hig/lists-and-tables.md",
+            "bytes": 6911,
+            "sha256": "d5ef34413e99ddfdd336d297a9d50457e87895c68c370a575db0b96eba585380"
+          },
+          {
+            "path": "references/hig/live-activities.md",
+            "bytes": 27010,
+            "sha256": "eb43e093a69b2df26a3d90eb453e56cc6855da05a816b2618040296a03d8e783"
+          },
+          {
+            "path": "references/hig/live-viewing-apps.md",
+            "bytes": 6614,
+            "sha256": "4c6615f181905ed4f997f4603ee65d9d8ac2ba415efa3018d3d1b1adacdd0360"
+          },
+          {
+            "path": "references/hig/loading.md",
+            "bytes": 3514,
+            "sha256": "0f74660a15fbd462c40eb8e2c7c89ba5efbcb20a91003c15b98ad3df7f0d93bf"
+          },
+          {
+            "path": "references/hig/machine-learning.md",
+            "bytes": 38242,
+            "sha256": "84a33434c0563cdf82ae004379013c73a1c008f2983e3b358f03717aab3d0668"
+          },
+          {
+            "path": "references/hig/managing-accounts.md",
+            "bytes": 7350,
+            "sha256": "6c3f18f757ace9baa72eb519af339a66af83462f856a6937a48adc7fb5b087ff"
+          },
+          {
+            "path": "references/hig/managing-notifications.md",
+            "bytes": 6853,
+            "sha256": "e603cf8b4acb64236fc81a8037f3d8194b7ae0f7b510633d94e17eecc5b9bcb5"
+          },
+          {
+            "path": "references/hig/maps.md",
+            "bytes": 15729,
+            "sha256": "1979762fa52f01bff89c6051675d08de6bd1e527936233bc2494740e66639b8a"
+          },
+          {
+            "path": "references/hig/materials.md",
+            "bytes": 10288,
+            "sha256": "713eab7141019cb8342a8c87246e909848f5cd203d0917053fbe172e932717a1"
+          },
+          {
+            "path": "references/hig/menus.md",
+            "bytes": 13174,
+            "sha256": "0019420ce6a39949e2019faa5cafbd8ada54aefae9566736247241e32e9d6309"
+          },
+          {
+            "path": "references/hig/modality.md",
+            "bytes": 5613,
+            "sha256": "12a935f47543755f7173692c7a10db246a69b478dffd5c24c7c8740d06b8247d"
+          },
+          {
+            "path": "references/hig/motion.md",
+            "bytes": 4652,
+            "sha256": "8eec582bb4e8dcad7cd7af290c8907bb4aa68eb41678c9723dd0a0da36c6bb62"
+          },
+          {
+            "path": "references/hig/multitasking.md",
+            "bytes": 5963,
+            "sha256": "e157230e132c5d6af2d55c8479a9e3953943a1cf7f66c44b627de2eaeeb51f99"
+          },
+          {
+            "path": "references/hig/nfc.md",
+            "bytes": 2984,
+            "sha256": "7ffdc3cf5bbb870e1d3089eb5aeffe5625b080f35683633809ff0562ced1f1f9"
+          },
+          {
+            "path": "references/hig/notifications.md",
+            "bytes": 10470,
+            "sha256": "d9f3ab076f89e42d11803e242d99422bdacfafa6c9179ba54f96a8284389628c"
+          },
+          {
+            "path": "references/hig/offering-help.md",
+            "bytes": 6941,
+            "sha256": "f780688788a77e0aa7f9310691e6e7064d076e5c3e9e6577a7bae3abd33e1c37"
+          },
+          {
+            "path": "references/hig/onboarding.md",
+            "bytes": 5225,
+            "sha256": "0fe52d5db320ee0b6460be3be8cb9429a55575b02095051dd7bf11f7f3edc3ad"
+          },
+          {
+            "path": "references/hig/outline-views.md",
+            "bytes": 4362,
+            "sha256": "268e9ba17040314653db846675f3b40e9826297faa6f1554a5140a8289366440"
+          },
+          {
+            "path": "references/hig/page-controls.md",
+            "bytes": 6627,
+            "sha256": "eed816cd71f21f5cd73534396af89404b8297b8d7e26606f988fa514c04bf028"
+          },
+          {
+            "path": "references/hig/panels.md",
+            "bytes": 5692,
+            "sha256": "21568d2a5f03d7273ce70eb053d4b7520c751e0a75cb6cb31ec3aae6367c99bb"
+          },
+          {
+            "path": "references/hig/path-controls.md",
+            "bytes": 1737,
+            "sha256": "43a2bed4220e6dc9ce61795e60bb4a8108d33e7b5efae1221caba993354df91c"
+          },
+          {
+            "path": "references/hig/pickers.md",
+            "bytes": 4878,
+            "sha256": "2cb1690168b1e4e26ed6579cdd060b698d246957c5726032ac94dbccf1dfc4a4"
+          },
+          {
+            "path": "references/hig/playing-audio.md",
+            "bytes": 8962,
+            "sha256": "0c671faa6fe77221d1dffc5437e93eba28c8621a56ff230f99228da299d8db13"
+          },
+          {
+            "path": "references/hig/playing-haptics.md",
+            "bytes": 8892,
+            "sha256": "1ea9b09381254623535237e0bcb4abe1bf16f6d325b1c5a3bcb36dfee85180ab"
+          },
+          {
+            "path": "references/hig/playing-video.md",
+            "bytes": 9802,
+            "sha256": "f0580f5ac0a48373a6cc6a6104a273e2a25c3094197f999fd9200ceab933c399"
+          },
+          {
+            "path": "references/hig/pointing-devices.md",
+            "bytes": 20651,
+            "sha256": "f6ef7fad9fc1c4b5154803bd181ea88d31ef191f143161f7cf1d106bcf7cccae"
+          },
+          {
+            "path": "references/hig/pop-up-buttons.md",
+            "bytes": 2771,
+            "sha256": "770f424d98609aa63816541f8b8d810b9cf1054db3b6832e0e2a96d85f9593a6"
+          },
+          {
+            "path": "references/hig/popovers.md",
+            "bytes": 4579,
+            "sha256": "55566647f3555fa0604074d93c448006e52cef5822c9002f3a7432329f27f825"
+          },
+          {
+            "path": "references/hig/printing.md",
+            "bytes": 3389,
+            "sha256": "7c8c2e7f27d3ba03a8cc09608d25c60812b358b5e7f679ccd46363324c319d61"
+          },
+          {
+            "path": "references/hig/privacy.md",
+            "bytes": 15302,
+            "sha256": "94381926f74ff9d4b12c80acc2e56ad0e5cedab32943ba52ae45a3d29b205ee5"
+          },
+          {
+            "path": "references/hig/progress-indicators.md",
+            "bytes": 6677,
+            "sha256": "e225236309a41bda746d3fd048395d41b70b390a46bc83069fb3a2c3e2ac6ca5"
+          },
+          {
+            "path": "references/hig/pull-down-buttons.md",
+            "bytes": 4284,
+            "sha256": "6b7afb90a15577cc3c2711ed9cf05b32802a575f21a234591be898ea602088cd"
+          },
+          {
+            "path": "references/hig/rating-indicators.md",
+            "bytes": 1239,
+            "sha256": "9b18bc783316479b42934b717cfd558701734665679e8fde39d1fd957df8e2f4"
+          },
+          {
+            "path": "references/hig/ratings-and-reviews.md",
+            "bytes": 3451,
+            "sha256": "0ea68b26f5b2b09493cad37781bda3d4a8bc61dba0c99999b5334c1f9c716423"
+          },
+          {
+            "path": "references/hig/right-to-left.md",
+            "bytes": 9856,
+            "sha256": "bde37d1a79cfb17aa75390b5f3407b4bb265985eb48b292ba5283d07cd4ae9c0"
+          },
+          {
+            "path": "references/hig/scroll-views.md",
+            "bytes": 7426,
+            "sha256": "2e5f0ba871c2afdc4bc11e781ad913aa848e45e21209f89c400191b4fdc1389e"
+          },
+          {
+            "path": "references/hig/search-fields.md",
+            "bytes": 11576,
+            "sha256": "a64a7d956e53fd8ad7a0880e8eb0dfd9ec0094c2b6b0742d03645d74a282ee3d"
+          },
+          {
+            "path": "references/hig/searching.md",
+            "bytes": 5050,
+            "sha256": "7602faf8ca8f8c851c03ff9e8cfaaa4067a30b921dde21de625f1b7f65b9404d"
+          },
+          {
+            "path": "references/hig/segmented-controls.md",
+            "bytes": 5437,
+            "sha256": "8a165f456e6803da4ce6c2575a466d903361f0f38d8ebb79b20426ce676e07c2"
+          },
+          {
+            "path": "references/hig/settings.md",
+            "bytes": 6808,
+            "sha256": "b9dd7137c9feb3105cf010195b132786034d44a6b6027ac1068db6ed520439c3"
+          },
+          {
+            "path": "references/hig/sf-symbols.md",
+            "bytes": 20736,
+            "sha256": "e18ce5da6790aeee5a14d542f768735e7dcc0ef008f50305537d63c2ce58bc8b"
+          },
+          {
+            "path": "references/hig/sheets.md",
+            "bytes": 9046,
+            "sha256": "478b5aa57829ed148ba9876b6b92def08dbef88dc4c05e52e493297df37fee20"
+          },
+          {
+            "path": "references/hig/sidebars.md",
+            "bytes": 7220,
+            "sha256": "67f10910cf4430ae9ff216c60e4d19cf03ab93affae9f5f6dcd9b861434a1582"
+          },
+          {
+            "path": "references/hig/sign-in-with-apple.md",
+            "bytes": 18361,
+            "sha256": "0a70e80d407017d631033f48193b4189d12d6f545658c626a297102cdd59c475"
+          },
+          {
+            "path": "references/hig/siri.md",
+            "bytes": 13708,
+            "sha256": "b3322a585bbf2336f93a3fdb390ce0bd20ee8616dfe336cea52b8dace82031a0"
+          },
+          {
+            "path": "references/hig/sliders.md",
+            "bytes": 4953,
+            "sha256": "846cb74afdd569ffa7fb06716bd8b8dd47cfd38ca4227e74331f77e99b5f92ae"
+          },
+          {
+            "path": "references/hig/snippets.md",
+            "bytes": 4161,
+            "sha256": "1de903847513657a2bc2c5d4f55e6059be39a5f1778b6dce788fbbf1d50c885c"
+          },
+          {
+            "path": "references/hig/split-views.md",
+            "bytes": 5175,
+            "sha256": "0bcb8614521aedfb4acce8301e51bb855748dcdeb145eb7890f9da4ac6b6d3d7"
+          },
+          {
+            "path": "references/hig/status-bars.md",
+            "bytes": 1936,
+            "sha256": "d5bf751ee7b27e134f8970e9530924692a15e66cd05aa1ec21904afc29615b06"
+          },
+          {
+            "path": "references/hig/steppers.md",
+            "bytes": 1604,
+            "sha256": "0fca3965ccd57c862a9144bb9016ecba658b7adc866b157a530a258a52afbe33"
+          },
+          {
+            "path": "references/hig/tab-bars.md",
+            "bytes": 7172,
+            "sha256": "a7bbe3cb627006a5747df961e3f840b7cac5ead81f584fc99771a1f03a7a74d5"
+          },
+          {
+            "path": "references/hig/tab-views.md",
+            "bytes": 3153,
+            "sha256": "ddc05a426c409b53ea87462e9e30521427fd948f65c265ba78358efee2d3cb41"
+          },
+          {
+            "path": "references/hig/text-fields.md",
+            "bytes": 5280,
+            "sha256": "0fcbc4a56192f1d4df5fd850f6b48cbc3e726589010562df255b7edd940b9c5c"
+          },
+          {
+            "path": "references/hig/text-views.md",
+            "bytes": 2471,
+            "sha256": "9a283683b25ea5fc0703a311c6d650cb8253337ab7fbacb1ef3cd9d152c95e47"
+          },
+          {
+            "path": "references/hig/the-menu-bar.md",
+            "bytes": 27291,
+            "sha256": "262c3424fab946b0ae6e7fb2d3101b9af1e79b16144b99375e48d923af8e1bc0"
+          },
+          {
+            "path": "references/hig/toggles.md",
+            "bytes": 8629,
+            "sha256": "f44ea298fffb3a68c0fa234be70d66bcfaee6aa1dc1b6c8d61c179818099c33b"
+          },
+          {
+            "path": "references/hig/token-fields.md",
+            "bytes": 2230,
+            "sha256": "a62b10980a16326f9fc2ef2e265ed3802bfb09fc2ad3ca73425a5f46c9f2f06b"
+          },
+          {
+            "path": "references/hig/toolbars.md",
+            "bytes": 12411,
+            "sha256": "836ada706164be2c4b063218210789040513d30f456ad062b70fc164a407cd1e"
+          },
+          {
+            "path": "references/hig/typography.md",
+            "bytes": 30481,
+            "sha256": "9e91d330a5597802bdad751e8da006bf2aba2aee9537df0879f5fe6e82ac9bef"
+          },
+          {
+            "path": "references/hig/undo-and-redo.md",
+            "bytes": 4072,
+            "sha256": "e253a5764811dd9b76be3ab2dc14a66d4bc28f8f03839fc54da42ed6b72e43ed"
+          },
+          {
+            "path": "references/hig/virtual-keyboards.md",
+            "bytes": 8571,
+            "sha256": "6f5bb81c995264f685386aecfb7e1e8164071036d120058c272e4944ee5ac41f"
+          },
+          {
+            "path": "references/hig/voiceover.md",
+            "bytes": 5745,
+            "sha256": "3cd17ca5b15f16b41f335ee2830b231004bb3b4a971e1dc9d1371e2523e576d1"
+          },
+          {
+            "path": "references/hig/web-views.md",
+            "bytes": 1171,
+            "sha256": "4b61d903c52d764ec864cb563e07b77ce5b295af5a5245210d61932a8765ce9b"
+          },
+          {
+            "path": "references/hig/widgets.md",
+            "bytes": 31701,
+            "sha256": "ec85face8f96eb8f42716dfb0002e458959db2c66a6b88e5c5437a75a93890ce"
+          },
+          {
+            "path": "references/hig/windows.md",
+            "bytes": 9098,
+            "sha256": "e259a7459e7c301e18a7f88d16ef617ba615678c3a3f9c422e0bb9f5776f6272"
+          },
+          {
+            "path": "references/hig/writing.md",
+            "bytes": 9907,
+            "sha256": "b865a5773cfa3619ee9903e6d3867b604e144b529dfedb8cc62f54f3747b195a"
+          },
+          {
+            "path": "scripts/pull-hig.mjs",
+            "bytes": 34149,
+            "sha256": "45dc5000c63d8b427d96f3df7bf21a34e3d1f29f2fcd25d20ea1e30658fbb1e8"
+          }
+        ],
+        "scripts_executed": []
+      }
+    ]
+  },
+  "ubuntu": {
+    "label": "ubuntu",
+    "platform": "Linux",
+    "skills_root": "/home/anas/.agents/skills",
+    "verified": [
+      {
+        "name": "animate-expo",
+        "path": "/home/anas/.agents/skills/animate-expo",
+        "repo": "emilkowalski/skills",
+        "commit": "a81dbca07f2217b7103e510c0f13f8d5b017afc9",
+        "upstream_path": "skills/animate-expo",
+        "upstream_skill_sha256": "9a01a91701e6563c67677dde6b66ab30f066a5341d42c21a90ba51d99679274a",
+        "installed_skill_sha256": "9a01a91701e6563c67677dde6b66ab30f066a5341d42c21a90ba51d99679274a",
+        "local_changes": [],
+        "file_count": 2,
+        "files": [
+          {
+            "path": "RECIPES.md",
+            "bytes": 16808,
+            "sha256": "1193cb71334da2e2341778dd92bec9ac79d989cb07fd55d661f324ed5871e718"
+          },
+          {
+            "path": "SKILL.md",
+            "bytes": 17891,
+            "sha256": "9a01a91701e6563c67677dde6b66ab30f066a5341d42c21a90ba51d99679274a"
+          }
+        ],
+        "scripts_executed": []
+      },
+      {
+        "name": "animate",
+        "path": "/home/anas/.agents/skills/animate",
+        "repo": "emilkowalski/skills",
+        "commit": "a81dbca07f2217b7103e510c0f13f8d5b017afc9",
+        "upstream_path": "skills/animate",
+        "upstream_skill_sha256": "b8ede161270458e6ae2e45e8a1985373515d4c63de5568ddb0f9012d7634356c",
+        "installed_skill_sha256": "b8ede161270458e6ae2e45e8a1985373515d4c63de5568ddb0f9012d7634356c",
+        "local_changes": [],
+        "file_count": 2,
+        "files": [
+          {
+            "path": "RECIPES.md",
+            "bytes": 7957,
+            "sha256": "21ff63d84391db8d96ecdf9170095f55a42c836ccc36fd3269c4772bab031ba2"
+          },
+          {
+            "path": "SKILL.md",
+            "bytes": 11860,
+            "sha256": "b8ede161270458e6ae2e45e8a1985373515d4c63de5568ddb0f9012d7634356c"
+          }
+        ],
+        "scripts_executed": []
+      },
+      {
+        "name": "animation-performance",
+        "path": "/home/anas/.agents/skills/animation-performance",
+        "repo": "emilkowalski/skills",
+        "commit": "a81dbca07f2217b7103e510c0f13f8d5b017afc9",
+        "upstream_path": "skills/animation-performance",
+        "upstream_skill_sha256": "ceb9dd3fe912615830f725a0120ccf8d012d15a6218001a5cd6c15d38e39a957",
+        "installed_skill_sha256": "ceb9dd3fe912615830f725a0120ccf8d012d15a6218001a5cd6c15d38e39a957",
+        "local_changes": [],
+        "file_count": 1,
+        "files": [
+          {
+            "path": "SKILL.md",
+            "bytes": 13966,
+            "sha256": "ceb9dd3fe912615830f725a0120ccf8d012d15a6218001a5cd6c15d38e39a957"
+          }
+        ],
+        "scripts_executed": []
+      },
+      {
+        "name": "animation-vocabulary",
+        "path": "/home/anas/.agents/skills/animation-vocabulary",
+        "repo": "emilkowalski/skills",
+        "commit": "a81dbca07f2217b7103e510c0f13f8d5b017afc9",
+        "upstream_path": "skills/animation-vocabulary",
+        "upstream_skill_sha256": "40d2b27adfdfeb0570a9f20e7d0255109d9233c50603878bcd0dcd04c923fd94",
+        "installed_skill_sha256": "40d2b27adfdfeb0570a9f20e7d0255109d9233c50603878bcd0dcd04c923fd94",
+        "local_changes": [],
+        "file_count": 1,
+        "files": [
+          {
+            "path": "SKILL.md",
+            "bytes": 13425,
+            "sha256": "40d2b27adfdfeb0570a9f20e7d0255109d9233c50603878bcd0dcd04c923fd94"
+          }
+        ],
+        "scripts_executed": []
+      },
+      {
+        "name": "apple-design",
+        "path": "/home/anas/.agents/skills/apple-design",
+        "repo": "emilkowalski/skills",
+        "commit": "a81dbca07f2217b7103e510c0f13f8d5b017afc9",
+        "upstream_path": "skills/apple-design",
+        "upstream_skill_sha256": "77bb63b7043bb93aca2ff4ab040c249484eef35682bb6ff7163433c31d30adc7",
+        "installed_skill_sha256": "77bb63b7043bb93aca2ff4ab040c249484eef35682bb6ff7163433c31d30adc7",
+        "local_changes": [],
+        "file_count": 1,
+        "files": [
+          {
+            "path": "SKILL.md",
+            "bytes": 23036,
+            "sha256": "77bb63b7043bb93aca2ff4ab040c249484eef35682bb6ff7163433c31d30adc7"
+          }
+        ],
+        "scripts_executed": []
+      },
+      {
+        "name": "ask-sonner",
+        "path": "/home/anas/.agents/skills/ask-sonner",
+        "repo": "emilkowalski/skills",
+        "commit": "a81dbca07f2217b7103e510c0f13f8d5b017afc9",
+        "upstream_path": "skills/ask-sonner",
+        "upstream_skill_sha256": "39f3ee185b3aa2cf70a689052ff078953ce7ba5915ed7a9391d232e9d4dcf57f",
+        "installed_skill_sha256": "39f3ee185b3aa2cf70a689052ff078953ce7ba5915ed7a9391d232e9d4dcf57f",
+        "local_changes": [],
+        "file_count": 2,
+        "files": [
+          {
+            "path": "API.md",
+            "bytes": 4545,
+            "sha256": "4bb06f482c5757529e3d7a672a30fbeed42d24919a63e2571384a9ce1549aa7f"
+          },
+          {
+            "path": "SKILL.md",
+            "bytes": 7233,
+            "sha256": "39f3ee185b3aa2cf70a689052ff078953ce7ba5915ed7a9391d232e9d4dcf57f"
+          }
+        ],
+        "scripts_executed": []
+      },
+      {
+        "name": "break-ui",
+        "path": "/home/anas/.agents/skills/break-ui",
+        "repo": "emilkowalski/skills",
+        "commit": "a81dbca07f2217b7103e510c0f13f8d5b017afc9",
+        "upstream_path": "skills/break-ui",
+        "upstream_skill_sha256": "e7eec1d70ac56a04255e9c0dbe98084ea3d544cc04aaad34f32c95d6fa9dff5e",
+        "installed_skill_sha256": "e7eec1d70ac56a04255e9c0dbe98084ea3d544cc04aaad34f32c95d6fa9dff5e",
+        "local_changes": [],
+        "file_count": 2,
+        "files": [
+          {
+            "path": "CATALOG.md",
+            "bytes": 8268,
+            "sha256": "7358efcc6bb48e35187be1c064cf60022dcb18c72c18fab58b606dfc5f421f15"
+          },
+          {
+            "path": "SKILL.md",
+            "bytes": 14380,
+            "sha256": "e7eec1d70ac56a04255e9c0dbe98084ea3d544cc04aaad34f32c95d6fa9dff5e"
+          }
+        ],
+        "scripts_executed": []
+      },
+      {
+        "name": "emil-design-eng",
+        "path": "/home/anas/.agents/skills/emil-design-eng",
+        "repo": "emilkowalski/skills",
+        "commit": "a81dbca07f2217b7103e510c0f13f8d5b017afc9",
+        "upstream_path": "skills/emil-design-eng",
+        "upstream_skill_sha256": "ffbe68e6007fb42cb8149f089b400a1ca007d59ba23e8948e2be4476f3175939",
+        "installed_skill_sha256": "ffbe68e6007fb42cb8149f089b400a1ca007d59ba23e8948e2be4476f3175939",
+        "local_changes": [],
+        "file_count": 1,
+        "files": [
+          {
+            "path": "SKILL.md",
+            "bytes": 27123,
+            "sha256": "ffbe68e6007fb42cb8149f089b400a1ca007d59ba23e8948e2be4476f3175939"
+          }
+        ],
+        "scripts_executed": []
+      },
+      {
+        "name": "find-animation-opportunities",
+        "path": "/home/anas/.agents/skills/find-animation-opportunities",
+        "repo": "emilkowalski/skills",
+        "commit": "a81dbca07f2217b7103e510c0f13f8d5b017afc9",
+        "upstream_path": "skills/find-animation-opportunities",
+        "upstream_skill_sha256": "d52a377819b84a71930f0c822cfe2849f40301605a2d5c7eccbfa3b257700df2",
+        "installed_skill_sha256": "d52a377819b84a71930f0c822cfe2849f40301605a2d5c7eccbfa3b257700df2",
+        "local_changes": [],
+        "file_count": 1,
+        "files": [
+          {
+            "path": "SKILL.md",
+            "bytes": 9808,
+            "sha256": "d52a377819b84a71930f0c822cfe2849f40301605a2d5c7eccbfa3b257700df2"
+          }
+        ],
+        "scripts_executed": []
+      },
+      {
+        "name": "improve-animations",
+        "path": "/home/anas/.agents/skills/improve-animations",
+        "repo": "emilkowalski/skills",
+        "commit": "a81dbca07f2217b7103e510c0f13f8d5b017afc9",
+        "upstream_path": "skills/improve-animations",
+        "upstream_skill_sha256": "73962447464433476343e2c12cd08ab39cc99a9e5f3c118c5fb54ed897574ef6",
+        "installed_skill_sha256": "73962447464433476343e2c12cd08ab39cc99a9e5f3c118c5fb54ed897574ef6",
+        "local_changes": [],
+        "file_count": 3,
+        "files": [
+          {
+            "path": "AUDIT.md",
+            "bytes": 7387,
+            "sha256": "551c8473e20e5f4774680bc24d45e1c68e50992582720905c6b077756b7b5a55"
+          },
+          {
+            "path": "PLAN-TEMPLATE.md",
+            "bytes": 3100,
+            "sha256": "0a08ac8e23fd2082d7ffb86aeed7b789de77328c3cf874b16f1a755f2ef0a6ad"
+          },
+          {
+            "path": "SKILL.md",
+            "bytes": 8208,
+            "sha256": "73962447464433476343e2c12cd08ab39cc99a9e5f3c118c5fb54ed897574ef6"
+          }
+        ],
+        "scripts_executed": []
+      },
+      {
+        "name": "mobile-native",
+        "path": "/home/anas/.agents/skills/mobile-native",
+        "repo": "emilkowalski/skills",
+        "commit": "a81dbca07f2217b7103e510c0f13f8d5b017afc9",
+        "upstream_path": "skills/mobile-native",
+        "upstream_skill_sha256": "888b7651d66d66dbac4e72b7c554638eb19bd971d686d6cbdf030a5ef3788f55",
+        "installed_skill_sha256": "888b7651d66d66dbac4e72b7c554638eb19bd971d686d6cbdf030a5ef3788f55",
+        "local_changes": [],
+        "file_count": 1,
+        "files": [
+          {
+            "path": "SKILL.md",
+            "bytes": 16838,
+            "sha256": "888b7651d66d66dbac4e72b7c554638eb19bd971d686d6cbdf030a5ef3788f55"
+          }
+        ],
+        "scripts_executed": []
+      },
+      {
+        "name": "pick-ui-library",
+        "path": "/home/anas/.agents/skills/pick-ui-library",
+        "repo": "emilkowalski/skills",
+        "commit": "a81dbca07f2217b7103e510c0f13f8d5b017afc9",
+        "upstream_path": "skills/pick-ui-library",
+        "upstream_skill_sha256": "675fdce308683256ed617351a9b74d23457a5fbd0a562d9831b9c764b8c5e682",
+        "installed_skill_sha256": "675fdce308683256ed617351a9b74d23457a5fbd0a562d9831b9c764b8c5e682",
+        "local_changes": [],
+        "file_count": 1,
+        "files": [
+          {
+            "path": "SKILL.md",
+            "bytes": 4790,
+            "sha256": "675fdce308683256ed617351a9b74d23457a5fbd0a562d9831b9c764b8c5e682"
+          }
+        ],
+        "scripts_executed": []
+      },
+      {
+        "name": "prototype",
+        "path": "/home/anas/.agents/skills/prototype",
+        "repo": "emilkowalski/skills",
+        "commit": "a81dbca07f2217b7103e510c0f13f8d5b017afc9",
+        "upstream_path": "skills/prototype",
+        "upstream_skill_sha256": "bba39c955eb1871c5a02733976ceec5d0324198e0812e667604756489c89f7b9",
+        "installed_skill_sha256": "bba39c955eb1871c5a02733976ceec5d0324198e0812e667604756489c89f7b9",
+        "local_changes": [],
+        "file_count": 2,
+        "files": [
+          {
+            "path": "PICKER.md",
+            "bytes": 7548,
+            "sha256": "31a55eec94715cc79942e91e172e539e3031dcd5e2e5ee7c1446cf2caee960a6"
+          },
+          {
+            "path": "SKILL.md",
+            "bytes": 7830,
+            "sha256": "bba39c955eb1871c5a02733976ceec5d0324198e0812e667604756489c89f7b9"
+          }
+        ],
+        "scripts_executed": []
+      },
+      {
+        "name": "remove-animations",
+        "path": "/home/anas/.agents/skills/remove-animations",
+        "repo": "emilkowalski/skills",
+        "commit": "a81dbca07f2217b7103e510c0f13f8d5b017afc9",
+        "upstream_path": "skills/remove-animations",
+        "upstream_skill_sha256": "dea95b7a7ef81cba312c7f70a3c5c67d7e06a287cb16b16d2f90f2b1fb0afff9",
+        "installed_skill_sha256": "dea95b7a7ef81cba312c7f70a3c5c67d7e06a287cb16b16d2f90f2b1fb0afff9",
+        "local_changes": [],
+        "file_count": 1,
+        "files": [
+          {
+            "path": "SKILL.md",
+            "bytes": 11345,
+            "sha256": "dea95b7a7ef81cba312c7f70a3c5c67d7e06a287cb16b16d2f90f2b1fb0afff9"
+          }
+        ],
+        "scripts_executed": []
+      },
+      {
+        "name": "review-animations",
+        "path": "/home/anas/.agents/skills/review-animations",
+        "repo": "emilkowalski/skills",
+        "commit": "a81dbca07f2217b7103e510c0f13f8d5b017afc9",
+        "upstream_path": "skills/review-animations",
+        "upstream_skill_sha256": "6ff590d29e436766135aa3d137be1fac2a867165c7257fc315b189361f1873af",
+        "installed_skill_sha256": "6ff590d29e436766135aa3d137be1fac2a867165c7257fc315b189361f1873af",
+        "local_changes": [],
+        "file_count": 2,
+        "files": [
+          {
+            "path": "SKILL.md",
+            "bytes": 8407,
+            "sha256": "6ff590d29e436766135aa3d137be1fac2a867165c7257fc315b189361f1873af"
+          },
+          {
+            "path": "STANDARDS.md",
+            "bytes": 9801,
+            "sha256": "e7d3605034acda54ca13e43aec9e64d65b53de20f75b11b8d694e373012fbe07"
+          }
+        ],
+        "scripts_executed": []
+      },
+      {
+        "name": "write-swift",
+        "path": "/home/anas/.agents/skills/write-swift",
+        "repo": "emilkowalski/skills",
+        "commit": "a81dbca07f2217b7103e510c0f13f8d5b017afc9",
+        "upstream_path": "skills/write-swift",
+        "upstream_skill_sha256": "16a4b6adb74e338e55e704ce5753ad54d825438b8a63930eeaede9f3c04c9447",
+        "installed_skill_sha256": "16a4b6adb74e338e55e704ce5753ad54d825438b8a63930eeaede9f3c04c9447",
+        "local_changes": [],
+        "file_count": 1,
+        "files": [
+          {
+            "path": "SKILL.md",
+            "bytes": 42445,
+            "sha256": "16a4b6adb74e338e55e704ce5753ad54d825438b8a63930eeaede9f3c04c9447"
+          }
+        ],
+        "scripts_executed": []
+      },
+      {
+        "name": "apple-hig-review",
+        "path": "/home/anas/.agents/skills/apple-hig-review",
+        "repo": "dickwu/apple-design-skill",
+        "commit": "ff4ebddf0488598723a82bfdce1afb04de0b1c44",
+        "upstream_path": ".",
+        "upstream_skill_sha256": "55b47d4d93a366206bd8efea519fd78b6f4a4e5f66900f2fcff7ddac7a82e8fa",
+        "installed_skill_sha256": "9c55878a6aa49c4eed7ab568e0d168dcc672f2fb50ab3378968525e14dc28535",
+        "local_changes": [
+          "Frontmatter name only: apple-design -> apple-hig-review to avoid collision with Emil"
+        ],
+        "file_count": 135,
+        "files": [
+          {
+            "path": ".cursorrules",
+            "bytes": 1925,
+            "sha256": "c3f49f1fa2f5af5fccdf9114d098d02ad6e30cdf07516097074eefa677eb8e91"
+          },
+          {
+            "path": ".github/FUNDING.yml",
+            "bytes": 15,
+            "sha256": "6d2420f30900289d99e345b3ba4a96e9448e35a2e42f67084e4ebf9ec87c9659"
+          },
+          {
+            "path": ".gitignore",
+            "bytes": 39,
+            "sha256": "d807ff48d1f547f172c17203c8f6afe8647be04fe5565b54f45e11d0cf8bcbb9"
+          },
+          {
+            "path": "AGENTS.md",
+            "bytes": 6662,
+            "sha256": "979c368b18f3546be534b34c1145f89ed32730a620ec8e5fdbc7c1907ef0b63b"
+          },
+          {
+            "path": "GEMINI.md",
+            "bytes": 1925,
+            "sha256": "c3f49f1fa2f5af5fccdf9114d098d02ad6e30cdf07516097074eefa677eb8e91"
+          },
+          {
+            "path": "README.md",
+            "bytes": 10413,
+            "sha256": "37604579e4545bc2ad7e3062d438862c1185a21c30e8bdc6c20d0658febd2cc8"
+          },
+          {
+            "path": "SKILL.md",
+            "bytes": 28337,
+            "sha256": "9c55878a6aa49c4eed7ab568e0d168dcc672f2fb50ab3378968525e14dc28535"
+          },
+          {
+            "path": "references/code-audit.md",
+            "bytes": 12339,
+            "sha256": "9880d2a9af5444f44b310f4d4a8f202ddacbbcd6e150ae8c83ef33f3db9deb71"
+          },
+          {
+            "path": "references/cross-platform.md",
+            "bytes": 3079,
+            "sha256": "65b47876fd3320726efc80c75b3e07dc1ee2c7291573f0b047cdd3b1eebc17ed"
+          },
+          {
+            "path": "references/hig-lookup.md",
+            "bytes": 30559,
+            "sha256": "1d6e5eb942bd9f25863e5d2dafe8299f603d0b769e95c3ed4084be66a6be0a58"
+          },
+          {
+            "path": "references/hig/accessibility.md",
+            "bytes": 17044,
+            "sha256": "358960a892acd1164416af85c09aa8b95d1a995f0eea98d1e9d10a9da9df47e8"
+          },
+          {
+            "path": "references/hig/action-sheets.md",
+            "bytes": 3496,
+            "sha256": "6392f22a8a1b60811d8d123a5ce6f1e0f22a353a94c33a75a1de024b2e138f34"
+          },
+          {
+            "path": "references/hig/activity-views.md",
+            "bytes": 6596,
+            "sha256": "68bcb7eb0cfe225e27ad1e9aa2d288c7c28bd9c3c5f769cb32930dd770069cc8"
+          },
+          {
+            "path": "references/hig/airplay.md",
+            "bytes": 7052,
+            "sha256": "4be53d968269709fc77ce6989479cfe22176b50ea5d2924611694797c3ec4fbb"
+          },
+          {
+            "path": "references/hig/alerts.md",
+            "bytes": 9693,
+            "sha256": "596b06862a5519b605d58aee575495ae3f19112ae425ff6a898a991bec402326"
+          },
+          {
+            "path": "references/hig/app-clips.md",
+            "bytes": 30749,
+            "sha256": "ec76038c8d7074a25f081cd18a27f158b6fdea936f2c5fa163516436fe419660"
+          },
+          {
+            "path": "references/hig/app-icons.md",
+            "bytes": 13519,
+            "sha256": "ed874f36ab4e7078d5bfd6bd84e5f1bf57d03e44c44926b25715acf0023f0607"
+          },
+          {
+            "path": "references/hig/app-shortcuts.md",
+            "bytes": 9012,
+            "sha256": "7108cb538fa9035dcd4e264c5509e01b762cc61a03f10be5744e520d54291f7f"
+          },
+          {
+            "path": "references/hig/apple-in-app-purchase.md",
+            "bytes": 19494,
+            "sha256": "aac191290cbbf82d90dbe0a6116c3349db2627345a7bf6afdd1325e5a5a348aa"
+          },
+          {
+            "path": "references/hig/apple-pay.md",
+            "bytes": 31633,
+            "sha256": "5892171e543ca791e49c6472a6cd082db5f700961fd7bbbf60dc093bb60c3ea8"
+          },
+          {
+            "path": "references/hig/apple-pencil-and-scribble.md",
+            "bytes": 13856,
+            "sha256": "4190258208dd4c7c636d99f173641c13075bef0199eeb1157b2a5df1064d48b7"
+          },
+          {
+            "path": "references/hig/augmented-reality.md",
+            "bytes": 22653,
+            "sha256": "f657105682e0cb67da8148cee84f058c419dcf433738fc8c8ac0afe61abc1bba"
+          },
+          {
+            "path": "references/hig/boxes.md",
+            "bytes": 1812,
+            "sha256": "86aba58cc48a810665c8c652d3388878b6fc517d9ccea97a07f3feb41fe36ec2"
+          },
+          {
+            "path": "references/hig/branding.md",
+            "bytes": 4499,
+            "sha256": "755f3e0ab2d1d5dbc9c5c6ad9347658d70ccadf5d37cd97be085c6e8f3c29d12"
+          },
+          {
+            "path": "references/hig/buttons.md",
+            "bytes": 13196,
+            "sha256": "c1123cba00d693052d692fd6db3d9aeb0530b3cb90205010391877d4dd4a16a2"
+          },
+          {
+            "path": "references/hig/charting-data.md",
+            "bytes": 7208,
+            "sha256": "516d11509c901b8f27d628a06f14872547531e59d42736468877742e93054976"
+          },
+          {
+            "path": "references/hig/charts.md",
+            "bytes": 19534,
+            "sha256": "aa35ab7c113ad84325d02b8819ff1d56f523c0a79118faf89c0a0477013d6393"
+          },
+          {
+            "path": "references/hig/collaboration-and-sharing.md",
+            "bytes": 6279,
+            "sha256": "0fbf452d017b7644aa7bfd383c598d17f54d120ec8f00750d500db3bf88f2eaf"
+          },
+          {
+            "path": "references/hig/collections.md",
+            "bytes": 2186,
+            "sha256": "48d48e45c4887ac9b3708ebc121622c3b77582187498048fd5e2b7783674cee9"
+          },
+          {
+            "path": "references/hig/color-wells.md",
+            "bytes": 1425,
+            "sha256": "a755f786b4ef3aa64e6b8d959d4cb30c47c5240228918d31a6ef6917963d5a9b"
+          },
+          {
+            "path": "references/hig/color.md",
+            "bytes": 27304,
+            "sha256": "6ad99f66a2836487580a7d1857e82a70f8c532095c750766e3909fe969da6417"
+          },
+          {
+            "path": "references/hig/column-views.md",
+            "bytes": 2077,
+            "sha256": "5dfc26f02713fc653c96aecbb0a391985b7f06abb97a6326a4e7824762c623c6"
+          },
+          {
+            "path": "references/hig/combo-boxes.md",
+            "bytes": 1524,
+            "sha256": "dcc8fdd1fced9787abd1fedec6d7f7a897e980d6bc2aaa20ac1c1d853d158d86"
+          },
+          {
+            "path": "references/hig/context-menus.md",
+            "bytes": 7802,
+            "sha256": "8b664df2431cfc8e22c4a76af69858b04dacf819544c258d829d6c7f65278123"
+          },
+          {
+            "path": "references/hig/controls.md",
+            "bytes": 6861,
+            "sha256": "b5f6680744cde0f316356a00b57c67c58e86a11fa199c6421ebc694a9c2f84ca"
+          },
+          {
+            "path": "references/hig/dark-mode.md",
+            "bytes": 7891,
+            "sha256": "4bced5888c10557a4f7645c57ce9ac1125db7872859a7565ede696c48d783675"
+          },
+          {
+            "path": "references/hig/design-principles.md",
+            "bytes": 9420,
+            "sha256": "92106fd83fc15ac2b56b568ced1b36ae72060230d925cd76160f7d143e9aa004"
+          },
+          {
+            "path": "references/hig/designing-for-games.md",
+            "bytes": 12529,
+            "sha256": "7634cf490c32c4242935ce1167fc67119506ce7634a31b0d56416f5e1b5dbee0"
+          },
+          {
+            "path": "references/hig/designing-for-ios.md",
+            "bytes": 3320,
+            "sha256": "3fa9e7d98de8ed00058e65cff0d49b646b1825093d137d20853799403be937e8"
+          },
+          {
+            "path": "references/hig/designing-for-ipados.md",
+            "bytes": 2924,
+            "sha256": "22081179f6c6049ef459c5dc536329555209e954b2e9644874540598fb17e909"
+          },
+          {
+            "path": "references/hig/designing-for-iphone-duo.md",
+            "bytes": 17834,
+            "sha256": "62062c2b947dca76bacacd165caba877f5db330ee8d8422c44079df6328ae69e"
+          },
+          {
+            "path": "references/hig/designing-for-macos.md",
+            "bytes": 2989,
+            "sha256": "7349eaae524ce6326267a9910f515066cf35720ef7f6d61f82a4ff5a573e2e95"
+          },
+          {
+            "path": "references/hig/disclosure-controls.md",
+            "bytes": 3308,
+            "sha256": "dda30f8e20e548ef7a67ef580fe8d4a18f477a570fbc1ae450aee75b6c820622"
+          },
+          {
+            "path": "references/hig/dock-menus.md",
+            "bytes": 1871,
+            "sha256": "55af2a8a044d45abbdc75441b4f01496bbbce6dcecc82aff267c6d1e92900d2a"
+          },
+          {
+            "path": "references/hig/drag-and-drop.md",
+            "bytes": 13998,
+            "sha256": "b77b6e8c57f8ecb8d20798b619e0ca46be14e4b117b175fa6c09e2ab382273c7"
+          },
+          {
+            "path": "references/hig/edit-menus.md",
+            "bytes": 6115,
+            "sha256": "0ce8e29729946c252e5732c8fbaa0876969cbbc0189df0534618e6cc0108d70d"
+          },
+          {
+            "path": "references/hig/entering-data.md",
+            "bytes": 4698,
+            "sha256": "3a5cd88e73f56b1211ff0e7ba8dd44f7e8e12a9e55fb1f766c4959929f722954"
+          },
+          {
+            "path": "references/hig/feedback.md",
+            "bytes": 3600,
+            "sha256": "95ea1a5ac5e7d6e8a411071cfa4d633e23fb7b4b47b52a55d26e8e00abe92933"
+          },
+          {
+            "path": "references/hig/file-management.md",
+            "bytes": 11340,
+            "sha256": "b0b40ef7d2bb977cf10b4eb99740d9701f671c8d4e7fefb3c57f7aafa5b7b31b"
+          },
+          {
+            "path": "references/hig/focus-and-selection.md",
+            "bytes": 8303,
+            "sha256": "502f21df3ba42fae7ee8dd785a801d570773693a7efc3c6babb30fb56dac6d5c"
+          },
+          {
+            "path": "references/hig/game-controls.md",
+            "bytes": 11249,
+            "sha256": "ee5561840196b699df13f92a8c38526b8d0dfe2a8ff209ed22d46c1df3728d10"
+          },
+          {
+            "path": "references/hig/gauges.md",
+            "bytes": 3821,
+            "sha256": "6de299e5299a0f629d4442457de59a13bc893ada4cf7fa1fc9449f6f3b1d17c4"
+          },
+          {
+            "path": "references/hig/generative-ai.md",
+            "bytes": 17391,
+            "sha256": "22b3dae86797627067fdfd5a0d17c957fda9eeccdada454a6cfd460a7899adb7"
+          },
+          {
+            "path": "references/hig/gestures.md",
+            "bytes": 7760,
+            "sha256": "691ede486e3d2bc683482d78538ba6f37a11bffb3aa114e8423d3a4b2686849f"
+          },
+          {
+            "path": "references/hig/going-full-screen.md",
+            "bytes": 6735,
+            "sha256": "17cf3a009bbc713d7c16ab7befe25d51d8b83abe13ba972d65de6e07c412e020"
+          },
+          {
+            "path": "references/hig/gyro-and-accelerometer.md",
+            "bytes": 1690,
+            "sha256": "a83754b24b370388cf29e4451ee4e34b65981f215b44ce805aae397b3cf9b208"
+          },
+          {
+            "path": "references/hig/home-screen-quick-actions.md",
+            "bytes": 3281,
+            "sha256": "452bbb7ddd6902a73b7d16c784eea0b5d5874e9110919b88e7f7d5761181989d"
+          },
+          {
+            "path": "references/hig/icloud.md",
+            "bytes": 4822,
+            "sha256": "9ce1c33decc60aba4e15e5bac9dbdb69f88a384d34062ce66c0b49957f2c095c"
+          },
+          {
+            "path": "references/hig/icons.md",
+            "bytes": 14685,
+            "sha256": "624fc00f292a9a65c109e619f6e01d57169d809c55b7ef6fa6a4e4832d3546f6"
+          },
+          {
+            "path": "references/hig/image-views.md",
+            "bytes": 2887,
+            "sha256": "e96c59b5a5d9327d94201aac13dd8e60c9d3baddca62262d3003fe1ae706bb46"
+          },
+          {
+            "path": "references/hig/image-wells.md",
+            "bytes": 1084,
+            "sha256": "58a292e48ef5331ff41f2511d28e3eadc40695a5262288acd2adbf8b80730538"
+          },
+          {
+            "path": "references/hig/images.md",
+            "bytes": 3829,
+            "sha256": "edfa528e14fa70365eef2149fc0cf4a0b1e89f7eee54c63fae68ca555545adad"
+          },
+          {
+            "path": "references/hig/inclusion.md",
+            "bytes": 15133,
+            "sha256": "3d0480c02efc29cf432670a32e5264cd0091794ff6bfdf512b4f2173f68ad58e"
+          },
+          {
+            "path": "references/hig/keyboards.md",
+            "bytes": 16989,
+            "sha256": "e68d62122ced1c5532c9e2d89e0519023926b23e49f68b1f24367da9da8c2047"
+          },
+          {
+            "path": "references/hig/labels.md",
+            "bytes": 4088,
+            "sha256": "41d56214c14e2ec97b44434332e77e68444edcf91a8d5564604be4a42a808255"
+          },
+          {
+            "path": "references/hig/launching.md",
+            "bytes": 4141,
+            "sha256": "0dd56cdb1d16b16c432c069b765742c461cc6887420b30b3d5ada19bbccc305c"
+          },
+          {
+            "path": "references/hig/layout.md",
+            "bytes": 13510,
+            "sha256": "45b028d988d3e48495851ea41e26af2d5daf1e6f9efcf4467a62e928ee806a45"
+          },
+          {
+            "path": "references/hig/liquid-glass.md",
+            "bytes": 14283,
+            "sha256": "61d05ea762439960f06dda157e1ca101b4ee59aa8ef0dcc3d2dbaeb89d4d59b7"
+          },
+          {
+            "path": "references/hig/lists-and-tables.md",
+            "bytes": 6911,
+            "sha256": "d5ef34413e99ddfdd336d297a9d50457e87895c68c370a575db0b96eba585380"
+          },
+          {
+            "path": "references/hig/live-activities.md",
+            "bytes": 27010,
+            "sha256": "eb43e093a69b2df26a3d90eb453e56cc6855da05a816b2618040296a03d8e783"
+          },
+          {
+            "path": "references/hig/live-viewing-apps.md",
+            "bytes": 6614,
+            "sha256": "4c6615f181905ed4f997f4603ee65d9d8ac2ba415efa3018d3d1b1adacdd0360"
+          },
+          {
+            "path": "references/hig/loading.md",
+            "bytes": 3514,
+            "sha256": "0f74660a15fbd462c40eb8e2c7c89ba5efbcb20a91003c15b98ad3df7f0d93bf"
+          },
+          {
+            "path": "references/hig/machine-learning.md",
+            "bytes": 38242,
+            "sha256": "84a33434c0563cdf82ae004379013c73a1c008f2983e3b358f03717aab3d0668"
+          },
+          {
+            "path": "references/hig/managing-accounts.md",
+            "bytes": 7350,
+            "sha256": "6c3f18f757ace9baa72eb519af339a66af83462f856a6937a48adc7fb5b087ff"
+          },
+          {
+            "path": "references/hig/managing-notifications.md",
+            "bytes": 6853,
+            "sha256": "e603cf8b4acb64236fc81a8037f3d8194b7ae0f7b510633d94e17eecc5b9bcb5"
+          },
+          {
+            "path": "references/hig/maps.md",
+            "bytes": 15729,
+            "sha256": "1979762fa52f01bff89c6051675d08de6bd1e527936233bc2494740e66639b8a"
+          },
+          {
+            "path": "references/hig/materials.md",
+            "bytes": 10288,
+            "sha256": "713eab7141019cb8342a8c87246e909848f5cd203d0917053fbe172e932717a1"
+          },
+          {
+            "path": "references/hig/menus.md",
+            "bytes": 13174,
+            "sha256": "0019420ce6a39949e2019faa5cafbd8ada54aefae9566736247241e32e9d6309"
+          },
+          {
+            "path": "references/hig/modality.md",
+            "bytes": 5613,
+            "sha256": "12a935f47543755f7173692c7a10db246a69b478dffd5c24c7c8740d06b8247d"
+          },
+          {
+            "path": "references/hig/motion.md",
+            "bytes": 4652,
+            "sha256": "8eec582bb4e8dcad7cd7af290c8907bb4aa68eb41678c9723dd0a0da36c6bb62"
+          },
+          {
+            "path": "references/hig/multitasking.md",
+            "bytes": 5963,
+            "sha256": "e157230e132c5d6af2d55c8479a9e3953943a1cf7f66c44b627de2eaeeb51f99"
+          },
+          {
+            "path": "references/hig/nfc.md",
+            "bytes": 2984,
+            "sha256": "7ffdc3cf5bbb870e1d3089eb5aeffe5625b080f35683633809ff0562ced1f1f9"
+          },
+          {
+            "path": "references/hig/notifications.md",
+            "bytes": 10470,
+            "sha256": "d9f3ab076f89e42d11803e242d99422bdacfafa6c9179ba54f96a8284389628c"
+          },
+          {
+            "path": "references/hig/offering-help.md",
+            "bytes": 6941,
+            "sha256": "f780688788a77e0aa7f9310691e6e7064d076e5c3e9e6577a7bae3abd33e1c37"
+          },
+          {
+            "path": "references/hig/onboarding.md",
+            "bytes": 5225,
+            "sha256": "0fe52d5db320ee0b6460be3be8cb9429a55575b02095051dd7bf11f7f3edc3ad"
+          },
+          {
+            "path": "references/hig/outline-views.md",
+            "bytes": 4362,
+            "sha256": "268e9ba17040314653db846675f3b40e9826297faa6f1554a5140a8289366440"
+          },
+          {
+            "path": "references/hig/page-controls.md",
+            "bytes": 6627,
+            "sha256": "eed816cd71f21f5cd73534396af89404b8297b8d7e26606f988fa514c04bf028"
+          },
+          {
+            "path": "references/hig/panels.md",
+            "bytes": 5692,
+            "sha256": "21568d2a5f03d7273ce70eb053d4b7520c751e0a75cb6cb31ec3aae6367c99bb"
+          },
+          {
+            "path": "references/hig/path-controls.md",
+            "bytes": 1737,
+            "sha256": "43a2bed4220e6dc9ce61795e60bb4a8108d33e7b5efae1221caba993354df91c"
+          },
+          {
+            "path": "references/hig/pickers.md",
+            "bytes": 4878,
+            "sha256": "2cb1690168b1e4e26ed6579cdd060b698d246957c5726032ac94dbccf1dfc4a4"
+          },
+          {
+            "path": "references/hig/playing-audio.md",
+            "bytes": 8962,
+            "sha256": "0c671faa6fe77221d1dffc5437e93eba28c8621a56ff230f99228da299d8db13"
+          },
+          {
+            "path": "references/hig/playing-haptics.md",
+            "bytes": 8892,
+            "sha256": "1ea9b09381254623535237e0bcb4abe1bf16f6d325b1c5a3bcb36dfee85180ab"
+          },
+          {
+            "path": "references/hig/playing-video.md",
+            "bytes": 9802,
+            "sha256": "f0580f5ac0a48373a6cc6a6104a273e2a25c3094197f999fd9200ceab933c399"
+          },
+          {
+            "path": "references/hig/pointing-devices.md",
+            "bytes": 20651,
+            "sha256": "f6ef7fad9fc1c4b5154803bd181ea88d31ef191f143161f7cf1d106bcf7cccae"
+          },
+          {
+            "path": "references/hig/pop-up-buttons.md",
+            "bytes": 2771,
+            "sha256": "770f424d98609aa63816541f8b8d810b9cf1054db3b6832e0e2a96d85f9593a6"
+          },
+          {
+            "path": "references/hig/popovers.md",
+            "bytes": 4579,
+            "sha256": "55566647f3555fa0604074d93c448006e52cef5822c9002f3a7432329f27f825"
+          },
+          {
+            "path": "references/hig/printing.md",
+            "bytes": 3389,
+            "sha256": "7c8c2e7f27d3ba03a8cc09608d25c60812b358b5e7f679ccd46363324c319d61"
+          },
+          {
+            "path": "references/hig/privacy.md",
+            "bytes": 15302,
+            "sha256": "94381926f74ff9d4b12c80acc2e56ad0e5cedab32943ba52ae45a3d29b205ee5"
+          },
+          {
+            "path": "references/hig/progress-indicators.md",
+            "bytes": 6677,
+            "sha256": "e225236309a41bda746d3fd048395d41b70b390a46bc83069fb3a2c3e2ac6ca5"
+          },
+          {
+            "path": "references/hig/pull-down-buttons.md",
+            "bytes": 4284,
+            "sha256": "6b7afb90a15577cc3c2711ed9cf05b32802a575f21a234591be898ea602088cd"
+          },
+          {
+            "path": "references/hig/rating-indicators.md",
+            "bytes": 1239,
+            "sha256": "9b18bc783316479b42934b717cfd558701734665679e8fde39d1fd957df8e2f4"
+          },
+          {
+            "path": "references/hig/ratings-and-reviews.md",
+            "bytes": 3451,
+            "sha256": "0ea68b26f5b2b09493cad37781bda3d4a8bc61dba0c99999b5334c1f9c716423"
+          },
+          {
+            "path": "references/hig/right-to-left.md",
+            "bytes": 9856,
+            "sha256": "bde37d1a79cfb17aa75390b5f3407b4bb265985eb48b292ba5283d07cd4ae9c0"
+          },
+          {
+            "path": "references/hig/scroll-views.md",
+            "bytes": 7426,
+            "sha256": "2e5f0ba871c2afdc4bc11e781ad913aa848e45e21209f89c400191b4fdc1389e"
+          },
+          {
+            "path": "references/hig/search-fields.md",
+            "bytes": 11576,
+            "sha256": "a64a7d956e53fd8ad7a0880e8eb0dfd9ec0094c2b6b0742d03645d74a282ee3d"
+          },
+          {
+            "path": "references/hig/searching.md",
+            "bytes": 5050,
+            "sha256": "7602faf8ca8f8c851c03ff9e8cfaaa4067a30b921dde21de625f1b7f65b9404d"
+          },
+          {
+            "path": "references/hig/segmented-controls.md",
+            "bytes": 5437,
+            "sha256": "8a165f456e6803da4ce6c2575a466d903361f0f38d8ebb79b20426ce676e07c2"
+          },
+          {
+            "path": "references/hig/settings.md",
+            "bytes": 6808,
+            "sha256": "b9dd7137c9feb3105cf010195b132786034d44a6b6027ac1068db6ed520439c3"
+          },
+          {
+            "path": "references/hig/sf-symbols.md",
+            "bytes": 20736,
+            "sha256": "e18ce5da6790aeee5a14d542f768735e7dcc0ef008f50305537d63c2ce58bc8b"
+          },
+          {
+            "path": "references/hig/sheets.md",
+            "bytes": 9046,
+            "sha256": "478b5aa57829ed148ba9876b6b92def08dbef88dc4c05e52e493297df37fee20"
+          },
+          {
+            "path": "references/hig/sidebars.md",
+            "bytes": 7220,
+            "sha256": "67f10910cf4430ae9ff216c60e4d19cf03ab93affae9f5f6dcd9b861434a1582"
+          },
+          {
+            "path": "references/hig/sign-in-with-apple.md",
+            "bytes": 18361,
+            "sha256": "0a70e80d407017d631033f48193b4189d12d6f545658c626a297102cdd59c475"
+          },
+          {
+            "path": "references/hig/siri.md",
+            "bytes": 13708,
+            "sha256": "b3322a585bbf2336f93a3fdb390ce0bd20ee8616dfe336cea52b8dace82031a0"
+          },
+          {
+            "path": "references/hig/sliders.md",
+            "bytes": 4953,
+            "sha256": "846cb74afdd569ffa7fb06716bd8b8dd47cfd38ca4227e74331f77e99b5f92ae"
+          },
+          {
+            "path": "references/hig/snippets.md",
+            "bytes": 4161,
+            "sha256": "1de903847513657a2bc2c5d4f55e6059be39a5f1778b6dce788fbbf1d50c885c"
+          },
+          {
+            "path": "references/hig/split-views.md",
+            "bytes": 5175,
+            "sha256": "0bcb8614521aedfb4acce8301e51bb855748dcdeb145eb7890f9da4ac6b6d3d7"
+          },
+          {
+            "path": "references/hig/status-bars.md",
+            "bytes": 1936,
+            "sha256": "d5bf751ee7b27e134f8970e9530924692a15e66cd05aa1ec21904afc29615b06"
+          },
+          {
+            "path": "references/hig/steppers.md",
+            "bytes": 1604,
+            "sha256": "0fca3965ccd57c862a9144bb9016ecba658b7adc866b157a530a258a52afbe33"
+          },
+          {
+            "path": "references/hig/tab-bars.md",
+            "bytes": 7172,
+            "sha256": "a7bbe3cb627006a5747df961e3f840b7cac5ead81f584fc99771a1f03a7a74d5"
+          },
+          {
+            "path": "references/hig/tab-views.md",
+            "bytes": 3153,
+            "sha256": "ddc05a426c409b53ea87462e9e30521427fd948f65c265ba78358efee2d3cb41"
+          },
+          {
+            "path": "references/hig/text-fields.md",
+            "bytes": 5280,
+            "sha256": "0fcbc4a56192f1d4df5fd850f6b48cbc3e726589010562df255b7edd940b9c5c"
+          },
+          {
+            "path": "references/hig/text-views.md",
+            "bytes": 2471,
+            "sha256": "9a283683b25ea5fc0703a311c6d650cb8253337ab7fbacb1ef3cd9d152c95e47"
+          },
+          {
+            "path": "references/hig/the-menu-bar.md",
+            "bytes": 27291,
+            "sha256": "262c3424fab946b0ae6e7fb2d3101b9af1e79b16144b99375e48d923af8e1bc0"
+          },
+          {
+            "path": "references/hig/toggles.md",
+            "bytes": 8629,
+            "sha256": "f44ea298fffb3a68c0fa234be70d66bcfaee6aa1dc1b6c8d61c179818099c33b"
+          },
+          {
+            "path": "references/hig/token-fields.md",
+            "bytes": 2230,
+            "sha256": "a62b10980a16326f9fc2ef2e265ed3802bfb09fc2ad3ca73425a5f46c9f2f06b"
+          },
+          {
+            "path": "references/hig/toolbars.md",
+            "bytes": 12411,
+            "sha256": "836ada706164be2c4b063218210789040513d30f456ad062b70fc164a407cd1e"
+          },
+          {
+            "path": "references/hig/typography.md",
+            "bytes": 30481,
+            "sha256": "9e91d330a5597802bdad751e8da006bf2aba2aee9537df0879f5fe6e82ac9bef"
+          },
+          {
+            "path": "references/hig/undo-and-redo.md",
+            "bytes": 4072,
+            "sha256": "e253a5764811dd9b76be3ab2dc14a66d4bc28f8f03839fc54da42ed6b72e43ed"
+          },
+          {
+            "path": "references/hig/virtual-keyboards.md",
+            "bytes": 8571,
+            "sha256": "6f5bb81c995264f685386aecfb7e1e8164071036d120058c272e4944ee5ac41f"
+          },
+          {
+            "path": "references/hig/voiceover.md",
+            "bytes": 5745,
+            "sha256": "3cd17ca5b15f16b41f335ee2830b231004bb3b4a971e1dc9d1371e2523e576d1"
+          },
+          {
+            "path": "references/hig/web-views.md",
+            "bytes": 1171,
+            "sha256": "4b61d903c52d764ec864cb563e07b77ce5b295af5a5245210d61932a8765ce9b"
+          },
+          {
+            "path": "references/hig/widgets.md",
+            "bytes": 31701,
+            "sha256": "ec85face8f96eb8f42716dfb0002e458959db2c66a6b88e5c5437a75a93890ce"
+          },
+          {
+            "path": "references/hig/windows.md",
+            "bytes": 9098,
+            "sha256": "e259a7459e7c301e18a7f88d16ef617ba615678c3a3f9c422e0bb9f5776f6272"
+          },
+          {
+            "path": "references/hig/writing.md",
+            "bytes": 9907,
+            "sha256": "b865a5773cfa3619ee9903e6d3867b604e144b529dfedb8cc62f54f3747b195a"
+          },
+          {
+            "path": "scripts/pull-hig.mjs",
+            "bytes": 34149,
+            "sha256": "45dc5000c63d8b427d96f3df7bf21a34e3d1f29f2fcd25d20ea1e30658fbb1e8"
+          }
+        ],
+        "scripts_executed": []
+      }
+    ]
+  },
+  "codex_discovery": {
+    "method": "Codex app-server skills/list forceReload via stdio; no agent turn or runtime listener",
+    "cwd": "C:\\Users\\lap\\Documents\\Codex\\2026-10-24\\task",
+    "found": [
+      {
+        "name": "animate",
+        "path": "C:\\Users\\lap\\.agents\\skills\\animate\\SKILL.md",
+        "scope": "user",
+        "enabled": true
+      },
+      {
+        "name": "animate-expo",
+        "path": "C:\\Users\\lap\\.agents\\skills\\animate-expo\\SKILL.md",
+        "scope": "user",
+        "enabled": true
+      },
+      {
+        "name": "animation-performance",
+        "path": "C:\\Users\\lap\\.agents\\skills\\animation-performance\\SKILL.md",
+        "scope": "user",
+        "enabled": true
+      },
+      {
+        "name": "animation-vocabulary",
+        "path": "C:\\Users\\lap\\.agents\\skills\\animation-vocabulary\\SKILL.md",
+        "scope": "user",
+        "enabled": true
+      },
+      {
+        "name": "apple-design",
+        "path": "C:\\Users\\lap\\.agents\\skills\\apple-design\\SKILL.md",
+        "scope": "user",
+        "enabled": true
+      },
+      {
+        "name": "apple-hig-review",
+        "path": "C:\\Users\\lap\\.agents\\skills\\apple-hig-review\\SKILL.md",
+        "scope": "user",
+        "enabled": true
+      },
+      {
+        "name": "ask-sonner",
+        "path": "C:\\Users\\lap\\.agents\\skills\\ask-sonner\\SKILL.md",
+        "scope": "user",
+        "enabled": true
+      },
+      {
+        "name": "break-ui",
+        "path": "C:\\Users\\lap\\.agents\\skills\\break-ui\\SKILL.md",
+        "scope": "user",
+        "enabled": true
+      },
+      {
+        "name": "emil-design-eng",
+        "path": "C:\\Users\\lap\\.agents\\skills\\emil-design-eng\\SKILL.md",
+        "scope": "user",
+        "enabled": true
+      },
+      {
+        "name": "find-animation-opportunities",
+        "path": "C:\\Users\\lap\\.agents\\skills\\find-animation-opportunities\\SKILL.md",
+        "scope": "user",
+        "enabled": true
+      },
+      {
+        "name": "improve-animations",
+        "path": "C:\\Users\\lap\\.agents\\skills\\improve-animations\\SKILL.md",
+        "scope": "user",
+        "enabled": true
+      },
+      {
+        "name": "mobile-native",
+        "path": "C:\\Users\\lap\\.agents\\skills\\mobile-native\\SKILL.md",
+        "scope": "user",
+        "enabled": true
+      },
+      {
+        "name": "pick-ui-library",
+        "path": "C:\\Users\\lap\\.agents\\skills\\pick-ui-library\\SKILL.md",
+        "scope": "user",
+        "enabled": true
+      },
+      {
+        "name": "prototype",
+        "path": "C:\\Users\\lap\\.agents\\skills\\prototype\\SKILL.md",
+        "scope": "user",
+        "enabled": true
+      },
+      {
+        "name": "remove-animations",
+        "path": "C:\\Users\\lap\\.agents\\skills\\remove-animations\\SKILL.md",
+        "scope": "user",
+        "enabled": true
+      },
+      {
+        "name": "review-animations",
+        "path": "C:\\Users\\lap\\.agents\\skills\\review-animations\\SKILL.md",
+        "scope": "user",
+        "enabled": true
+      },
+      {
+        "name": "write-swift",
+        "path": "C:\\Users\\lap\\.agents\\skills\\write-swift\\SKILL.md",
+        "scope": "user",
+        "enabled": true
+      }
+    ],
+    "skill_errors": [],
+    "expected_count": 17,
+    "all_installed_present_enabled": true
+  },
+  "contrast": [
+    {
+      "role": "primary",
+      "foreground": "#f3f7f4",
+      "background": "#000000",
+      "ratio": 19.42
+    },
+    {
+      "role": "secondary",
+      "foreground": "#b7c3bb",
+      "background": "#080c0a",
+      "ratio": 10.81
+    },
+    {
+      "role": "eyebrow",
+      "foreground": "#9eada3",
+      "background": "#000000",
+      "ratio": 8.96
+    },
+    {
+      "role": "action",
+      "foreground": "#032017",
+      "background": "#62e7b1",
+      "ratio": 11.11
+    },
+    {
+      "role": "support",
+      "foreground": "#aab7af",
+      "background": "#050705",
+      "ratio": 9.72
+    }
+  ],
+  "original_files_before": {
+    "apps/web/public/ASSETS.md": "feca5ebec9df9b3842afadb1c0a6442e24b38ad479c9445e1f1d26f2cd9a3cf9",
+    "apps/web/components/learning/home-next-action.module.css": "4eaa849950b223af5c220b8330ca6e3f732c865e907a66a454798dff22916d87",
+    "apps/web/public/piscine/official-logo.svg": "0fde8181d16ceb17ac55e6d52e8cab523c3f75976a9aaa81b8695942c7336e54",
+    "docs/RELEASE_CANDIDATE_001_REPORT.md": "95e04b9accaf10d922e5acac157d8d5d7ae33ef17284ccef042558fa0fbca2fd"
+  },
+  "reviewed_head": "c59e8a9be66c92d0ea6b70bbeaf6d650854cb432"
+}

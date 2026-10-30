@@ -18,7 +18,7 @@ The owner still sees the opaque Home video background as separate from the page.
 
 OS reduced-motion emulation and OS-light preference are not live-browser passes. Current source has reduced-motion alternatives. Browser evidence is component-fixture evidence, not live Auth/DB/Runner or a full HIG audit.
 
-## Skills actually used
+## Historical comparison skill provenance
 
 The installed skill lock maps all three following packages to emilkowalski/skills. These are installation folder hashes, not recorded Git commit IDs:
 
@@ -33,3 +33,11 @@ The button-press section of /home/anas/.agents/skills/animate/RECIPES.md was als
 The separate dickwu/apple-design-skill package was not installed in the inspected local skill locations. During comparison review, the design worker read its rendered public SKILL.md and references/cross-platform.md plus references/hig/accessibility.md,layout.md,typography.md,color.md,motion.md,buttons.md,design-principles.md. This was a limited web-foundation review after the initial CSS draft, not the initial implementation source, a package installation, or a native Apple compliance audit. It supported checks of contrast, target sizes, hierarchy, readability and restraint. The document records computed key text contrast8.96–19.42:1 and CTA11.11:1. No Dickwu Git commit was pinned. A raw-file retrieval failed and was not retried; no repository script was run.
 
 See docs/DESIGN_EXPLORATION_001.md for exact public reference links and the historical Before/After/Why rationale. Existing artwork geometry is unchanged. The adoption applies to visual direction; the separately documented backend and operational gaps remain open.
+
+## Paired installed workflow — 30 October 2026
+
+The provenance above describes the original comparison and remains historical. Both requested repositories are now installed and verified on Halawany: Emil's existing 16-package Ubuntu collection was preserved, matching the pinned source; Windows Codex received the same collection. Dickwu's full package is installed in both user skill roots under the unique name `apple-hig-review`, while Emil retains `apple-design`. Only Dickwu's frontmatter name differs from upstream. Codex's actual Windows `skills/list` rescan reports all 17 enabled with no skill errors. The installation does not retroactively change which guidance created the earlier draft.
+
+For every design slice, apply `$emil-design-eng` and `$apple-hig-review` together: define the learner task; audit hierarchy, type, semantic color, spacing, disclosure and accessibility; then apply component finish and purposeful motion using Emil's appropriate motion guidance. Use existing approved artwork and content. Native Apple conventions are translated only where appropriate for this React web portal. Record a Before/After/Why plan, actual responsive and accessibility evidence, and source versus fixture versus live limits. Shared tokens and component variants replace unrelated page-by-page styling.
+
+See `docs/DESIGN_AUDIT_003_BOTH_SKILLS.md` for the first paired source/screenshot audit, exact source commits, next bounded implementation steps and remaining evidence gaps. The approved calm direction is retained; installation/audit does not itself adopt the wrapper on production routes, fix the Home video backdrop, enable backend services, or resolve the two separately denied source actions.
