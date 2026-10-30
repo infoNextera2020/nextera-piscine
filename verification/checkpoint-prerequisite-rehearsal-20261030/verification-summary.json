@@ -1,0 +1,114 @@
+{
+  "state": "passed",
+  "kind": "real_private_socket_PostgreSQL16_rehearsal",
+  "executedSourceHead": "e52406339829be6cd7146278d43bd8979ba8aee9",
+  "scopeSha256": "58612dc01d0393324c85dbced5c927081124bee05c41e1880ae3dd7ec7a8331b",
+  "ownerApproval": {
+    "owner_message_id": "Sentinel_fdde6d1c89288191be3e8c5897b50e24",
+    "owner_approved_at": "2026-10-30T09:08:48.230830+00:00",
+    "scope_sha256": "58612dc01d0393324c85dbced5c927081124bee05c41e1880ae3dd7ec7a8331b"
+  },
+  "startedAtUtc": "2026-10-30T09:11:32.624728+00:00",
+  "cleanupThresholdUtc": "2026-10-30T09:38:32.624728+00:00",
+  "hardDeadlineUtc": "2026-10-30T09:41:32.624728+00:00",
+  "cleanupReceiptWrittenAtUtc": "2026-10-30T09:11:43.934555+00:00",
+  "independentlyCheckedAtUtc": "2026-10-30T09:31:05.776352+00:00",
+  "registeredMigrationsAcknowledged": 11,
+  "dbaSourceSpans": [
+    {
+      "file": "0003_judge_protocol.sql",
+      "sha256": "9bb4aed8f6f05d28cbb5f13b1c64a9d1b0e3bf9406d307a0fea97f07eb0a1fc3",
+      "dbaSha256": "dbf561eeb30b64429ef7cc1f01a4624115eb5221c8270a46c10665eea1344f53",
+      "actorRestoredBeforeCommit": true
+    },
+    {
+      "file": "0007_checkpoint_operations.sql",
+      "sha256": "99e9d01c77f6eeb9f6f968e903375083531a3d2f112dfaca3249d458aaeeb35c",
+      "dbaSha256": "88481335927c400dfbf25ff1f2141e5f962da1ef4b191eba75b1984dcf9c6e11",
+      "actorRestoredBeforeCommit": true
+    },
+    {
+      "file": "0008_raid_domain.sql",
+      "sha256": "c4ac095e2b8cbdde3df918975801cc7ee0cc25c13990bc193369f097b6a4a718",
+      "dbaSha256": "aef286e174b93fcf2e7c16c98c2d5f8a082424ade82a91d17e87248f3815918b",
+      "actorRestoredBeforeCommit": true
+    },
+    {
+      "file": "0009_raid_operations.sql",
+      "sha256": "49f98790ac105e99d2f946823813ee7aa150b0b9247f777afb494707ae5d4cbe",
+      "dbaSha256": "68f3bb4f7239965fe1947d0dbb6d02a57886e80662decb1df8a33a28a9a6f825",
+      "actorRestoredBeforeCommit": true
+    }
+  ],
+  "repair": {
+    "functions": 25,
+    "executeGrants": 27,
+    "commitAcknowledged": true,
+    "actualBeforeAfterAclEqual": true,
+    "publicDenied": true,
+    "actorPrivilegeExpansion": false,
+    "beforeGraphSha256": "b3234acde46cf7f505fc8bb4c8b949d36f7af246abb9b7c7aebd8326da5b67c5",
+    "afterGraphSha256": "b3234acde46cf7f505fc8bb4c8b949d36f7af246abb9b7c7aebd8326da5b67c5",
+    "sqlSourceSha256": "aa313eb1ea95d653648856157084a1dc7df3ce960cef4a99fb952f9bfa25af3f"
+  },
+  "realSqlCases": [
+    {
+      "name": "wrong_identity",
+      "passed": true
+    },
+    {
+      "name": "probe_acl_rejection",
+      "passed": true
+    },
+    {
+      "name": "second_ddl_rollback",
+      "passed": true
+    },
+    {
+      "name": "audit_rollback",
+      "passed": true
+    },
+    {
+      "name": "catalog_contention_and_rollback_release",
+      "passed": true
+    },
+    {
+      "name": "disconnect_release",
+      "passed": true
+    },
+    {
+      "name": "single_commit_last",
+      "passed": true
+    }
+  ],
+  "sqlCleanupReceipt": {
+    "guard_removed": true,
+    "roles_disabled": true
+  },
+  "independentShutdown": {
+    "ownedProcesses": [],
+    "postmasterPidFilePresent": false,
+    "socketFiles": [],
+    "watchdogAlive": false,
+    "tcpConfigured": false,
+    "protectedDataRetained": true,
+    "evidenceRetained": true,
+    "permanentDeletion": false
+  },
+  "retainedPrivateRoot": "/home/anas/.local/share/nextera-judge/checkpoint-migration-adapter-20261029/run-001",
+  "snapshotSourcesSha256Verified": 33,
+  "evidenceSha256": {
+    "assertions.json": "f1c3e4acfc71b59f69ad20b915839203f40b7681e9efdf87599249f6013654d0",
+    "prerequisite-repair.json": "69b59a5ca0b32c9615261ea7f1a1ca4d3d3f0cb5bc3dff722f171715de1e882d",
+    "cleanup.json": "3025a5aeb403c8c025a30b2c4218d10b7dbd84d76d33779c67fd3c60fd6a5cca",
+    "guard-ready.json": "65b49a27e4befb3c3f7f695df2b03e9b43c32d2489909c5829993d3e3ff2ca14"
+  },
+  "limits": [
+    "Reconciliation was idempotent on the already-complete fresh baseline; missing-grant repair rollback remains injected evidence.",
+    "Real rollback cases concern the combined0011/0014 draft transaction, not a real repair-grant fault.",
+    "No authenticated HTTP/browser saving, learner data, Auth, Storage, Runner, invitations or student numbers tested.",
+    "This does not prove a hosted provider permits the DBA/catalog-lock operations.",
+    "Old attempt003 exception/catalog state remains unknown and untouched."
+  ],
+  "approvalClosedByCompletion": true
+}
