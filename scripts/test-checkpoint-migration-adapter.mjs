@@ -8,6 +8,19 @@ import { performance } from 'node:perf_hooks';
 import { setTimeout, clearTimeout } from 'node:timers';
 import { fileURLToPath } from 'node:url';
 import {
+  PREREQUISITE_FUNCTIONS,
+  assertFunctionAcls,
+  applyRegisteredPrerequisite,
+  applyPrerequisiteExecuteRepair,
+  REPAIR_FILE,
+  PrerequisiteRepairError,
+} from './checkpoint-prerequisite-repair.mjs';
+export {
+  PREREQUISITE_FUNCTIONS,
+  FUNCTION_ACL_SQL,
+  assertFunctionAcls,
+} from './checkpoint-prerequisite-repair.mjs';
+import {
   buildMigrationCatalogGuard,
   createCheckpointMigrationPostgresRepository,
   MIGRATION_FACTS_SQL,
@@ -22,9 +35,7 @@ import {
 export const TARGET =
   '/home/anas/.local/share/nextera-judge/checkpoint-migration-adapter-20261029/run-001';
 export const DATABASE = 'foundation_test_checkpoint_migration_adapter_20261029';
-export const RUNTIME_BLOCKERS = Object.freeze([
-  'registered_prerequisite_acl_authority_requires_review',
-]);
+export const RUNTIME_BLOCKERS = Object.freeze([]);
 const ACTOR = 'checkpoint_migration_actor_20261029',
   PROBE = 'checkpoint_migration_probe_20261029';
 const ROLES = [
@@ -100,82 +111,6 @@ export const DRAFT_FUNCTIONS = Object.freeze([
   ['app.purge_expired_checkpoint_drafts(timestamptz,integer)', false],
   ['app.checkpoint_editor_context(uuid,uuid,text)', true],
 ]);
-export const FUNCTION_ACL_SQL = `SELECT o.rolname AS owner,
- NOT EXISTS(SELECT FROM pg_catalog.aclexplode(coalesce(p.proacl,pg_catalog.acldefault('f',p.proowner))) a WHERE a.grantee=0) AS no_public,
- pg_catalog.has_function_privilege('nextera_web',p.oid,'EXECUTE') AS web_execute,
- NOT EXISTS(SELECT FROM pg_catalog.aclexplode(coalesce(p.proacl,pg_catalog.acldefault('f',p.proowner))) a
- WHERE a.grantee<>p.proowner AND (a.privilege_type<>'EXECUTE' OR a.is_grantable)) AS execute_only,
- coalesce((SELECT jsonb_agg(DISTINCT r.rolname ORDER BY r.rolname) FROM
- pg_catalog.aclexplode(coalesce(p.proacl,pg_catalog.acldefault('f',p.proowner))) a
- JOIN pg_catalog.pg_roles r ON r.oid=a.grantee WHERE a.grantee<>p.proowner),'[]'::jsonb) AS grantees
- FROM pg_catalog.pg_proc p JOIN pg_catalog.pg_roles o ON o.oid=p.proowner WHERE p.oid=pg_catalog.to_regprocedure($1)`;
-export async function assertFunctionAcls(sql, specs) {
-  for (const [signature, owner, allowWeb, extra = []] of specs) {
-    const expected = [...(allowWeb ? ['nextera_web'] : []), ...extra].sort();
-    const rows = await sql.unsafe(FUNCTION_ACL_SQL, [signature]);
-    assert.equal(rows.length, 1, 'Missing expected function ' + signature);
-    const row = rows[0];
-    assert.equal(row.owner, owner, signature);
-    assert.equal(row.no_public, true, signature);
-    assert.equal(row.web_execute, allowWeb, signature);
-    assert.equal(row.execute_only, true, signature);
-    assert.deepEqual(row.grantees, expected, signature);
-  }
-}
-export const PREREQUISITE_FUNCTIONS = Object.freeze([
-  ['app.submission_context(uuid,uuid,text)', 'nextera_judge_owner', true, ['nextera_raid_owner']],
-  [
-    'app.accept_submission(uuid,uuid,text,uuid,text,bigint,text)',
-    'nextera_judge_owner',
-    true,
-    ['nextera_raid_owner'],
-  ],
-  ['app.read_submissions(uuid,uuid,text)', 'nextera_judge_owner', true],
-  ...[
-    'claim_job()',
-    'renew_lease(uuid,uuid,uuid,bigint)',
-    'heartbeat()',
-    'record_execution_attempt(uuid,uuid,uuid,bigint)',
-    'record_result(uuid,uuid,uuid,bigint,text,jsonb)',
-    'record_infrastructure_failure(uuid,uuid,uuid,bigint,text)',
-  ].map((s) => ['judge.' + s, 'nextera_judge_owner', false, ['nextera_runner']]),
-  ['judge.recover_expired(integer)', 'nextera_judge_owner', false, ['nextera_judge_maintenance']],
-  ['app.start_checkpoint(uuid,uuid,text,uuid)', 'nextera_checkpoint_owner', true],
-  ['app.finish_checkpoint(uuid,uuid)', 'nextera_checkpoint_owner', true],
-  ['app.checkpoint_task_context(uuid,uuid,text)', 'nextera_checkpoint_owner', true],
-  [
-    'app.accept_checkpoint_submission(uuid,uuid,text,uuid,text,bigint,text)',
-    'nextera_checkpoint_owner',
-    true,
-  ],
-  ['app.read_checkpoint(uuid,uuid,text)', 'nextera_checkpoint_owner', true],
-  ['app.grant_checkpoint_replacement(uuid,uuid)', 'nextera_checkpoint_owner', true],
-  [
-    'app.finalize_checkpoint(uuid)',
-    'nextera_checkpoint_owner',
-    false,
-    ['nextera_result_application'],
-  ],
-  [
-    'app.announce_checkpoint_retake(uuid)',
-    'nextera_checkpoint_owner',
-    false,
-    ['nextera_result_application'],
-  ],
-  ['app.assign_raid_team(uuid,uuid,text,uuid,text,uuid,uuid[])', 'nextera_raid_owner', true],
-  ['app.accept_raid_submission(uuid,uuid,text,uuid,text,bigint,text)', 'nextera_raid_owner', true],
-  ['app.read_raid(uuid,uuid,text,uuid)', 'nextera_raid_owner', true],
-  ['app.raid_review_queue(uuid)', 'nextera_raid_owner', true],
-  ['app.review_raid(uuid,uuid,uuid,text,text)', 'nextera_raid_owner', true],
-  ['app.raid_artifact_context(uuid,uuid)', 'nextera_raid_owner', true],
-  [
-    'app.apply_raid_automated_result(uuid)',
-    'nextera_raid_owner',
-    false,
-    ['nextera_result_application'],
-  ],
-]);
-
 export async function runOrderedCases(operations, timeoutMs = 15000) {
   assert.deepEqual(Object.keys(operations).sort(), [...CASE_ORDER].sort());
   assert.ok(Number.isSafeInteger(timeoutMs) && timeoutMs > 0 && timeoutMs <= 15000);
@@ -310,19 +245,51 @@ export async function executePreparedRunner(record, postgres) {
       CREATE SCHEMA auth AUTHORIZATION ${quote(ACTOR)};
       CREATE TABLE auth.users(id uuid PRIMARY KEY);ALTER TABLE auth.users OWNER TO ${quote(ACTOR)};`);
     actor = bindRoleTransactions(connect(), ACTOR);
+    const minimalAuth = (
+      await admin.unsafe(
+        "SELECT to_regclass('storage.objects') IS NULL AS storage_absent,to_regprocedure('auth.uid()') IS NULL AS auth_stub",
+      )
+    )[0];
+    assert.deepEqual({ ...minimalAuth }, { storage_absent: true, auth_stub: true });
     const journal = JSON.parse(sourceBytes(record, 'packages/db/migrations/meta/_journal.json'));
     assert.deepEqual(
       journal.entries.map((e) => e.idx),
       Array.from({ length: 11 }, (_, i) => i),
     );
+    const authorityPolicy = () => ({
+      database: DATABASE,
+      dba: 'anas',
+      actor: ACTOR,
+      allowFixedDbaSections: true,
+      approvedScopeSha256: record.scope_sha256,
+      deadlineMs: Math.min(Date.now() + 20000, record.cleanup_at * 1000),
+    });
+    const authorityClock = { nowMs: Date.now, monotonicMs: () => performance.now() };
     for (const entry of journal.entries) {
       checkTime();
-      await actor.unsafe(
-        sourceBytes(record, 'packages/db/migrations/' + entry.tag + '.sql').toString('utf8'),
+      const file = entry.tag + '.sql',
+        bytes = sourceBytes(record, 'packages/db/migrations/' + file);
+      phase = 'prerequisite:' + file;
+      fs.writeFileSync(
+        path.join(TARGET, 'evidence/prerequisite-' + entry.idx + '-started.json'),
+        JSON.stringify({ file, sourceSha256: hash(bytes), scope_sha256: record.scope_sha256 }) +
+          '\n',
+        { mode: 0o600, flag: 'wx' },
+      );
+      const receipt = await applyRegisteredPrerequisite(
+        admin,
+        file,
+        bytes,
+        authorityPolicy(),
+        authorityClock,
+      );
+      fs.writeFileSync(
+        path.join(TARGET, 'evidence/prerequisite-' + entry.idx + '.json'),
+        JSON.stringify(receipt) + '\n',
+        { mode: 0o600, flag: 'wx' },
       );
     }
     await admin.unsafe('ALTER ROLE ' + quote(ACTOR) + ' NOCREATEROLE');
-    await assertFunctionAcls(observer, PREREQUISITE_FUNCTIONS);
     const roles = await admin.unsafe(
       "SELECT rolname,rolcanlogin,rolsuper,rolcreatedb,rolcreaterole,rolbypassrls,rolreplication FROM pg_catalog.pg_roles WHERE rolname !~ '^pg_' AND rolname<>'anas' ORDER BY rolname",
     );
@@ -349,6 +316,25 @@ export async function executePreparedRunner(record, postgres) {
       )[0].n,
       0,
     );
+    phase = 'prerequisite_execute_repair';
+    const repairBytes = sourceBytes(record, 'packages/db/migration-drafts/' + REPAIR_FILE);
+    fs.writeFileSync(
+      path.join(TARGET, 'evidence/prerequisite-repair-started.json'),
+      JSON.stringify({ scope_sha256: record.scope_sha256, sourceSha256: hash(repairBytes) }) + '\n',
+      { mode: 0o600, flag: 'wx' },
+    );
+    const repairReceipt = await applyPrerequisiteExecuteRepair(
+      admin,
+      repairBytes,
+      { ...authorityPolicy(), repairSha256: hash(repairBytes) },
+      authorityClock,
+    );
+    fs.writeFileSync(
+      path.join(TARGET, 'evidence/prerequisite-repair.json'),
+      JSON.stringify(repairReceipt) + '\n',
+      { mode: 0o600, flag: 'wx' },
+    );
+    await assertFunctionAcls(observer, PREREQUISITE_FUNCTIONS);
     const before = (await actor.unsafe(MIGRATION_FACTS_SQL))[0].data;
     assert.equal(before.principalCanSetOwner, false);
     assert.equal(before.grantAuthority, 'admin_option');
@@ -596,7 +582,12 @@ export async function executePreparedRunner(record, postgres) {
       state: 'failed',
       scope_sha256: record.scope_sha256,
       phase,
-      sqlstate: /^[0-9A-Z]{5}$/.test(error?.code ?? '') ? error.code : null,
+      sqlstate:
+        error instanceof PrerequisiteRepairError
+          ? error.sqlstate
+          : /^[0-9A-Z]{5}$/.test(error?.code ?? '')
+            ? error.code
+            : null,
       assertion_failure: error?.code === 'ERR_ASSERTION',
       raw_diagnostics_retained: false,
     };

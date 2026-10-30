@@ -1,0 +1,115 @@
+{
+  "kind": "source_only_fixed_27_execute_repair_and_minimum_dba_handoff",
+  "checkedAtUtc": "2026-10-30T09:00:56.983647+00:00",
+  "baselineHead": "761e91e253ce0c1645fabcb693e0f60f7bade6d9",
+  "node": {
+    "tests": 209,
+    "passed": 209,
+    "failed": 0,
+    "newRepairTests": 37
+  },
+  "python": {
+    "testsAcrossTwoRuns": 86,
+    "passed": 86,
+    "failed": 0,
+    "authControllerTests": 74,
+    "migrationControllerTests": 12
+  },
+  "static": {
+    "eslint": true,
+    "nodeSyntax": true,
+    "pythonCompilation": true,
+    "prettier": true,
+    "gitDiffCheck": true,
+    "gitStagedDiffCheck": true
+  },
+  "provenance": {
+    "intendedExecuteEdges": 27,
+    "functions": 25,
+    "originalRegisteredFiles": 11,
+    "allRegisteredBytesAndJournalUnchanged": true,
+    "fourOriginalDirtyFilesSha256Unchanged": true,
+    "repairRegisteredForAutomaticMigration": false
+  },
+  "independentReview": {
+    "mode": "read_only_source",
+    "remainingCodeFindings": 0,
+    "checked": [
+      "minimal_pinned_source_spans",
+      "role_identity_and_no_actor_expansion",
+      "actor_SET_and_inherit_path_denial",
+      "owner_PUBLIC_and_exact_ACL_guards",
+      "rollback_and_commit_uncertainty",
+      "source_vs_runtime_readiness"
+    ]
+  },
+  "readOnlyPreflight": {
+    "passed": true,
+    "targetAbsent": true,
+    "installedToolPathsExist": true,
+    "sourceScopeStable": true,
+    "databaseConnection": false
+  },
+  "scopeSha256": "58612dc01d0393324c85dbced5c927081124bee05c41e1880ae3dd7ec7a8331b",
+  "sha256": {
+    "scripts/checkpoint-prerequisite-manifest.mjs": "ed614445a8746c8f440d715db38178e175097a2734884e629ba858f14da11523",
+    "scripts/checkpoint-prerequisite-repair.mjs": "a4bcae5fd6ca16b65eff41fa23ad5e0d0aaa039b2f1ffdf513e7196dd2c1813b",
+    "scripts/tests/checkpoint-prerequisite-repair.node-unit.mjs": "009eb64058615836ea86c934d614f221808d7c9ec59c24eb2ada746426fa2640",
+    "packages/db/migration-drafts/0019_prerequisite_execute_repair.DRAFT.sql": "aa313eb1ea95d653648856157084a1dc7df3ce960cef4a99fb952f9bfa25af3f",
+    "scripts/test-checkpoint-migration-adapter.py": "963bbc3e5ff97fbd160b6d35f9ec707349e88cd0cdd3617ec9b55c9a2d5a2338",
+    "scripts/test-checkpoint-migration-adapter.mjs": "76f94d9258e56d8c9c7f156b002fb71ead9e8eb0f84f205a37da1be238789c5e",
+    "scripts/tests/test_checkpoint_migration_adapter.py": "8d1394074301f48cb712700507bcf857f11908c819d58b39c6e2327ed3018db8",
+    "scripts/tests/checkpoint-migration-rehearsal.node-unit.mjs": "7c6d0cd81d93da30d9f8bae3b091df11ac4e7e543d8054dc27b355ca868a5864",
+    "docs/CHECKPOINT_MIGRATION_ADAPTER_REHEARSAL_001.md": "a3130ce61f7ced78a5b089b7b7b7e36c09e8756799e7bf809de4e64b9a20b94c",
+    "docs/SUNDAY_WEEK1_TRIAL_001.md": "b2637084d44c242d70e2d1b7f33d10eedc5ba75265c979db92c86dca24555c80",
+    "apps/web/lib/invitations/README.md": "e77a00139046cc3c0ebac646f5786ae01f5ddca9eb45fbb560b3e674e2263af2"
+  },
+  "runtime": {
+    "preparedSourceReady": true,
+    "realPostgresVerified": false,
+    "freshExactApprovalRequired": true,
+    "newTargetCreated": false,
+    "sqlExecuted": false,
+    "rolesOrCredentialsCreated": false,
+    "servicesStarted": false
+  },
+  "limits": [
+    "Missing-edge recovery and repair rollback are injected evidence only.",
+    "Fresh mixed-authority replay is expected to have all27 grants; repair then proves idempotent reconciliation.",
+    "No SQL parsing, lock, driver-wire, real rollback or authenticated browser assertion ran.",
+    "Source checkpoint budgets do not replace independent runtime deadline supervision.",
+    "Existing closed attempts and original unknown SQL failure remain untouched."
+  ],
+  "notRun": [
+    "actual PostgreSQL rehearsal",
+    "application typecheck/build/browser; no application code changed"
+  ],
+  "trialScope": "Sunday preconfigured Week1 invitation/login, real challenge/result, exam save/recovery, project/assigned mentor; advanced assignment/exceptions/admin expansion deferred",
+  "approvedTrialPlanning": {
+    "manualPrivateInvitation": {
+      "emailBound": true,
+      "expiring": true,
+      "singleUse": true,
+      "sentByAnas": true,
+      "issuanceIsAcceptance": true,
+      "noSecondAdminConfirmation": true,
+      "enrollIntendedCohort": true,
+      "liveTokensIssued": false
+    },
+    "studentNumber": {
+      "globallyUniqueStableAcrossCohorts": true,
+      "separateFromInternalUserId": true,
+      "learnerDisplay": "own settings only",
+      "staffDisplay": "authorized mentor/admin name plus number; email/cohort where authorized",
+      "peerEmailOrNumberExposure": false,
+      "implementedOrAssigned": false
+    },
+    "sourceGaps": [
+      "private issuer/acceptance authority hook",
+      "live invitation inspection/activation route and UI currently disabled",
+      "explicit lifetime/password/email-verification/rate/transport policies",
+      "versioned globally unique student-number field and authorized projections"
+    ],
+    "nativeAclScopeExpandedForTheseFeatures": false
+  }
+}

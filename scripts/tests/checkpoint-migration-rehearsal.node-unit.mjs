@@ -112,9 +112,9 @@ test('source uses explicit dynamic driver gate and exact body failure injection'
   assert.ok(!code.includes('DROP SCHEMA') && !code.includes('DROP DATABASE'));
 });
 
-test('known prerequisite blocker prevents all client creation', async () => {
+test('invalid control prevents all client creation', async () => {
   let constructed = false;
-  assert.ok(RUNTIME_BLOCKERS.length > 0);
+  assert.equal(RUNTIME_BLOCKERS.length, 0);
   await assert.rejects(
     executePreparedRunner({}, () => {
       constructed = true;

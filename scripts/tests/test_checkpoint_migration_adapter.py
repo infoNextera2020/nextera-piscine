@@ -207,10 +207,10 @@ class ControllerTests(unittest.TestCase):
             self.c.run(self.approval)
         self.assertFalse(self.target.parent.exists())
 
-    def test_real_entrypoint_is_blocked_before_any_runtime_path_or_command(self):
+    def test_real_entrypoint_requires_fresh_approval_before_any_runtime_path_or_command(self):
         real = h.Controller(REPO)
         with patch.object(Path, 'mkdir') as mkdir, patch.object(real, 'preflight') as preflight:
-            with self.assertRaisesRegex(RuntimeError, 'prerequisite ACL authority'):
+            with self.assertRaisesRegex(RuntimeError, 'Approval is future or expired'):
                 real.run(self.approval)
             mkdir.assert_not_called()
             preflight.assert_not_called()

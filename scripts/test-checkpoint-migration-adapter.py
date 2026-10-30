@@ -26,16 +26,19 @@ ACTOR = 'checkpoint_migration_actor_20261029'
 PROBE = 'checkpoint_migration_probe_20261029'
 PORT = '55451'
 MAX_SECONDS, CLEANUP_EARLY, APPROVAL_SECONDS = 1800, 180, 600
-SOURCE_BLOCKERS = ['registered_prerequisite_acl_authority_requires_review']
+SOURCE_BLOCKERS = []
 PERMISSION_ROLES = ['nextera_web', 'nextera_judge_owner', 'nextera_runner',
                     'nextera_judge_maintenance', 'nextera_result_application',
                     'nextera_checkpoint_owner', 'nextera_raid_owner']
-SCOPE = {'version': 1, 'database': DATABASE, 'target': str(TARGET), 'socket': 's',
+SCOPE = {'version': 2, 'database': DATABASE, 'target': str(TARGET), 'socket': 's',
          'socket_identifier': PORT, 'tcp': False, 'actor': ACTOR, 'probe': PROBE,
          'nologin_roles': PERMISSION_ROLES + [ACTOR, PROBE],
          'maximum_seconds': MAX_SECONDS, 'cleanup_early_seconds': CLEANUP_EARLY,
          'approval_start_seconds': APPROVAL_SECONDS,
-         'migrations': 'registered0000-0010+draft0011+draft0014',
+         'migrations': 'registered0000-0010+draft0019-execute-repair+draft0011+draft0014',
+         'fixed_dba_sections': {'0003':'EXECUTE grants only','0007':'unchanged final DO block','0008':'one EXECUTE grant','0009':'EXECUTE grants only'},
+         'repair': 'named existing DBA: 27 exact EXECUTE grants; no grant option, owner or role changes',
+         'repair_catalog_locks': ['pg_authid','pg_auth_members','pg_proc','pg_namespace'],
          'auth_accounts_or_passwords': False, 'retained_data_touched': False,
          'permanent_deletion': False, 'guard_owner': 'anas',
          'actor_createrole': 'prerequisites only, then revoked',
@@ -60,6 +63,8 @@ def source_manifest(repo):
              'packages/db/migrations/meta/_journal.json',
              'packages/db/migration-drafts/0011_checkpoint_drafts.DRAFT.sql',
              'packages/db/migration-drafts/0014_checkpoint_editor_context.DRAFT.sql']
+    fixed += ['scripts/checkpoint-prerequisite-manifest.mjs', 'scripts/checkpoint-prerequisite-repair.mjs',
+              'packages/db/migration-drafts/0019_prerequisite_execute_repair.DRAFT.sql']
     journal = json.loads((repo / fixed[5]).read_text())['entries']
     if [e['idx'] for e in journal] != list(range(11)):
         raise RuntimeError('Registered migration scope changed')
@@ -83,7 +88,8 @@ def source_manifest(repo):
 
 def plan(repo):
     sources = source_manifest(repo)
-    value = {'scope': SCOPE, 'sources': sources, 'runtime_ready': not SOURCE_BLOCKERS,
+    value = {'scope': SCOPE, 'sources': sources, 'prepared_source_ready': not SOURCE_BLOCKERS, 'runtime_ready': False,
+             'real_postgres_verified': False, 'fresh_runtime_approval_required': True,
              'runtime_blockers': SOURCE_BLOCKERS}
     digest = hashlib.sha256(json.dumps(value, sort_keys=True, separators=(',', ':')).encode()).hexdigest()
     return {**value, 'scope_sha256': digest}

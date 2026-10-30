@@ -1,97 +1,84 @@
-# Checkpoint migration adapter: source and proposed isolated verification
+# Checkpoint prerequisite repair and migration rehearsal: proposed scope v2
 
-Status: implemented source and injected tests only. This document is a proposal, not execution approval. No connection, grant, SQL application, new runtime directory, service, credential or attempt was created for this work. The adapter is not imported by the live broker.
+Status: source preparation only. No PostgreSQL connection, SQL execution, runtime directory, service, credential or grant application occurred during preparation. The plan reports `prepared_source_ready: true`, `runtime_ready: false`, `real_postgres_verified: false`, and requires fresh runtime approval. Earlier runtime approvals are closed. Historical receipts and failed attempts remain untouched.
 
-## 2026-10-30 source correction and blocked runtime status
+## Why the DBA phase is necessary
 
-The runnable Python controller and Node assertion runner are now prepared, with injected tests. Both real entrypoints deliberately fail before target creation or client construction because registered prerequisite ACL authority is unresolved. Do not request launch approval or remove these blocks merely to obtain a passing rehearsal.
+The non-superuser actor has no inherited owner privileges. Registered 0003 revokes PUBLIC execution, transfers function ownership, then tries to grant EXECUTE. With no remaining privileges that can raise a hard error, so a repair appended after all prerequisites would be unreachable. Registered 0007/0008/0009 contain related authority boundaries. Merely adding INHERIT, SET ROLE, SUPERUSER or GRANT OPTION to the actor would conceal the problem and is excluded. [PostgreSQL GRANT rules](https://www.postgresql.org/docs/16/sql-grant.html#SQL-GRANT-NOTES)
 
-The old one-time pool identity switch was replaced with a per-transaction wrapper: Postgres.js binds the transaction callback to one physical connection; before any callback or prerequisite SQL, the wrapper uses SET LOCAL SESSION AUTHORIZATION and verifies both current and session user. Every newly reconnected transaction repeats this setup. This uses only the already proposed private-cluster bootstrap authority and restores identity on transaction completion. It is not a web authentication feature. See [PostgreSQL session authorization](https://www.postgresql.org/docs/16/sql-set-session-authorization.html).
+The prepared solution preserves every registered byte and uses the originally authenticated private-cluster bootstrap DBA only for four fixed source spans. Each file remains one transaction on one physical connection. The actor executes its unchanged prefix; the named DBA executes only the pinned privileged span; the actor is restored and verified before any suffix and before commit. A source/hash/boundary mismatch fails before transaction execution. [PostgreSQL session authorization](https://www.postgresql.org/docs/16/sql-set-session-authorization.html) supports LOCAL identity changes and restoration; this is test-bootstrap authority, not an application login feature.
 
-Draft 0011 and 0014 had a confirmed source bug: ownership transfer preceded ACL cleanup/grants, although SET-only membership does not supply inherited owner ACL authority afterward. Their current reviewed source now finalizes exact new-object ACLs before transfer. No INHERIT, SET ROLE, ADMIN or other actor privilege was added. Draft 0011 cleanup also targets exact function signatures rather than unrelated overloads. These are unregistered draft source corrections, not migration execution or a rewrite of prior evidence:
+| Registered source              | Exact DBA span                                                 | Everything else |
+| ------------------------------ | -------------------------------------------------------------- | --------------- |
+| 0003_judge_protocol.sql        | Three complete EXECUTE GRANT statements, original lines363–367 | Actor           |
+| 0007_checkpoint_operations.sql | Entire unchanged final DO block, original lines314–330         | Actor           |
+| 0008_raid_domain.sql           | One complete EXECUTE GRANT statement, original line106         | Actor           |
+| 0009_raid_operations.sql       | Two complete EXECUTE GRANT statements, original lines258–260   | Actor           |
 
-- Current 0011 SHA256: eaf3f7e95589fddf081f73084700ee994e9d87a775187d76f0d39d8d89e5a1e6.
-- Current 0014 SHA256: 8146ae6be34adfeacdbcaf3fb9e22b4a3516b9202eeee8cfaf3fbd88e81b78c3.
+Byte offsets and SHA256 values for every prefix/span/suffix and all 11 registered files are frozen in `scripts/checkpoint-prerequisite-manifest.mjs`. Concatenation must reproduce each original buffer exactly. The final DO in 0007 cannot be split at its internal GRANT without rewriting registered code; it executes as verified bootstrap superuser, so its conditional temporary self-membership branch is unnecessary. No owner role is granted to the actor by this handoff.
 
-The runner checks exact owners, PUBLIC denial, web EXECUTE and other intended grantees on eight draft functions and 25 prerequisite functions representing 27 intended EXECUTE edges, plus owner-only table ACLs and RLS. Object existence alone cannot establish success. Simulated reconnect, identity mismatch, ACL mismatch, case ordering and pre-runtime blocking are covered by fake tests; actual SQL remains unexecuted.
+## Append-only 27-grant repair
 
-Registered 0003 and 0007 grant function execution after transfer; 0008 grants access to helpers transferred by 0003; 0009 grants after transfer and temporary-membership removal. The restricted NOINHERIT actor therefore cannot reliably establish the intended 27 edges. Registered 0000–0010 remain byte-for-byte unchanged. The skipped 0010 Storage branch is not covered by this native test.
+`packages/db/migration-drafts/0019_prerequisite_execute_repair.DRAFT.sql` is unregistered and never discovered by ordinary `db:migrate`. It contains exactly27 EXECUTE GRANT statements for 25 fixed functions and existing grantees already named by the registered contracts:
 
-The next source task is a separately reviewed append-only prerequisite ACL repair and explicit owner/DBA authority plan, with exact pre/post owner/ACL/role-graph assertions. A fixed bootstrap/DBA repair in the fresh private cluster would avoid broadening the actor, but is not authorized or implemented by this milestone. Do not silently add INHERIT, SET ROLE, SUPERUSER or arbitrary grants, rewrite registered history, or repair retained databases. The exact runtime proposal below remains blocked until that source plan is complete and reviewed; any later added repair SQL requires a revised scope and fresh approval.
+- 0003: three web, six Runner and one maintenance edges.
+- 0007: six web and two result-application edges.
+- 0008: two Raid-owner edges on the existing submission helpers.
+- 0009: six web and one result-application edges.
 
-Controller lifecycle: immutable approval metadata (trusted outer caller must verify the real human message), source-hash-bound private snapshot, watchdog-ready handshake before initdb, parent identity, wall and monotonic deadlines, startup/shutdown serialization, verified owned-process cleanup and retained evidence. CLI metadata validation checks freshness/scope; it does not authenticate a human message itself. Planned case order is negatives/forced rollback before one committed success. The plan command reads source only and reports `runtime_ready: false`; the run command cannot proceed in this version.
+The complete function/owner/grantee manifest is fixed in source and tested against the original statements. The repair creates no objects or roles, changes no owner or role attributes, revokes no existing rights, grants no grant option, and grants nothing to PUBLIC or the migration actor. On a successful mixed-authority fresh replay, all 27 edges should already exist: the repair is idempotent reconciliation there, not evidence that grants were previously missing. Missing-edge recovery and failure rollback are injected-test coverage until a separately approved real test establishes them.
 
-## Implemented boundary
+The named DBA runs the repair in one READ COMMITTED transaction. It checks the exact synthetic database and DBA identity, acquires NOWAIT SHARE ROW EXCLUSIVE locks on pg_authid, pg_auth_members, pg_proc and pg_namespace, and independently verifies those locks. It requires safe existing NOLOGIN permission roles, exact function owners, PUBLIC denial, and no unexpected grantee or grant option. The actor must have neither SET nor inherited/USAGE access to any of the seven owner/recipient roles; existing ADMIN-only rows may remain. This prevents object grants from indirectly expanding actor privileges through an existing membership.
 
-`scripts/checkpoint-migration-postgres.mjs` accepts an already configured Postgres.js client (`prepare: false`), explicit scope/database/actor/draft hashes, reviewed guard parameters, required time limits and injected wall/monotonic clocks. Construction is pure. It does not read environment files, instantiate a client, authenticate owner approval or install its guard.
+After the 27 fixed grants, exact intended ACLs and effective web permissions are checked. The role/attribute/membership graph must be unchanged. Protected receipts include actual safe before/after ACL facts and graph digests, source hashes and commit acknowledgement. Any source, identity, ACL, path, graph or statement failure aborts. Commit/connection ambiguity is never a rollback claim or permission to replay. No retained attempt is inspected to infer its old catalog or rollback state.
 
-One `client.begin('isolation level read committed', ...)` callback supplies every query. The adapter attests the fixed guard's body hash, schema/function owner, SECURITY DEFINER mode, signature, language, search path and ACLs; rejects web effective privileges and SET reachability; invokes the guard; independently proves both shared-catalog locks on this backend/transaction; then re-attests permissions under those locks. Missing proof fails before migration DDL.
+## Exact proposed execution resources
 
-The existing contract verifies direct existing ADMIN authority before adding exactly one owner-to-same-actor membership, with ADMIN false, INHERIT false, SET true and that actor as grantor. Existing SET authority uses no grant. After the two exact draft bodies, only the introduced grant is revoked, with qualified grantor and RESTRICT. All original membership rows/options, actor identity and SET availability must match before commit. Web/learner memberships are never a target.
+| Item           | Proposed value                                                                             |
+| -------------- | ------------------------------------------------------------------------------------------ |
+| Environment    | Halawany, existing WSL Ubuntu, OS user anas                                                |
+| Tools          | Existing PostgreSQL 16, Node 24 and installed Postgres.js 3.4.9; no install                |
+| Fresh root     | `/home/anas/.local/share/nextera-judge/checkpoint-migration-adapter-20261029/run-001`      |
+| Database       | `foundation_test_checkpoint_migration_adapter_20261029`                                    |
+| Socket         | `s/.s.PGSQL.55451` below that root; directory/socket 0700; no TCP                          |
+| Data/evidence  | Protected `data/`, `snapshot/`, `evidence/`; retained after shutdown                       |
+| Lifetime       | At most 30 minutes; cleanup begins 3 minutes early; no renewal                             |
+| Approval       | Verified human message ID/time and exact new scope hash; start within 600 seconds          |
+| Authentication | Private local socket only, host access rejected; no application passwords or Auth accounts |
 
-Audit writes use parameters and the server transaction/session identity. Diagnostics expose only a closed stage name and validated SQLSTATE. A rejected query or lost commit acknowledgement never becomes a verified rollback claim or automatic replay permission. A commit acknowledged after the local budget is classified as uncertain, even if it may have committed.
+initdb creates only its standard bootstrap administrator identity `anas`, confined to the private OS-user-only socket. The nine synthetic NOLOGIN roles are `checkpoint_migration_actor_20261029`, `checkpoint_migration_probe_20261029`, `nextera_web`, `nextera_judge_owner`, `nextera_runner`, `nextera_judge_maintenance`, `nextera_result_application`, `nextera_checkpoint_owner`, and `nextera_raid_owner`. These are database permission fixtures, not learner accounts.
 
-## Why the proposed catalog guard needs separate authority
+The actor owns the one synthetic database, creates the ordinary registered source objects and is CREATEROLE only during prerequisites, as previously proposed; it remains NOLOGIN/NOINHERIT/NOSUPERUSER/NOCREATEDB/NOBYPASSRLS. CREATEROLE is removed before repair. The DBA performs only disclosed setup, the four pinned authority spans, the fixed 27-grant repair, narrow catalog-guard installation and cleanup. This adds DBA execution authority to the new approval scope; it does not add actor privileges.
 
-An ordinary migration actor's ADMIN or CREATEROLE permission does not authorize a strong lock on shared role catalogs. Advisory locks cannot serialize unrelated GRANTs. Giving the actor direct UPDATE on catalog tables or SUPERUSER would be excessive.
+The minimal prerequisite is an empty synthetic auth.users table, not an Auth service. Storage must be absent and auth.uid unavailable, so 0010's conditional Storage branch is explicitly not verified. No curriculum or learner/result records are seeded. Registered 0000–0010, new repair draft 0019 and corrected draft 0011/0014 are the only SQL source inputs. Registered history and the migration journal remain unchanged.
 
-The pure `buildMigrationCatalogGuard` builder instead returns setup SQL for a fresh, fixed, zero-argument SECURITY DEFINER function owned by an already trusted cluster administrator. Its entire operation is scope validation plus `SHARE ROW EXCLUSIVE ... NOWAIT` locks on `pg_catalog.pg_authid` and `pg_catalog.pg_auth_members`, returning this backend PID and transaction ID. It contains no role mutation, arbitrary arguments or dynamic SQL. It checks the exact test database, session actor, owner, server major, READ COMMITTED and positive bounded server timeouts.
+## Draft 0011/0014 and test cases
 
-This is still a real capability to block role changes across its cluster. It is not covered by old rehearsal approvals and must be explicitly approved for a new isolated test. The adapter verifies actual catalog locks; a provider administrator name alone is not proof of permission. This proposal makes no claim that a retained Supabase instance can or should install it.
+The reviewed draft source fixes ACLs while the actor still owns its new objects, before ownership transfer. The SET-only adapter verifies the actor's existing direct ADMIN authority, adds one SET-only/INHERIT-false/ADMIN-false self-membership if needed, applies both exact draft bodies in one transaction, and restores the original graph/options before commit. The actor receives no permanent owner authority. Current corrected hashes:
 
-Setup uses one transaction and fresh object names, failing if they already exist. It removes PUBLIC rights and unexpected default-ACL grantees from only the new private schema, audit table and guard function, then grants the actor exactly schema USAGE, table INSERT and function EXECUTE. Global default privileges remain unchanged. Before setup commits it rejects effective web access or web SET reachability to actor/owner. The adapter rechecks these conditions. No web grant is added for a negative test.
+- 0011: `eaf3f7e95589fddf081f73084700ee994e9d87a775187d76f0d39d8d89e5a1e6`.
+- 0014: `8146ae6be34adfeacdbcaf3fb9e22b4a3516b9202eeee8cfaf3fbd88e81b78c3`.
 
-## Time limits: explicit limitation
+Planned real cases remain: wrong identity, bounded probe ACL rejection/restoration on only new guard objects, failure before second draft, failure before audit, two-session catalog contention, unrelated owner-to-probe writer timeout/rollback, lock release on rollback/disconnect, then one committed draft success last. No non-idempotent draft is reapplied after that commit. Missing-ADMIN/existing-SET alternatives, web-access expansion fixtures, global-default-ACL mutation and real lost-ack wire faults remain deferred; their current tests are injected only.
 
-`checkpointBudgetMs` and `deadlineMs` bound admission and checks between queries, including before returning the transaction callback. They do not cancel an active SQL batch or the driver's initial connection/begin wait. PostgreSQL 16 applies `statement_timeout` separately to statements in a multi-statement simple query, so a draft batch can remain active beyond that checkpoint budget. Statement/lock/idle timeouts are supplemental, not a hard total transaction bound. [PostgreSQL timeout rules](https://www.postgresql.org/docs/16/runtime-config-client.html)
+Migration-test limits are explicit test settings, not learner policies: guard statement/idle ceilings 5000 ms; adapter statement 2000 ms, lock 1000 ms, idle 3000 ms; per-case outer timeout 15000 ms; checkpoint budget 20000 ms. Budgets check admission/between-query progress and do not cancel every in-flight batch. The independent lifetime/parent-loss guard is required; there is no deadline extension or automatic retry.
 
-No live enablement should occur without a separately supervised outer deadline and verified cleanup. The disposable proposal below requires an independent process guard that stops only its identified cluster at the deadline or parent loss. The controller source is now implemented, but its real entrypoint is blocked as explained above; it has not been executed.
+## Retained evidence and cleanup
 
-## Exact smallest proposed real PostgreSQL test
+Before initialization, create the private source snapshot and immutable approval/control record, verify all hashes, then require an independently identified watchdog-ready handshake. Record each registered file's start/source hash and acknowledged authority receipt; record repair start and safe before/after evidence. No raw connection strings, passwords, signed Library metadata or raw SQL errors are retained in reports.
 
-Fresh target, subject to availability checks after approval:
+Success or failure closes owned clients, revokes actor EXECUTE on the temporary catalog guard and drops only that verified helper function, retains the audit table/data/evidence, keeps synthetic roles NOLOGIN/NOCREATEROLE, and stops only the UID/PID/data-path-verified cluster. Verify process and socket absence; no database/schema/table/data-directory deletion. If SQL cleanup cannot complete, stop the cluster and explicitly report the unverified SQL cleanup rather than broadening authority. Source-time fake cleanup is not real PostgreSQL cleanup evidence.
 
-| Item                         | Proposed value                                                                            |
-| ---------------------------- | ----------------------------------------------------------------------------------------- |
-| Host / OS user               | Existing Halawany WSL Ubuntu / `anas`                                                     |
-| Existing tools               | PostgreSQL 16 binaries, existing Node 24 and installed Postgres.js 3.4.9; no install      |
-| New private root             | `/home/anas/.local/share/nextera-judge/checkpoint-migration-adapter-20261029/run-001`     |
-| Data / evidence              | `data/` and `evidence/` under that root, protected and retained                           |
-| Private socket               | `s/` under that root, OS-user-only directory and socket permissions 0700                  |
-| Database                     | `foundation_test_checkpoint_migration_adapter_20261029`                                   |
-| Socket identifier            | `55451`, Unix socket filename only; `listen_addresses=''`, no TCP                         |
-| Maximum lifetime             | 30 minutes from actual initialization start; cleanup begins at minute 27, no renewal      |
-| Independent guard            | Armed before initdb; PID/data-path/UID identity checks, deadline and parent-loss shutdown |
-| Application passwords / Auth | None; private local socket, host authentication rejected, no real accounts or tokens      |
+Excluded: every old attempt/data directory, Docker/Supabase/Auth/Storage/Runner services, real accounts or invitations, grading/public Run, real learner awards, publication, network/security changes, credential provisioning, deployment and push. Existing fixture preview is untouched. This native SQL rehearsal does not prove authenticated browser autosave or the complete Sunday learner journey.
 
-Authority requested for this test only:
+## Next critical path for the narrowed Week 1 trial
 
-1. Initialize a new private local PostgreSQL cluster whose bootstrap administrator is the current OS user; do not reuse or connect to a retained database. Local trust authentication is confined by the private socket directory; no host access or application password is provisioned.
-2. Create two synthetic NOLOGIN roles: `checkpoint_migration_actor_20261029` and `checkpoint_migration_probe_20261029`. Make only the actor owner of the one synthetic database and temporarily CREATEROLE during prerequisites. Do not grant it SUPERUSER, BYPASSRLS or CREATEDB. Remove CREATEROLE before running the adapter.
-3. Apply registered SQL0000–0010 in that new database as the non-superuser actor, so its existing creator ADMIN grant reflects the relevant PostgreSQL 16 behavior. These prerequisites create seven existing permission roles: `nextera_web`, `nextera_judge_owner`, `nextera_runner`, `nextera_judge_maintenance`, `nextera_result_application`, `nextera_checkpoint_owner`, `nextera_raid_owner`; all remain NOLOGIN. This is nine NOLOGIN test roles total, not nine user accounts. Supply only a minimal synthetic `auth.users` prerequisite table; no Auth or Storage service. Storage-policy guarded branches remain untested without Storage.
-4. As the existing private-cluster bootstrap administrator, install only the reviewed guard/schema/audit objects. Give the migration actor USAGE/INSERT/EXECUTE on those new objects. Test connections establish the NOLOGIN actor identity through bootstrap-owned `SET SESSION AUTHORIZATION` in test setup, before the adapter begins; inside the adapter current/session actor must match and never switch.
-5. Allow the actor, only after verifying its preexisting direct ADMIN row, to grant itself the single temporary SET-only owner membership within the adapter transaction. Allow the unchanged internal bodies of draft0011 then draft0014 only there, followed by exact membership restoration and commit acknowledgement. No journal promotion or extra draft execution.
-6. Permit a second private test session to contend on the same catalogs and attempt an owner-to-probe membership with a short timeout. It must block while the adapter holds the locks, then roll back; never grant to web, learners or a real identity. This verifies protection from an unrelated role writer rather than only a cooperating advisory-lock caller.
-7. For ACL rejection cases only, allow the bootstrap administrator to add and then revoke its own new USAGE/EXECUTE/INSERT grants to the synthetic probe on the three newly created guard/audit objects. Snapshot and restore their exact ACLs before the next case. Do not exercise that access, change global default privileges, change the actor's original role membership, or grant anything to web.
+1. Obtain fresh approval for this exact reviewed native SQL scope and verify real results and shutdown.
+2. Prepare/review one co-resident local Auth/Storage/DB/web/Runner trial setup, then request its separate exact temporary-access approval. Earlier credentials and approvals cannot be reused.
+3. Freeze the preconfigured Week 1 content/evaluation contracts and private test-pack bindings. Confirm handling of the approved mixed exam answers and project evaluation; do not treat all authored curriculum as machine-ready.
+4. Verify invitation activation/login as an ordinary learner; wrong then correct challenge submission, actual isolated execution, durable history/result and server progression.
+5. Verify authenticated exam save/reload/conflict/recovery, access/time boundaries and official immutable submission. Recovery/Run policies and unsupported adapters must remain honest until configured and tested.
+6. Verify the preconfigured three-member project team, exact automated attempt and assigned mentor decision, per-member completion receipts and prerequisites. One human tester does not justify fictional team evidence or learner self-approval; other synthetic identities need explicit provisioning scope.
+7. Rehearse that complete path Saturday and report ready/not-ready from actual evidence. Sunday Nov 1 is the target trial, not a delivery guarantee. Advanced automatic assignment, exception administration and expanded admin dashboards are deferred.
 
-Required local test settings, proposed only: guard statement/idle ceilings 5000 ms; adapter statement 2000 ms, lock 1000 ms, idle 3000 ms; admission/checkpoint budget 20000 ms and a fresh per-case absolute deadline. Individual cases also have an outer supervised timeout. These are migration-test limits, not learner Run, exam, quota or retention policies. No curriculum, learner result, draft source or progression award is needed for this adapter test.
-
-## Assertions and retained evidence
-
-- Validate fresh target/data directory/socket identity and no TCP listener before any SQL. Record immutable owner approval identity/time/scope in a controller that rejects expired, reused or closed approval; no timestamp refresh. The prepared harness remains blocked until the prerequisite repair source and authority plan are completed and independently reviewed; only then ask for fresh runtime approval.
-- On real PostgreSQL, verify the existing ADMIN row and absent SET right, the exact temporary grant delta/grantor/options, both draft schemas, unchanged guards/source hashes, audit order, original role graph after commit, and no effective web access to guard/audit.
-- Order cases explicitly: permission negatives, contention and forced-rollback cases first; one acknowledged committed migration success last. Never reapply unchanged non-idempotent draft bodies after that commit in the retained database. No reset, schema drop, extra database or role-fixture change is implicitly authorized.
-- On the real database, use only the explicitly proposed probe ACL mutations above to test rejection and exact ACL restoration, plus wrong-identity rejection before DDL. Web reachability, default-ACL cleanup simulation, existing-SET and missing-ADMIN alternatives remain source/fake-tested in this smallest scope; live variants need a separate precise fixture plan and authority. Do not alter the actor's original ADMIN/SET row or add web reachability just to manufacture a negative case.
-- Inject a test-client failure before second DDL or before audit without modifying either locked SQL file; use the independent bootstrap session to verify DDL, audit and temporary grant rollback before the final success. Missing commit acknowledgement is already injected-test-covered; an actual lost-ack wire fault is deferred, not simulated as a verified network failure. Any unexpected commit ambiguity requires read-only reconciliation and no automatic replay.
-- Use two real sessions for NOWAIT contention, unrelated role-writer timeout, and release after commit, rollback and client disconnect. Fake tests alone do not prove these PostgreSQL semantics.
-- Record controlled SQLSTATE, stage, source hashes, timings and assertion results. No passwords, raw connection strings, source dumps or signed Library transfer metadata in reports.
-
-## Cleanup and explicit exclusions
-
-After tests or any failure, the test controller closes owned clients, revokes the actor's EXECUTE capability and drops only the verified temporary guard function, keeps all synthetic roles NOLOGIN/NOCREATEROLE, then stops only the identity-verified cluster. Dropping that guard is explicitly part of the proposed future cleanup; no database/schema/audit table/data directory is deleted. If safe guard removal cannot complete, stop the cluster and report the retained function rather than expanding permissions. Verify no matching process/socket/TCP listener remains; retain data, audit table, protected logs and receipts under the private root. The independent guard must also stop the cluster on parent loss or expiry.
-
-Excluded: attempt001/002/003 data or services, SQL replay against their uncertain state, Supabase/Docker/Auth/Storage/Runner, public Run, official grading, invitations, Raid, user accounts, new persistent login access, global ACL changes, hidden-test access, publication, deployment and push. The existing localhost3118 fixture stays unchanged. Earlier approvals do not authorize this new target or guard capability.
-
-## Verification labels
-
-Current evidence is static review and injected Postgres.js-client tests. Existing private-socket draft tests and stopped authenticated attempt003 are separate historical evidence. No actual SQL syntax, catalog-lock, default-ACL, transactional grant, driver wire protocol or timeout behavior is newly proven by this source-only milestone. Current draft0011/0014 hashes are the reviewed corrected values above; historical receipts retain their original hashes. Real verification requires a revised, specifically approved isolated scope after the prerequisite authority blocker is resolved.
+The approved Sunday manual invitation decision and source-gap inventory are recorded in [SUNDAY_WEEK1_TRIAL_001.md](SUNDAY_WEEK1_TRIAL_001.md). This planning record does not enable invitations or expand this native SQL approval scope.

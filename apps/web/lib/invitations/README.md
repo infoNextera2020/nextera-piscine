@@ -1,5 +1,7 @@
 # Invitation admission and activation — prepared source, disabled runtime
 
+Sunday trial planning update (2026-10-30): owner-issued invitation is the acceptance decision; Anas manually sends a private email-bound, expiring, single-use link. Registration joins the fixed cohort without a second admin confirmation. Automated invitation delivery/management are deferred. See docs/SUNDAY_WEEK1_TRIAL_001.md for approved scope and inspected gaps. The missing private authority hook, issuer, policies and live wiring below remain source/runtime work; no token or account has been issued.
+
 This slice extends the existing invitation activation service; it does not activate public signup.
 `app/api/invitations/activate/route.ts` supplies **null** configuration and returns503. `/signup`
 is unchanged and still shows unavailable. No environment client, SQL connection, provider request,
