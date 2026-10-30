@@ -51,6 +51,9 @@ func cases(files map[string][]byte, id string) ([]json.RawMessage, []string, err
 	return casesFor(files, c)
 }
 func casesFor(files map[string][]byte, contract artifact.ExecutionContract) ([]json.RawMessage, []string, error) {
+	if contract.Version == 3 {
+		return functionCases(files, contract)
+	}
 	var inputs []json.RawMessage
 	var expected []string
 	for _, name := range []string{"cases/public.json", "cases/private.json"} {
@@ -225,6 +228,9 @@ func (e Executor) compile(ctx context.Context, s protocol.Snapshot, source []byt
 func (e Executor) execute(ctx context.Context, s protocol.Snapshot, program []byte, inputs []json.RawMessage, expected []string, metrics map[string]int64) (verdict string, err error) {
 	if s.Contract != nil && s.Contract.Version == 2 {
 		return e.executeProgram(ctx, s, program, inputs, expected, metrics)
+	}
+	if s.Contract != nil && s.Contract.Version == 3 {
+		return e.executeFunction(ctx, s, program, inputs, expected, metrics)
 	}
 	c, err := e.runtimeEngine().Create(ctx, s.Sandbox, false)
 	if err != nil {

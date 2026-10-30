@@ -141,16 +141,44 @@ export function resolveEvaluations(curriculum: Curriculum, catalog?: unknown) {
         ['version', 'item_key', 'learner_file', 'function', 'input_type', 'output_type'],
         'execution_contract',
       );
+      const functionName =
+        typeof contract.function === 'string' &&
+        /^[A-Z][A-Za-z0-9_]{0,63}$/.test(contract.function);
+      const v1 =
+        contract.version === 1 &&
+        functionName &&
+        ['string', 'int64'].includes(String(contract.input_type)) &&
+        contract.output_type === 'string' &&
+        contract.learner_file !== 'main.go' &&
+        /^[A-Za-z0-9_][A-Za-z0-9_]*[.]go$/.test(String(contract.learner_file));
+      const v2 =
+        contract.version === 2 &&
+        contract.function === '' &&
+        contract.input_type === 'stdin_utf8' &&
+        contract.output_type === 'stdout_utf8_exact' &&
+        contract.learner_file === 'main.go';
+      const v3 =
+        contract.version === 3 &&
+        functionName &&
+        contract.learner_file !== 'main.go' &&
+        (((contract.input_type === 'int_int' || contract.input_type === 'string') &&
+          contract.output_type === 'int') ||
+          (contract.input_type === 'pointer_int_int' && contract.output_type === 'pointer_int') ||
+          ((contract.input_type === 'int_slice_int_int' || contract.input_type === 'int_slice') &&
+            contract.output_type === 'int_slice_preserved'));
       if (
-        contract.version !== 1 ||
+        !(v1 || v2 || v3) ||
         contract.item_key !== node.key ||
-        !/^[A-Z][A-Za-z0-9_]{0,63}$/.test(String(contract.function)) ||
-        !['string', 'int64'].includes(String(contract.input_type)) ||
-        contract.output_type !== 'string' ||
+        typeof contract.item_key !== 'string' ||
+        contract.item_key.length > 100 ||
+        !/^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(contract.item_key) ||
+        typeof contract.learner_file !== 'string' ||
+        contract.learner_file.length > 100 ||
+        !/^[A-Za-z0-9_][A-Za-z0-9_.-]*[.]go$/.test(contract.learner_file) ||
+        ((contract.version === 2 || contract.version === 3) &&
+          ['hello-go-v1', 'even-or-odd-v1'].includes(node.testPackId)) ||
         node.submissionRules.required_files.length !== 1 ||
-        node.submissionRules.required_files[0] !== contract.learner_file ||
-        !/^[A-Za-z0-9_][A-Za-z0-9_]*[.]go$/.test(String(contract.learner_file)) ||
-        contract.learner_file === 'main.go'
+        node.submissionRules.required_files[0] !== contract.learner_file
       )
         throw new EvaluationBoundaryError(
           'Trusted execution contract conflicts with curriculum task.',

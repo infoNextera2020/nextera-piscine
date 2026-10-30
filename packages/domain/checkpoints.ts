@@ -17,13 +17,17 @@ export const CHECKPOINT_ATTEMPT_STATES = [
 ] as const;
 export type CheckpointAttemptState = (typeof CHECKPOINT_ATTEMPT_STATES)[number];
 export type ExecutionContract = {
-  version: 1;
   item_key: string;
   learner_file: string;
-  function: string;
-  input_type: 'string' | 'int64';
-  output_type: 'string';
-};
+} & (
+  | { version: 1; function: string; input_type: 'string' | 'int64'; output_type: 'string' }
+  | { version: 2; function: ''; input_type: 'stdin_utf8'; output_type: 'stdout_utf8_exact' }
+  | ({ version: 3; function: string } & (
+      | { input_type: 'int_int' | 'string'; output_type: 'int' }
+      | { input_type: 'pointer_int_int'; output_type: 'pointer_int' }
+      | { input_type: 'int_slice_int_int' | 'int_slice'; output_type: 'int_slice_preserved' }
+    ))
+);
 export type CheckpointTask = {
   key: string;
   title: string;

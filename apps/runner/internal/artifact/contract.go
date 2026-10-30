@@ -47,6 +47,18 @@ func ContractFor(id string, declared *ExecutionContract) (ExecutionContract, err
 		if c.File != "main.go" || c.Function != "" || c.Input != "stdin_utf8" || c.Output != "stdout_utf8_exact" {
 			return ExecutionContract{}, ErrInvalid
 		}
+	case 3:
+		if id == "hello-go-v1" || id == "even-or-odd-v1" || c.File == "main.go" || !functionPattern.MatchString(c.Function) {
+			return ExecutionContract{}, ErrInvalid
+		}
+		valid := (c.Input == "int_int" && c.Output == "int") ||
+			(c.Input == "pointer_int_int" && c.Output == "pointer_int") ||
+			(c.Input == "int_slice_int_int" && c.Output == "int_slice_preserved") ||
+			(c.Input == "string" && c.Output == "int") ||
+			(c.Input == "int_slice" && c.Output == "int_slice_preserved")
+		if !valid {
+			return ExecutionContract{}, ErrInvalid
+		}
 	default:
 		return ExecutionContract{}, ErrInvalid
 	}
