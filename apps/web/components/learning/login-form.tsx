@@ -2,7 +2,7 @@
 import { useFormStatus } from 'react-dom';
 import { PasswordControl } from './password-control';
 import { HairlineIcon } from './hairline-icon';
-import s from './access.module.css';
+import s from './auth-split.module.css';
 
 function LoginFields() {
   const { pending } = useFormStatus();
@@ -36,7 +36,7 @@ function LoginFields() {
 }
 export function LoginForm({ action }: { action(form: FormData): Promise<void> }) {
   return (
-    <form action={action} className={s.form}>
+    <form action={action}>
       <LoginFields />
     </form>
   );

@@ -67,6 +67,7 @@ export function HomeNextAction({
       <div className={s.nextActions} data-actionable={!!action}>
         <Link
           className={s.primary}
+          data-press-feedback="primary"
           href={action?.href ?? '/app/cohorts/' + encodeURIComponent(cohort.id)}
         >
           <span>

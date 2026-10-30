@@ -250,7 +250,9 @@ export function CheckpointEditor({
         <span className={e.eyebrow}>Question {String(index + 1).padStart(2, '0')}</span>
         <h2>{item.title}</h2>
         <span className={e.state}>{questionStatus(taskState)}</span>
-        <Subject>{item.subject}</Subject>
+        <div className={e.statementCopy}>
+          <Subject>{item.subject}</Subject>
+        </div>
         <div className={e.requirements}>
           <span className={e.eyebrow}>Submission requirements</span>
           <p>
@@ -411,7 +413,12 @@ function DraftSyncStatus({
             } as const
           )[status];
   return (
-    <div id="checkpoint-save-status" className={e.saveStatus}>
+    <div
+      id="checkpoint-save-status"
+      className={e.saveStatus}
+      data-phase={phase}
+      data-status={status}
+    >
       <span className={e.eyebrow}>Draft status</span>
       <strong role="status" aria-live="polite">
         {label}

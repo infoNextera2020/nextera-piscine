@@ -5,21 +5,24 @@
   box-sizing: border-box;
   width: 100%;
   max-width: 100%;
-  min-height: 44px;
-  color: #edf3ef;
-  background: #0e1511;
-  border: 1px solid #35423a;
-  border-radius: 6px;
-  padding: 10px 12px;
-  margin-block: 8px 16px;
+  min-height: var(--learning-control-min, 2.75rem);
+  padding: var(--learning-space-3, 0.75rem) var(--learning-space-4, 1rem);
+  margin-block: var(--learning-space-2, 0.5rem) var(--learning-space-4, 1rem);
+  border: 1px solid var(--workspace-border);
+  border-radius: var(--learning-radius-compact, 1rem);
+  color: var(--workspace-text);
+  background: var(--workspace-bg);
   font: inherit;
+  font-size: var(--learning-body, 1rem);
 }
 .controls textarea {
   resize: vertical;
+  min-height: 9rem;
 }
 .controls fieldset {
   border: 0;
   padding: 0;
+  margin: 0;
   min-width: 0;
 }
 .controls fieldset:disabled {
@@ -27,36 +30,39 @@
 }
 .controls legend {
   font-weight: 600;
-  margin-block: 12px;
+  margin-block: var(--learning-space-3, 0.75rem);
 }
-.controls :is(input, textarea, select, button, a):focus-visible {
-  outline: 2px solid #57e6ad;
-  outline-offset: 3px;
+.controls :is(input, textarea, select, button, a, summary):focus-visible,
+.revisions :is(textarea, button, a, summary):focus-visible {
+  outline: 2px solid var(--workspace-accent);
+  outline-offset: 4px;
 }
 .controls label {
   display: block;
 }
-.controls code {
-  overflow-wrap: anywhere;
+.controls :is(button, a, summary) {
+  touch-action: manipulation;
 }
 .controls button {
-  min-height: 44px;
+  min-height: var(--learning-control-min, 2.75rem);
 }
-.controls > * {
+.controls > *,
+.workspace > * {
   min-width: 0;
 }
-
 .workspace {
+  --piscine-panel: var(--workspace-panel);
+  --piscine-text: var(--workspace-text);
+  --piscine-muted: var(--workspace-muted);
+  --piscine-line: var(--workspace-border);
+  --piscine-accent: var(--workspace-accent);
   display: grid;
   grid-template-columns: minmax(0, 1.25fr) minmax(0, 1fr);
   grid-template-areas: 'brief history' 'team upload';
   align-items: start;
-  gap: 24px;
+  gap: var(--learning-space-8, 2rem);
   color: var(--workspace-text);
   font-family: var(--workspace-font);
-}
-.workspace > * {
-  min-width: 0;
 }
 .brief,
 .team,
@@ -65,8 +71,8 @@
 .access,
 .assignment {
   border: 1px solid var(--workspace-border);
-  border-radius: 7px;
-  padding: 26px;
+  border-radius: var(--learning-radius-card, 1.25rem);
+  padding: var(--learning-space-8, 2rem);
   background: var(--workspace-panel);
   min-width: 0;
 }
@@ -82,48 +88,55 @@
 .upload {
   grid-area: upload;
   background: transparent;
-  border-color: transparent;
-  padding: 12px 0;
+  border: 0;
+  padding: var(--learning-space-3, 0.75rem) 0;
 }
 .eyebrow {
   display: block;
   color: var(--workspace-muted);
-  font:
-    10px/1.7 ui-monospace,
-    monospace;
-  letter-spacing: 0.04em;
+  font-size: var(--learning-label, 0.75rem);
+  font-weight: 500;
+  letter-spacing: 0.06em;
   text-transform: uppercase;
-  margin-bottom: 18px;
+  line-height: 1.6;
+  margin-bottom: var(--learning-space-5, 1.25rem);
 }
 .workspace h2,
-.assignment h2 {
-  font-size: clamp(21px, 1.8vw, 29px);
-  font-weight: 500;
+.assignment h2,
+.access h2 {
+  font-size: clamp(1.375rem, 1.1rem + 0.8vw, 1.75rem);
+  font-weight: 600;
   letter-spacing: -0.035em;
   line-height: 1.3;
-  margin: 0 0 20px;
+  margin: 0 0 var(--learning-space-5, 1.25rem);
 }
 .workspace p,
-.assignment p {
+.assignment p,
+.access p {
   color: var(--workspace-muted);
-  line-height: 1.95;
-  font-size: 13px;
-  margin: 12px 0;
+  line-height: 1.8;
+  font-size: var(--learning-body, 1rem);
+  margin: var(--learning-space-3, 0.75rem) 0;
+  overflow-wrap: anywhere;
 }
 .editorNote {
   display: flex;
   align-items: center;
-  gap: 20px;
-  padding: 36px 0 8px;
-  font-size: 13px;
+  gap: var(--learning-space-5, 1.25rem);
+  padding: var(--learning-space-8, 2rem) 0 var(--learning-space-2, 0.5rem);
+  font-size: var(--learning-body-small, 0.875rem);
+  line-height: 1.7;
+}
+.editorNote svg {
+  flex: 0 0 auto;
 }
 .editorNote strong {
   font-weight: 500;
 }
 .authoredBrief {
   border-top: 1px solid var(--workspace-border);
-  margin-top: 28px;
-  padding-top: 24px;
+  margin-top: var(--learning-space-7, 1.75rem);
+  padding-top: var(--learning-space-6, 1.5rem);
   overflow-wrap: anywhere;
 }
 .authoredBrief pre {
@@ -131,152 +144,274 @@
   max-width: 100%;
 }
 .team ul {
-  padding-left: 18px;
+  padding-inline-start: var(--learning-space-5, 1.25rem);
   color: var(--workspace-text);
-  font-size: 13px;
-  line-height: 2;
+  font-size: var(--learning-body, 1rem);
+  line-height: 1.9;
 }
 .team .small {
-  font-size: 11px;
-  margin-top: 32px;
+  font-size: var(--learning-body-small, 0.875rem);
+  margin-top: var(--learning-space-8, 2rem);
 }
 .historyHeading {
   display: flex;
-  align-items: start;
+  align-items: center;
   justify-content: space-between;
-  gap: 12px;
-  margin-bottom: 24px;
+  flex-wrap: wrap;
+  gap: var(--learning-space-3, 0.75rem);
+  margin-bottom: var(--learning-space-6, 1.5rem);
 }
 .historyHeading h2 {
-  font:
-    10px/1.7 ui-monospace,
-    monospace;
-  color: var(--workspace-muted);
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
-}
-.historyHeading button {
-  min-height: 36px;
-  font-size: 11px;
-  padding: 6px 10px;
-}
-.history ol {
-  padding: 0;
-  list-style: none;
+  color: var(--workspace-text);
+  font-size: var(--learning-body, 1rem);
+  letter-spacing: -0.015em;
   margin: 0;
 }
-.history ol > li {
-  min-width: 0;
-  padding: 0;
-  border: 0;
-  background: transparent;
+.historyHeading button {
+  font-size: var(--learning-body-small, 0.875rem);
 }
-.history .checks {
-  font-size: 24px;
+.revisions {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  min-width: 0;
+}
+.revisions > li {
+  min-width: 0;
+}
+.revisions > li + li {
+  border-top: 1px solid var(--workspace-border);
+  padding-top: var(--learning-space-6, 1.5rem);
+  margin-top: var(--learning-space-6, 1.5rem);
+}
+.revisions p {
+  color: var(--workspace-muted);
+  font-size: var(--learning-body, 1rem);
+  line-height: 1.8;
+  margin-block: var(--learning-space-3, 0.75rem);
+  overflow-wrap: anywhere;
+}
+.recordHeading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: var(--learning-space-3, 0.75rem);
+}
+.recordHeading strong {
+  font-size: var(--learning-body-small, 0.875rem);
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+.verdict {
+  border: 1px solid var(--workspace-border);
+  border-radius: var(--learning-radius-control, 999px);
+  padding: var(--learning-space-1, 0.25rem) var(--learning-space-3, 0.75rem);
+  color: var(--workspace-muted);
+  font-size: var(--learning-label, 0.75rem);
+  line-height: 1.6;
+}
+.verdict[data-state='completed'] {
+  color: var(--workspace-accent);
+}
+.revisions .checks {
+  font-size: clamp(1.375rem, 1.1rem + 0.8vw, 1.75rem);
   line-height: 1.35;
   letter-spacing: -0.025em;
-  margin: 24px 0 18px;
+  margin: var(--learning-space-6, 1.5rem) 0 var(--learning-space-5, 1.25rem);
   color: var(--workspace-text);
 }
-.history .checks[data-state='passed'] {
+.revisions .checks[data-state='passed'] {
   color: var(--workspace-accent);
 }
 .acceptedFile {
-  margin: 28px 0 18px;
+  margin: var(--learning-space-7, 1.75rem) 0 var(--learning-space-5, 1.25rem);
   border-top: 1px solid var(--workspace-border);
-  padding-top: 20px;
-  font-size: 12px;
+  padding-top: var(--learning-space-2, 0.5rem);
+  font-size: var(--learning-body-small, 0.875rem);
 }
-.acceptedFile summary {
-  min-height: 44px;
+.acceptedFile summary,
+.earlier > summary {
+  display: flex;
+  align-items: center;
+  min-height: var(--learning-control-min, 2.75rem);
+  padding-block: var(--learning-space-2, 0.5rem);
   cursor: pointer;
-  line-height: 1.8;
+  line-height: 1.7;
+  color: var(--workspace-text);
+  list-style: none;
 }
-.acceptedFile code {
+.acceptedFile summary::-webkit-details-marker,
+.earlier > summary::-webkit-details-marker {
+  display: none;
+}
+.acceptedFile summary::after,
+.earlier > summary::after {
+  content: '+';
+  margin-inline-start: auto;
+  padding-inline-start: var(--learning-space-4, 1rem);
+  color: var(--workspace-muted);
+  font-size: 1.25rem;
+}
+.acceptedFile[open] > summary::after,
+.earlier[open] > summary::after {
+  content: '−';
+}
+.acceptedFile p {
+  font-size: var(--learning-body-small, 0.875rem);
+}
+.digest {
   display: block;
   white-space: normal;
   overflow-wrap: anywhere;
+  padding: var(--learning-space-3, 0.75rem) var(--learning-space-4, 1rem);
+  border: 1px solid var(--workspace-border);
+  border-radius: var(--learning-radius-compact, 1rem);
+  background: var(--workspace-bg);
+  color: var(--workspace-text);
+  font:
+    0.8125rem/1.8 ui-monospace,
+    SFMono-Regular,
+    Consolas,
+    monospace;
+}
+.acceptedFile time {
+  display: block;
+  margin-block: var(--learning-space-3, 0.75rem);
+  color: var(--workspace-muted);
+  font-size: var(--learning-label, 0.75rem);
+  font-variant-numeric: tabular-nums;
 }
 .earlier {
   border-top: 1px solid var(--workspace-border);
-  padding-top: 20px;
-  margin-top: 26px;
-  font-size: 12px;
+  padding-top: var(--learning-space-3, 0.75rem);
+  margin-top: var(--learning-space-7, 1.75rem);
+  font-size: var(--learning-body-small, 0.875rem);
 }
-.earlier > summary {
-  min-height: 44px;
-  cursor: pointer;
-}
-.earlier ol > li + li {
-  border-top: 1px solid var(--workspace-border);
-  padding-top: 24px;
-  margin-top: 24px;
+.earlier[open] > summary {
+  margin-bottom: var(--learning-space-5, 1.25rem);
 }
 .outlineButton,
 .primaryButton {
   display: inline-flex;
-  min-height: 48px;
-  justify-content: space-between;
+  box-sizing: border-box;
+  min-height: var(--learning-control-min, 2.75rem);
+  justify-content: center;
   align-items: center;
-  gap: 14px;
-  padding: 12px 16px;
+  gap: var(--learning-space-3, 0.75rem);
+  padding: var(--learning-space-3, 0.75rem) var(--learning-space-5, 1.25rem);
   border: 1px solid var(--workspace-border);
-  border-radius: 5px;
+  border-radius: var(--learning-radius-control, 999px);
   color: var(--workspace-text);
   background: transparent;
-  font: 500 12px/1.6 var(--workspace-font);
+  font: 500 var(--learning-body-small, 0.875rem)/1.5 var(--workspace-font);
+  text-align: center;
   text-decoration: none;
   cursor: pointer;
+}
+.outlineButton svg,
+.primaryButton svg {
+  flex: 0 0 auto;
 }
 .primaryButton {
   background: var(--workspace-accent);
   color: var(--workspace-ink);
   border-color: var(--workspace-accent);
 }
+.outlineButton:disabled,
+.primaryButton:disabled {
+  cursor: wait;
+}
+.reviewForm {
+  margin-top: var(--learning-space-8, 2rem);
+}
+.reviewForm fieldset {
+  padding: 0;
+  margin: 0;
+  min-width: 0;
+  border: 0;
+}
+.reviewForm fieldset:disabled {
+  opacity: 0.65;
+}
+.reviewForm legend {
+  font-size: 1.375rem;
+  font-weight: 600;
+  line-height: 1.4;
+  letter-spacing: -0.025em;
+  margin-bottom: var(--learning-space-4, 1rem);
+}
+.reviewForm label {
+  display: block;
+}
+.reviewForm textarea {
+  display: block;
+  box-sizing: border-box;
+  width: 100%;
+  resize: vertical;
+  border: 1px solid var(--workspace-border);
+  background: var(--workspace-bg);
+  color: var(--workspace-text);
+  border-radius: var(--learning-radius-compact, 1rem);
+  padding: var(--learning-space-4, 1rem);
+  margin-block: var(--learning-space-2, 0.5rem) var(--learning-space-4, 1rem);
+  min-height: 9rem;
+  font: inherit;
+  font-size: var(--learning-body, 1rem);
+  line-height: 1.7;
+}
 .reviewActions {
-  display: grid;
-  grid-template-columns: 1fr 1.2fr;
-  gap: 12px;
-  margin: 24px 0 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--learning-space-3, 0.75rem);
+  margin-top: var(--learning-space-6, 1.5rem);
 }
 .reviewActions button {
-  width: 100%;
+  flex: 1 1 12rem;
 }
-.controls fieldset {
-  margin: 0;
+.muted,
+.revisions .muted {
+  color: var(--workspace-muted);
+  font-size: var(--learning-body-small, 0.875rem);
+  line-height: 1.8;
 }
-.controls input:not([type='file']),
-.controls textarea,
-.controls select {
+.fieldLabel {
+  display: block;
+  margin-bottom: var(--learning-space-2, 0.5rem);
   color: var(--workspace-text);
-  background: var(--workspace-bg);
-  border-color: var(--workspace-border);
-  font-size: 16px;
+  font-size: var(--learning-body-small, 0.875rem);
+  font-weight: 500;
+  line-height: 1.7;
 }
-.controls textarea {
-  min-height: 140px;
+.revisions .feedback {
+  color: var(--workspace-muted);
+  font-size: var(--learning-body-small, 0.875rem);
+  text-align: start;
 }
-.controls :is(input, textarea, select, button, a, summary):focus-visible {
-  outline: 2px solid var(--workspace-accent);
-  outline-offset: 3px;
+.feedback:empty {
+  margin: 0;
 }
 .controls .upload input[type='file'] {
   background: var(--workspace-bg);
   border-color: var(--workspace-border);
+  min-height: 3.25rem;
+  border-radius: var(--learning-radius-compact, 1rem);
 }
 .controls .upload button[type='submit'] {
   background: var(--workspace-accent);
   color: var(--workspace-ink);
   justify-content: space-between;
-  border-radius: 5px;
-  min-height: 52px;
+  border-radius: var(--learning-radius-control, 999px);
+  min-height: 3.25rem;
 }
 .alert {
-  grid-column: 1/-1;
-  padding: 18px;
-  border: 1px solid var(--workspace-warning);
-  border-radius: 6px;
-  color: var(--workspace-warning);
+  grid-column: 1 / -1;
+  padding: var(--learning-space-5, 1.25rem);
+  border: 1px solid var(--workspace-border);
+  border-inline-start: 2px solid var(--workspace-text);
+  border-radius: var(--learning-radius-compact, 1rem);
+  color: var(--workspace-text);
+  background: var(--workspace-panel);
 }
 .alert p {
   color: inherit;
@@ -284,53 +419,50 @@
 .access {
   color: var(--workspace-text);
 }
-.access p {
-  color: var(--workspace-muted);
-  line-height: 1.8;
-}
 .access .outlineButton + .outlineButton {
-  margin-left: 12px;
+  margin-inline-start: var(--learning-space-3, 0.75rem);
 }
 .assignment {
-  margin-top: 32px;
+  margin-top: var(--learning-space-8, 2rem);
   font-family: var(--workspace-font);
 }
 .assignmentGrid {
   display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 12px 24px;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: var(--learning-space-3, 0.75rem) var(--learning-space-6, 1.5rem);
 }
 .memberField,
 .memberIntro {
-  grid-column: 1/-1;
+  grid-column: 1 / -1;
 }
 .memberIntro {
   border-top: 1px solid var(--workspace-border);
-  margin: 18px 0 8px;
-  padding-top: 24px;
+  margin: var(--learning-space-5, 1.25rem) 0 var(--learning-space-2, 0.5rem);
+  padding-top: var(--learning-space-6, 1.5rem);
 }
 .memberIntro h3 {
-  font-size: 22px;
-  font-weight: 500;
-  margin: 0 0 10px;
+  font-size: 1.375rem;
+  font-weight: 600;
+  margin: 0 0 var(--learning-space-3, 0.75rem);
 }
 .assignment .primaryButton {
   width: 100%;
-  margin-top: 24px;
+  margin-top: var(--learning-space-6, 1.5rem);
 }
 .queuePage {
-  padding: 36px 40px 64px;
-  max-width: 1280px;
+  padding: var(--learning-space-9, 2.25rem) var(--learning-space-10, 2.5rem)
+    var(--learning-space-16, 4rem);
+  max-width: 80rem;
   margin: auto;
   color: var(--workspace-text);
   font-family: var(--workspace-font);
 }
 .queuePage h1 {
-  font-size: clamp(26px, 3vw, 36px);
-  font-weight: 500;
+  font-size: clamp(1.75rem, 1.3rem + 1.5vw, 2.25rem);
+  font-weight: 600;
   letter-spacing: -0.04em;
   line-height: 1.35;
-  margin: 20px 0 32px;
+  margin: var(--learning-space-5, 1.25rem) 0 var(--learning-space-8, 2rem);
 }
 .queueList {
   display: grid;
@@ -338,83 +470,127 @@
   list-style: none;
   padding: 0;
   margin: 0;
-  gap: 20px;
+  gap: var(--learning-space-5, 1.25rem);
 }
 .queueList li {
   border: 1px solid var(--workspace-border);
-  border-radius: 7px;
+  border-radius: var(--learning-radius-card, 1.25rem);
   background: var(--workspace-panel);
   min-width: 0;
 }
 .queueList a {
   display: flex;
   flex-direction: column;
-  gap: 14px;
-  padding: 24px;
-  min-height: 180px;
+  gap: var(--learning-space-4, 1rem);
+  padding: var(--learning-space-6, 1.5rem);
+  min-height: 11.25rem;
   text-decoration: none;
   color: var(--workspace-text);
   overflow-wrap: anywhere;
 }
 .queueList strong {
-  font-size: 18px;
-  font-weight: 500;
+  font-size: 1.125rem;
+  font-weight: 600;
 }
 .queueList p {
   margin: 0;
-  font-size: 12px;
+  font-size: var(--learning-body-small, 0.875rem);
   line-height: 1.8;
   color: var(--workspace-muted);
 }
 .queueList .hold {
-  color: var(--workspace-warning);
+  color: var(--workspace-text);
 }
 .queueList a:focus-visible,
 .queuePage > a:focus-visible {
   outline: 2px solid var(--workspace-accent);
-  outline-offset: 3px;
+  outline-offset: 4px;
 }
 .queueEmpty {
-  max-width: 680px;
+  max-width: 42.5rem;
   border: 1px solid var(--workspace-border);
-  border-radius: 7px;
-  padding: 26px;
+  border-radius: var(--learning-radius-card, 1.25rem);
+  padding: var(--learning-space-8, 2rem);
   color: var(--workspace-muted);
-  line-height: 1.9;
+  font-size: var(--learning-body, 1rem);
+  line-height: 1.8;
 }
-@media (max-width: 900px) {
+@media (hover: hover) and (pointer: fine) {
+  .outlineButton:hover:not(:disabled),
+  .acceptedFile summary:hover,
+  .earlier > summary:hover {
+    color: var(--workspace-text);
+    border-color: var(--workspace-muted);
+  }
+  .primaryButton:hover:not(:disabled) {
+    border-color: var(--workspace-text);
+  }
+  .queueList a:hover {
+    background: var(--workspace-bg);
+    border-radius: inherit;
+  }
+}
+@media (max-width: 60rem) {
   .workspace {
     grid-template-columns: minmax(0, 1fr);
     grid-template-areas: 'brief' 'team' 'history' 'upload';
-    gap: 24px;
+  }
+  .queueList {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+@media (max-width: 38rem) {
+  .workspace {
+    gap: var(--learning-space-6, 1.5rem);
   }
   .brief,
   .team,
-  .history {
-    padding: 24px 20px;
+  .history,
+  .access,
+  .assignment,
+  .queueEmpty {
+    padding: var(--learning-space-5, 1.25rem);
+    border-radius: var(--learning-radius-compact, 1rem);
   }
-  .editorNote {
-    padding-top: 20px;
-  }
-  .queueList {
-    grid-template-columns: 1fr 1fr;
-  }
-}
-@media (max-width: 600px) {
   .reviewActions,
   .assignmentGrid,
   .queueList {
+    display: grid;
     grid-template-columns: minmax(0, 1fr);
   }
-  .assignment {
-    padding: 24px 20px;
-  }
   .queuePage {
-    padding: 28px 20px 48px;
+    padding: var(--learning-space-7, 1.75rem) var(--learning-space-5, 1.25rem)
+      var(--learning-space-12, 3rem);
   }
   .access .outlineButton {
     display: flex;
     width: 100%;
-    margin: 14px 0 0 !important;
+    margin: var(--learning-space-4, 1rem) 0 0;
+  }
+  .access .outlineButton + .outlineButton {
+    margin-inline-start: 0;
+  }
+}
+@media (prefers-contrast: more) {
+  .outlineButton,
+  .primaryButton,
+  .controls input,
+  .controls textarea,
+  .reviewForm textarea,
+  .verdict {
+    border-color: currentColor;
+  }
+}
+@media (forced-colors: active) {
+  .outlineButton,
+  .primaryButton,
+  .verdict,
+  .digest,
+  .alert {
+    border-color: ButtonText;
+  }
+  .controls :is(input, textarea, select, button, a, summary):focus-visible,
+  .revisions :is(textarea, button, a, summary):focus-visible {
+    outline-color: Highlight;
   }
 }

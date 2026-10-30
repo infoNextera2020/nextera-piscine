@@ -1,17 +1,18 @@
 .portal {
-  --staff-bg: #000;
-  --staff-panel: #090909;
-  --staff-text: #eee;
-  --staff-muted: #aaa;
-  --staff-line: #282828;
-  --staff-accent: #50dfad;
+  --staff-bg: var(--learning-canvas, #000);
+  --staff-panel: var(--learning-panel, #080c0a);
+  --staff-text: var(--learning-text, #f3f7f4);
+  --staff-muted: var(--learning-muted, #b7c3bb);
+  --staff-line: var(--learning-border, #28342d);
+  --staff-accent: var(--learning-accent, #62e7b1);
   --workspace-bg: var(--staff-bg);
   --workspace-panel: var(--staff-panel);
   --workspace-text: var(--staff-text);
   --workspace-muted: var(--staff-muted);
   --workspace-border: var(--staff-line);
   --workspace-accent: var(--staff-accent);
-  --workspace-ink: #07140f;
+  --workspace-ink: var(--learning-ink, #032017);
+  --piscine-panel: var(--staff-panel);
   --piscine-text: var(--staff-text);
   --piscine-muted: var(--staff-muted);
   --piscine-line: var(--staff-line);
@@ -37,12 +38,12 @@
 }
 .container {
   width: 100%;
-  max-width: 90rem;
+  max-width: 80rem;
   margin-inline: auto;
-  padding-inline: clamp(1.5rem, 5vw, 4.5rem);
+  padding-inline: clamp(1.25rem, 4vw, 4rem);
 }
 .header {
-  min-height: 5.2rem;
+  min-height: 5.5rem;
   display: grid;
   grid-template-columns: 1fr auto 1fr;
   gap: 1rem;
@@ -69,14 +70,15 @@
   display: inline-flex;
   align-items: center;
   min-height: 2.75rem;
-  font-size: 0.88rem;
+  font-size: var(--learning-body-small, 0.875rem);
   color: var(--staff-muted);
   text-decoration: none;
 }
-.navigation [aria-current='page'],
-.navigation a:hover,
-.account a:hover {
+.navigation [aria-current='page'] {
   color: var(--staff-text);
+  text-decoration: underline;
+  text-underline-offset: 0.65rem;
+  text-decoration-color: var(--staff-accent);
 }
 .account {
   justify-self: end;
@@ -84,10 +86,10 @@
   gap: 1.5rem;
   align-items: center;
   color: var(--staff-muted);
-  font-size: 0.88rem;
+  font-size: var(--learning-body-small, 0.875rem);
 }
 .main {
-  padding-block: 3rem 5rem;
+  padding-block: var(--learning-space-12, 3rem) 5rem;
   min-height: 78dvh;
   outline: none;
 }
@@ -100,34 +102,34 @@
   background: var(--staff-accent);
   color: var(--workspace-ink);
   padding: 0.75rem 1rem;
-  border-radius: 0.25rem;
+  border-radius: var(--learning-radius-compact, 1rem);
 }
 .skip:focus {
   transform: none;
 }
 .intro {
-  margin-bottom: 3.75rem;
-  max-width: 60rem;
+  margin-bottom: var(--learning-space-12, 3rem);
+  max-width: 56rem;
 }
 .eyebrow {
   display: block;
   margin-bottom: 0.85rem;
   text-transform: uppercase;
   color: var(--staff-muted);
-  font-size: 0.65rem;
-  letter-spacing: 0.025em;
+  font-size: var(--learning-label, 0.75rem);
+  letter-spacing: 0.06em;
   line-height: 1.8;
 }
 .intro h1 {
-  font-size: clamp(2rem, 1.4rem + 2vw, 3rem);
-  line-height: 1.2;
+  font-size: clamp(2.25rem, 1.5rem + 2vw, 3.25rem);
+  line-height: 1.15;
   letter-spacing: -0.035em;
   font-weight: 600;
   margin: 0 0 1rem;
 }
 .intro p {
   color: var(--staff-muted);
-  font-size: 1rem;
+  font-size: var(--learning-body, 1rem);
   line-height: 1.75;
   margin: 0;
 }
@@ -141,13 +143,16 @@
   display: flex;
   align-items: center;
   min-height: 3.5rem;
-  padding-bottom: 0.9rem;
+  padding-block: 0.875rem;
+  margin-bottom: -1px;
+  border-bottom: 2px solid transparent;
   color: var(--staff-muted);
   text-decoration: none;
 }
 .reviewNavigation [aria-current='page'] {
   color: var(--staff-text);
   font-weight: 600;
+  border-bottom-color: var(--staff-accent);
 }
 .queue {
   list-style: none;
@@ -166,6 +171,17 @@
   background: var(--staff-panel);
   box-shadow: inset 2px 0 var(--staff-accent);
 }
+.queueRow > div {
+  min-width: 0;
+}
+.queueRow .queueState {
+  justify-self: start;
+  border: 1px solid var(--staff-line);
+  border-radius: var(--learning-radius-control, 999px);
+  padding: 0.375rem 0.75rem;
+  font-size: var(--learning-label, 0.75rem);
+  line-height: 1.7;
+}
 .queueRow h2 {
   font-size: 1.2rem;
   line-height: 1.4;
@@ -175,7 +191,7 @@
 .queueRow p {
   margin: 0;
   color: var(--staff-muted);
-  font-size: 0.86rem;
+  font-size: var(--learning-body-small, 0.875rem);
   line-height: 1.7;
 }
 .openLink,
@@ -188,28 +204,26 @@
   color: var(--staff-text);
   text-decoration: none;
   font: inherit;
-  font-size: 0.85rem;
-}
-.openLink:hover {
-  color: var(--staff-accent);
+  font-size: var(--learning-body-small, 0.875rem);
 }
 .outlineButton {
   background: var(--staff-panel);
   border: 1px solid var(--staff-line);
-  border-radius: 0.35rem;
+  border-radius: var(--learning-radius-control, 999px);
   padding: 0.7rem 1rem;
   cursor: pointer;
-}
-.outlineButton:hover:not(:disabled) {
-  border-color: var(--staff-muted);
 }
 .outlineButton:disabled {
   cursor: wait;
   opacity: 0.65;
 }
 .unavailable {
-  padding-block: 2rem;
+  margin-block: var(--learning-space-8, 2rem);
+  padding: var(--learning-space-8, 2rem);
   max-width: 52rem;
+  border: 1px solid var(--staff-line);
+  border-radius: var(--learning-radius-card, 1.25rem);
+  background: var(--staff-panel);
 }
 .unavailable h2,
 .unavailable h3 {
@@ -221,7 +235,7 @@
 .disclosure p,
 .scope p,
 .note {
-  font-size: 0.9rem;
+  font-size: var(--learning-body, 1rem);
   line-height: 1.8;
   color: var(--staff-muted);
 }
@@ -232,7 +246,11 @@
   margin-top: 2rem;
 }
 .scope {
-  padding-top: 1.4rem;
+  align-self: start;
+  padding: var(--learning-space-6, 1.5rem);
+  border: 1px solid var(--staff-line);
+  border-radius: var(--learning-radius-compact, 1rem);
+  background: var(--staff-panel);
 }
 .disclosure {
   border-bottom: 1px solid var(--staff-line);
@@ -246,7 +264,7 @@
   min-height: 3.75rem;
   padding-block: 0.85rem;
   color: var(--staff-text);
-  font-size: 0.9rem;
+  font-size: var(--learning-body, 1rem);
   cursor: pointer;
   list-style: none;
 }
@@ -262,7 +280,7 @@
   content: '−';
 }
 .disclosure > p:last-child {
-  padding-bottom: 1rem;
+  padding-bottom: var(--learning-space-5, 1.25rem);
 }
 .management {
   margin-block: 1.5rem 3rem;
@@ -281,7 +299,7 @@
   margin: 0 0 0.6rem;
 }
 .managementRow p {
-  font-size: 0.9rem;
+  font-size: var(--learning-body, 1rem);
   line-height: 1.75;
   color: var(--staff-muted);
   margin: 0;
@@ -294,14 +312,14 @@
 }
 .availability {
   color: var(--staff-muted);
-  font-size: 0.8rem;
+  font-size: var(--learning-body-small, 0.875rem);
 }
 .backLink {
   display: inline-flex;
   min-height: 2.75rem;
   align-items: center;
   color: var(--staff-muted);
-  font-size: 0.9rem;
+  font-size: var(--learning-body, 1rem);
   margin-bottom: 1rem;
 }
 .detail {
@@ -317,8 +335,8 @@
   margin-bottom: 2rem;
 }
 .detailHeading :is(h1, h2) {
-  font-size: clamp(1.8rem, 1.2rem + 2vw, 2.8rem);
-  line-height: 1.2;
+  font-size: clamp(2.25rem, 1.5rem + 2vw, 3.25rem);
+  line-height: 1.15;
   font-weight: 600;
   letter-spacing: -0.03em;
   margin: 0 0 0.8rem;
@@ -331,8 +349,10 @@
 .alert {
   padding: 1rem;
   border: 1px solid var(--staff-line);
-  border-left: 2px solid var(--staff-accent);
-  font-size: 0.9rem;
+  border-inline-start: 2px solid var(--staff-text);
+  border-radius: var(--learning-radius-compact, 1rem);
+  background: var(--staff-panel);
+  font-size: var(--learning-body, 1rem);
   line-height: 1.8;
 }
 .reviewBody {
@@ -346,11 +366,11 @@
   overflow: visible;
 }
 .reviewBody > ol > li {
-  padding: 0 0 2rem;
+  padding: 0 0 var(--learning-space-8, 2rem);
   border: 0;
   display: grid;
   grid-template-columns: minmax(0, 1.8fr) minmax(0, 1fr);
-  column-gap: 4rem;
+  column-gap: var(--learning-space-12, 3rem);
   align-items: start;
 }
 .reviewBody > ol > li > * {
@@ -360,6 +380,11 @@
 .reviewBody > ol > li > form {
   grid-column: 2;
   grid-row: 1 / span 12;
+  margin-top: 0;
+  padding: var(--learning-space-6, 1.5rem);
+  border: 1px solid var(--staff-line);
+  border-radius: var(--learning-radius-card, 1.25rem);
+  background: var(--staff-panel);
 }
 .reviewBody > ol > li > div:first-child {
   display: flex;
@@ -369,7 +394,7 @@
   margin-bottom: 1rem;
 }
 .reviewBody p {
-  font-size: 0.9rem;
+  font-size: var(--learning-body, 1rem);
   line-height: 1.8;
 }
 .reviewBody form p {
@@ -398,11 +423,11 @@
   border: 1px solid var(--staff-line);
   background: var(--staff-panel);
   color: var(--staff-text);
-  border-radius: 0.35rem;
+  border-radius: var(--learning-radius-compact, 1rem);
   padding: 1rem;
   margin-top: 0.6rem;
   font: inherit;
-  font-size: 0.9rem;
+  font-size: var(--learning-body, 1rem);
 }
 .reviewBody button,
 .reviewBody a {
@@ -414,7 +439,7 @@
 }
 .memberList {
   padding-left: 1.4rem;
-  font-size: 0.9rem;
+  font-size: var(--learning-body, 1rem);
   line-height: 1.8;
 }
 .note {
@@ -428,7 +453,7 @@
   border-top: 1px solid var(--staff-line);
   padding-block: 1.2rem;
   color: var(--staff-muted);
-  font-size: 0.7rem;
+  font-size: var(--learning-label, 0.75rem);
 }
 @media (max-width: 48rem) {
   .header {
@@ -463,10 +488,14 @@
   .queueRow[data-selected] {
     padding-inline: 1rem;
   }
+  .unavailable {
+    padding: var(--learning-space-5, 1.25rem);
+    border-radius: var(--learning-radius-compact, 1rem);
+  }
   .queueRow .openLink {
     justify-content: flex-start;
     border: 1px solid var(--staff-line);
-    border-radius: 0.35rem;
+    border-radius: var(--learning-radius-control, 999px);
     padding: 0.6rem 1rem;
     background: var(--staff-panel);
   }
@@ -492,13 +521,38 @@
     display: block;
   }
   .reviewBody > ol > li > form {
-    padding-top: 2rem;
-    margin-top: 2rem;
-    border-top: 1px solid var(--staff-line);
+    padding: var(--learning-space-5, 1.25rem);
+    margin-top: var(--learning-space-8, 2rem);
+    border: 1px solid var(--staff-line);
   }
   .reviewNavigation {
     gap: 1.75rem;
-    font-size: 0.9rem;
+    font-size: var(--learning-body, 1rem);
+  }
+}
+@media (hover: hover) and (pointer: fine) {
+  .openLink:hover {
+    color: var(--staff-accent);
+  }
+  .outlineButton:hover:not(:disabled) {
+    border-color: var(--staff-muted);
+  }
+  .navigation a:hover,
+  .account a:hover,
+  .backLink:hover,
+  .disclosure > summary:hover {
+    color: var(--staff-text);
+  }
+  .reviewNavigation a:hover {
+    color: var(--staff-text);
+    border-bottom-color: var(--staff-muted);
+  }
+}
+@media (prefers-contrast: more) {
+  .outlineButton,
+  .queueRow .queueState,
+  .reviewBody textarea {
+    border-color: currentColor;
   }
 }
 @media (forced-colors: active) {

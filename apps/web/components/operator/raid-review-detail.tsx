@@ -114,7 +114,12 @@ export function StaffRaidReviewDetail({
             {view?.team ? ' · ' + view.team.name : ''}
           </p>
         </div>
-        <button className={s.outlineButton} disabled={busy} onClick={() => void refresh()}>
+        <button
+          className={s.outlineButton}
+          disabled={busy}
+          aria-busy={busy}
+          onClick={() => void refresh()}
+        >
           {busy ? 'Refreshing…' : 'Refresh result'} <HairlineIcon name="arrow" />
         </button>
       </div>

@@ -1,5 +1,5 @@
-<!doctype html><html lang="en" data-theme="dark"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'sha256-P4336j5TVM5eUPL9ubwwx/sMRZeY8ErTo8MpCGPTcxY=' 'sha256-DjOzy+NILRWUGcfSWHA3G9CNJIilck8CWIrZVZ5TA3o=' 'sha256-v+/W7vjQMYa33dnHhorP6x/5mVZHJCMXuiQcX5/GnC8='; style-src 'unsafe-inline'; base-uri 'none'; form-action 'none'; connect-src 'none'"><title>Decorative greeting card</title><style>html,body{margin:0;width:100%;height:100%;overflow:hidden;background:transparent}#stage{width:100%;height:100%;aspect-ratio:5/4;pointer-events:auto}@media(prefers-reduced-motion:reduce){#stage{pointer-events:none}}#stage>svg{background:var(--hairline-plate,#000)}/* Public Hairline host tokens. No geometry, stroke-width or fill overrides. */
-:root[data-theme="dark"] {
+<!doctype html><html lang="en" data-theme="dark"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'sha256-P4336j5TVM5eUPL9ubwwx/sMRZeY8ErTo8MpCGPTcxY=' 'sha256-OHF6IBbnbalXaOmznB1p/9tfA1tbzQFwhzcwgKDp67U=' 'sha256-v+/W7vjQMYa33dnHhorP6x/5mVZHJCMXuiQcX5/GnC8='; style-src 'unsafe-inline'; base-uri 'none'; form-action 'none'; connect-src 'none'"><title>Decorative greeting card</title><style>html,body{margin:0;width:100%;height:100%;overflow:hidden;background:transparent}#stage{width:100%;height:100%;aspect-ratio:5/4;pointer-events:auto}#stage>svg{background:var(--hairline-plate,#000)}@media(prefers-reduced-motion:reduce){#stage{pointer-events:none}#stage,#stage *{animation:none!important;transition:none!important}}/* Public Hairline host tokens. No geometry, stroke-width or fill overrides. */
+:root[data-theme='dark'] {
   --ground: #000000;
   --hairline-plate: #000000;
   --hairline-hi: #eef2f8;
@@ -8,7 +8,7 @@
   --hairline-lo: #566170;
 }
 @media (prefers-color-scheme: dark) {
-  :root:not([data-theme="light"]) {
+  :root:not([data-theme='light']) {
     --ground: #000000;
     --hairline-plate: #000000;
     --hairline-hi: #eef2f8;
@@ -17,7 +17,7 @@
     --hairline-lo: #566170;
   }
 }
-</style></head><body><div id="stage" aria-hidden="true"></div><script>
+</style></head><body><div id="stage"></div><script>
 /* hairline kernel sha256:346b48bdef2cdfafd5343eba01494255cf75f9c078e6fcd1aafc62bab62980a1 */
 /*
  * HL: everything a figure may call. Read this index; the code under it is the
@@ -732,27 +732,46 @@ var HL = (() => {
   return __toCommonJS(kernel_exports);
 })();
 /* /hairline kernel */
-</script><script>
-const stage = document.getElementById('stage');
-const reduced = matchMedia('(prefers-reduced-motion: reduce)');
-let definition, handle, automatic;
-function clear() {
-  automatic?.stop(); automatic = null;
-  handle?.destroy(); handle = null;
-  stage.replaceChildren();
-}
-window.hairline = (figure) => { definition = figure; stage.setAttribute('data-hairline', figure.name); HL.inject(document); reset(); };
-function reset() {
-  clear();
-  if (!definition || document.visibilityState !== 'visible') return;
-  const svg = HL.mk('svg', {viewBox:'0 0 400 320', 'aria-hidden':'true'}, stage);
-  handle = definition.mount({stage, svg, read:{textContent:''}}, definition.range[1]);
-  // Supplied tour yields to a real pointer, then resumes when it leaves.
-  if (!reduced.matches) automatic = HL.tour(stage, definition.tour);
-}
-document.addEventListener('visibilitychange', reset);
-reduced.addEventListener('change', reset);
-window.addEventListener('pagehide', clear);
+</script><script>/* global document, window, matchMedia, HL */
+(() => {
+  const stage = document.getElementById('stage');
+  const reduced = matchMedia('(prefers-reduced-motion: reduce)');
+  let definition, handle;
+  function clear() {
+    handle?.destroy();
+    handle = null;
+    stage.replaceChildren();
+  }
+  function reset() {
+    clear();
+    if (!definition || document.visibilityState !== 'visible') return;
+    const svg = HL.mk('svg', {viewBox:'0 0 400 320', 'aria-hidden':'true'}, stage);
+    handle = definition.mount({stage, svg, read:{textContent:''}}, definition.range[1]);
+    if (reduced.matches) {
+      // Freeze exact supplied rest geometry, then dispose every engine listener/frame.
+      const still = svg.cloneNode(true);
+      clear();
+      stage.replaceChildren(still);
+    }
+  }
+  function mouseOnly(event) {
+    if (reduced.matches || event.pointerType !== 'mouse') event.stopImmediatePropagation();
+  }
+  // The original figure owns mouse hit testing. No idle tour or delayed resume is started.
+  stage.addEventListener('pointermove', mouseOnly, true);
+  stage.addEventListener('pointerdown', mouseOnly, true);
+  // Reset outside the original scope so leaving stops motion and restores the exact rest pose.
+  stage.addEventListener('pointerleave', reset, true);
+  window.hairline = (figure) => {
+    definition = figure;
+    stage.setAttribute('data-hairline', figure.name);
+    HL.inject(document);
+    reset();
+  };
+  document.addEventListener('visibilitychange', reset);
+  reduced.addEventListener('change', reset);
+  window.addEventListener('pagehide', clear);
+})();
 </script><script>/** A folded paper heart, carried by the opening of a rounded greeting card. */
 const {
   Cam, clamp, disposer, facing, fillet, fit, hull, mk, open, pointer, poly, prism,

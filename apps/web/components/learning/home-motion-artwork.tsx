@@ -20,6 +20,15 @@ export function HomeMotionArtwork() {
   const [paused, setPaused] = useState(false);
   const [failed, setFailed] = useState(false);
   const [playing, setPlaying] = useState(false);
+  const staticReason = conditions.reducedMotion
+    ? 'reduced-motion'
+    : conditions.saveData
+      ? 'save-data'
+      : !conditions.visible
+        ? 'page-hidden'
+        : !conditions.inViewport
+          ? 'offscreen'
+          : undefined;
   const eligible = homeMotionEligible(conditions);
   const mountVideo = eligible && !failed;
   const wantsPlayback = mountVideo && !paused;
@@ -90,6 +99,7 @@ export function HomeMotionArtwork() {
       className={s.frame}
       data-home-motion
       data-eligible={eligible}
+      data-static-reason={staticReason}
       data-playing={playing && wantsPlayback}
     >
       <div className={s.canvas}>
@@ -151,9 +161,15 @@ export function HomeMotionArtwork() {
       <p id={statusId} className={s.srOnly} role="status">
         {failed
           ? 'Animation unavailable. Static artwork is shown.'
-          : playing && wantsPlayback
-            ? 'Decorative artwork animation is playing.'
-            : 'Decorative artwork loops automatically while visible unless paused, reduced-motion or data-saving preferences apply.'}
+          : !eligible
+            ? staticReason === 'reduced-motion'
+              ? 'Static artwork respects your reduced-motion preference.'
+              : staticReason === 'save-data'
+                ? 'Static artwork respects your data-saving preference.'
+                : 'Decorative animation pauses while the artwork or page is out of view.'
+            : playing && wantsPlayback
+              ? 'Decorative artwork animation is playing.'
+              : 'Decorative artwork loops automatically while visible unless paused, reduced-motion or data-saving preferences apply.'}
       </p>
     </div>
   );

@@ -16,8 +16,15 @@ class FigureElement {
     this.children.push(child);
     return child;
   }
-  replaceChildren() {
-    this.children = [];
+  replaceChildren(...children: FigureElement[]) {
+    this.children = children;
+  }
+  cloneNode(deep: boolean): FigureElement {
+    const clone = new FigureElement(this.tag);
+    clone.attrs = { ...this.attrs };
+    clone.ownerDocument = this.ownerDocument;
+    if (deep) clone.children = this.children.map((child) => child.cloneNode(true));
+    return clone;
   }
   addEventListener(name: string, callback: (event: unknown) => void) {
     const set = this.events.get(name) ?? new Set();
@@ -42,10 +49,20 @@ class FigureElement {
     },
   };
   emit(name: string, event: unknown) {
-    for (const fn of this.events.get(name) ?? []) fn(event);
+    let stopped = false;
+    const payload = {
+      ...(event as Record<string, unknown>),
+      stopImmediatePropagation() {
+        stopped = true;
+      },
+    };
+    for (const fn of [...(this.events.get(name) ?? [])]) {
+      if (this.events.get(name)?.has(fn)) fn(payload);
+      if (stopped) break;
+    }
   }
 }
-function scene(legacyCollision = false) {
+function scene(kind: 'greeting-card' | 'sign-label' = 'greeting-card') {
   let clock = 0,
     id = 0;
   const frames = new Map<number, Callback>(),
@@ -106,12 +123,12 @@ function scene(legacyCollision = false) {
       disconnect() {}
     },
   });
-  const html = readFileSync('apps/web/public/piscine/hairline/greeting-card/figure.html', 'utf8');
+  const html = readFileSync(`apps/web/public/piscine/hairline/${kind}/figure.html`, 'utf8');
   const scripts = [...html.matchAll(/<script>([\s\S]*?)<\/script>/g)].map((match) => match[1]!);
   runInContext(scripts[0]!, context, { timeout: 1000 });
-  // Only browser stylesheet installation is stubbed; geometry, scheduler, spring, hit testing and tour are original.
+  // Only browser stylesheet installation is stubbed; supplied geometry, scheduler, springs and hit testing execute.
   runInContext('HL = {...HL, inject(){}};', context, { timeout: 1000 });
-  const bridge = legacyCollision ? scripts[1]!.replace(/\breset\b/g, 'mount') : scripts[1]!;
+  const bridge = scripts[1]!;
   runInContext(bridge, context, { timeout: 1000 });
   runInContext('var hairline = window.hairline;', context, { timeout: 1000 });
   runInContext(scripts[2]!, context, { timeout: 1000 });
@@ -142,7 +159,12 @@ function scene(legacyCollision = false) {
     frames,
     advance,
     snapshot,
-    pointer: () => stage.emit('pointermove', { clientX: 280, clientY: 205, pointerType: 'mouse' }),
+    pointer: (pointerType = 'mouse') =>
+      stage.emit('pointermove', {
+        clientX: kind === 'greeting-card' ? 280 : 200,
+        clientY: kind === 'greeting-card' ? 205 : 165,
+        pointerType,
+      }),
     leave: () => stage.emit('pointerleave', { pointerType: 'mouse' }),
     hide: () => {
       doc.visibilityState = 'hidden';
@@ -161,56 +183,74 @@ function scene(legacyCollision = false) {
     },
   };
 }
-describe('Original GreetingCard engine deterministic lifecycle — not browser evidence', () => {
-  it('detects the former host/figure global mount collision as a negative control', () => {
-    expect(() => scene(true)).toThrow(/undefined|destructure/i);
-  });
-  it('changes actual SVG path geometry automatically over time without a pointer', () => {
-    const s = scene(),
-      samples = new Set([s.snapshot()]);
-    expect(s.stage.attrs['data-hairline']).toBe('greeting-heart');
-    for (let n = 0; n < 7; n++) {
-      s.advance(1800);
-      samples.add(s.snapshot());
-    }
-    expect(samples.size).toBeGreaterThan(2);
-    expect(s.stage.children).toHaveLength(1);
-    s.destroy();
-    expect(s.frames.size).toBe(0);
-  });
-  it('yields to a simulated pointer position, holds it, then resumes the tour after leaving', () => {
-    const s = scene(),
-      rest = s.snapshot();
-    s.advance(5000);
-    s.pointer();
-    s.advance(2400);
-    const held = s.snapshot();
-    expect(held).not.toBe(rest);
-    s.advance(3000);
-    expect(s.snapshot()).toBe(held);
-    s.leave();
-    s.advance(300);
-    const left = s.snapshot();
-    s.advance(4000);
-    expect(s.snapshot()).not.toBe(left);
-    s.destroy();
-  });
-  it('stops while hidden, resumes visibly, and leaves reduced motion at the static rest geometry', () => {
-    const s = scene(),
-      rest = s.snapshot();
-    s.advance(3500);
-    s.hide();
-    expect(s.frames.size).toBe(0);
-    expect(s.stage.children).toHaveLength(0);
-    s.advance(4000);
-    expect(s.stage.children).toHaveLength(0);
-    s.show();
-    s.advance(3500);
-    expect(s.snapshot()).not.toBe(rest);
-    s.reduce();
-    s.advance(200);
-    expect(s.snapshot()).toBe(rest);
-    expect(s.frames.size).toBe(0);
-    s.destroy();
-  });
-});
+describe.each(['greeting-card', 'sign-label'] as const)(
+  'Supplied %s engine hover-only lifecycle — not browser evidence',
+  (kind) => {
+    it('keeps exact static rest without a pointer, then stops scheduling', () => {
+      const s = scene(kind),
+        rest = s.snapshot();
+      expect(s.stage.attrs['data-hairline']).toBe(
+        kind === 'greeting-card' ? 'greeting-heart' : 'q02-sign-label',
+      );
+      for (let n = 0; n < 7; n++) {
+        s.advance(1800);
+        expect(s.snapshot()).toBe(rest);
+      }
+      expect(s.frames.size).toBe(0);
+      expect(s.stage.children).toHaveLength(1);
+      s.destroy();
+    });
+    it('responds to mouse hover, holds the pointer pose and returns to rest on leave with no tour', () => {
+      const s = scene(kind),
+        rest = s.snapshot();
+      s.advance(3000);
+      s.pointer();
+      s.advance(2400);
+      const held = s.snapshot();
+      expect(held).not.toBe(rest);
+      s.advance(3000);
+      expect(s.snapshot()).toBe(held);
+      s.leave();
+      expect(s.snapshot()).toBe(rest);
+      for (let n = 0; n < 5; n++) {
+        s.advance(1800);
+        expect(s.snapshot()).toBe(rest);
+      }
+      expect(s.frames.size).toBe(0);
+      s.destroy();
+    });
+    it('rejects touch interaction and suppresses all input/motion after the reduced-motion change', () => {
+      const s = scene(kind),
+        rest = s.snapshot();
+      s.pointer('touch');
+      s.advance(2000);
+      expect(s.snapshot()).toBe(rest);
+      s.pointer();
+      s.advance(2400);
+      expect(s.snapshot()).not.toBe(rest);
+      s.reduce();
+      expect(s.snapshot()).toBe(rest);
+      expect(s.frames.size).toBe(0);
+      s.pointer();
+      s.advance(4000);
+      expect(s.snapshot()).toBe(rest);
+      expect(s.frames.size).toBe(0);
+      s.destroy();
+    });
+    it('clears hidden work and returns visible at rest, without autonomous movement', () => {
+      const s = scene(kind),
+        rest = s.snapshot();
+      s.pointer();
+      s.advance(2400);
+      s.hide();
+      expect(s.stage.children).toHaveLength(0);
+      expect(s.frames.size).toBe(0);
+      s.advance(4000);
+      s.show();
+      s.advance(4000);
+      expect(s.snapshot()).toBe(rest);
+      expect(s.frames.size).toBe(0);
+      s.destroy();
+    });
+  },
+);

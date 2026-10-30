@@ -37,3 +37,8 @@ content/source-baselines/quest2-standard-go-v3/source-map.md
 apps/web/public/piscine/hairline/greeting-card/figure.html
 apps/web/public/piscine/hairline/greeting-card/greeting-heart.js
 apps/web/public/piscine/hairline/greeting-card/rest.svg
+apps/web/public/piscine/hairline/sign-label/figure.html
+apps/web/public/piscine/hairline/sign-label/q02-sign-label.js
+apps/web/public/piscine/hairline/sign-label/rest.svg
+apps/web/public/piscine/hairline/sign-label/sign-label-theme.css
+apps/web/public/piscine/hairline/challenge-figure-host.js

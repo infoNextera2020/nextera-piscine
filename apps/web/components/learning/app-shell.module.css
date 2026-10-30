@@ -1,12 +1,12 @@
 .shell {
-  --piscine-bg: #090b0a;
-  --piscine-panel: #101211;
-  --piscine-raised: #171a18;
-  --piscine-line: #343834;
-  --piscine-text: #f4f5f2;
-  --piscine-muted: #b4bab6;
-  --piscine-accent: #4bd17b;
-  --piscine-accent-soft: #152f20;
+  --piscine-bg: var(--learning-canvas, #000);
+  --piscine-panel: var(--learning-panel, #080c0a);
+  --piscine-raised: var(--learning-raised, #171a18);
+  --piscine-line: var(--learning-border, #28342d);
+  --piscine-text: var(--learning-text, #f3f7f4);
+  --piscine-muted: var(--learning-muted, #b7c3bb);
+  --piscine-accent: var(--learning-accent, #62e7b1);
+  --piscine-accent-soft: var(--learning-accent-soft, #152f20);
   --piscine-error: #ffb5ae;
   --piscine-system: #d4c4f3;
   /* Preserve the token contract of route bodies awaiting their visual pass. */
@@ -123,7 +123,7 @@
   padding: 0.8rem 1rem;
   border-radius: 0.65rem;
   font-size: 1.13rem;
-  transition: background 140ms ease;
+  transition: none;
 }
 .nav a[aria-current='page'] {
   background: var(--piscine-accent-soft);

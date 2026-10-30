@@ -1,0 +1,19 @@
+/* Public Hairline host tokens. No geometry, stroke-width or fill overrides. */
+:root[data-theme="dark"] {
+  --ground: #000000;
+  --hairline-plate: #000000;
+  --hairline-hi: #eef2f8;
+  --hairline-edge: #aab3c1;
+  --hairline-mid: #7d8797;
+  --hairline-lo: #566170;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --ground: #000000;
+    --hairline-plate: #000000;
+    --hairline-hi: #eef2f8;
+    --hairline-edge: #aab3c1;
+    --hairline-mid: #7d8797;
+    --hairline-lo: #566170;
+  }
+}

@@ -1,0 +1,59 @@
+.figure {
+  position: relative;
+  width: min(100%, 260px);
+  min-width: 0;
+  background: var(--focus-bg, #000);
+  isolation: isolate;
+}
+.rest,
+.interactive {
+  display: block;
+  width: 100%;
+  height: 100%;
+  border: 0;
+}
+.interactive {
+  position: absolute;
+  inset: 0;
+}
+.canvas {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 5 / 4;
+}
+.control {
+  position: relative;
+  display: block;
+  margin: 8px 0 0 auto;
+  min-height: 44px;
+  padding: 6px 10px;
+  border: 1px solid var(--focus-line, #282828);
+  border-radius: 999px;
+  background: var(--focus-bg, #000);
+  color: var(--focus-muted, #bdbdbd);
+  font: 11px/1.4 var(--workspace-font, sans-serif);
+  cursor: pointer;
+}
+.control:focus-visible {
+  outline: 2px solid var(--focus-accent, #50dfad);
+  outline-offset: 3px;
+}
+.control:disabled {
+  cursor: default;
+}
+@media (max-width: 50rem) {
+  .figure {
+    justify-self: center;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .figure,
+  .figure * {
+    animation: none !important;
+    transition: none !important;
+  }
+  .interactive {
+    display: none;
+    pointer-events: none;
+  }
+}

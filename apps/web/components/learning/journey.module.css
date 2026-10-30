@@ -1,4 +1,6 @@
 .page {
+  min-width: 0;
+  overflow-wrap: anywhere;
   max-width: 1450px;
   margin: 0 auto;
   padding: 34px 44px 40px;
@@ -9,7 +11,7 @@
   gap: 10px;
   align-items: center;
   color: var(--piscine-muted);
-  font-size: 11px;
+  font-size: var(--learning-label, 0.75rem);
   margin-bottom: 34px;
   flex-wrap: wrap;
 }
@@ -21,7 +23,7 @@
 }
 .eyebrow {
   color: var(--piscine-muted);
-  font-size: 10px;
+  font-size: var(--learning-label, 0.75rem);
   letter-spacing: 0.15em;
   text-transform: uppercase;
   font-weight: 600;
@@ -35,14 +37,14 @@
 }
 .heading h1,
 .entry h1 {
-  font-size: clamp(2.4rem, 4vw, 3.7rem);
+  font-size: clamp(2.4rem, 1.25rem + 2.75vw, 3.7rem);
   font-weight: 550;
   letter-spacing: -0.055em;
   line-height: 1.1;
   margin: 14px 0 18px;
 }
 .heading > div > p:last-child {
-  font-size: 13px;
+  font-size: var(--learning-body-small, 0.875rem);
   color: var(--piscine-muted);
   line-height: 1.8;
   max-width: 590px;
@@ -63,7 +65,7 @@
   font-size: 18px;
 }
 .total > span {
-  font-size: 10px;
+  font-size: var(--learning-label, 0.75rem);
   color: var(--piscine-muted);
 }
 .toolbar {
@@ -87,7 +89,7 @@
   color: var(--piscine-muted);
   background: transparent;
   padding: 7px 12px;
-  font-size: 11px;
+  font-size: var(--learning-label, 0.75rem);
   border-radius: 5px;
 }
 .filters button[aria-pressed='true'] {
@@ -133,7 +135,7 @@
   display: flex;
   gap: 19px;
   flex-wrap: wrap;
-  font-size: 10px;
+  font-size: var(--learning-label, 0.75rem);
   color: var(--piscine-muted);
 }
 .legend > span {
@@ -159,7 +161,7 @@
   border-color: var(--piscine-accent);
 }
 .hierarchyNote {
-  font-size: 10px;
+  font-size: var(--learning-label, 0.75rem);
   color: var(--piscine-muted);
   margin: 13px 0 25px;
   line-height: 1.7;
@@ -170,7 +172,7 @@
 }
 .questGroup {
   border: 1px solid var(--piscine-line);
-  border-radius: 10px;
+  border-radius: var(--learning-radius-compact, 1rem);
   overflow: hidden;
   background: var(--piscine-panel);
 }
@@ -183,17 +185,17 @@
 }
 .questIndex {
   font:
-    11px ui-monospace,
+    0.75rem ui-monospace,
     monospace;
   color: var(--piscine-muted);
 }
 .questGroup h2 {
-  font-size: 15px;
+  font-size: var(--learning-body, 1rem);
   font-weight: 550;
   letter-spacing: -0.02em;
 }
 .questGroup header p {
-  font-size: 10px;
+  font-size: var(--learning-label, 0.75rem);
   color: var(--piscine-muted);
   margin-top: 5px;
 }
@@ -231,7 +233,7 @@
   align-items: center;
   justify-content: center;
   font:
-    11px ui-monospace,
+    0.75rem ui-monospace,
     monospace;
   color: var(--piscine-muted);
   background: var(--piscine-panel);
@@ -268,13 +270,13 @@
   padding: 2px 0;
 }
 .nodeSelect h3 {
-  font-size: 12px;
+  font-size: var(--learning-body-small, 0.875rem);
   line-height: 1.6;
   font-weight: 550;
   overflow-wrap: anywhere;
 }
 .nodeSelect > span {
-  font-size: 10px;
+  font-size: var(--learning-label, 0.75rem);
   color: var(--piscine-muted);
   text-transform: capitalize;
   display: flex;
@@ -284,7 +286,7 @@
   margin-top: 3px;
 }
 .nodeSelect em {
-  font-size: 9px;
+  font-size: var(--learning-label, 0.75rem);
   font-style: normal;
   color: #e4c76e;
 }
@@ -295,7 +297,7 @@
   color: var(--piscine-accent);
 }
 .status {
-  font-size: 9px;
+  font-size: var(--learning-label, 0.75rem);
   line-height: 1.7;
   color: var(--piscine-muted);
   white-space: nowrap;
@@ -318,7 +320,7 @@
   color: var(--piscine-system);
 }
 .openNode {
-  font-size: 16px;
+  font-size: var(--learning-body, 1rem);
   color: var(--piscine-muted);
   padding: 6px;
 }
@@ -369,7 +371,7 @@
 }
 .details {
   border: 1px solid var(--piscine-line);
-  border-radius: 10px;
+  border-radius: var(--learning-radius-compact, 1rem);
   padding: 25px 23px;
   background: var(--piscine-panel);
   position: sticky;
@@ -383,7 +385,7 @@
   margin: 25px 0 14px;
 }
 .detailMeta > span:first-child {
-  font-size: 10px;
+  font-size: var(--learning-label, 0.75rem);
   text-transform: capitalize;
   color: var(--piscine-muted);
 }
@@ -396,7 +398,7 @@
 }
 .questContext {
   color: var(--piscine-muted);
-  font-size: 11px;
+  font-size: var(--learning-label, 0.75rem);
   margin-top: 9px;
 }
 .details dl {
@@ -405,13 +407,13 @@
   margin: 28px 0;
 }
 .details dt {
-  font-size: 10px;
+  font-size: var(--learning-label, 0.75rem);
   letter-spacing: 0.03em;
   color: var(--piscine-muted);
   margin-bottom: 8px;
 }
 .details dd {
-  font-size: 12px;
+  font-size: var(--learning-body-small, 0.875rem);
   line-height: 1.8;
   margin: 0;
   overflow-wrap: anywhere;
@@ -436,7 +438,7 @@
   border-radius: 4px;
   color: var(--piscine-muted);
   padding: 3px 8px;
-  font-size: 10px;
+  font-size: var(--learning-label, 0.75rem);
 }
 .primary {
   display: flex;
@@ -446,14 +448,14 @@
   border-radius: 5px;
   background: var(--piscine-accent);
   color: #08190e;
-  font-size: 11px;
+  font-size: var(--learning-label, 0.75rem);
   font-weight: 650;
 }
 .primary:hover {
   background: #6de795;
 }
 .textLink {
-  font-size: 11px;
+  font-size: var(--learning-label, 0.75rem);
   display: inline-flex;
   align-items: center;
   gap: 15px;
@@ -465,7 +467,7 @@
   margin-top: 20px;
 }
 .detailNote {
-  font-size: 10px;
+  font-size: var(--learning-label, 0.75rem);
   line-height: 1.8;
   color: var(--piscine-muted);
   border-top: 1px solid var(--piscine-line);
@@ -473,7 +475,7 @@
   margin-top: 24px;
 }
 .notice {
-  font-size: 12px;
+  font-size: var(--learning-body-small, 0.875rem);
   line-height: 1.7;
   color: var(--piscine-muted);
   padding: 16px;
@@ -502,7 +504,7 @@
   border-radius: 6px;
   padding: 10px 6px;
   color: var(--piscine-muted);
-  font-size: 11px;
+  font-size: var(--learning-label, 0.75rem);
   line-height: 1.5;
 }
 .siblings button[aria-pressed='true'] {
@@ -512,14 +514,14 @@
 }
 .siblings small {
   display: block;
-  font-size: 9px;
+  font-size: var(--learning-label, 0.75rem);
   color: var(--piscine-muted);
   margin-top: 4px;
 }
 .questOverview {
   padding: 25px;
   border: 1px solid var(--piscine-line);
-  border-radius: 10px;
+  border-radius: var(--learning-radius-compact, 1rem);
   margin-bottom: 20px;
 }
 .questOverview h2 {
@@ -529,7 +531,7 @@
   margin: 13px 0;
 }
 .questOverview > p:not(.eyebrow) {
-  font-size: 12px;
+  font-size: var(--learning-body-small, 0.875rem);
   color: var(--piscine-muted);
   line-height: 1.8;
 }
@@ -544,11 +546,11 @@
   justify-content: space-between;
   gap: 15px;
   color: var(--piscine-muted);
-  font-size: 9px;
+  font-size: var(--learning-label, 0.75rem);
 }
 .empty {
   border: 1px solid var(--piscine-line);
-  border-radius: 10px;
+  border-radius: var(--learning-radius-compact, 1rem);
   padding: 32px;
   background: var(--piscine-panel);
 }
@@ -559,7 +561,7 @@
 }
 .empty p,
 .emptyCopy {
-  font-size: 12px;
+  font-size: var(--learning-body-small, 0.875rem);
   line-height: 1.8;
   color: var(--piscine-muted);
 }
@@ -570,7 +572,7 @@
   padding: 8px 12px;
   background: var(--piscine-raised);
   color: var(--piscine-text);
-  font-size: 12px;
+  font-size: var(--learning-body-small, 0.875rem);
 }
 .entry {
   max-width: 1200px;
@@ -630,7 +632,7 @@
   }
   .breadcrumb {
     margin-bottom: 25px;
-    font-size: 10px;
+    font-size: var(--learning-label, 0.75rem);
   }
   .heading {
     align-items: start;
@@ -640,7 +642,7 @@
     font-size: 2.5rem;
   }
   .heading > div > p:last-child {
-    font-size: 12px;
+    font-size: var(--learning-body-small, 0.875rem);
   }
   .total {
     display: none;
@@ -654,7 +656,7 @@
   }
   .filters button {
     padding: 6px 9px;
-    font-size: 10px;
+    font-size: var(--learning-label, 0.75rem);
   }
   .workspace[data-detail='true'] {
     grid-template-columns: 1fr;
@@ -674,36 +676,36 @@
   }
   .siblings button {
     height: 100%;
-    font-size: 10px;
+    font-size: var(--learning-label, 0.75rem);
   }
   .siblings .nodeShape {
     flex-basis: 21px;
     width: 21px;
     height: 21px;
-    font-size: 9px;
+    font-size: var(--learning-label, 0.75rem);
   }
   .legend {
     gap: 12px;
-    font-size: 9px;
+    font-size: var(--learning-label, 0.75rem);
   }
   .questGroup > header {
     padding: 18px 15px;
     gap: 10px;
   }
   .questGroup h2 {
-    font-size: 13px;
+    font-size: var(--learning-body-small, 0.875rem);
   }
   .nodes > li {
     padding: 14px 12px;
     gap: 9px;
   }
   .nodes .status {
-    font-size: 8px;
+    font-size: var(--learning-label, 0.75rem);
     max-width: 68px;
     white-space: normal;
   }
   .nodeSelect h3 {
-    font-size: 11px;
+    font-size: var(--learning-label, 0.75rem);
   }
   .openNode {
     padding: 4px;

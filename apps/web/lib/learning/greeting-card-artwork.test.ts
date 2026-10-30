@@ -43,7 +43,10 @@ describe('Supplied GreetingCard figure boundary', () => {
     expect(scripts[2]).toBe(read('greeting-heart.js'));
     expect(createHash('sha256').update(scripts[0]!).digest('hex')).toBe(provenance.kernel_sha256);
     expect(host).not.toMatch(/id="(hl-bench|intensity|play|name|read|means|rules)"/);
-    expect(host).toContain('HL.tour(stage, definition.tour)');
+    expect(host).not.toContain('HL.tour(stage');
+    expect(scripts[1]).toBe(
+      readFileSync('apps/web/public/piscine/hairline/challenge-figure-host.js', 'utf8'),
+    );
     expect(host).toContain('#stage>svg{background:var(--hairline-plate,#000)}');
     expect(host).not.toMatch(/fetch\(|XMLHttpRequest|eval\(|localStorage|WebSocket/);
     expect(host).toContain("connect-src 'none'");

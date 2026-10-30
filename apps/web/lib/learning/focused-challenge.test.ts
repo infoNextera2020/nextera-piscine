@@ -92,7 +92,7 @@ describe('Opt-in focused Challenge presentation', () => {
     expect(html).not.toContain('Need a hint?');
     expect(html).not.toContain('Review &amp; understanding');
     expect(html).not.toMatch(/id="focused-resources"[^>]*open/);
-    expect(html).not.toMatch(/mentor approval|XP|points|pass to unlock/i);
+    expect(html).not.toMatch(/\b(?:mentor approval|XP|points|pass to unlock)\b/i);
   });
   it('reveals only explicitly supplied optional material and supports resources deep links', () => {
     const html = render({

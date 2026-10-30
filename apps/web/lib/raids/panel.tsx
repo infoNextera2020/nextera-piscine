@@ -12,7 +12,7 @@ import { SubmissionForm } from '../submissions/form';
 import { SubmissionIntents } from '../submissions/retry-intent';
 import { HairlineIcon } from '../../components/learning/hairline-icon';
 import { formatMoment, displayState } from '../learning/display';
-import s from '../../components/learning/challenge.module.css';
+import { LearningSurface } from '../../components/learning/design-exploration';
 
 export const raidLabels: Record<RaidAttemptView['status'], string> = {
   awaiting_checks: 'Automated checks pending',
@@ -118,16 +118,18 @@ export function RaidPanel({
   }, [refresh, accessRemoved]);
   if (accessRemoved)
     return (
-      <section className={raidStyles.access} aria-label="Raid access unavailable">
-        <h2>Access must be confirmed</h2>
-        <p role="alert">{error}</p>
-        <button className={raidStyles.outlineButton} onClick={() => void refresh()}>
-          Retry authorized read
-        </button>
-        <Link className={raidStyles.outlineButton} href={'/app/cohorts/' + cohort}>
-          Return to Journey <HairlineIcon name="arrow" />
-        </Link>
-      </section>
+      <LearningSurface page="project">
+        <section className={raidStyles.access} aria-label="Raid access unavailable">
+          <h2>Access must be confirmed</h2>
+          <p role="alert">{error}</p>
+          <button className={raidStyles.outlineButton} onClick={() => void refresh()}>
+            Retry authorized read
+          </button>
+          <Link className={raidStyles.outlineButton} href={'/app/cohorts/' + cohort}>
+            Return to Journey <HairlineIcon name="arrow" />
+          </Link>
+        </section>
+      </LearningSurface>
     );
   const latest =
     view?.attempts.reduce<RaidAttemptView | null>(
@@ -136,115 +138,119 @@ export function RaidPanel({
     ) ?? null;
   const previous = view?.attempts.filter((a) => a.id !== latest?.id) ?? [];
   return (
-    <div className={raidStyles.workspace + ' ' + raidStyles.controls} aria-label="Team Raid">
-      {error && (
-        <div className={raidStyles.alert} role="alert">
-          <p>{error}</p>
-          <button className={raidStyles.outlineButton} onClick={() => void refresh()}>
-            Retry authorized read
-          </button>
-        </div>
-      )}
-      <section className={raidStyles.brief}>
-        <span className={raidStyles.eyebrow}>Project brief</span>
-        <h2>Work with your team</h2>
-        <p>
-          Build your solution in your own editor and terminal. Upload one shared source file for the
-          team.
-        </p>
-        <p>A revised upload needs new checks and a fresh mentor review.</p>
-        <div className={raidStyles.editorNote}>
-          <HairlineIcon name="code" size={56} />
-          <strong>One accepted file. One exact revision.</strong>
-        </div>
-        {brief && <div className={raidStyles.authoredBrief}>{brief}</div>}
-      </section>
-      <section className={raidStyles.team} aria-label="Current team assignment">
-        <span className={raidStyles.eyebrow}>Current team</span>
-        <h2>
-          {view ? (view.team?.name ?? 'Team assignment pending') : 'Team workflow unavailable'}
-        </h2>
-        {view?.team ? (
-          <>
-            <ul>
-              {view.team.members.map((member) => (
-                <li key={member.id}>{member.displayName}</li>
-              ))}
-            </ul>
-            <p>Assigned mentor: {view.team.mentor}</p>
-          </>
-        ) : (
-          <p>
-            {view
-              ? 'Your owner must assign a team of exactly three before a shared upload.'
-              : 'Shared team workflow is unavailable in this environment. The published brief remains read-only.'}
-          </p>
-        )}
-        <p className={raidStyles.small}>
-          Each accepted revision records its own frozen members. Later assignments do not change
-          that history.
-        </p>
-      </section>
-      <section className={raidStyles.history} aria-labelledby="raid-history-heading">
-        <div className={raidStyles.historyHeading}>
-          <h2 id="raid-history-heading">Shared team history</h2>
-          <button className={raidStyles.outlineButton} onClick={() => void refresh()}>
-            Refresh
-          </button>
-        </div>
-        {view ? (
-          <>
-            <RaidHistory
-              attempts={latest ? [latest] : []}
-              canReview={view.can_review}
-              paused={!!error}
-              onReviewed={() => void refresh()}
-              onAccessRemoved={hideProtected}
-            />
-            {previous.length > 0 && (
-              <details className={raidStyles.earlier}>
-                <summary>Earlier revisions ({previous.length})</summary>
-                <RaidHistory
-                  attempts={previous}
-                  canReview={view.can_review}
-                  paused={!!error}
-                  onReviewed={() => void refresh()}
-                  onAccessRemoved={hideProtected}
-                />
-              </details>
-            )}
-          </>
-        ) : (
-          <p>No shared history can be confirmed until the team workflow is available.</p>
-        )}
-      </section>
-      <section className={raidStyles.upload}>
-        {view?.can_submit && !error ? (
-          <SubmissionForm
-            cohort={cohort}
-            node={node}
-            filename={rules.required_files[0]!}
-            maxSizeKb={rules.max_size_kb}
-            copy={{
-              heading: latest ? 'New revision' : 'Shared source file',
-              description:
-                'Build locally and upload one shared file. Earlier accepted files and frozen team records stay unchanged.',
-              submitLabel: latest ? 'Upload new revision' : 'Upload team source',
-            }}
-            onAccepted={() => void refresh()}
-            onAccessUnavailable={hideProtected}
-          />
-        ) : (
-          <>
-            <h2>Shared upload unavailable</h2>
-            <p>Upload is unavailable under the current team, access or evaluation configuration.</p>
+    <LearningSurface page="project">
+      <div className={raidStyles.workspace + ' ' + raidStyles.controls} aria-label="Team Raid">
+        {error && (
+          <div className={raidStyles.alert} role="alert">
+            <p>{error}</p>
             <button className={raidStyles.outlineButton} onClick={() => void refresh()}>
-              Recheck team access
+              Retry authorized read
             </button>
-          </>
+          </div>
         )}
-      </section>
-    </div>
+        <section className={raidStyles.brief}>
+          <span className={raidStyles.eyebrow}>Project brief</span>
+          <h2>Work with your team</h2>
+          <p>
+            Build your solution in your own editor and terminal. Upload one shared source file for
+            the team.
+          </p>
+          <p>A revised upload needs new checks and a fresh mentor review.</p>
+          <div className={raidStyles.editorNote}>
+            <HairlineIcon name="code" size={56} />
+            <strong>One accepted file. One exact revision.</strong>
+          </div>
+          {brief && <div className={raidStyles.authoredBrief}>{brief}</div>}
+        </section>
+        <section className={raidStyles.team} aria-label="Current team assignment">
+          <span className={raidStyles.eyebrow}>Current team</span>
+          <h2>
+            {view ? (view.team?.name ?? 'Team assignment pending') : 'Team workflow unavailable'}
+          </h2>
+          {view?.team ? (
+            <>
+              <ul>
+                {view.team.members.map((member) => (
+                  <li key={member.id}>{member.displayName}</li>
+                ))}
+              </ul>
+              <p>Assigned mentor: {view.team.mentor}</p>
+            </>
+          ) : (
+            <p>
+              {view
+                ? 'Your owner must assign a team of exactly three before a shared upload.'
+                : 'Shared team workflow is unavailable in this environment. The published brief remains read-only.'}
+            </p>
+          )}
+          <p className={raidStyles.small}>
+            Each accepted revision records its own frozen members. Later assignments do not change
+            that history.
+          </p>
+        </section>
+        <section className={raidStyles.history} aria-labelledby="raid-history-heading">
+          <div className={raidStyles.historyHeading}>
+            <h2 id="raid-history-heading">Shared team history</h2>
+            <button className={raidStyles.outlineButton} onClick={() => void refresh()}>
+              Refresh
+            </button>
+          </div>
+          {view ? (
+            <>
+              <RaidHistory
+                attempts={latest ? [latest] : []}
+                canReview={view.can_review}
+                paused={!!error}
+                onReviewed={() => void refresh()}
+                onAccessRemoved={hideProtected}
+              />
+              {previous.length > 0 && (
+                <details className={raidStyles.earlier}>
+                  <summary>Earlier revisions ({previous.length})</summary>
+                  <RaidHistory
+                    attempts={previous}
+                    canReview={view.can_review}
+                    paused={!!error}
+                    onReviewed={() => void refresh()}
+                    onAccessRemoved={hideProtected}
+                  />
+                </details>
+              )}
+            </>
+          ) : (
+            <p>No shared history can be confirmed until the team workflow is available.</p>
+          )}
+        </section>
+        <section className={raidStyles.upload}>
+          {view?.can_submit && !error ? (
+            <SubmissionForm
+              cohort={cohort}
+              node={node}
+              filename={rules.required_files[0]!}
+              maxSizeKb={rules.max_size_kb}
+              copy={{
+                heading: latest ? 'New revision' : 'Shared source file',
+                description:
+                  'Build locally and upload one shared file. Earlier accepted files and frozen team records stay unchanged.',
+                submitLabel: latest ? 'Upload new revision' : 'Upload team source',
+              }}
+              onAccepted={() => void refresh()}
+              onAccessUnavailable={hideProtected}
+            />
+          ) : (
+            <>
+              <h2>Shared upload unavailable</h2>
+              <p>
+                Upload is unavailable under the current team, access or evaluation configuration.
+              </p>
+              <button className={raidStyles.outlineButton} onClick={() => void refresh()}>
+                Recheck team access
+              </button>
+            </>
+          )}
+        </section>
+      </div>
+    </LearningSurface>
   );
 }
 export function RaidHistory({
@@ -262,17 +268,19 @@ export function RaidHistory({
 }) {
   if (!attempts.length)
     return (
-      <p className={s.muted}>
+      <p className={raidStyles.muted}>
         No shared upload yet. Automated checks and mentor feedback will appear here.
       </p>
     );
   return (
-    <ol className={s.history}>
+    <ol className={raidStyles.revisions}>
       {attempts.map((a) => (
         <li key={a.id}>
-          <div className={s.recordHeading}>
+          <div className={raidStyles.recordHeading}>
             <strong>Revision {a.ordinal}</strong>
-            <span className={s.verdict}>{raidLabels[a.status]}</span>
+            <span className={raidStyles.verdict} data-state={a.status}>
+              {raidLabels[a.status]}
+            </span>
           </div>
           <p className={raidStyles.checks} data-state={a.automated_state}>
             {a.automated_state === 'passed'
@@ -296,7 +304,7 @@ export function RaidHistory({
             </p>
           )}
           {a.automated_state === 'passed' && !a.outcome_id && (
-            <p className={s.muted}>
+            <p className={raidStyles.muted}>
               Automated PASS does not complete this Raid. The assigned mentor must approve this
               exact revision.
             </p>
@@ -315,13 +323,11 @@ export function RaidHistory({
             <p>
               {a.filename} · uploaded by {a.uploader}
             </p>
-            <p className={s.muted}>
+            <p className={raidStyles.muted}>
               Frozen members: {a.members.map((m) => m.displayName).join(', ')}
             </p>
-            <p className={s.muted}>SHA-256</p>
-            <code style={{ display: 'block', overflowWrap: 'anywhere', whiteSpace: 'normal' }}>
-              {a.artifact_digest}
-            </code>
+            <p className={raidStyles.muted}>SHA-256</p>
+            <code className={raidStyles.digest}>{a.artifact_digest}</code>
             <time dateTime={a.created_at}>{formatMoment(a.created_at)}</time>
           </details>
           {canReview && !paused && a.automated_state === 'passed' && (
@@ -366,6 +372,8 @@ function RaidReview({
   if (!intents.current) intents.current = new SubmissionIntents(() => sessionStorage);
   return (
     <form
+      className={raidStyles.reviewForm}
+      aria-busy={busy}
       onSubmit={async (event) => {
         event.preventDefault();
         if (pending.current || paused) return;
@@ -433,12 +441,12 @@ function RaidReview({
             this form.
           </p>
         )}
-        <p className={s.muted}>
+        <p className={raidStyles.muted}>
           Confirm the accepted file digest and published brief before deciding. A new upload
           requires new checks and a fresh review.
         </p>
         <label>
-          <span className={s.fieldLabel}>Feedback shared with all three members</span>
+          <span className={raidStyles.fieldLabel}>Feedback shared with all three members</span>
           <textarea
             name="feedback"
             required
@@ -447,7 +455,7 @@ function RaidReview({
             aria-describedby={'review-message-' + attempt.id}
           />
         </label>
-        <p className={s.muted}>
+        <p className={raidStyles.muted}>
           This decision applies to this exact revision and its three frozen members.
         </p>
         <div className={raidStyles.reviewActions}>
@@ -469,7 +477,7 @@ function RaidReview({
           </button>
         </div>
       </fieldset>
-      <p id={'review-message-' + attempt.id} role="status" className={s.feedback}>
+      <p id={'review-message-' + attempt.id} role="status" className={raidStyles.feedback}>
         {message}
       </p>
     </form>

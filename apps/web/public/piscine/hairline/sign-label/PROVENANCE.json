@@ -1,0 +1,13 @@
+{
+  "library_file_id": "libfile_2e930d3197c88191a5339f9decda6296",
+  "version": 0,
+  "source_archive_sha256": "5bc1754ae7448c7bd96d1622e2dc7522a045b3c8733423ae6dfbfe0f640fb26f",
+  "source_archive_bytes": 495515,
+  "figure_sha256": "de443b5e95728003ef5f3a060ea2facba01a9337df282459109ac985cf6572d8",
+  "kernel_sha256": "3f8df7ea3e5354ce5e50f2fdb9bc30c7fb0c459798f04ad3a3c3290863d37316",
+  "theme_sha256": "7116fa52eaf11770b232c06dc0598b7c201da1b6d6fbc5ff0728bc8f419d6fdb",
+  "geometry_and_kernel_unchanged": true,
+  "motion_policy": "Rest by default; mouse interaction only; immediate rest on leave; no idle tour or automatic resume.",
+  "author_bench_and_scripts_excluded": true,
+  "supplier_checks_are_not_browser_verification": true
+}
