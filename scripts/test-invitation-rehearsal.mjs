@@ -9,8 +9,9 @@ import process from 'node:process';
 import { fileURLToPath } from 'node:url';
 import { REGISTERED_SOURCES } from './checkpoint-prerequisite-manifest.mjs';
 
-export const TARGET = '/home/anas/.local/share/nextera-judge/invitation-sql-20261030/run-001';
-export const DATABASE = 'foundation_test_invitation_sql_20261030';
+export const TARGET =
+  '/home/anas/.local/share/nextera-judge/invitation-sql-20261030-attempt002/run-001';
+export const DATABASE = 'foundation_test_invitation_sql_20261030_attempt002';
 export const PORT = 55461;
 export const ACTOR = 'invitation_migration_actor_20261030',
   PROBE = 'invitation_probe_20261030';

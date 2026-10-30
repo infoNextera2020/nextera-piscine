@@ -1,0 +1,43 @@
+{
+  "kind": "source_preparation_only",
+  "baseHead": "75307b77f44a3a0045262ffc494dd6c625652dee",
+  "checks": [
+    {
+      "check": "format_changed",
+      "exitCode": 0
+    },
+    {
+      "check": "node_fake_and_installed_serializer",
+      "exitCode": 0
+    },
+    {
+      "check": "python_fake",
+      "exitCode": 0
+    },
+    {
+      "check": "lint_all",
+      "exitCode": 0
+    },
+    {
+      "check": "format_all",
+      "exitCode": 0
+    },
+    {
+      "check": "diff_check",
+      "exitCode": 0
+    }
+  ],
+  "nodeTestsPassed": 24,
+  "pythonFakeTestsPassed": 23,
+  "installedDriverJsonTemplatesRoundTripped": 6,
+  "postgresClientConstructedForSerializationTest": false,
+  "sqlExecuted": false,
+  "independentReview": "cleared",
+  "readOnlyPreflightPassedAtUtc": "2026-10-30T10:53:20.376937+00:00",
+  "scopeSha256": "ff972d50a3938730be88b21a80e9aa348c0d9acb16421806e1381e64859e95db",
+  "runtimeTargetAndParentAbsent": true,
+  "approvalReceiptCreated": false,
+  "oldDataOrRolesReused": false,
+  "realAuthProviderUsed": false,
+  "runtimeExecutionApprovalRequired": true
+}

@@ -19,8 +19,8 @@ import tempfile
 import time
 
 REPO = Path('/home/anas/nextera-piscine')
-TARGET = Path('/home/anas/.local/share/nextera-judge/invitation-sql-20261030/run-001')
-DATABASE = 'foundation_test_invitation_sql_20261030'
+TARGET = Path('/home/anas/.local/share/nextera-judge/invitation-sql-20261030-attempt002/run-001')
+DATABASE = 'foundation_test_invitation_sql_20261030_attempt002'
 ACTOR = 'invitation_migration_actor_20261030'
 PROBE = 'invitation_probe_20261030'
 ISSUER = 'invitation_issuer_client_20261030'
@@ -53,7 +53,7 @@ SOURCE_FILES = [
     'packages/db/migration-drafts/0018_invitation_admission.DRAFT.sql',
 ]
 SCOPE = {
-    'version': 1, 'database': DATABASE, 'target': str(TARGET), 'socket': 's',
+    'version': 2, 'database': DATABASE, 'target': str(TARGET), 'socket': 's',
     'socket_identifier': PORT, 'tcp': False, 'actor': ACTOR, 'probe': PROBE,
     'issuer': ISSUER, 'activator': ACTIVATOR,
     'nologin_roles': PERMISSION_ROLES + [ACTOR, PROBE, ISSUER, ACTIVATOR],

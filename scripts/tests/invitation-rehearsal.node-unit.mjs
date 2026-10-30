@@ -72,6 +72,8 @@ test('control binds the exact unused target, roles, clock and authentic approval
   validateControl(record(), (created + 1) * 1000);
   for (const patch of [
     { target: '/tmp/old' },
+    { target: '/home/anas/.local/share/nextera-judge/invitation-sql-20261030/run-001' },
+    { database: 'foundation_test_invitation_sql_20261030' },
     { database: 'postgres' },
     { port: '5432' },
     { bootstrap: ACTOR },
@@ -260,7 +262,9 @@ test('installed postgres JSONB serializer receives fixture objects once, without
     email: 'synthetic@example.test',
   };
   const cases = [
-    fixtureSpecParameter(jsonOnly, 'root', 'synthetic-1'),
+    ...['synthetic-1', 'synthetic-2'].flatMap((version) =>
+      ['root', 'dependent'].map((node) => fixtureSpecParameter(jsonOnly, node, version)),
+    ),
     authProofParameter(jsonOnly, invitation, true),
     authProofParameter(jsonOnly, invitation, false),
   ];
@@ -279,6 +283,7 @@ test('installed postgres JSONB serializer receives fixture objects once, without
     JSON.parse(serializer(cases[0].value)).resource_limits,
     fixtureSpec('root').resource_limits,
   );
-  assert.notDeepEqual(cases[1].value, cases[2].value);
+  assert.equal(cases.length, 6);
+  assert.notDeepEqual(cases.at(-2).value, cases.at(-1).value);
   assert.throws(() => fixtureSpecParameter({}, 'root', 'synthetic-1'));
 });
