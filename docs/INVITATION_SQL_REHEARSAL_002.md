@@ -1,5 +1,11 @@
 # Invitation SQL rehearsal — unused attempt002 proposal
 
+Execution status: attempt002 PASSED all 14 real PostgreSQL cases and is now CLOSED.
+All access cleanup and independent process/socket shutdown checks succeeded. See
+verification/invitation-rehearsal-attempt002-20261030 for sanitized evidence. This
+historical target and approval are not reusable. Real Auth/browser signup remains
+unverified and requires separately reviewed source/settings and runtime approval.
+
 This is source preparation only, based on the JSON fixture correction in `75307b77f44a3a0045262ffc494dd6c625652dee`. It does not renew the previous approval. The earlier target remains closed, protected and untouched; its 14 invitation SQL cases did not run. Its acknowledged prerequisite/draft commits do not substitute for the cases proposed here.
 
 ## Exact fresh binding

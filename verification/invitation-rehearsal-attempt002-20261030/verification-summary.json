@@ -1,0 +1,148 @@
+{
+  "state": "passed_closed",
+  "kind": "real_private_socket_PostgreSQL16_invitation_rehearsal",
+  "executedSourceHead": "69351d86f38cc33a988d21e29167ee797b078a09",
+  "scopeSha256": "ff972d50a3938730be88b21a80e9aa348c0d9acb16421806e1381e64859e95db",
+  "ownerApproval": {
+    "owner_message_id": "Sentinel_e332a8eb31588191a8b6506ff4bd236e",
+    "owner_approved_at": "2026-10-30T10:57:45.656312+00:00",
+    "scope_sha256": "ff972d50a3938730be88b21a80e9aa348c0d9acb16421806e1381e64859e95db"
+  },
+  "startedAtUtc": "2026-10-30T10:59:32.149101+00:00",
+  "cleanupThresholdUtc": "2026-10-30T11:26:32.149101+00:00",
+  "hardDeadlineUtc": "2026-10-30T11:29:32.149101+00:00",
+  "cleanupReceiptWrittenAtUtc": "2026-10-30T10:59:53.624946+00:00",
+  "firstIndependentShutdownCheckAtUtc": "2026-10-30T11:01:05.974899+00:00",
+  "reportIndependentShutdownRecheckAtUtc": "2026-10-30T11:03:51.901829+00:00",
+  "database": "foundation_test_invitation_sql_20261030_attempt002",
+  "privateSocketIdentifier": 55461,
+  "tcp": false,
+  "syntheticNoLoginRoles": 14,
+  "bootstrapDba": "anas",
+  "passwordsCreated": false,
+  "registeredMigrationsAcknowledged": 11,
+  "draftCommitReceipts": [
+    {
+      "file": "0013_invitations.DRAFT.sql",
+      "sourceSha256": "e20c9938753ddd7b0660f7240006fb65bb28a79ac1687f1629c1ce763ef4a675",
+      "commitAcknowledged": true,
+      "scope_sha256": "ff972d50a3938730be88b21a80e9aa348c0d9acb16421806e1381e64859e95db"
+    },
+    {
+      "file": "0020_invitation_issuance.DRAFT.sql",
+      "sourceSha256": "3bba54e13b61b4bf76d33e65cc2446a34b09bef7e53984281914eef3cbefada4",
+      "commitAcknowledged": true,
+      "scope_sha256": "ff972d50a3938730be88b21a80e9aa348c0d9acb16421806e1381e64859e95db"
+    },
+    {
+      "file": "0016_invitation_operations.DRAFT.sql",
+      "sourceSha256": "b2033271518a5079ca46f6678da3b103c0f05b17f137ee3437a2225358b58b49",
+      "commitAcknowledged": true,
+      "scope_sha256": "ff972d50a3938730be88b21a80e9aa348c0d9acb16421806e1381e64859e95db"
+    },
+    {
+      "file": "0018_invitation_admission.DRAFT.sql",
+      "sourceSha256": "731047b27dfee25c017480ebe7ea5b499832fca771dc63d43d8aafdffaeaebf5",
+      "commitAcknowledged": true,
+      "scope_sha256": "ff972d50a3938730be88b21a80e9aa348c0d9acb16421806e1381e64859e95db"
+    }
+  ],
+  "sqlCasesPassed": 14,
+  "sqlCases": [
+    {
+      "name": "private_acl_and_identity",
+      "passed": true
+    },
+    {
+      "name": "issuer_policy_and_scope",
+      "passed": true
+    },
+    {
+      "name": "issuance_replay_and_digest",
+      "passed": true
+    },
+    {
+      "name": "concurrent_issuance",
+      "passed": true
+    },
+    {
+      "name": "atomic_unique_failure",
+      "passed": true
+    },
+    {
+      "name": "expiry_and_revocation",
+      "passed": true
+    },
+    {
+      "name": "claim_concurrency_and_fences",
+      "passed": true
+    },
+    {
+      "name": "wrong_scope_and_auth_proof",
+      "passed": true
+    },
+    {
+      "name": "enrollment_retry_and_completion",
+      "passed": true
+    },
+    {
+      "name": "concurrent_enrollment",
+      "passed": true
+    },
+    {
+      "name": "distinct_invitation_enrollment",
+      "passed": true
+    },
+    {
+      "name": "locked_authority_revocation",
+      "passed": true
+    },
+    {
+      "name": "outer_transaction_rollback",
+      "passed": true
+    },
+    {
+      "name": "no_awards_or_role_escalation",
+      "passed": true
+    }
+  ],
+  "sqlCleanupAcknowledged": true,
+  "sqlCleanup": {
+    "roles_disabled": true,
+    "policy_disabled": true,
+    "test_memberships_removed": true
+  },
+  "independentShutdown": {
+    "ownedProcesses": [],
+    "postmasterPidFile": false,
+    "socketFiles": [],
+    "watchdogAlive": false
+  },
+  "protectedDataRetained": true,
+  "protectedEvidenceRetained": true,
+  "permanentDeletion": false,
+  "retainedPrivateRoot": "/home/anas/.local/share/nextera-judge/invitation-sql-20261030-attempt002/run-001",
+  "sourceSnapshotSha256Verified": 36,
+  "migrationCommitUncertainty": false,
+  "rollbackEvidence": "Actual outer-transaction/unique-failure observer assertions passed; no full-setup rollback claimed.",
+  "approvalClosedByCompletion": true,
+  "restartOrRenewalPerformed": false,
+  "oldTargetOrRetainedDatabaseTouched": false,
+  "realAuthProviderUsed": false,
+  "realApplicationAccountsOrSessionsCreated": false,
+  "realInvitationTokensCreated": false,
+  "lostAcknowledgementWireFaultTested": false,
+  "syntheticPolicyOnly": true,
+  "evidenceSha256": {
+    "assertions.json": "17aee93914cf3557800a36553d6fd8a65a03e9b969f393df1042621a7b66dc3c",
+    "cleanup.json": "e68a4a675d67534e29f50e537281fef1ed7bd6cf1e4aa13145c0461aaff53e6b",
+    "guard-ready.json": "fad61bdc3fad50580644999a472bce831aae66e78a2374b552a7698cd273a89b"
+  },
+  "limits": [
+    "Auth is a synthetic SQL table, not a provider/HTTP/browser session.",
+    "Synthetic owner/cohort/catalogue/enrollment records only; no learner catalogue or test packs were published for use.",
+    "No actual email, raw invitation capability, password, Runner, grading or production route enablement.",
+    "Fixture policy values do not approve production lifetime, rates, verification or password settings.",
+    "This run does not prove hosted-provider DBA privileges, wire-level lost-ack recovery or the complete Week1 journey."
+  ]
+}

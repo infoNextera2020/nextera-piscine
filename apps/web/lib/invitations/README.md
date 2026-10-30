@@ -1,5 +1,13 @@
 # Invitation admission and activation — prepared source, disabled runtime
 
+Current verification (2026-10-30): a fresh isolated native PostgreSQL rehearsal passed
+all 14 invitation SQL cases, with 11 registered prerequisites and four draft commits
+acknowledged, SQL access cleanup and independent shutdown verified. Evidence:
+verification/invitation-rehearsal-attempt002-20261030. Its policy/Auth rows were synthetic.
+Production issue and activation remain 503; real provider/browser registration and
+actual settings are unverified. No real account, session, password, token or email
+was created. Earlier preparation notes below remain historical context.
+
 Sunday trial planning update (2026-10-30): owner-issued invitation is the acceptance decision; Anas manually sends a private email-bound, expiring, single-use link. Registration joins the fixed cohort without a second admin confirmation. Automated invitation delivery/management are deferred. See docs/SUNDAY_WEEK1_TRIAL_001.md for approved scope and inspected gaps. Prepared private authority and issuance source now exist; policy configuration, SQL/provider verification and live UI wiring remain gated. No token or account has been issued.
 
 This slice extends the existing invitation activation service; it does not activate public signup.
@@ -13,7 +21,7 @@ The private acceptance hook and owner-authorized digest-only issuance now have s
 implementations in unregistered0020 and issuance*.ts. Installation order is0013 ->0020
 ->0016 ->0018, not filename order. Exact owner/login/cohort/version policy is empty and
 required. Ownership/ACL ordering in0016/0018 is corrected as unregistered source only.
-Both production issue and activate routes remain503; signup remains a fixture. No
+Both production issue and activate routes remain 503; signup remains a fixture. No
 invitation SQL/provider/browser integration is claimed. The historical preparation
 notes below describe the earlier slice; the current implementation, limitations and
 remaining gates are in docs/MANUAL_INVITATION_SOURCE_001.md. No live token was issued.
