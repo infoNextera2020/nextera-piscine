@@ -1,0 +1,38 @@
+{
+  "kind": "source_fixture_correction_only",
+  "checks": [
+    {
+      "check": "format_changed",
+      "exitCode": 0
+    },
+    {
+      "check": "node_serializer_and_harness",
+      "exitCode": 0
+    },
+    {
+      "check": "python_fake",
+      "exitCode": 0
+    },
+    {
+      "check": "lint_all",
+      "exitCode": 0
+    },
+    {
+      "check": "format_all",
+      "exitCode": 0
+    },
+    {
+      "check": "diff_check",
+      "exitCode": 0
+    }
+  ],
+  "nodeTestsPassed": 24,
+  "pythonFakeTestsPassed": 23,
+  "driverSerializer": "installed postgres3.4.9 OID3802; no client construction/connection",
+  "independentReview": "cleared",
+  "realDatabaseRerun": false,
+  "all14InvitationSqlCasesRemainUnrun": true,
+  "newRuntimeTargetOrApprovalReceiptCreated": false,
+  "sqlConstraintsOrMigrationBytesChanged": false,
+  "notRepeated": "Application unit/types/build unchanged by this harness-only fix; prior1181 source suite and type/lint/format checks passed."
+}

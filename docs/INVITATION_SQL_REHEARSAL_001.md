@@ -1,5 +1,13 @@
 # Invitation SQL rehearsal — prepared, not executed
 
+Execution status (2026-10-30): this exact target was executed and is now CLOSED after
+a synthetic JSONB fixture failure. All 11 prerequisites/four draft commits were
+acknowledged, but none of the 14 planned invitation SQL cases started. Cleanup and
+independent shutdown succeeded. See verification/invitation-rehearsal-20261030.
+The corrected fixture serialization is source-tested only. This historical target
+and its approval must not be reused; another run needs a reviewed new unused target,
+source/scope binding and fresh owner approval. No new runtime is authorized here.
+
 This is the smallest SQL-only integration check for the manual invitation source in7ccd7b7. It is not an authenticated browser registration test. It reuses the native PostgreSQL lifecycle pattern, with a fresh target and independent source/scope binding. Previous rehearsal approvals are closed and are not accepted as authority for this target.
 
 ## Exact proposed resources and authority

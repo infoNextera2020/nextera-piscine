@@ -4,7 +4,7 @@ import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import fs from 'node:fs';
 import path from 'node:path';
-import { fileURLToPath } from 'node:url';
+import { fileURLToPath, pathToFileURL } from 'node:url';
 import {
   TARGET,
   DATABASE,
@@ -22,6 +22,8 @@ import {
   applyPrerequisite,
   runCases,
   fixtureSpec,
+  fixtureSpecParameter,
+  authProofParameter,
 } from '../test-invitation-rehearsal.mjs';
 import { REGISTERED_SOURCES } from '../checkpoint-prerequisite-manifest.mjs';
 const repo = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../..');
@@ -48,11 +50,17 @@ const record = () => ({
   },
   sources: Object.fromEntries(Array.from({ length: 11 }, (_, n) => ['synthetic/' + n, hash])),
 });
-test('imports and static profile do not create or adopt the runtime target', () => {
+test('imports and static profile do not create or adopt the runtime target', async () => {
   assert.equal(ROLES.length, 14);
   assert.equal(new Set(ROLES).size, 14);
   assert.equal(PORT, 55461);
-  assert.equal(fs.existsSync(TARGET), false);
+  const before = fs.existsSync(TARGET) ? fs.statSync(TARGET) : null;
+  await import('../test-invitation-rehearsal.mjs?readonly-import-regression');
+  const after = fs.existsSync(TARGET) ? fs.statSync(TARGET) : null;
+  assert.deepEqual(
+    after && [after.ino, after.mode, after.mtimeMs],
+    before && [before.ino, before.mode, before.mtimeMs],
+  );
   assert.deepEqual(DRAFT_ORDER, [
     '0013_invitations.DRAFT.sql',
     '0020_invitation_issuance.DRAFT.sql',
@@ -239,4 +247,38 @@ test('synthetic projection meets structural publication fields but promises no e
   for (const phase of ['compilation', 'execution'])
     for (const n of Object.values(spec.resource_limits[phase]))
       assert.ok(Number.isSafeInteger(n) && n > 0);
+});
+
+test('installed postgres JSONB serializer receives fixture objects once, without a connection', async () => {
+  const driver = await import(
+    pathToFileURL(fs.realpathSync(path.join(repo, 'node_modules/postgres/src/types.js'))).href
+  );
+  const serializer = driver.serializers[3802];
+  const jsonOnly = { json: (value) => new driver.Parameter(value, 3802) };
+  const invitation = {
+    id: '00000000-0000-4000-8000-000000000444',
+    email: 'synthetic@example.test',
+  };
+  const cases = [
+    fixtureSpecParameter(jsonOnly, 'root', 'synthetic-1'),
+    authProofParameter(jsonOnly, invitation, true),
+    authProofParameter(jsonOnly, invitation, false),
+  ];
+  for (const parameter of cases) {
+    const values = [],
+      types = [];
+    driver.handleValue(parameter, values, types, { transform: { undefined: undefined } });
+    assert.deepEqual(types, [3802]);
+    const decoded = JSON.parse(serializer(values[0]));
+    assert.equal(typeof decoded, 'object');
+    assert.deepEqual(decoded, parameter.value);
+    // The old pre-stringified path becomes a scalar under the SAME installed serializer.
+    assert.equal(typeof JSON.parse(serializer(JSON.stringify(parameter.value))), 'string');
+  }
+  assert.deepEqual(
+    JSON.parse(serializer(cases[0].value)).resource_limits,
+    fixtureSpec('root').resource_limits,
+  );
+  assert.notDeepEqual(cases[1].value, cases[2].value);
+  assert.throws(() => fixtureSpecParameter({}, 'root', 'synthetic-1'));
 });

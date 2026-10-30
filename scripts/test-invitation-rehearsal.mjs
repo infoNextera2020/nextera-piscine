@@ -271,6 +271,25 @@ export function fixtureSpec(node) {
   };
 }
 
+function jsonObject(client, value) {
+  assert.ok(value && typeof value === 'object' && !Array.isArray(value));
+  assert.equal(typeof client?.json, 'function');
+  return client.json(value);
+}
+export function fixtureSpecParameter(client, node, versionName) {
+  assert.ok(['synthetic-1', 'synthetic-2'].includes(versionName));
+  return jsonObject(client, { ...fixtureSpec(node), curriculum_version: versionName });
+}
+export function authProofParameter(client, invitation, good = true) {
+  return jsonObject(client, {
+    nextera_invitation_activation: {
+      version: 1,
+      operation_reference: invitation.id,
+      scope_digest: good ? proof(invitation) : H,
+    },
+  });
+}
+
 export async function executePreparedRunner(record, postgres) {
   validateControl(record);
   privateFile(TARGET, true);
@@ -366,17 +385,7 @@ export async function executePreparedRunner(record, postgres) {
   const authStub = async (i, good = true) =>
     admin.unsafe(
       'INSERT INTO auth.users(id,email,raw_app_meta_data,email_confirmed_at) VALUES($1::uuid,$2::text,$3::jsonb,clock_timestamp())',
-      [
-        i.id,
-        i.email,
-        JSON.stringify({
-          nextera_invitation_activation: {
-            version: 1,
-            operation_reference: i.id,
-            scope_digest: good ? proof(i) : H,
-          },
-        }),
-      ],
+      [i.id, i.email, authProofParameter(admin, i, good)],
     );
   const readyEnrollment = async (i) => {
     assert.equal((await issue(i)).kind, 'issued');
@@ -523,13 +532,14 @@ export async function executePreparedRunner(record, postgres) {
         ['root', 1],
         ['dependent', 2],
       ]) {
-        const spec = {
-          ...fixtureSpec(key),
-          curriculum_version: v === VERSION ? 'synthetic-1' : 'synthetic-2',
-        };
+        const spec = fixtureSpecParameter(
+          admin,
+          key,
+          v === VERSION ? 'synthetic-1' : 'synthetic-2',
+        );
         await admin.unsafe(
           "INSERT INTO app.curriculum_nodes(curriculum_version_id,node_key,quest_key,kind,title,position,difficulty,subject_markdown,subject_digest,skills,submission_rules,resolved_evaluation_spec,evaluation_spec_digest) VALUES($1::uuid,$2::text,'q','challenge','Synthetic SQL-only node',$3::integer,1,'Not learner curriculum',$4::text,ARRAY[]::text[],'{}'::jsonb,$5::jsonb,$4::text)",
-          [v, key, pos, H, JSON.stringify(spec)],
+          [v, key, pos, H, spec],
         );
       }
       await admin.unsafe(
@@ -676,13 +686,7 @@ export async function executePreparedRunner(record, postgres) {
         assert.equal(await enroll(i, f, activator, { email: 'wrong@example.test' }), 'blocked');
         assert.equal(await enroll(i, f, activator, { cohort: SECOND }), 'blocked');
         await admin.unsafe('UPDATE auth.users SET raw_app_meta_data=$1::jsonb WHERE id=$2::uuid', [
-          JSON.stringify({
-            nextera_invitation_activation: {
-              version: 1,
-              operation_reference: i.id,
-              scope_digest: H,
-            },
-          }),
+          authProofParameter(admin, i, false),
           i.id,
         ]);
         assert.equal(await enroll(i, f), 'blocked');

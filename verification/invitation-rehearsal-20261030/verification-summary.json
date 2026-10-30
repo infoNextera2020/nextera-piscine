@@ -1,0 +1,83 @@
+{
+  "state": "failed_closed",
+  "executedSourceHead": "cbd390e7b77e89516af018e678891006f16859eb",
+  "scopeSha256": "bba46cdb225fc4b435f4630e4cf1a2602a4d9bda07336cbc880c4abe75465089",
+  "ownerApproval": {
+    "owner_message_id": "Sentinel_9a00de9e1bec8191b6a2ff258a3bcc8a",
+    "owner_approved_at": "2026-10-30T10:30:58.368515+00:00",
+    "scope_sha256": "bba46cdb225fc4b435f4630e4cf1a2602a4d9bda07336cbc880c4abe75465089"
+  },
+  "startedAtUtc": "2026-10-30T10:33:03.235299+00:00",
+  "cleanupThresholdUtc": "2026-10-30T11:00:03.235299+00:00",
+  "hardDeadlineUtc": "2026-10-30T11:03:03.235299+00:00",
+  "cleanupReceiptWrittenAtUtc": "2026-10-30T10:33:11.491462+00:00",
+  "independentlyVerifiedAtUtc": "2026-10-30T10:38:31.111861+00:00",
+  "registeredMigrationsAcknowledged": 11,
+  "draftCommitReceipts": [
+    {
+      "file": "0013_invitations.DRAFT.sql",
+      "sourceSha256": "e20c9938753ddd7b0660f7240006fb65bb28a79ac1687f1629c1ce763ef4a675",
+      "commitAcknowledged": true,
+      "scope_sha256": "bba46cdb225fc4b435f4630e4cf1a2602a4d9bda07336cbc880c4abe75465089"
+    },
+    {
+      "file": "0020_invitation_issuance.DRAFT.sql",
+      "sourceSha256": "3bba54e13b61b4bf76d33e65cc2446a34b09bef7e53984281914eef3cbefada4",
+      "commitAcknowledged": true,
+      "scope_sha256": "bba46cdb225fc4b435f4630e4cf1a2602a4d9bda07336cbc880c4abe75465089"
+    },
+    {
+      "file": "0016_invitation_operations.DRAFT.sql",
+      "sourceSha256": "b2033271518a5079ca46f6678da3b103c0f05b17f137ee3437a2225358b58b49",
+      "commitAcknowledged": true,
+      "scope_sha256": "bba46cdb225fc4b435f4630e4cf1a2602a4d9bda07336cbc880c4abe75465089"
+    },
+    {
+      "file": "0018_invitation_admission.DRAFT.sql",
+      "sourceSha256": "731047b27dfee25c017480ebe7ea5b499832fca771dc63d43d8aafdffaeaebf5",
+      "commitAcknowledged": true,
+      "scope_sha256": "bba46cdb225fc4b435f4630e4cf1a2602a4d9bda07336cbc880c4abe75465089"
+    }
+  ],
+  "failure": {
+    "phase": "synthetic_fixtures",
+    "sqlstate": "23514",
+    "constraint": "nodes_resource_limits_check"
+  },
+  "plannedSqlCases": 14,
+  "sqlCasesStarted": 0,
+  "sqlCasesPassed": 0,
+  "sqlCleanupAcknowledged": true,
+  "sqlCleanup": {
+    "roles_disabled": true,
+    "policy_disabled": true,
+    "test_memberships_removed": true
+  },
+  "independentShutdown": {
+    "ownedProcesses": [],
+    "postmasterPidFile": false,
+    "socketFiles": [],
+    "watchdogAlive": false,
+    "tcp": false
+  },
+  "protectedDataRetained": true,
+  "permanentDeletion": false,
+  "retainedPrivateRoot": "/home/anas/.local/share/nextera-judge/invitation-sql-20261030/run-001",
+  "wholeSetupRollbackClaimed": false,
+  "migrationCommitUncertainty": false,
+  "fixturePartialState": "Retained; no post-shutdown database connection or catalogue inventory performed.",
+  "approvalClosedByCompletion": true,
+  "restartOrRenewalPerformed": false,
+  "realAuthProviderUsed": false,
+  "realPasswordsOrTokensCreated": false,
+  "limits": [
+    "Only synthetic SQL/Auth-stub rows; no real provider account/session or browser flow.",
+    "Registered and draft commits acknowledged; this does not prove the fourteen invitation business cases.",
+    "No old rehearsal data or services touched."
+  ],
+  "evidenceSha256": {
+    "assertions.json": "cf49cdc56af4db4d11501dde080458e68839b6d037d0512c74d7668930d43a37",
+    "cleanup.json": "db6f598cf6933bda32e0ece255989240cd8c793fa7a932576d1124a0cba53050",
+    "guard-ready.json": "c5cf5cffe133737651d15eb6c5046788a3e94f151ed96aabd259d417da57c24c"
+  }
+}
