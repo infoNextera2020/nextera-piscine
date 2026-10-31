@@ -18,15 +18,15 @@ import threading
 import time
 import uuid
 
-REPO = '/home/anas/nextera-piscine'
+REPO = '/home/anas/.local/share/01coding-source/auth-source-browser-smtp1-clean1'
 PROFILE = 'week1-auth-20261031-smtp1'
 ROOT = '/home/anas/.local/share/nextera-judge/' + PROFILE + '/run-001'
 WSL = r'C:\Windows\System32\wsl.exe'
 PYTHON = r'C:\Python315\python.exe'
 NODE = r'C:\Program Files\nodejs\node.exe'
 CHROME = r'C:\Program Files\Google\Chrome\Application\chrome.exe'
-CORE = 'file://wsl.localhost/Ubuntu/home/anas/nextera-piscine/node_modules/.pnpm/playwright-core@1.64.1/node_modules/playwright-core/index.mjs'
-CORE_PACKAGE = REPO + '/node_modules/.pnpm/playwright-core@1.64.1/node_modules/playwright-core'
+PINNED_CORE_PACKAGE = '/home/anas/nextera-piscine/node_modules/.pnpm/playwright-core@1.64.1/node_modules/playwright-core'
+CORE = 'file://wsl.localhost/Ubuntu' + PINNED_CORE_PACKAGE + '/index.mjs'
 CORE_TREE_SHA256 = '0c7d8cae7c6fce1d651f80b117825b4cc32627847252e2fa962e9cdc071366e6'
 NODE_SHA = 'd702daa815eabbff763c7d3808e235cf031cf2ca70211b56847bc72f51e240e5'
 CHROME_SHA = '4132eb3e9c5b3978874eed48cb45c21debf343a0d383b6d2fb01a5fcf349ec65'
@@ -341,7 +341,7 @@ class WorkerPort:
         self.verify_runtime()  # Recheck after setup wait, before private issuance and consumption.
         remaining = seconds - (time.monotonic() - started)
         require(remaining > 0)
-        value = parse(run_private(wsl(['/usr/bin/python3', '-B', '-c', CORE_ATTEST, CORE_PACKAGE]),
+        value = parse(run_private(wsl(['/usr/bin/python3', '-B', '-c', CORE_ATTEST, PINNED_CORE_PACKAGE]),
             None, remaining, LIMIT))
         exact(value, {'sha256', 'files', 'bytes'})
         require(value == {'sha256': CORE_TREE_SHA256, 'files': 116, 'bytes': 13658236})

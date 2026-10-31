@@ -1,5 +1,6 @@
 """Pure protocol tests and public subprocess probes; never execute a live guard."""
 from pathlib import Path
+import ast
 import copy
 import importlib.util
 import json
@@ -10,6 +11,8 @@ import tempfile
 import threading
 import unittest
 from datetime import datetime, timedelta, timezone
+from types import SimpleNamespace
+from unittest.mock import patch
 
 sys.dont_write_bytecode = True
 source = Path(__file__).resolve().parents[1] / 'week1-auth-host-coordinator.py'
@@ -188,6 +191,82 @@ class SessionTests(unittest.TestCase):
         for data in [b'{"a":1,"a":2}\n',b'{}',b'{"x":"\\u0000"}\n',b'{"n":NaN}\n',b' '*h.MAX_FRAME+b'\n']:
             with self.subTest(data=data[:30]), self.assertRaises((h.DriverError,ValueError)): h.decode(data)
         with self.assertRaises(h.DriverError): h.encode({'password': '\x00'})
+
+
+class FrozenBrowserSourceTests(unittest.TestCase):
+    def setUp(self):
+        self.host_source = source.with_name('week1-auth-browser-host.py')
+        self.sha = h.digest(self.host_source.read_bytes())
+        self.expected_repo = '/home/anas/.local/share/01coding-source/auth-source-browser-smtp1-clean1'
+
+    def test_actual_verified_host_accepts_only_exact_new_frozen_repo_without_runtime(self):
+        helper = h.browser_source_for_repo(self.expected_repo, self.sha)
+        self.assertEqual(helper.REPO, self.expected_repo)
+        self.assertTrue(callable(helper.start))
+        for repo in ['/home/anas/nextera-piscine', '/home/anas/.local/share/01coding-source/auth-source-smtp1-clean1',
+                     self.expected_repo + '/', self.expected_repo + '/..']:
+            with self.subTest(repo=repo), self.assertRaises(h.DriverError): h.browser_source_for_repo(repo, self.sha)
+
+    def test_host_hash_mismatch_rejected_before_import(self):
+        with self.assertRaises(h.DriverError): h.browser_source_for_repo(self.expected_repo, '0'*64)
+
+    def test_actual_execute_rejects_wrong_repo_before_probe_guard_job_or_keys(self):
+        class PublicProbeReached(Exception): pass
+        with tempfile.TemporaryDirectory(prefix='public-source-admission-fixture-') as directory:
+            fixture = Path(directory)
+            coordinator = fixture / source.name; coordinator.write_bytes(source.read_bytes())
+            host = fixture / 'week1-auth-browser-host.py'; host.write_bytes(self.host_source.read_bytes())
+            consumer = fixture / 'week1-auth-browser-consumer.mjs'; consumer.write_bytes(b'public fake consumer source')
+            guard = fixture / 'week1-auth-host-guard.ps1'; guard.write_bytes(b'public fake guard source')
+            sources = {'scripts/week1-auth-host-coordinator.py': h.digest(coordinator.read_bytes()),
+                'scripts/week1-auth-browser-host.py': h.digest(host.read_bytes()),
+                'scripts/week1-auth-browser-consumer.mjs': h.digest(consumer.read_bytes()),
+                'scripts/week1-auth-host-guard.ps1': h.digest(guard.read_bytes())}
+            public = {'spec': {'sourceLockSha256': 'b'*64, 'scopeSha256': 'a'*64, 'reviewedHead': 'c'*40},
+                'lock': {'sources': sources}, 'lockSha': 'b'*64, 'head': 'c'*40,
+                'sourceHashes': sources, 'changedPaths': []}
+            def paths(value): return guard if str(value) == h.GUARD else Path(value)
+            for repo in ['/home/anas/nextera-piscine', '/home/anas/.local/share/01coding-source/auth-source-smtp1-clean1',
+                         self.expected_repo]:
+                args = SimpleNamespace(repo=repo, template='/public-fixture/template', spec='/public-fixture/spec.json',
+                    source_lock='/public-fixture/lock.json', source_lock_sha256='b'*64,
+                    approval_receipt='/public-fixture/synthetic-approval.json', owner_message_id='Sentinel_'+'e'*32,
+                    owner_approved_at=datetime.now(timezone.utc).isoformat(), scope_sha256='a'*64,
+                    browser_context='/public-fixture/context.json')
+                with self.subTest(repo=repo), patch.object(h, '__file__', str(coordinator)), patch.object(h, 'Path', paths), \
+                        patch.object(h, 'os', SimpleNamespace(name='nt', path=os.path)), \
+                        patch.object(h, 'sys', SimpleNamespace(executable=h.WINDOWS_PYTHON)), \
+                        patch.object(h, 'native_run', return_value=json.dumps(public).encode()) as metadata, \
+                        patch.object(h, 'public_probe', side_effect=PublicProbeReached) as probe, \
+                        patch.object(h, 'host_command') as command, patch.object(h, 'NativeSession') as session, \
+                        patch.object(h.subprocess, 'Popen') as start:
+                    if repo == self.expected_repo:
+                        with self.assertRaises(PublicProbeReached): h.execute(args)
+                        probe.assert_called_once_with(repo)
+                    else:
+                        with self.assertRaisesRegex(h.DriverError, 'exact frozen source repository'): h.execute(args)
+                        probe.assert_not_called()
+                    metadata.assert_called_once()  # Public source metadata only; no private read/dispatch.
+                    command.assert_not_called(); session.assert_not_called(); start.assert_not_called()
+
+    def test_production_execute_admits_host_repo_before_public_probe_or_guard_job_key_dispatch(self):
+        tree = ast.parse(source.read_text())
+        execute = next(node for node in tree.body if isinstance(node, ast.FunctionDef) and node.name == 'execute')
+        calls = {name: [node.lineno for node in ast.walk(execute) if isinstance(node, ast.Call) and
+            isinstance(node.func, ast.Name) and node.func.id == name] for name in
+            ['browser_source_for_repo', 'public_probe', 'NativeSession']}
+        self.assertEqual(len(calls['browser_source_for_repo']), 1)
+        admission = calls['browser_source_for_repo'][0]
+        self.assertLess(admission, min(calls['public_probe']))
+        self.assertLess(admission, min(calls['NativeSession']))
+        subprocess_starts = [node.lineno for node in ast.walk(execute) if isinstance(node, ast.Call) and
+            isinstance(node.func, ast.Attribute) and node.func.attr == 'Popen']
+        self.assertTrue(subprocess_starts)
+        self.assertLess(admission, min(subprocess_starts))
+        session = next(node for node in ast.walk(execute) if isinstance(node, ast.Call) and
+            isinstance(node.func, ast.Name) and node.func.id == 'NativeSession')
+        factory = next(keyword.value for keyword in session.keywords if keyword.arg == 'browser_factory')
+        self.assertEqual(ast.unparse(factory), 'browser_host.start')
 
 
 @unittest.skipUnless(os.name == 'posix', 'POSIX inherited pipe identity test')

@@ -28,7 +28,7 @@ WSL = r'C:\Windows\System32\wsl.exe'
 POWERSHELL = r'C:\Windows\System32\WindowsPowerShell\v1.0\powershell.exe'
 DOCKER = r'C:\Program Files\Docker\Docker\resources\bin\docker.exe'
 ENDPOINT = 'npipe:////./pipe/docker_engine'
-GUARD = r'C:\Users\lap\Documents\Codex\2026-10-24\task\verification\host-coordinator-smtp-source-20261031\week1-auth-host-guard.ps1'
+GUARD = r'C:\Users\lap\Documents\Codex\2026-10-24\task\verification\host-coordinator-browser-source-20261031\week1-auth-host-guard.ps1'
 MAX_FRAME = 65536
 HASH = re.compile(r'^[a-f0-9]{64}$')
 BINDING_KEYS = {'driver', 'session', 'scopeSha256', 'sourceLockSha256', 'reviewedHead', 'profile', 'root', 'project'}
@@ -334,11 +334,21 @@ def validate_manifest(manifest, bound, probe):
         raise DriverError('Original host lifetime/engine changed')
 
 
-def browser_helpers():
+def browser_helpers(expected_sha):
     source = Path(__file__).with_name('week1-auth-browser-host.py')
+    raw = source.read_bytes()
+    if not isinstance(expected_sha, str) or not HASH.fullmatch(expected_sha) or digest(raw) != expected_sha:
+        raise DriverError('Native browser host source differs from reviewed packet')
     setup = importlib.util.spec_from_file_location('native_private_browser_host', source)
     helper = importlib.util.module_from_spec(setup)
-    setup.loader.exec_module(helper)
+    exec(compile(raw, str(source), 'exec'), helper.__dict__)  # Import the exact verified bytes; no runtime action.
+    return helper
+
+
+def browser_source_for_repo(repo, expected_sha):
+    helper = browser_helpers(expected_sha)
+    if repo != helper.REPO:
+        raise DriverError('Native browser host requires the exact frozen source repository')
     return helper
 
 
@@ -352,7 +362,7 @@ class NativeSession:
         self.sequence, self.failed, self.probe, self.guard, self.arm_attempted = 0, False, None, None, False
         self.deadline, self.monotonic_end = None, None
         self.browser, self.browser_config = None, browser_config
-        self.browser_factory = browser_factory or (lambda config: browser_helpers().start(config))
+        self.browser_factory = browser_factory or (lambda config: browser_helpers(config['hostSha256']).start(config))
 
     def check_browser(self):
         if self.browser is not None:
@@ -487,6 +497,7 @@ def execute(args):
     if (digest(browser_source.read_bytes()) != lock['sources'].get('scripts/week1-auth-browser-host.py') or
             digest(consumer_source.read_bytes()) != lock['sources'].get('scripts/week1-auth-browser-consumer.mjs')):
         raise DriverError('Native browser source copy differs from reviewed packet')
+    browser_host = browser_source_for_repo(args.repo, lock['sources']['scripts/week1-auth-browser-host.py'])
     actual_probe = public_probe(args.repo)  # Real supported cross-platform/engine/EOF path, before any reservation.
     session_id = digest((str(os.getpid()) + ':' + str(time.monotonic_ns()) + ':' + args.scope_sha256).encode())
     bound = binding(spec, session_id)
@@ -496,7 +507,7 @@ def execute(args):
         'consumerSha256': lock['sources']['scripts/week1-auth-browser-consumer.mjs'],
         'hostSha256': lock['sources']['scripts/week1-auth-browser-host.py']}
     session = NativeSession(bound, spec, lock['sources']['scripts/week1-auth-host-guard.ps1'],
-        browser_config=browser_config,
+        browser_config=browser_config, browser_factory=browser_host.start,
         verify_sources=lambda: all(digest(path.read_bytes()) == wanted for path, wanted in [
             (Path(GUARD), lock['sources']['scripts/week1-auth-host-guard.ps1']),
             (Path(__file__), lock['sources']['scripts/week1-auth-host-coordinator.py']),

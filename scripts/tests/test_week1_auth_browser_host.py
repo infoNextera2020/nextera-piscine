@@ -84,6 +84,17 @@ class FakePort:
 class WorkerTests(unittest.TestCase):
     def setUp(self): self.c = config(); self.port = FakePort(self.c)
 
+    def test_only_exact_frozen_execution_repo_accepted_while_core_is_independent_pinned_tool(self):
+        self.assertEqual(h.REPO, '/home/anas/.local/share/01coding-source/auth-source-browser-smtp1-clean1')
+        self.assertEqual(h.validate_config(self.c)['repo'], h.REPO)
+        self.assertEqual(h.CORE, 'file://wsl.localhost/Ubuntu' + h.PINNED_CORE_PACKAGE + '/index.mjs')
+        self.assertTrue(h.PINNED_CORE_PACKAGE.startswith('/home/anas/nextera-piscine/node_modules/'))
+        self.assertEqual(h.wsl(['public-fixture'])[6], h.REPO)
+        for repo in ['/home/anas/nextera-piscine', '/home/anas/.local/share/01coding-source/auth-source-smtp1-clean1',
+                     h.REPO + '/', h.REPO + '/..']:
+            c = copy.deepcopy(self.c); c['repo'] = repo
+            with self.subTest(repo=repo), self.assertRaises(h.BrowserHostError): h.validate_config(c)
+
     def test_real_chain_waits_marker_then_one_private_handoff_independent_ack_consume_record(self):
         result = h.run_worker(self.c, self.port)
         self.assertEqual([x[0] for x in self.port.calls], ['metadata', 'metadata', 'preflight', 'handoff', 'metadata', 'preflight', 'consume', 'record'])

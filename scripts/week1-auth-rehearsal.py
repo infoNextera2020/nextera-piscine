@@ -248,8 +248,8 @@ prepareWeek1ComposeEnvironment(req('yaml').parse(fs.readFileSync(template+'/dock
 process.stdout.write(JSON.stringify({status:'validated_not_authorized',scopeSha256:p.scopeSha256,runtimeReady:false}));
 """
 
-HOST_GUARD_LOCAL_SOURCE = r'C:\Users\lap\Documents\Codex\2026-10-24\task\verification\host-coordinator-smtp-source-20261031\week1-auth-host-guard.ps1'
-HOST_GUARD_MOUNTED_SOURCE = '/mnt/c/Users/lap/Documents/Codex/2026-10-24/task/verification/host-coordinator-smtp-source-20261031/week1-auth-host-guard.ps1'
+HOST_GUARD_LOCAL_SOURCE = r'C:\Users\lap\Documents\Codex\2026-10-24\task\verification\host-coordinator-browser-source-20261031\week1-auth-host-guard.ps1'
+HOST_GUARD_MOUNTED_SOURCE = '/mnt/c/Users/lap/Documents/Codex/2026-10-24/task/verification/host-coordinator-browser-source-20261031/week1-auth-host-guard.ps1'
 
 def host_driver_helpers():
     file = Path(__file__).with_name('week1-auth-host-coordinator.py')
