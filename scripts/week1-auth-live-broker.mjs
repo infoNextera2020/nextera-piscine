@@ -21,7 +21,7 @@ import { INVITATION_AUTH_DRAFTS } from './invitation-auth-migration-plan.mjs';
 
 export const WEEK1_TARGET = Object.freeze({
   profile: 'week1-auth-20261030-invitation1',
-  root: '/home/anas/.local/share/nextera-judge/week1-auth-20261030-invitation1/run-001',
+  root: '/home/anas/.local/share/nextera-judge/week1-auth-20261030-invitation1/run-002',
   project: '01coding-week1-auth-20261030-invitation1',
   database: 'foundation_test_week1_auth_20261030_invitation1',
   origin: 'http://127.0.0.1:3151',
@@ -378,6 +378,7 @@ export function prepareWeek1AuthBroker(spec) {
   combinedCheckpointMode(spec);
   week1RegistrationDriver(spec);
   check(spec.hostGuardExecutionPolicy === 'process-RemoteSigned', 'HOST_GUARD_EXECUTION_POLICY');
+  check(spec.hostGuardDriver === 'native-windows-parent-v1', 'HOST_GUARD_DRIVER');
   check(spec?.version === 1 && same(spec.target, WEEK1_TARGET), 'TARGET');
   check(
     HASH.test(spec.scopeSha256 ?? '') &&

@@ -6,7 +6,7 @@ function Assert-True($value) { if (-not $value) { throw 'Fake host guard asserti
 function Assert-Rejected([scriptblock]$work) { $denied = $false; try { & $work | Out-Null } catch { $denied = $true }; Assert-True $denied }
 # All inputs are synthetic metadata; no file/process/Docker/provider function is called.
 $m = [pscustomobject]@{
-    version=1;profile='week1-auth-20261030-invitation1';root='/home/anas/.local/share/nextera-judge/week1-auth-20261030-invitation1/run-001';project='01coding-week1-auth-20261030-invitation1';scopeSha256=('a'*64);sourceLockSha256=('b'*64);reviewedHead=('c'*40);engineId='synthetic-engine-123';dockerCliSha256=('d'*64)
+    version=1;profile='week1-auth-20261030-invitation1';root='/home/anas/.local/share/nextera-judge/week1-auth-20261030-invitation1/run-002';project='01coding-week1-auth-20261030-invitation1';scopeSha256=('a'*64);sourceLockSha256=('b'*64);reviewedHead=('c'*40);engineId='synthetic-engine-123';dockerCliSha256=('d'*64)
     startedUtc='2026-10-30T12:00:00.0000000+00:00';deadlineUtc='2026-10-30T13:00:00.0000000+00:00';cleanupAtUtc='2026-10-30T12:57:00.0000000+00:00';baselineContainerIds=@(('f'*64));services=[pscustomobject]@{}
 }
 foreach ($name in @('db','auth','rest','storage','imgproxy','meta','studio','api-gw')) { $m.services | Add-Member -NotePropertyName $name -NotePropertyValue ('fixture.invalid/'+$name+'@sha256:'+('e'*64)) }
@@ -49,3 +49,23 @@ $secondSweep = Invoke-Week1OwnedSweep $m $fakeInvoke
 Assert-True ($secondSweep.observedIds.Count -eq 2 -and -not $script:FakeRows[$late.id].running)
 Assert-True (@($script:FakeCalls | Where-Object { $_[0] -eq 'stop' }).Count -eq 2)
 Write-Output 'Host guard pure fake metadata tests passed; no native actions executed.'
+
+$sealed = @{pid=1234;startedTicks=987654;guardSourceSha256=('a'*64)}
+Assert-True (Assert-Week1GuardIdentity $sealed 1234 987654 ('a'*64))
+Assert-Rejected { Assert-Week1GuardIdentity $sealed 4321 987654 ('a'*64) }
+Assert-Rejected { Assert-Week1GuardIdentity $sealed 1234 987655 ('a'*64) }
+Assert-Rejected { Assert-Week1GuardIdentity $sealed 1234 987654 ('b'*64) }
+
+Assert-True ($WindowsPowerShell -ceq 'C:\Windows\System32\WindowsPowerShell\v1.0\powershell.exe')
+
+$script:IdentityCalls = @()
+$fake = [pscustomobject]@{Path='C:\Windows\System32\WindowsPowerShell\v1.0\powershell.exe';HasExited=$false}
+$fake | Add-Member ScriptProperty Handle { $script:IdentityCalls += 'handle'; return [IntPtr]123 }
+$fake | Add-Member ScriptProperty StartTime { $script:IdentityCalls += 'identity'; return [DateTime]::new(987654,[DateTimeKind]::Utc) }
+$fake | Add-Member ScriptMethod Kill { $script:IdentityCalls += 'kill-exact-object' }
+$fake | Add-Member ScriptMethod WaitForExit { param($milliseconds) $script:IdentityCalls += 'wait-exact-object'; return $true }
+Assert-True (Stop-Week1SealedGuardProcess $fake 987654 'C:\Windows\System32\WindowsPowerShell\v1.0\powershell.exe')
+Assert-True (($script:IdentityCalls -join ',') -ceq 'handle,identity,kill-exact-object,wait-exact-object')
+$script:IdentityCalls = @()
+Assert-Rejected { Stop-Week1SealedGuardProcess $fake 987655 'C:\Windows\System32\WindowsPowerShell\v1.0\powershell.exe' }
+Assert-True ($script:IdentityCalls -cnotcontains 'kill-exact-object')

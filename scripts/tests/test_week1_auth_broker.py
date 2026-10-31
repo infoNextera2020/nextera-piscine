@@ -3,7 +3,7 @@ import importlib.util
 from pathlib import Path
 import sys
 import unittest
-from unittest.mock import patch
+from unittest.mock import patch, Mock
 
 sys.dont_write_bytecode = True
 source = Path(__file__).resolve().parents[1] / 'week1-auth-rehearsal.py'
@@ -14,7 +14,7 @@ spec.loader.exec_module(broker)
 
 
 def proposal():
-    value = {'version': 1, 'registrationDriver': 'http-only', 'target': {'root': broker.ROOT, 'database': broker.DATABASE, 'project': broker.PROJECT},
+    value = {'version': 1, 'hostGuardDriver': 'native-windows-parent-v1', 'registrationDriver': 'http-only', 'target': {'root': broker.ROOT, 'database': broker.DATABASE, 'project': broker.PROJECT},
              'bounds': {'ownerApprovalStartSeconds': 600, 'maximumSeconds': 3600, 'cleanupReserveSeconds': 180},
              'explicitFakePolicy': {'notProductionDefaults': True}}
     value['scopeSha256'] = broker.scope_sha256(value)
@@ -206,16 +206,52 @@ class BrokerSourceTests(unittest.TestCase):
         with self.assertRaises(broker.ScopeError):
             broker.isolated_build_plan('webpack', [])
 
-    def test_live_guard_policy_vector_is_explicit_process_only_and_never_a_fake_test_authority(self):
-        command = broker.host_guard_install_command('process-RemoteSigned', 'fake-public-manifest')
-        self.assertEqual(command[:6], ['/mnt/c/Windows/System32/WindowsPowerShell/v1.0/powershell.exe',
-                                     '-NoProfile', '-NonInteractive', '-ExecutionPolicy', 'RemoteSigned', '-File'])
-        self.assertEqual(command[6], broker.HOST_GUARD_LOCAL_SOURCE)
-        self.assertNotIn('Bypass', command)
-        self.assertNotIn('Set-ExecutionPolicy', command)
-        for denied in [None, '', 'Bypass', 'RemoteSigned', 'persistent-RemoteSigned']:
+    def test_native_driver_is_explicit_required_and_old_root_cannot_reopen(self):
+        p = proposal()
+        for change in [{'hostGuardDriver': None}, {'hostGuardDriver': 'wsl-interop'},
+                       {'target': {**p['target'], 'root': broker.ROOT.replace('run-002','run-001')}}]:
+            value = {**p, **change}
+            value['scopeSha256'] = broker.scope_sha256(value)
             with self.assertRaises(broker.ScopeError):
-                broker.host_guard_install_command(denied, 'fake-public-manifest')
+                broker.admit(value, owner(value, '7'), NOW+1)
+        self.assertNotIn('/mnt/c/Windows/System32', source.read_text())
+        self.assertIn('run-002', broker.ROOT)
+
+    def test_pipe_loss_blocks_work_even_when_controller_and_linux_guard_are_alive(self):
+        adapter = broker.LiveBroker.__new__(broker.LiveBroker)
+        adapter.read = lambda: {'parentPid': 123}
+        adapter.host = Mock()
+        adapter.host.live.return_value = False
+        with patch.object(broker, 'process_identity', side_effect=AssertionError('No later work check')):
+            with self.assertRaisesRegex(broker.ScopeError, 'pipe lost'):
+                adapter.check_lease()
+
+    def test_linux_guard_inherits_duplicate_fd_and_never_consumes_host_protocol(self):
+        adapter = broker.LiveBroker.__new__(broker.LiveBroker)
+        adapter.run, adapter.repo, adapter.env = Path('/public-fake-run'), Path('/public-fake-repo'), {}
+        adapter.host = Mock(read_fd=0, bound={'session':'e'*64})
+        adapter.read = lambda: {'guardPid': None, 'guardTicks': None}
+        child = Mock(pid=123)
+        with patch.object(broker.os,'open',return_value=91), patch.object(broker.os,'close') as close, \
+                patch.object(broker.os,'dup',return_value=92), patch.object(broker.subprocess,'Popen',return_value=child) as popen, \
+                patch.object(broker,'process_identity',return_value={'ticks':'77'}), \
+                patch.object(broker,'private_write'), patch.object(Path,'exists',return_value=True):
+            adapter.arm_guard()
+        self.assertEqual(popen.call_args.kwargs['pass_fds'], (92,))
+        self.assertIn('--host-driver-fd', popen.call_args.args[0])
+        self.assertEqual(popen.call_args.args[0][-2:], ['--host-driver-session','e'*64])
+        self.assertEqual(popen.call_args.kwargs['stdin'], broker.subprocess.DEVNULL)
+        self.assertIn(92, [call.args[0] for call in close.call_args_list])
+
+
+    def test_normal_completion_accounts_exact_linux_guard_exit_without_foreign_signal(self):
+        control = {'guardPid':123, 'guardTicks':'77'}
+        self.assertTrue(broker.await_linux_guard_exit(control, wait_child=lambda *_:(123,0)))
+        self.assertTrue(broker.await_linux_guard_exit(control, wait_child=lambda *_:(0,0),
+            read_process=lambda _:{'ticks':'reused'}))
+        times = iter([0,0,3])
+        self.assertFalse(broker.await_linux_guard_exit(control, wait_child=lambda *_:(0,0),
+            read_process=lambda _:{'ticks':'77'},monotonic=lambda:next(times),pause=lambda _:None))
 
     def test_default_proposal_does_not_call_native_ports_or_claim_e2e(self):
         with patch.object(broker, 'private_read', side_effect=AssertionError('NO RUNTIME FS')), patch.object(broker.subprocess, 'Popen', side_effect=AssertionError('NO SUBPROCESS')):

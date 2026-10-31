@@ -46,6 +46,7 @@ const spec = () => {
     rehearsalChecks: 'auth-invitation-checkpoint',
     registrationDriver: 'http-only',
     hostGuardExecutionPolicy: 'process-RemoteSigned',
+    hostGuardDriver: 'native-windows-parent-v1',
     target: WEEK1_TARGET,
     sourceLockSha256: 'a'.repeat(64),
     reviewedHead: 'b'.repeat(40),
@@ -1125,6 +1126,8 @@ test('required scope-bound rehearsal mode and host guard policy cannot be absent
   for (const patch of [
     { rehearsalChecks: undefined },
     { rehearsalChecks: 'checkpoint-only' },
+    { hostGuardDriver: undefined },
+    { hostGuardDriver: 'wsl-interop' },
     { hostGuardExecutionPolicy: undefined },
     { hostGuardExecutionPolicy: 'Bypass' },
   ])

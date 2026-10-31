@@ -1,14 +1,22 @@
 param(
     [switch]$Execute,
     [switch]$Install,
+    [switch]$Probe,
+    [switch]$ProbeChild,
+    [switch]$Complete,
+    [string]$ProbeNonce,
+    [int]$GuardPid,
+    [long]$GuardStartedTicks,
+    [string]$GuardSourceSha256,
     [string]$ManifestJsonBase64,
     [string]$ManifestPath,
     [string]$ManifestSha256
 )
 $ErrorActionPreference = 'Stop'
 $ProfileId = 'week1-auth-20261030-invitation1'
-$OwnedRoot = '/home/anas/.local/share/nextera-judge/week1-auth-20261030-invitation1/run-001'
+$OwnedRoot = '/home/anas/.local/share/nextera-judge/week1-auth-20261030-invitation1/run-002'
 $DockerCli = 'C:\Program Files\Docker\Docker\resources\bin\docker.exe'
+$WindowsPowerShell = 'C:\Windows\System32\WindowsPowerShell\v1.0\powershell.exe'
 $LocalEndpoint = 'npipe:////./pipe/docker_engine'
 
 function Assert-Week1Manifest($m) {
@@ -128,6 +136,73 @@ function Invoke-Week1OwnedSweep($m, [scriptblock]$InvokeDocker) {
     return [pscustomobject]@{observedIds=$ids;stoppedIds=$stopped;allStopped=$true}
 }
 
+
+function Start-Week1HostChild([string]$ScriptFile, [string[]]$ChildArguments) {
+    $windowsPowerShell = 'C:\Windows\System32\WindowsPowerShell\v1.0\powershell.exe'
+    $arguments = @('-NoProfile','-NonInteractive','-ExecutionPolicy','RemoteSigned','-File',$ScriptFile) + $ChildArguments
+    foreach ($item in $arguments) { if ($item -match '["\r\n]') { throw 'Invalid fixed child argument.' } }
+    return Start-Process -FilePath $windowsPowerShell -ArgumentList ($arguments | ForEach-Object { '"' + $_ + '"' }) -WindowStyle Hidden -PassThru
+}
+
+function Assert-Week1GuardIdentity($sealed, [int]$ProcessId, [long]$StartedTicks, [string]$SourceSha256) {
+    if ($ProcessId -le 0 -or $StartedTicks -le 0 -or $SourceSha256 -cnotmatch '^[a-f0-9]{64}$' -or
+        $sealed.pid -ne $ProcessId -or $sealed.startedTicks -ne $StartedTicks -or
+        $sealed.guardSourceSha256 -cne $SourceSha256) { throw 'Exact sealed native guard identity rejected.' }
+    return $true
+}
+
+function Stop-Week1SealedGuardProcess($Owned, [long]$ExpectedTicks, [string]$ExpectedPath) {
+    # Force acquisition/retention BEFORE identity checks. Kill/Wait use this exact
+    # Process object and its pinned handle, never another lookup by numeric PID.
+    $verifiedHandle = $Owned.Handle
+    if ($verifiedHandle -eq [IntPtr]::Zero -or $Owned.StartTime.ToUniversalTime().Ticks -ne $ExpectedTicks -or
+        $Owned.Path -ine $ExpectedPath) { throw 'Pinned native process identity rejected; no stop.' }
+    if (-not $Owned.HasExited) { $Owned.Kill() }
+    if (-not $Owned.WaitForExit(5000)) { throw 'Exact native guard exit unverified.' }
+    return $true
+}
+
+if ($ProbeChild) {
+    if ($Install -or $Execute -or $Complete -or $Probe -or $ProbeNonce -cnotmatch '^[a-f0-9]{64}$') { throw 'Public child probe rejected.' }
+    exit 0
+}
+
+if ($Probe) {
+    if ($Install -or $Execute -or $Complete -or $ProbeNonce -cnotmatch '^[a-f0-9]{64}$') { throw 'Public native probe rejected.' }
+    $script:BoundDockerSha256 = (Get-FileHash -LiteralPath $DockerCli -Algorithm SHA256).Hash.ToLowerInvariant()
+    $engine = Invoke-LocalDocker @('info','--format','{{.ID}}')
+    $child = Start-Week1HostChild $PSCommandPath @('-ProbeChild','-ProbeNonce',$ProbeNonce)
+    $childTicks = $child.StartTime.ToUniversalTime().Ticks
+    if (-not $child.WaitForExit(10000)) { $child.Kill(); throw 'Actual native child probe timed out; no retry.' }
+    if ($child.ExitCode -ne 0) { throw 'Actual native child probe failed.' }
+    @{ready=$true;nonce=$ProbeNonce;engineId=$engine;dockerSha=$script:BoundDockerSha256;childPid=$child.Id;childStartedTicks=$childTicks;childExited=$true;guardSha256=(Get-FileHash -LiteralPath $PSCommandPath -Algorithm SHA256).Hash.ToLowerInvariant()} | ConvertTo-Json -Compress
+    exit 0
+}
+
+if ($Complete) {
+    if ($Install -or $Execute -or -not $ManifestPath -or $ManifestSha256 -cnotmatch '^[a-f0-9]{64}$') { throw 'Exact normal cleanup binding required.' }
+    $cache = Split-Path -Parent $ManifestPath
+    if ((Get-Item -LiteralPath $cache).Attributes -band [IO.FileAttributes]::ReparsePoint) { throw 'Host cache reparse point rejected.' }
+    if ((Get-FileHash -LiteralPath $ManifestPath -Algorithm SHA256).Hash.ToLowerInvariant() -cne $ManifestSha256) { throw 'Host manifest hash mismatch.' }
+    $m = [IO.File]::ReadAllText($ManifestPath) | ConvertFrom-Json
+    Assert-Week1Manifest $m | Out-Null
+    $expectedCache = Join-Path $env:TEMP ('nextera-' + $ProfileId + '-' + $m.scopeSha256.Substring(0,16))
+    if ([IO.Path]::GetFullPath($cache) -ine [IO.Path]::GetFullPath($expectedCache)) { throw 'Foreign host cache rejected.' }
+    $sealed = [IO.File]::ReadAllText((Join-Path $cache 'guard-record.json')) | ConvertFrom-Json
+    Assert-Week1GuardIdentity $sealed $GuardPid $GuardStartedTicks $GuardSourceSha256 | Out-Null
+    if ($sealed.scopeSha256 -cne $m.scopeSha256 -or $sealed.manifestSha256 -cne $ManifestSha256 -or
+        (Get-FileHash -LiteralPath (Join-Path $cache 'host-guard.ps1') -Algorithm SHA256).Hash.ToLowerInvariant() -cne $GuardSourceSha256) { throw 'Changed native guard seal/source rejected.' }
+    $owned = Get-Process -Id $GuardPid -ErrorAction SilentlyContinue
+    if ($null -ne $owned) {
+        $fixedPowerShell = 'C:\Windows\System32\WindowsPowerShell\v1.0\powershell.exe'
+        Stop-Week1SealedGuardProcess $owned $GuardStartedTicks $fixedPowerShell | Out-Null
+    }
+    $ack = @{guardStopped=$true;pid=$GuardPid;startedTicks=$GuardStartedTicks;scopeSha256=$m.scopeSha256;manifestSha256=$ManifestSha256;guardSourceSha256=$GuardSourceSha256}
+    Write-HostMetadata (Join-Path $cache 'normal-cleanup.json') $ack
+    $ack | ConvertTo-Json -Compress
+    exit 0
+}
+
 if ($Install) {
     if (-not $ManifestJsonBase64 -or $Execute) { throw 'Explicit source-bound manifest required.' }
     $bytes = [Convert]::FromBase64String($ManifestJsonBase64)
@@ -145,13 +220,14 @@ if ($Install) {
     [IO.File]::Copy($PSCommandPath, $scriptPath, $false); Set-OwnerOnlyAcl $scriptPath
     $manifestFile = Join-Path $cache 'manifest.json'; Write-HostMetadata $manifestFile $m
     $manifestHash = (Get-FileHash -LiteralPath $manifestFile -Algorithm SHA256).Hash.ToLowerInvariant()
-    $arguments = @('-NoProfile','-NonInteractive','-File',$scriptPath,'-Execute','-ManifestPath',$manifestFile,'-ManifestSha256',$manifestHash)
-    $windowsPowerShell = Join-Path $env:WINDIR 'System32\WindowsPowerShell\v1.0\powershell.exe'
-    $p = Start-Process -FilePath $windowsPowerShell -ArgumentList ($arguments | ForEach-Object { '"' + $_ + '"' }) -WindowStyle Hidden -PassThru
+    $p = Start-Week1HostChild $scriptPath @('-Execute','-ManifestPath',$manifestFile,'-ManifestSha256',$manifestHash)
+    $guardSourceHash = (Get-FileHash -LiteralPath $scriptPath -Algorithm SHA256).Hash.ToLowerInvariant()
+    $guardTicks = $p.StartTime.ToUniversalTime().Ticks
+    Write-HostMetadata (Join-Path $cache 'guard-record.json') @{pid=$p.Id;startedTicks=$guardTicks;scopeSha256=$m.scopeSha256;manifestSha256=$manifestHash;guardSourceSha256=$guardSourceHash}
     $ready = Join-Path $cache 'ready.json'
     for ($n=0; $n -lt 100 -and -not (Test-Path -LiteralPath $ready); $n++) { Start-Sleep -Milliseconds 50 }
     if (-not (Test-Path -LiteralPath $ready)) { throw 'Independent host guard not ready.' }
-    @{profile=$ProfileId;scopeSha256=$m.scopeSha256;engineId=$m.engineId;pid=$p.Id;startedTicks=$p.StartTime.ToUniversalTime().Ticks;cache=$cache;manifestSha256=$manifestHash;ready=$true} | ConvertTo-Json -Compress
+    @{profile=$ProfileId;scopeSha256=$m.scopeSha256;engineId=$m.engineId;pid=$p.Id;startedTicks=$guardTicks;cache=$cache;manifestSha256=$manifestHash;guardSourceSha256=$guardSourceHash;ready=$true} | ConvertTo-Json -Compress
     exit 0
 }
 

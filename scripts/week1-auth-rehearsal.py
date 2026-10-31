@@ -6,7 +6,6 @@ No old profile is widened. Injected lifecycle tests do not prove native readines
 from pathlib import Path
 from datetime import datetime, timezone
 import argparse
-import base64
 import fcntl
 import hashlib
 import importlib.util
@@ -23,7 +22,7 @@ import tarfile
 import time
 
 PROFILE = 'week1-auth-20261030-invitation1'
-ROOT = '/home/anas/.local/share/nextera-judge/' + PROFILE + '/run-001'
+ROOT = '/home/anas/.local/share/nextera-judge/' + PROFILE + '/run-002'
 PROJECT = '01coding-' + PROFILE
 DATABASE = 'foundation_test_week1_auth_20261030_invitation1'
 SERVICES = ('db', 'auth', 'rest', 'storage', 'imgproxy', 'meta', 'studio', 'api-gw')
@@ -42,7 +41,7 @@ class ScopeError(ValueError):
 
 
 def proposal():
-    return {'profile': PROFILE, 'root': ROOT, 'project': PROJECT, 'database': DATABASE,
+    return {'hostGuardDriver': 'native-windows-parent-v1', 'profile': PROFILE, 'root': ROOT, 'project': PROJECT, 'database': DATABASE,
             'ports': list(PORTS), 'ownerApprovalStartSeconds': 600, 'maximumSeconds': 3600,
             'cleanupReserveSeconds': 180, 'status': 'source_only_not_authorized',
             'runtimeReady': False, 'learnersCreatedOnlyByInvitationActivation': True,
@@ -78,6 +77,8 @@ def admit(spec, owner, now_ms):
         raise ScopeError('Owner message time/scope cannot be reassigned.')
     if type(now_ms) is not int or not 0 <= now_ms * 1000 - approved <= 600000000:
         raise ScopeError('Owner admission expired or future; receipt time cannot renew it.')
+    if spec.get('hostGuardDriver') != 'native-windows-parent-v1':
+        raise ScopeError('Explicit native Windows parent driver required.')
     if spec.get('target', {}).get('root') != ROOT or spec['target'].get('database') != DATABASE or spec['target'].get('project') != PROJECT:
         raise ScopeError('Exact new target required.')
     if spec.get('bounds') != {'ownerApprovalStartSeconds': 600, 'maximumSeconds': 3600, 'cleanupReserveSeconds': 180}:
@@ -186,6 +187,27 @@ def process_identity(pid):
             'ticks': (proc / 'stat').read_text().rsplit(')', 1)[1].split()[19]}
 
 
+def await_linux_guard_exit(control, read_process=process_identity, wait_child=os.waitpid,
+                          monotonic=time.monotonic, pause=time.sleep):
+    """Read/reap only the sealed child; never signal a reused/foreign process."""
+    end = monotonic() + 2
+    while monotonic() < end:
+        try:
+            pid, _ = wait_child(control['guardPid'], os.WNOHANG)
+            if pid == control['guardPid']:
+                return True
+        except ChildProcessError:
+            pass
+        try:
+            actual = read_process(control['guardPid'])
+            if actual['ticks'] != control['guardTicks']:
+                return True  # Original identity exited; do not act on the reused PID.
+        except (FileNotFoundError, ProcessLookupError):
+            return True
+        pause(.05)
+    return False
+
+
 def validate_browser_transport(receipt, now):
     required = {'transport', 'allowedTargetOrigin', 'observedUrl', 'contextVerified', 'observedAt', 'deniedRouteRetried'}
     if (not isinstance(receipt, dict) or set(receipt) != required or
@@ -214,17 +236,16 @@ const p=prepareWeek1AuthBroker(JSON.parse(fs.readFileSync(0,'utf8')));
 process.stdout.write(JSON.stringify({status:'validated_not_authorized',scopeSha256:p.scopeSha256,runtimeReady:false}));
 """
 
-HOST_GUARD_LOCAL_SOURCE = r'C:\Users\lap\Documents\Codex\2026-10-24\task\verification\host-guard-unit-20261030\week1-auth-host-guard.ps1'
-HOST_GUARD_MOUNTED_SOURCE = '/mnt/c/Users/lap/Documents/Codex/2026-10-24/task/verification/host-guard-unit-20261030/week1-auth-host-guard.ps1'
+HOST_GUARD_LOCAL_SOURCE = r'C:\Users\lap\Documents\Codex\2026-10-24\task\verification\host-coordinator-source-20261031\week1-auth-host-guard.ps1'
+HOST_GUARD_MOUNTED_SOURCE = '/mnt/c/Users/lap/Documents/Codex/2026-10-24/task/verification/host-coordinator-source-20261031/week1-auth-host-guard.ps1'
 
-def host_guard_install_command(policy, manifest_base64):
-    # Source preparation only. A future exact live approval must explicitly cover
-    # this installer and its inherited child-process policy, not just fake tests.
-    if policy != 'process-RemoteSigned':
-        raise ScopeError('Explicit scope-bound process-only host policy required.')
-    return ['/mnt/c/Windows/System32/WindowsPowerShell/v1.0/powershell.exe',
-            '-NoProfile', '-NonInteractive', '-ExecutionPolicy', 'RemoteSigned',
-            '-File', HOST_GUARD_LOCAL_SOURCE, '-Install', '-ManifestJsonBase64', manifest_base64]
+def host_driver_helpers():
+    file = Path(__file__).with_name('week1-auth-host-coordinator.py')
+    setup = importlib.util.spec_from_file_location('week1_native_host_driver', file)
+    module = importlib.util.module_from_spec(setup)
+    sys.modules[setup.name] = module
+    setup.loader.exec_module(module)
+    return module
 
 class LiveBroker:
     """Concrete future launch/shutdown adapter; construction itself is inert.
@@ -242,6 +263,9 @@ class LiveBroker:
         self.env = {'PATH': str(Path(self.node).parent) + ':/usr/bin:/bin', 'HOME': str(Path.home()),
                     'LANG': 'C.UTF-8', 'NEXT_TELEMETRY_DISABLED': '1', 'DOCKER_CONFIG': ROOT + '/docker-client'}
         self.module = None
+        self.host = None
+        self.host_probe = None
+        self.native_guard_armed = False
 
     def helpers(self):
         if self.module is None:
@@ -273,12 +297,17 @@ class LiveBroker:
         c = json.loads(private_read(self.run / 'broker-control.private.json'))
         if c.get('profile') != PROFILE or c.get('scopeSha256') != self.spec['scopeSha256'] or c.get('database') != DATABASE or c.get('project') != PROJECT:
             raise ScopeError('Wrong immutable lease target.')
+        host = getattr(self, 'host', None)
+        if host is not None and (c.get('hostDriver') != host.bound or c.get('hostDriverPipe') != host.identity):
+            raise ScopeError('Immutable native session/pipe identity changed.')
         if c['deadline'] - c['started'] != 3600000 or c['cleanupAt'] != c['deadline'] - 180000:
             raise ScopeError('Changed immutable deadline.')
         return c
 
     def preflight(self):
         admit(self.spec, self.owner, self.now())
+        if self.spec.get('hostGuardDriver') != 'native-windows-parent-v1' or self.host is None or not self.host.live():
+            raise ScopeError('Native Windows parent pipe required; no WSL interop fallback.')
         if self.spec.get('buildBundler') != 'webpack':
             raise ScopeError('Reviewed isolated Webpack build required.')
         if self.spec.get('hostGuardExecutionPolicy') != 'process-RemoteSigned':
@@ -327,10 +356,27 @@ class LiveBroker:
                 if probe.connect_ex(('127.0.0.1', port)) == 0:
                     raise ScopeError('Loopback port occupied.')
         isolated_build_plan(self.spec['buildBundler'], self.helpers().direct_build_plan(self.repo, node=self.node))
+        coordinator = self.repo / 'scripts/week1-auth-host-coordinator.py'
+        native_copy = Path(HOST_GUARD_MOUNTED_SOURCE).with_name('week1-auth-host-coordinator.py')
+        expected = self.lock['sources'].get('scripts/week1-auth-host-coordinator.py')
+        if (coordinator.is_symlink() or native_copy.is_symlink() or not expected or
+                sha(coordinator.read_bytes()) != expected or sha(native_copy.read_bytes()) != expected):
+            raise ScopeError('Reviewed native coordinator source mismatch.')
+        engine = self.command(['docker', 'info', '--format', '{{.ID}}']).decode().strip()
+        self.host_probe = self.host.exchange('probe', {'linuxEngineId': engine,
+            'guardSha256': self.lock['sources']['scripts/week1-auth-host-guard.ps1'],
+            'coordinatorSha256': expected}, timeout=25)
+        if (self.host_probe.get('ready') is not True or self.host_probe.get('engineId') != engine or
+                self.host_probe.get('nonce') != self.host.bound['session'] or
+                self.host_probe.get('guardSha256') != self.lock['sources']['scripts/week1-auth-host-guard.ps1'] or
+                self.host_probe.get('childExited') is not True):
+            raise ScopeError('Actual native cross-platform launch probe unavailable.')
         return {'status': 'preflight_only_not_authorized', 'runtimeReady': False}
 
     def reserve(self):
         admit(self.spec, self.owner, self.now())
+        if self.host is None or self.host_probe is None or not self.host.live():
+            raise ScopeError('Successful native launch probe required before reservation.')
         self.run.parent.mkdir(parents=True, exist_ok=True, mode=0o700)
         self.run.mkdir(mode=0o700)
         for name in ['adapter-code', 'docker-client']:
@@ -343,7 +389,8 @@ class LiveBroker:
                    'monotonicStarted': mono, 'monotonicDeadline': mono + 3600000,
                    'parentPid': os.getpid(), 'parentTicks': process_identity(os.getpid())['ticks'],
                    'guardPid': None, 'guardTicks': None, 'repo': str(self.repo), 'template': str(self.template),
-                   'spec': self.spec, 'state': 'reserved', 'phases': [],
+                   'spec': self.spec, 'hostDriver': self.host.bound, 'hostDriverPipe': self.host.identity,
+                   'state': 'reserved', 'phases': [],
                    'baselineContainers': self.command(['docker', 'ps', '-aq', '--no-trunc']).decode().splitlines()}
         for name, expected in self.lock['sources'].items():
             if name.startswith('scripts/') and Path(name).suffix in ['.py', '.mjs', '.json', '.ps1']:
@@ -369,9 +416,15 @@ class LiveBroker:
     def arm_guard(self):
         log = os.open(self.run / 'guard.private.log', os.O_WRONLY | os.O_CREAT | os.O_EXCL, 0o600)
         try:
-            child = subprocess.Popen([sys.executable, str(self.run / 'adapter-code/week1-auth-rehearsal.py'), '--watch'],
-                                     cwd=self.repo, env=self.env, stdin=subprocess.DEVNULL,
-                                     stdout=log, stderr=log, start_new_session=True)
+            fd = os.dup(self.host.read_fd)
+            try:
+                child = subprocess.Popen([sys.executable, str(self.run / 'adapter-code/week1-auth-rehearsal.py'),
+                                         '--watch', '--host-driver-fd', str(fd),
+                                         '--host-driver-session', self.host.bound['session']],
+                                         cwd=self.repo, env=self.env, stdin=subprocess.DEVNULL, pass_fds=(fd,),
+                                         stdout=log, stderr=log, start_new_session=True)
+            finally:
+                os.close(fd)
         finally:
             os.close(log)
         c = self.read()
@@ -386,32 +439,29 @@ class LiveBroker:
         raise ScopeError('Independent guard did not acknowledge; no secrets may be minted.')
 
     def arm_host_guard(self):
-        """Independent Windows host process survives WSL distro/transport death.
-
-        Cached manifest contains no credentials. A different Windows Docker
-        engine, blocked script policy or missing CLI refuses before stack start.
-        """
+        """Native parent installs Windows guard; WSL never executes a Windows PE."""
         c = self.check_lease()
         engine = self.command(['docker', 'info', '--format', '{{.ID}}']).decode().strip()
-        powershell = '/mnt/c/Windows/System32/WindowsPowerShell/v1.0/powershell.exe'
-        docker_hash = self.command([powershell, '-NoProfile', '-NonInteractive', '-Command',
-                                   "(Get-FileHash -LiteralPath 'C:\\Program Files\\Docker\\Docker\\resources\\bin\\docker.exe' -Algorithm SHA256).Hash.ToLowerInvariant()"])
+        if not self.host_probe or engine != self.host_probe['engineId']:
+            raise ScopeError('Probed Docker engine changed.')
         def stamp(ms):
             t = datetime.fromtimestamp(ms // 1000, timezone.utc)
             return t.strftime('%Y-%m-%dT%H:%M:%S.') + f'{(ms % 1000) * 10000:07d}+00:00'
         manifest = {'version': 1, 'profile': PROFILE, 'root': ROOT, 'project': PROJECT,
                     'scopeSha256': c['scopeSha256'], 'sourceLockSha256': c['sourceLockSha256'],
                     'reviewedHead': self.spec['reviewedHead'], 'engineId': engine,
-                    'dockerCliSha256': docker_hash.decode().strip(), 'services': self.spec['images'],
+                    'dockerCliSha256': self.host_probe['dockerSha'], 'services': self.spec['images'],
                     'startedUtc': stamp(c['started']), 'deadlineUtc': stamp(c['deadline']),
                     'cleanupAtUtc': stamp(c['cleanupAt']), 'baselineContainerIds': c['baselineContainers']}
-        if sha(Path(HOST_GUARD_MOUNTED_SOURCE).read_bytes()) != self.lock['sources'].get('scripts/week1-auth-host-guard.ps1'):
-            raise ScopeError('Reviewed local host guard changed before installer dispatch.')
-        receipt = json.loads(self.command(host_guard_install_command(
-            self.spec.get('hostGuardExecutionPolicy'), base64.b64encode(json.dumps(manifest).encode()).decode()), timeout=30))
-        if receipt.get('ready') is not True or receipt.get('engineId') != engine or receipt.get('scopeSha256') != c['scopeSha256']:
+        raw = json.dumps(manifest, separators=(',', ':')).encode()
+        self.journal({'phase': 'host_guard', 'state': 'intent', 'manifestSha256': sha(raw)})
+        receipt = self.host.exchange('arm', {'manifest': manifest, 'manifestSha256': sha(raw)}, timeout=35)
+        if (receipt.get('ready') is not True or receipt.get('engineId') != engine or
+                receipt.get('scopeSha256') != c['scopeSha256'] or
+                receipt.get('guardSourceSha256') != self.lock['sources']['scripts/week1-auth-host-guard.ps1']):
             raise ScopeError('Independent Windows host guard not ready.')
         private_write(self.run / 'host-guard.private.json', receipt, True)
+        self.native_guard_armed = True
 
     def journal(self, event):
         c = self.read()
@@ -420,6 +470,8 @@ class LiveBroker:
 
     def check_lease(self):
         c = self.read()
+        if self.host is None or not self.host.live():
+            raise ScopeError('Native coordinator pipe lost; stop work and clean up.')
         if guard_should_stop(c, self.now(), self.monotonic(), process_identity):
             raise ScopeError('Lease/parent cutoff; no renewal.')
         guard = process_identity(c['guardPid'])
@@ -676,6 +728,8 @@ def main():
     parser.add_argument('--owner-approved-at')
     parser.add_argument('--scope-sha256')
     parser.add_argument('--browser-context')
+    parser.add_argument('--host-driver-session')
+    parser.add_argument('--host-driver-fd', type=int)
     args = parser.parse_args()
     if args.supervise_web:
         if sys.stdin.buffer.read(1) != b'1':
@@ -725,6 +779,12 @@ def main():
         lock_bytes = private_read(Path(ROOT) / 'adapter-code/week1-auth-source-lock.json')
         adapter = LiveBroker(c['repo'], c['template'], c['spec'], json.loads(lock_bytes),
                              {'messageId': c['ownerMessageId'], 'approvedAt': c['ownerApprovedAt'], 'scopeSha256': c['scopeSha256']}, {}, lock_bytes=lock_bytes)
+        driver = host_driver_helpers()
+        fd = args.host_driver_fd
+        if (fd is None or driver.pipe_identity(fd) != c.get('hostDriverPipe') or
+                not args.host_driver_session or
+                driver.binding(c['spec'], args.host_driver_session) != c.get('hostDriver')):
+            raise ScopeError('Independent host-driver pipe identity unavailable.')
         for _ in range(100):
             c = adapter.read()
             if c['guardPid'] == os.getpid() and c['guardTicks'] == process_identity(os.getpid())['ticks']:
@@ -734,7 +794,8 @@ def main():
             raise ScopeError('Guard not sealed before readiness.')
         private_write(Path(ROOT) / 'guard-ready.private.json', {'pid': os.getpid(), 'ticks': c['guardTicks']}, True)
         while not (Path(ROOT) / 'cleanup.private.json').exists():
-            if guard_should_stop(c, adapter.now(), adapter.monotonic(), process_identity):
+            if (driver.pipe_closed(fd, c['hostDriverPipe']) or
+                    guard_should_stop(c, adapter.now(), adapter.monotonic(), process_identity)):
                 adapter.cleanup()
                 return
             time.sleep(.25)
@@ -742,7 +803,7 @@ def main():
     if not args.execute:
         print(json.dumps(proposal(), indent=2))
         return
-    if not all(getattr(args, k) for k in ['repo', 'template', 'spec', 'source_lock', 'source_lock_sha256', 'approval_receipt', 'owner_message_id', 'owner_approved_at', 'scope_sha256', 'browser_context']):
+    if not all(getattr(args, k) for k in ['repo', 'template', 'spec', 'source_lock', 'source_lock_sha256', 'approval_receipt', 'owner_message_id', 'owner_approved_at', 'scope_sha256', 'browser_context', 'host_driver_session']):
         raise ScopeError('Explicit protected source/fresh authentic approval/browser inputs required.')
     spec = json.loads(private_read(args.spec))
     lock_bytes = private_read(args.source_lock)
@@ -754,9 +815,21 @@ def main():
         raise ScopeError('Protected receipt cannot replace independent owner ID/time/scope.')
     adapter = LiveBroker(args.repo, args.template, spec, json.loads(lock_bytes), owner,
                          json.loads(private_read(args.browser_context)), lock_bytes=lock_bytes)
+    driver = host_driver_helpers()
+    adapter.host = driver.HostClient(driver.binding(spec, args.host_driver_session))
     result = adapter.execute()
+    linux_verified = all(result['cleanup'].get(k) is True for k in
+                         ['providerRevoked','appDisabled','sqlDisabled','stopped','retained','deadlineMet'])
+    linux_guard_exited = await_linux_guard_exit(adapter.read())
+    linux_verified = linux_verified and linux_guard_exited
+    if not adapter.native_guard_armed:
+        raise ScopeError('Native guard closure unverified; retained fail-safe may remain.')
+    closure = adapter.host.exchange('complete', {'linuxCleanupVerified': linux_verified}, timeout=20)
+    if closure.get('guardStopped') is not True:
+        raise ScopeError('Exact native guard exit unverified.')
+    private_write(adapter.run / 'host-guard-closure.private.json', {**closure, 'linuxGuardExited': linux_guard_exited}, True)
     print(json.dumps({'status': result['status'], 'runtimeReady': False,
-                      'cleanupVerified': all(result['cleanup'].get(k) is True for k in ['providerRevoked', 'appDisabled', 'sqlDisabled', 'stopped', 'retained', 'deadlineMet'])}))
+                      'cleanupVerified': linux_verified and closure.get('guardStopped') is True}))
 
 
 if __name__ == '__main__':
