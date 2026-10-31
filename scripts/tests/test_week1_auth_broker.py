@@ -375,5 +375,67 @@ class BrokerSourceTests(unittest.TestCase):
                 self.assertEqual(writes[-1][0], 'cleanup.private.json')
 
 
+
+@unittest.skipUnless(sys.platform == 'linux', 'Public gated Python subprocesses require POSIX identity')
+class PhaseProcessEvidenceTests(unittest.TestCase):
+    def helper(self):
+        adapter = broker.LiveBroker.__new__(broker.LiveBroker); adapter.module = None
+        return adapter.helpers()
+
+    def test_actual_gated_commands_capture_exit_and_signal_without_raw_stderr(self):
+        import json
+        module = self.helper()
+        for code, expected, sig in [
+            ("import sys;sys.stderr.write('PRIVATE_SENTINEL');sys.exit(7)", 7, None),
+            ("import os,signal;os.kill(os.getpid(),signal.SIGTERM)", -15, 15),
+        ]:
+            with tempfile.TemporaryDirectory() as directory:
+                run = Path(directory)
+                with self.assertRaises(module.scope.ScopeError):
+                    module.Commands().run([sys.executable, '-c', code], cwd=run,
+                        env={'PATH':'/usr/bin:/bin','CHECKPOINT_REHEARSAL_CONTROL':str(run)},
+                        safe_diagnostics=True)
+                record = json.loads((run/'phase-process.json').read_bytes())
+                self.assertEqual((record['exitCode'], record['signal']), (expected, sig))
+                self.assertTrue(record['finished']); self.assertFalse(record['timedOut'])
+                self.assertFalse((run/'command-failure.private.log').exists())
+                self.assertNotIn('PRIVATE_SENTINEL', json.dumps(record))
+
+    def test_real_command_wrapper_keeps_primary_exit_category_for_later_cleanup(self):
+        import json
+        module = self.helper()
+        with tempfile.TemporaryDirectory() as directory:
+            adapter = broker.LiveBroker.__new__(broker.LiveBroker)
+            adapter.run = adapter.repo = Path(directory)
+            adapter.module, adapter.command_override = module, None
+            adapter.env = {'PATH':'/usr/bin:/bin','CHECKPOINT_REHEARSAL_CONTROL':directory}
+            adapter.current_phase = 'stack'
+            with self.assertRaises(module.scope.ScopeError):
+                adapter.command([sys.executable, '-c', "raise SystemExit(9)"])
+            first = dict(adapter.first_failure)
+            self.assertEqual((first['category'], first['exitCode']), ('phase_exit', 9))
+            adapter.current_phase = 'cleanup'
+            with self.assertRaises(module.scope.ScopeError):
+                adapter.command([sys.executable, '-c', "raise SystemExit(2)"])
+            self.assertEqual(adapter.first_failure, first)
+            self.assertNotIn('args', first)
+            self.assertNotIn('PRIVATE_SENTINEL', json.dumps(broker.safe_failure(
+                ValueError('PRIVATE_SENTINEL'), 'stack')))
+
+    def test_public_command_timeout_records_cancellation_truthfully(self):
+        import json
+        module = self.helper()
+        with tempfile.TemporaryDirectory() as directory:
+            run = Path(directory)
+            with self.assertRaises(module.scope.ScopeError):
+                module.Commands().run([sys.executable, '-c', "import time;time.sleep(30)"],
+                    cwd=run, env={'PATH':'/usr/bin:/bin','CHECKPOINT_REHEARSAL_CONTROL':directory},
+                    timeout=.05, safe_diagnostics=True)
+            record = json.loads((run/'phase-process.json').read_bytes())
+            self.assertTrue(record['timedOut']); self.assertTrue(record['finished'])
+            self.assertIn(record['signal'], (9, 15))
+            self.assertFalse((run/'command-failure.private.log').exists())
+
+
 if __name__ == '__main__':
     unittest.main()

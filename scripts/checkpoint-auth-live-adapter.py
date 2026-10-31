@@ -253,7 +253,7 @@ class Commands:
             self._signal_owned_group(p,record,signal.SIGKILL)
             try:p.communicate(timeout=COMMAND_KILL_GRACE_SECONDS)
             except subprocess.TimeoutExpired:raise scope.ScopeError('Command termination unverified after bounded grace')
-    def run(self,args,*,env,cwd,input=None,timeout=60):
+    def run(self,args,*,env,cwd,input=None,timeout=60,safe_diagnostics=False):
         control=env.get('CHECKPOINT_REHEARSAL_CONTROL')
         launch=[sys.executable,'-c',GATE,*args]
         p=subprocess.Popen(launch,env=env,cwd=cwd,stdin=subprocess.PIPE,stdout=subprocess.PIPE,stderr=subprocess.PIPE,start_new_session=True)
@@ -263,15 +263,21 @@ class Commands:
             except Exception:
                 p.communicate(input=b'',timeout=COMMAND_TERM_GRACE_SECONDS)  # EOF without GO: sensitive target never executes.
                 raise
+        timed_out=False
         try:
             stdout,stderr=p.communicate(input=b'1'+(input or b''),timeout=timeout)
         except subprocess.TimeoutExpired:
+            timed_out=True
             self._terminate_bounded(p,record)
             raise scope.ScopeError('Bounded command timeout; no automatic retry.')
         finally:
-            if control:protected(Path(control)/'phase-process.json',{**record,'finished':p.poll() is not None})
-        if p.returncode:
             if control:
+                code=p.poll()
+                protected(Path(control)/'phase-process.json',{**record,'finished':code is not None,
+                    'exitCode':code,'signal':-code if type(code) is int and -64<=code<0 else None,
+                    'timedOut':timed_out})
+        if p.returncode:
+            if control and not safe_diagnostics:
                 fd=os.open(Path(control)/'command-failure.private.log',os.O_WRONLY|os.O_CREAT|os.O_APPEND,0o600)
                 with os.fdopen(fd,'ab') as f:f.write(stderr)
             raise scope.ScopeError('Command failed; protected diagnostics retained, not returned.')

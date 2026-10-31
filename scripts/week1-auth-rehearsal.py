@@ -40,6 +40,25 @@ class ScopeError(ValueError):
     pass
 
 
+def safe_failure(error, phase, record=None):
+    """Only fixed categories and bounded process facts; never exception text/args."""
+    kinds = [(PermissionError, 'permission'), (TimeoutError, 'timeout'),
+             (OSError, 'os'), (ValueError, 'validation')]
+    kind = next((name for cls, name in kinds if isinstance(error, cls)), 'unexpected')
+    record = record if isinstance(record, dict) else {}
+    code = record.get('exitCode')
+    code = code if type(code) is int and -(1 << 31) <= code < (1 << 32) else None
+    sig = record.get('signal')
+    sig = sig if type(sig) is int and 1 <= sig <= 64 else None
+    category = ('phase_timeout' if record.get('timedOut') is True else
+                'phase_signal' if sig is not None else
+                'phase_exit' if code not in (None, 0) else 'controller_failure')
+    allowed = set(auth_phases({'registrationDriver': 'operator-browser-learner-b'}, True)) | {'setup', 'host_guard', 'cleanup'}
+    return {'version': 1, 'phase': phase if phase in allowed else 'setup',
+            'component': 'linux_controller', 'category': category,
+            'exceptionKind': kind, 'exitCode': code, 'signal': sig}
+
+
 def proposal():
     return {'hostGuardDriver': 'native-windows-parent-v1', 'profile': PROFILE, 'root': ROOT, 'project': PROJECT, 'database': DATABASE,
             'ports': list(PORTS), 'ownerApprovalStartSeconds': 600, 'maximumSeconds': 3600,
@@ -295,8 +314,17 @@ class LiveBroker:
             args = ['docker', '--host', 'unix:///var/run/docker.sock', *args[1:]]
         if self.command_override:
             return self.command_override([str(x) for x in args], timeout=timeout, data=data, cwd=cwd, env=env or self.env)
-        return self.helpers().Commands().run([str(x) for x in args], env=env or self.env,
-                                             cwd=cwd or self.repo, input=data, timeout=timeout)
+        phase_file = self.run / 'phase-process.json'
+        before = private_read(phase_file) if phase_file.exists() else None
+        try:
+            return self.helpers().Commands().run([str(x) for x in args], env=env or self.env,
+                cwd=cwd or self.repo, input=data, timeout=timeout, safe_diagnostics=True)
+        except Exception as error:
+            after = private_read(phase_file) if phase_file.exists() else None
+            record = json.loads(after) if after is not None and after != before else None
+            if getattr(self, 'first_failure', None) is None:
+                self.first_failure = safe_failure(error, getattr(self, 'current_phase', 'setup'), record)
+            raise
 
     def compose(self, *args):
         return ['docker', 'compose', '--project-name', PROJECT, '--project-directory', ROOT + '/stack',
@@ -701,11 +729,14 @@ class LiveBroker:
         admit(self.spec, self.owner, self.now())
         self.reserve()
         outcome = {'assertionsPassed': False, 'runtimeReady': False}
+        self.first_failure = None
+        self.current_phase = 'host_guard'
         try:
             self.arm_guard()
             self.arm_host_guard()
             self.snapshot()
             for phase in auth_phases(self.spec, native=True):
+                self.current_phase = phase
                 self.check_lease()
                 self.journal({'phase': phase, 'state': 'intent'})
                 if phase == 'stack':
@@ -719,9 +750,12 @@ class LiveBroker:
             # remain explicit actions; absence never manufactures E2E readiness.
             outcome['assertionsPassed'] = True
             outcome['status'] = ('native_http_and_browser_registration_assertions_passed' if self.spec['registrationDriver'] == 'operator-browser-learner-b' else 'native_http_assertions_passed_browser_receipt_pending')
-        except Exception:
+        except Exception as error:
             outcome['status'] = 'phase_failed_or_unknown_outcome'
+            outcome['failure'] = self.first_failure or safe_failure(error, self.current_phase)
+            private_write(self.run / 'phase-failure.private.json', outcome['failure'], True)
         finally:
+            self.current_phase = 'cleanup'
             outcome['cleanup'] = self.cleanup()
             private_write(self.run / 'outcome.private.json', outcome, True)
         return outcome
@@ -838,9 +872,24 @@ def main():
                          ['providerRevoked','appDisabled','sqlDisabled','stopped','retained','deadlineMet'])
     linux_guard_exited = await_linux_guard_exit(adapter.read())
     linux_verified = linux_verified and linux_guard_exited
+    control = adapter.read()
+    completion_timeout = min(20, (control['deadline'] - adapter.now()) / 1000,
+                             (control['monotonicDeadline'] - adapter.monotonic()) / 1000)
+    if completion_timeout <= 0:
+        raise ScopeError('Original completion budget expired; native closure unverified.')
+    completion = {'linuxCleanupVerified': linux_verified, 'authAssertionsPassed': result['assertionsPassed'] is True}
+    if not adapter.host.live():
+        # EOF already cancelled work through the independent watcher. The retained
+        # stdout pipe can still carry ONE cleanup-only frame to the native owner.
+        # There is no response/receipt fabrication on the closed input pipe.
+        adapter.host.send_cleanup(completion, timeout=completion_timeout)
+        private_write(adapter.run / 'host-guard-closure-pending.private.json',
+                      {'linuxCleanupVerified': linux_verified, 'linuxGuardExited': linux_guard_exited,
+                       'nativeClosureVerified': False}, True)
+        return
     if not adapter.native_guard_armed:
         raise ScopeError('Native guard closure unverified; retained fail-safe may remain.')
-    closure = adapter.host.exchange('complete', {'linuxCleanupVerified': linux_verified}, timeout=20)
+    closure = adapter.host.exchange('complete', completion, timeout=completion_timeout)
     if closure.get('guardStopped') is not True:
         raise ScopeError('Exact native guard exit unverified.')
     private_write(adapter.run / 'host-guard-closure.private.json', {**closure, 'linuxGuardExited': linux_guard_exited}, True)

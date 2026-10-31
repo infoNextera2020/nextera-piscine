@@ -38,7 +38,9 @@ class FakeBrowser:
         if self.fail: raise h.DriverError('Synthetic worker failed')
     def finish(self, seconds):
         self.check(); self.finished = True; self.close()
-    def close(self): self.closed = True
+    def close(self, seconds=5):
+        self.closed = True
+        return {'jobClosed': True, 'activeProcessesZero': True, 'workerExited': True}
 
 
 class SessionTests(unittest.TestCase):
@@ -79,7 +81,7 @@ class SessionTests(unittest.TestCase):
     def test_only_original_order_and_bound_source_can_arm_and_close(self):
         self.session.handle(self.probe_request())
         self.session.handle(self.arm_request())
-        result = self.session.handle(h.frame(self.bound, 3, 'complete', {'linuxCleanupVerified': True}))
+        result = self.session.handle(h.frame(self.bound, 3, 'complete', {'linuxCleanupVerified': True, 'authAssertionsPassed': True}))
         self.assertTrue(result['result']['guardStopped'])
         self.assertEqual([call[0][7] for call in self.calls], ['-Probe', '-Install', '-Complete'])
         self.assertTrue(all('Bypass' not in call[0] and 'Set-ExecutionPolicy' not in call[0] for call in self.calls))
@@ -124,7 +126,7 @@ class SessionTests(unittest.TestCase):
         with self.assertRaises(h.DriverError): self.session.handle(bad)
         self.assertEqual(len(self.calls), 1)
         self.setUp(); self.session.handle(self.probe_request()); self.session.handle(self.arm_request())
-        with self.assertRaises(h.DriverError): self.session.handle(h.frame(self.bound,3,'complete',{'linuxCleanupVerified':False}))
+        with self.assertRaises(h.DriverError): self.session.handle(h.frame(self.bound,3,'complete',{'linuxCleanupVerified':False, 'authAssertionsPassed':False}))
         self.assertEqual(len(self.calls), 2)
 
     def test_changed_pid_creation_source_or_ack_never_claims_native_closure(self):
@@ -132,7 +134,7 @@ class SessionTests(unittest.TestCase):
             self.setUp(); self.answers[2] = {**self.closed,key:value}
             self.session.handle(self.probe_request()); self.session.handle(self.arm_request())
             with self.subTest(key=key), self.assertRaises(h.DriverError):
-                self.session.handle(h.frame(self.bound,3,'complete',{'linuxCleanupVerified':True}))
+                self.session.handle(h.frame(self.bound,3,'complete',{'linuxCleanupVerified':True, 'authAssertionsPassed':True}))
 
     def test_source_changed_before_dispatch_cannot_start_native_process(self):
         self.session.verify_sources = lambda:False
@@ -166,13 +168,16 @@ class SessionTests(unittest.TestCase):
             self.assertTrue(self.session.failed); self.assertIsNotNone(self.session.guard)
             self.assertEqual(len(self.calls), 2)
 
-    def test_completion_requires_worker_success_before_native_guard_complete(self):
+    def test_failed_assertions_still_close_owned_job_and_exact_guard_after_verified_linux_cleanup(self):
         self.session.handle(self.probe_request()); self.session.handle(self.arm_request())
         self.session.browser.fail = True
-        with self.assertRaises(h.DriverError):
-            self.session.handle(h.frame(self.bound, 3, 'complete', {'linuxCleanupVerified':True}))
+        result = self.session.handle(h.frame(self.bound, 3, 'complete',
+            {'linuxCleanupVerified':True, 'authAssertionsPassed':True}))['result']
         self.assertTrue(self.session.browser.closed)
-        self.assertEqual(len(self.calls), 2)  # Do not claim native guard stopped.
+        self.assertEqual(len(self.calls), 3)
+        self.assertTrue(result['guardStopped'])
+        self.assertTrue(result['browserJobClosed'])
+        self.assertFalse(result['authAssertionsPassed'])
 
     def test_idle_parent_pipe_wait_checks_browser_failure(self):
         import io
@@ -326,6 +331,164 @@ class NativePublicProbeTests(unittest.TestCase):
         self.assertFalse(result['wslInteropRequired'])
         self.assertFalse(result['liveRemoteSignedProbeExecuted'])
         self.assertFalse(result['runtimeCreated'])
+
+
+
+@unittest.skipUnless(os.name == 'posix', 'Controller HostClient uses POSIX inherited pipes')
+class FailureRecoveryTests(unittest.TestCase):
+    def fixture(self):
+        case = SessionTests(); case.setUp()
+        return case
+
+    def cleanup_frame(self, bound, verified=True):
+        incoming, owner = os.pipe(); output, writer = os.pipe()
+        try:
+            client = h.HostClient(bound, incoming, writer); client.sequence = 2
+            os.close(owner); owner = None
+            self.assertFalse(client.live())
+            if not verified:
+                with self.assertRaises(h.DriverError):
+                    client.send_cleanup({'linuxCleanupVerified': False, 'authAssertionsPassed': False})
+                self.assertEqual(client.sequence, 2)
+                return None
+            client.send_cleanup({'linuxCleanupVerified': True, 'authAssertionsPassed': False})
+            value = h.decode(os.read(output, h.MAX_FRAME))
+            with self.assertRaises(h.DriverError):
+                client.send_cleanup({'linuxCleanupVerified': True, 'authAssertionsPassed': False})
+            return value
+        finally:
+            for fd in (incoming, owner, output, writer):
+                if fd is not None: os.close(fd)
+
+    def test_actual_browser_job_client_and_native_session_close_after_worker_exit_and_eof(self):
+        import io
+        host_path = source.with_name('week1-auth-browser-host.py')
+        host = h.browser_helpers(h.digest(host_path.read_bytes()))
+        for point in ('arm_ack', 'stack'):
+            case = self.fixture(); events = []
+            class Worker:
+                def __init__(self):
+                    self.stdin = io.BytesIO(); self._handle = 24680
+                    self.returncode = 1 if point == 'arm_ack' else None
+                    event = host.failure(host.BrowserHostError('retry_exhausted', exit_code=1), 'metadata')
+                    self.stdout = io.BytesIO(host.compact({'status': 'failed', 'failure': event}))
+                def poll(self): return self.returncode
+                def wait(self, timeout): events.append('worker-reaped'); return self.returncode
+            worker = Worker()
+            class Job:
+                def assign(self, child): self.asserted = child._handle; events.append(('assign', child._handle))
+                def stop_and_verify(self, left): events.append('active-zero'); return left() > 0
+                def close(self): events.append('job-closed')
+            case.session.browser_config = {'repo':host.REPO,'helperSha256':'1'*64,
+                'brokerSha256':'2'*64,'consumerSha256':'3'*64,'hostSha256':h.digest(host_path.read_bytes())}
+            case.session.browser_factory = lambda c: host.BrowserJob(c, job_factory=Job, popen=lambda *_a,**_k:worker)
+            final = self.cleanup_frame(case.bound)
+            frames = [case.probe_request(), case.arm_request(), final]
+            if point == 'stack':
+                case.session.handle(frames.pop(0)); case.session.handle(frames.pop(0))
+                worker.returncode = 1
+            class Controller:
+                stdin, stdout = io.BytesIO(), io.BytesIO()
+                returncode = None
+                def wait(self, timeout): self.returncode = 0
+            controller = Controller()
+            def read(stream, timeout, check=None, pending=None):
+                if check: check()
+                return frames.pop(0)
+            with self.subTest(point=point), patch.object(h, 'read_line_bounded', side_effect=read), \
+                    patch.object(h, 'begin_line_read', return_value=object()):
+                result = h.serve_controller(controller, case.session)
+            self.assertTrue(controller.stdin.closed)
+            self.assertTrue(result['guardStopped']); self.assertTrue(result['browserJobClosed'])
+            self.assertFalse(result['authAssertionsPassed'])
+            self.assertEqual(case.session.diagnostic['category'], 'retry_exhausted')
+            self.assertEqual(events.count('active-zero'), 1)
+            self.assertEqual(events.count('job-closed'), 1)
+            self.assertEqual([row[0][7] for row in case.calls], ['-Probe','-Install','-Complete'])
+
+    def test_unverified_job_linux_cleanup_or_changed_binding_never_complete_guard(self):
+        case = self.fixture()
+        case.session.handle(case.probe_request()); case.session.handle(case.arm_request())
+        case.session.browser.close = lambda *_a: {'jobClosed':True,'activeProcessesZero':False,'workerExited':True}
+        with self.assertRaises(h.DriverError):
+            case.session.handle(self.cleanup_frame(case.bound))
+        self.assertEqual(len(case.calls), 2)
+        self.cleanup_frame(case.bound, verified=False)
+        case = self.fixture()
+        case.session.handle(case.probe_request()); case.session.handle(case.arm_request())
+        frame = self.cleanup_frame(case.bound); frame['binding'] = {**case.bound, 'session':'0'*64}
+        with self.assertRaises(h.DriverError): case.session.handle(frame)
+        self.assertEqual(len(case.calls), 2)
+
+    def test_failure_categories_reject_private_or_unknown_fields(self):
+        raw = {'version':1,'phase':'metadata','component':'native_browser','category':'metadata_timeout',
+               'exceptionKind':'browser','exitCode':1,'signal':None}
+        self.assertEqual(h.browser_failure(raw), raw)
+        for changed in ({**raw,'password':'PRIVATE_SENTINEL'}, {**raw,'category':'PRIVATE_SENTINEL'},
+                        {**raw,'exceptionKind':'PRIVATE_SENTINEL'}, {**raw,'exitCode':True}):
+            self.assertNotIn('PRIVATE_SENTINEL', json.dumps(h.browser_failure(changed)))
+        self.assertNotIn('PRIVATE_SENTINEL', json.dumps(h.safe_error(ValueError('PRIVATE_SENTINEL'))))
+
+
+
+class NativeFailureFlowTests(unittest.TestCase):
+    def test_native_source_modules_close_failed_worker_without_assertion_success(self):
+        import io
+        case = SessionTests(); case.setUp()
+        host_path = source.with_name('week1-auth-browser-host.py')
+        host = h.browser_helpers(h.digest(host_path.read_bytes()))
+        events = []
+        class Worker:
+            def __init__(self):
+                self.stdin, self._handle, self.returncode = io.BytesIO(), 13579, None
+                self.stdout = io.BytesIO(host.compact({'status':'failed','failure':
+                    host.failure(host.BrowserHostError('metadata_timeout', exit_code=1), 'metadata')}))
+            def poll(self): return self.returncode
+            def wait(self, timeout): events.append('root-exited'); return self.returncode
+        worker = Worker()
+        class Job:
+            def assign(self, child): events.append(('exact-handle', child._handle))
+            def stop_and_verify(self, left): events.append('active-zero'); return left() > 0
+            def close(self): events.append('job-closed')
+        case.session.browser_config = {'repo':host.REPO,'helperSha256':'1'*64,'brokerSha256':'2'*64,
+            'consumerSha256':'3'*64,'hostSha256':h.digest(host_path.read_bytes())}
+        case.session.browser_factory = lambda c: host.BrowserJob(c, job_factory=Job, popen=lambda *_a,**_k:worker)
+        case.session.handle(case.probe_request()); case.session.handle(case.arm_request())
+        worker.returncode = 1
+        class Controller:
+            stdin, stdout, returncode = io.BytesIO(), io.BytesIO(), None
+            def wait(self, timeout): self.returncode = 0
+        controller = Controller()
+        # Linux cleanup sender is injected here. Its real inherited-FD regression
+        # is separate and must run on Linux; no Windows select-on-pipe substitute.
+        final = h.frame(case.bound, 3, 'complete', {'linuxCleanupVerified':True,'authAssertionsPassed':False})
+        def read(stream, timeout, check=None, pending=None):
+            if check: check()
+            return final
+        with patch.object(h, 'begin_line_read', return_value=object()), \
+             patch.object(h, 'read_line_bounded', side_effect=read):
+            result = h.serve_controller(controller, case.session)
+        self.assertTrue(controller.stdin.closed)
+        self.assertTrue(result['guardStopped']); self.assertTrue(result['browserJobClosed'])
+        self.assertFalse(result['authAssertionsPassed'])
+        self.assertEqual(case.session.diagnostic['category'], 'metadata_timeout')
+        self.assertEqual(events.count('active-zero'), 1); self.assertEqual(events.count('job-closed'), 1)
+        self.assertEqual(len(case.calls), 3)
+
+    def test_pending_real_public_pipe_read_survives_browser_abort_without_losing_cleanup_frame(self):
+        read_fd, write_fd = os.pipe()
+        stream = os.fdopen(read_fd, 'rb', buffering=0)
+        try:
+            pending = h.begin_line_read(stream)
+            event = h.browser_failure(None)
+            with self.assertRaises(h.BrowserAbort):
+                h.read_line_bounded(stream, 1, pending=pending,
+                    check=lambda: (_ for _ in ()).throw(h.BrowserAbort(event)))
+            payload = {'public':'cleanup-frame'}
+            os.write(write_fd, h.encode(payload))
+            self.assertEqual(h.read_line_bounded(stream, 1, pending=pending), payload)
+        finally:
+            os.close(write_fd); stream.close()
 
 
 if __name__ == '__main__':

@@ -40,6 +40,47 @@ class DriverError(ValueError):
     pass
 
 
+class BrowserAbort(DriverError):
+    def __init__(self, event):
+        self.safe_event = browser_failure(event)
+        super().__init__('Owned browser worker failed; cleanup required')
+
+
+def safe_error(error):
+    if isinstance(error, BrowserAbort):
+        return error.safe_event
+    phase = getattr(error, 'safe_phase', 'native')
+    return {'version': 1, 'phase': phase if phase in {'native', 'probe', 'arm', 'complete'} else 'native', 'component': 'native_controller',
+            'category': 'native_failure',
+            'exceptionKind': 'driver' if isinstance(error, DriverError) else
+                             'timeout' if isinstance(error, (TimeoutError, subprocess.TimeoutExpired)) else 'unexpected',
+            'exitCode': None, 'signal': None}
+
+
+def browser_failure(event):
+    fallback = {'version': 1, 'phase': 'worker', 'component': 'native_browser',
+                'category': 'worker_failed', 'exceptionKind': 'unexpected', 'exitCode': None, 'signal': None}
+    if not isinstance(event, dict) or set(event) != set(fallback):
+        return fallback
+    if (type(event['version']) is not int or event['version'] != 1 or
+            event['phase'] not in {'worker', 'metadata', 'handoff', 'consume', 'record', 'closure'} or
+            event['component'] != 'native_browser' or event['category'] not in {
+                'metadata_timeout', 'wsl_service_unavailable', 'metadata_denied', 'private_process_failed',
+                'worker_failed', 'retry_exhausted', 'budget_expired', 'job_closure_unverified', 'validation_rejected'} or
+            event['exceptionKind'] not in {'browser', 'unexpected'} or event['signal'] is not None or
+            (event['exitCode'] is not None and (type(event['exitCode']) is not int or
+                                               not -(1 << 31) <= event['exitCode'] < (1 << 32)))):
+        return fallback
+    return dict(event)
+
+
+def completion_payload(payload):
+    exact(payload, {'linuxCleanupVerified', 'authAssertionsPassed'})
+    if payload['linuxCleanupVerified'] is not True or type(payload['authAssertionsPassed']) is not bool:
+        raise DriverError('Verified Linux cleanup and separate assertion state required')
+    return payload
+
+
 def digest(data):
     return hashlib.sha256(data).hexdigest()
 
@@ -187,6 +228,26 @@ class HostClient:
             self.failed = True
             raise
 
+    def send_cleanup(self, payload, timeout=20):
+        """One-way final cleanup after EOF; never resend a previous operation."""
+        import select
+        completion_payload(payload)
+        if self.sequence != 2:
+            raise DriverError('Only the consumed arm may send one final cleanup frame')
+        self.sequence, self.failed = 3, True  # Consume before dispatch, including partial/unknown writes.
+        data = encode(frame(self.bound, 3, 'complete', payload))
+        end = time.monotonic() + timeout
+        blocking = os.get_blocking(self.write_fd)
+        os.set_blocking(self.write_fd, False)
+        try:
+            while data:
+                remaining = end - time.monotonic()
+                if remaining <= 0 or not select.select([], [self.write_fd], [], remaining)[1]:
+                    raise DriverError('Final cleanup dispatch unverified; never replay')
+                data = data[os.write(self.write_fd, data):]
+        finally:
+            os.set_blocking(self.write_fd, blocking)
+
 
 def windows_env():
     return {key: value for key, value in os.environ.items() if key.upper() in
@@ -213,7 +274,7 @@ def native_run(args, timeout=20, data=None):
     return output
 
 
-def read_line_bounded(stream, timeout, check=None):
+def begin_line_read(stream):
     result = queue.Queue(maxsize=1)
     def read():
         try:
@@ -221,6 +282,11 @@ def read_line_bounded(stream, timeout, check=None):
         except Exception:
             result.put(b'')
     threading.Thread(target=read, daemon=True).start()
+    return result
+
+
+def read_line_bounded(stream, timeout, check=None, pending=None):
+    result = begin_line_read(stream) if pending is None else pending
     deadline = time.monotonic() + timeout
     while True:
         if check is not None:
@@ -362,15 +428,30 @@ class NativeSession:
         self.sequence, self.failed, self.probe, self.guard, self.arm_attempted = 0, False, None, None, False
         self.deadline, self.monotonic_end = None, None
         self.browser, self.browser_config = None, browser_config
+        self.work_failed, self.browser_closure, self.diagnostic = False, None, None
         self.browser_factory = browser_factory or (lambda config: browser_helpers(config['hostSha256']).start(config))
 
     def check_browser(self):
         if self.browser is not None:
-            self.browser.check()
+            try:
+                self.browser.check()
+            except Exception as error:
+                self.work_failed = True
+                # The verified browser module validates its categorical envelope.
+                # Arbitrary exception names/strings/args never cross this boundary.
+                self.diagnostic = browser_failure(getattr(self.browser, 'failure', None))
+                raise BrowserAbort(self.diagnostic) from None
 
     def close_browser(self):
         if self.browser is not None:
-            self.browser.close()
+            if self.browser_closure is None:
+                closed = self.browser.close(self.remaining(5))
+                exact(closed, {'jobClosed', 'activeProcessesZero', 'workerExited'})
+                if not all(value is True for value in closed.values()):
+                    raise DriverError('Owned browser Job closure unverified')
+                self.browser_closure = closed
+            return self.browser_closure
+        raise DriverError('Owned browser Job identity unavailable')
 
     def remaining(self, ceiling):
         if self.deadline is None:
@@ -383,7 +464,7 @@ class NativeSession:
 
     def handle(self, value):
         operations = ['probe', 'arm', 'complete']
-        if self.failed or self.sequence >= len(operations):
+        if self.sequence >= len(operations) or (self.failed and not (self.sequence == 2 and self.guard is not None)):
             raise DriverError('Closed native session')
         operation = operations[self.sequence]
         payload = validate_frame(value, self.bound, self.sequence + 1, operation)
@@ -438,14 +519,22 @@ class NativeSession:
                 # Worker begins with stdin GO; factory assigns exact retained HANDLE to
                 # its kill-on-close Job before releasing GO. It waits for the WSL marker.
                 self.browser = self.browser_factory(browser_config)
-                self.browser.check()
+                self.check_browser()
             else:
-                exact(payload, {'linuxCleanupVerified'})
-                if payload['linuxCleanupVerified'] is not True or not self.guard:
+                completion_payload(payload)
+                if not self.guard:
                     raise DriverError('Native fail-safe retained; Linux cleanup unverified')
                 if self.browser is None:
                     raise DriverError('Native browser worker completion unavailable')
-                self.browser.finish(self.remaining(10))
+                assertions = payload['authAssertionsPassed'] and not self.work_failed
+                if assertions:
+                    try:
+                        self.browser.finish(self.remaining(10))
+                    except Exception as error:
+                        self.work_failed = True
+                        self.diagnostic = browser_failure(getattr(self.browser, 'failure', None))
+                        assertions = False
+                self.close_browser()
                 result = json.loads(self.run(host_command('Complete', self.spec['hostGuardExecutionPolicy'],
                             '-ManifestPath', str(Path(self.guard['cache']) / 'manifest.json'),
                             '-ManifestSha256', self.guard['manifestSha256'], '-GuardPid', str(self.guard['pid']),
@@ -454,10 +543,14 @@ class NativeSession:
                 if (result['guardStopped'] is not True or any(result[key] != self.guard[key] for key in
                     ['pid','startedTicks','scopeSha256','manifestSha256','guardSourceSha256'])):
                     raise DriverError('Exact native guard closure unproved')
+                result = {**result, 'authAssertionsPassed': assertions,
+                          'browserJobClosed': True}
             return frame(self.bound, self.sequence, operation, result, status='ok')
-        except Exception:
+        except Exception as error:
             self.failed = True
-            self.close_browser()
+            error.safe_phase = operation
+            if self.browser is not None:
+                self.close_browser()
             raise
 
 
@@ -469,6 +562,36 @@ print(json.dumps({'spec':json.loads(spec.read_bytes()),'lock':data,'lockSha':has
 'changedPaths':sorted(set(name.decode() for raw in [subprocess.check_output(['git','-C',str(repo),'diff','--no-renames','--name-only','-z','HEAD']),subprocess.check_output(['git','-C',str(repo),'ls-files','--others','--exclude-standard','-z'])] for name in raw.split(b'\0') if name)),
 'sourceHashes':{name:hashlib.sha256((repo/name).read_bytes()).hexdigest() for name in data['sources']}}))
 """
+
+
+def serve_controller(child, session):
+    """Keep the exact output channel for cleanup after one EOF cancellation."""
+    cancelled, reply, pending = False, None, None
+    while session.sequence < 3:
+        if pending is None:
+            pending = begin_line_read(child.stdout)
+        try:
+            request = read_line_bounded(child.stdout,
+                session.remaining(180 if cancelled else 3600) if session.sequence == 2 else 60,
+                check=None if cancelled else session.check_browser, pending=pending)
+            pending = None  # Frame consumed; an ARM failure needs a NEW final-frame read.
+            reply = session.handle(request)
+        except BrowserAbort:
+            # Close only this owned Job and this controller's input. The separate
+            # Linux watcher cancels its exact owned phase and verifies cleanup.
+            session.close_browser()
+            if not child.stdin.closed:
+                child.stdin.close()
+            cancelled = True
+            continue
+        if not cancelled:
+            child.stdin.write(encode(reply)); child.stdin.flush()
+    if not child.stdin.closed:
+        child.stdin.close()
+    child.wait(timeout=session.remaining(10))
+    if child.returncode or reply is None:
+        raise DriverError('WSL controller final exit unverified')
+    return reply['result']
 
 
 def execute(args):
@@ -519,22 +642,29 @@ def execute(args):
     child = subprocess.Popen(command, stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.DEVNULL,
                 close_fds=True, env=windows_env(), creationflags=subprocess.CREATE_NO_WINDOW)
     try:
-        for _ in range(3):
-            request = read_line_bounded(child.stdout, session.remaining(3600) if session.sequence == 2 else 60,
-                check=session.check_browser)
-            reply = session.handle(request)
-            child.stdin.write(encode(reply)); child.stdin.flush()
-        child.stdin.close()
-        child.wait(timeout=session.remaining(10))
-        if child.returncode:
-            raise DriverError('WSL controller final exit unverified')
+        closure = serve_controller(child, session)
+        # Public, categorical evidence inherits the already checked owner-only
+        # native cache. It carries no URLs, identities, tokens or private frames.
+        cache = Path(session.guard['cache'])
+        browser_host.assert_owner_directory(cache)
+        receipt = {'version': 1, 'binding': bound, 'linuxCleanupVerified': True,
+                   'authAssertionsPassed': closure['authAssertionsPassed'],
+                   'browserJobClosed': closure['browserJobClosed'],
+                   'nativeGuard': {key: closure[key] for key in
+                       ['guardStopped','pid','startedTicks','scopeSha256','manifestSha256','guardSourceSha256']},
+                   'failure': session.diagnostic}
+        with (cache / 'native-completion.json').open('xb') as stream:
+            stream.write(encode(receipt))
         return {'status':'native_parent_completed','runtimeReady':False,'cleanupVerified':True,
-                'nativeGuardStopped':True,'guardPid':session.guard['pid'],'guardStartedTicks':session.guard['startedTicks']}
+                'nativeGuardStopped':True,'guardPid':session.guard['pid'],'guardStartedTicks':session.guard['startedTicks'],
+                'authAssertionsPassed': closure['authAssertionsPassed'], 'browserJobClosed':True,
+                'failure': session.diagnostic}
     finally:
         # EOF wakes the independently inherited Linux watcher even if the
         # controller is blocked in an owned phase. Do not kill wsl.exe first.
         try:
-            session.close_browser()
+            if session.browser is not None:
+                session.close_browser()
         finally:
             if not child.stdin.closed:
                 child.stdin.close()
@@ -568,6 +698,7 @@ def main():
 if __name__ == '__main__':
     try:
         main()
-    except Exception:
-        print('NATIVE_HOST_COORDINATOR_FAILED; no automatic retry; native guard closure may be unverified', file=sys.stderr)
+    except Exception as error:
+        print(json.dumps({'status': 'native_parent_failed', 'cleanupVerified': False,
+                          'failure': safe_error(error)}), file=sys.stderr)
         sys.exit(1)

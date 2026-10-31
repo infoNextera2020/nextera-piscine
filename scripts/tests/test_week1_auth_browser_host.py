@@ -212,8 +212,11 @@ class WorkerTests(unittest.TestCase):
     def test_worker_refuses_before_gate_with_only_fixed_error_no_children(self):
         result = subprocess.run([sys.executable, '-B', str(SOURCE), '--worker'], input=b'BAD\nprivate-synthetic\n',
             stdout=subprocess.PIPE, stderr=subprocess.PIPE, timeout=5)
-        self.assertNotEqual(result.returncode, 0); self.assertEqual(result.stdout, b'')
-        self.assertEqual(result.stderr.splitlines(), [b'NATIVE_BROWSER_UNRESOLVED; no automatic retry.'])
+        self.assertNotEqual(result.returncode, 0); self.assertEqual(result.stderr, b'')
+        value = h.parse(result.stdout)
+        self.assertEqual(value['status'], 'failed')
+        self.assertEqual(value['failure']['category'], 'validation_rejected')
+        self.assertNotIn(b'private-synthetic', result.stdout)
 
 
 class Gate(io.BytesIO):
@@ -232,10 +235,15 @@ class Child:
 
 
 class JobTests(unittest.TestCase):
+    def setUp(self):
+        clock = patch.object(h.time, 'time', return_value=1100)
+        clock.start(); self.addCleanup(clock.stop)
+
     def test_exact_handle_assignment_precedes_go_and_config_and_close_is_idempotent(self):
         events = []; child = Child(events)
         class Job:
             def assign(self, process): events.append(('assign', process._handle))
+            def stop_and_verify(self, left): events.append(('active-zero',)); return left() > 0
             def close(self): events.append(('close-job',))
         def popen(args, **kwargs):
             self.assertEqual(args[0], h.PYTHON); self.assertEqual(args[-1], '--worker')
@@ -247,13 +255,15 @@ class JobTests(unittest.TestCase):
         job.check(); self.assertTrue(job.finish(1)['proofRecorded']); job.close()
         self.assertEqual([e[0] for e in events].count('close-job'), 1)
 
-    def test_assignment_failure_never_releases_gate_and_kills_exact_unassigned_child(self):
+    def test_assignment_failure_never_releases_gate_and_reaps_exact_unassigned_child(self):
         events = []; child = Child(events)
         class Job:
             def assign(self, process): events.append(('assign', process._handle)); raise OSError('private fixture')
+            def stop_and_verify(self, left): return left() > 0
             def close(self): events.append(('close-job',))
         with self.assertRaises(h.BrowserHostError): h.BrowserJob(config(), job_factory=Job, popen=lambda *_a, **_k: child)
-        self.assertNotIn('gate', [e[0] for e in events]); self.assertIn(('kill-exact-child', child._handle), events)
+        self.assertNotIn('gate', [e[0] for e in events]); self.assertIn('wait', [e[0] for e in events])
+        self.assertTrue(child.stdin.closed)
 
     def test_bad_config_rejected_before_job_or_process(self):
         c = config(); c['deadline'] += 1
@@ -264,6 +274,7 @@ class JobTests(unittest.TestCase):
         events = []; child = Child(events)
         class Job:
             def assign(self, process): pass
+            def stop_and_verify(self, left): return left() > 0
             def close(self): events.append(('closed',))
         job = h.BrowserJob(config(), job_factory=Job, popen=lambda *_a, **_k: child)
         child.returncode = 1
@@ -276,6 +287,7 @@ class JobTests(unittest.TestCase):
             events = []; child = Child(events)
             class Job:
                 def assign(self, process): pass
+                def stop_and_verify(self, left): return left() > 0
                 def close(self): pass
             made = json.loads(child.stdout.getvalue()); made[field] = value; child.stdout = io.BytesIO(h.compact(made))
             job = h.BrowserJob(config(), job_factory=Job, popen=lambda *_a, **_k: child)
@@ -328,6 +340,127 @@ def private_read(p):
             rejected=subprocess.run([sys.executable,'-B','-c',h.METADATA_READER,str(root),h.sha(helper)],
                 stdout=subprocess.PIPE,stderr=subprocess.DEVNULL,timeout=5)
             self.assertNotEqual(rejected.returncode,0);self.assertEqual(rejected.stdout,b'')
+
+
+
+class MetadataRecoveryTests(unittest.TestCase):
+    def test_only_two_pre_handoff_transport_retries_then_one_issuance(self):
+        c = config(); port = FakePort(c); original = port.metadata; attempts = []
+        def metadata(seconds):
+            attempts.append(seconds)
+            if len(attempts) <= 2:
+                port.wall += 10000; port.monotonic += 10000
+                raise h.BrowserHostError(('metadata_timeout', 'wsl_service_unavailable')[len(attempts)-1])
+            return original(seconds)
+        port.metadata = metadata
+        self.assertEqual(h.run_worker(c, port)['status'], 'recorded')
+        self.assertEqual(sum(name == 'handoff' for name, *_ in port.calls), 1)
+        self.assertTrue(all(seconds <= 10 for seconds in attempts))
+
+    def test_exhaustion_denial_invalid_scope_and_post_handoff_timeout_are_not_replayed(self):
+        for category, expected in [('metadata_timeout', 3), ('wsl_service_unavailable', 3),
+                                   ('metadata_denied', 1), ('validation_rejected', 1)]:
+            c = config(); port = FakePort(c); calls = []
+            def metadata(seconds):
+                calls.append(seconds); raise h.BrowserHostError(category)
+            port.metadata = metadata
+            with self.subTest(category=category), self.assertRaises(h.BrowserHostError) as caught:
+                h.run_worker(c, port)
+            self.assertEqual(len(calls), expected)
+            self.assertEqual(caught.exception.category, 'retry_exhausted' if expected == 3 else category)
+            self.assertNotIn('handoff', [row[0] for row in port.calls])
+        c = config(); port = FakePort(c)
+        port.alter = lambda value: {**value, 'lockSha256': 'f'*64}
+        with self.assertRaises(h.BrowserHostError): h.run_worker(c, port)
+        self.assertEqual(port.reads, 1)
+        port = FakePort(c); original = port.metadata; after = []
+        def after_handoff(seconds):
+            if port.issued:
+                after.append(seconds); raise h.BrowserHostError('metadata_timeout')
+            return original(seconds)
+        port.metadata = after_handoff
+        with self.assertRaises(h.BrowserHostError): h.run_worker(c, port)
+        self.assertEqual(len(after), 1)
+        self.assertEqual(sum(row[0] == 'handoff' for row in port.calls), 1)
+        self.assertNotIn('consume', [row[0] for row in port.calls])
+
+    def test_retry_never_renews_original_wall_or_monotonic_budget(self):
+        for clock in ('wall', 'mono'):
+            c = config(); port = FakePort(c); calls = []
+            port.wall = c['cleanupAt'] - 50
+            def metadata(seconds):
+                calls.append(seconds)
+                if clock == 'wall': port.wall += 100
+                else: port.monotonic += 100
+                raise h.BrowserHostError('metadata_timeout')
+            port.metadata = metadata
+            with self.subTest(clock=clock), self.assertRaises(h.BrowserHostError): h.run_worker(c, port)
+            self.assertEqual(len(calls), 1)
+
+    def test_fixed_readonly_transport_classifies_only_allowlisted_faults_in_memory(self):
+        args = h.wsl(['/usr/bin/python3', '-B', '-c', h.METADATA_READER, h.ROOT, '1'*64])
+        class Process:
+            def __init__(self, output, error, timeout=False):
+                self.stdin, self.stdout, self.stderr = io.BytesIO(), io.BytesIO(output), io.BytesIO(error)
+                self.returncode = None; self.timeout = timeout
+            def wait(self, timeout):
+                if self.timeout:
+                    self.timeout = False
+                    raise subprocess.TimeoutExpired('PRIVATE_SENTINEL', timeout)
+                self.returncode = 1 if self.returncode is None else self.returncode
+            def poll(self): return self.returncode
+            def kill(self): self.returncode = -9
+        for output, error, timed, category in [
+            (b'', b'PRIVATE_SENTINEL\nError code: Wsl/Service/0x8007274c', False, 'wsl_service_unavailable'),
+            (b'', b'Access is denied Wsl/Service/0x8007274c PRIVATE_SENTINEL', False, 'metadata_denied'),
+            (b'PRIVATE_SENTINEL', b'', False, 'private_process_failed'),
+            (b'', b'', True, 'metadata_timeout'),
+        ]:
+            process = Process(output, error, timed)
+            with patch.object(h.os, 'name', 'nt'), patch.object(h.subprocess, 'CREATE_NO_WINDOW', 0, create=True), \
+                 patch.object(h.subprocess, 'Popen', return_value=process), self.assertRaises(h.BrowserHostError) as caught:
+                h.run_private(args, None, .5, 4096, metadata=True,
+                              hard_budget=(h.time.time() + 1, h.time.monotonic() + 1))
+            self.assertEqual(caught.exception.category, category)
+            self.assertNotIn('PRIVATE_SENTINEL', json.dumps(h.failure(caught.exception, 'metadata')))
+        with patch.object(h.subprocess, 'Popen') as create:
+            with patch.object(h.os, 'name', 'nt'), self.assertRaises(h.BrowserHostError):
+                h.run_private(['arbitrary'], None, 1, 4096, metadata=True)
+            create.assert_not_called()
+
+
+class JobClosureProofTests(unittest.TestCase):
+    def test_exact_job_handle_termination_and_active_zero_query_are_required(self):
+        events = []; active = [2, 0]
+        class API:
+            def TerminateJobObject(self, handle, code): events.append(('terminate', handle, code)); return True
+            def QueryInformationJobObject(self, handle, kind, pointer, size, returned):
+                events.append(('query', handle, kind))
+                h.ctypes.cast(pointer, h.ctypes.POINTER(h.BASIC_ACCOUNTING)).contents.ActiveProcesses = active.pop(0)
+                return True
+        job = h.NativeJob.__new__(h.NativeJob); job.handle = 123456; job.api = API()
+        with patch.object(h.time, 'sleep'):
+            self.assertTrue(job.stop_and_verify(lambda: .1))
+        self.assertEqual(events, [('terminate', 123456, 1), ('query', 123456, 1), ('query', 123456, 1)])
+        events.clear()
+        with self.assertRaises(h.BrowserHostError): job.stop_and_verify(lambda: 0)
+        self.assertEqual(events, [])
+
+    def test_expired_job_close_retains_kill_on_close_without_false_proof(self):
+        events = []
+        class Job:
+            def assign(self, child): pass
+            def stop_and_verify(self, left): left(); return True
+            def close(self): events.append('close')
+        child = Child(events)
+        with patch.object(h.time, 'time', return_value=1100):
+            owned = h.BrowserJob(config(), job_factory=Job, popen=lambda *_a, **_k: child)
+        with patch.object(h.time, 'time', return_value=5000), self.assertRaises(h.BrowserHostError):
+            owned.close()
+        self.assertEqual(events.count('close'), 1)
+        self.assertIsNone(owned.closure)
+        with self.assertRaises(h.BrowserHostError): owned.close()
+        self.assertEqual(events.count('close'), 1)
 
 
 if __name__ == '__main__': unittest.main()
