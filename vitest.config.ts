@@ -22,6 +22,7 @@ export default defineConfig({
       'packages/db/tests/scored-exam-functional-producer.test.ts',
       'packages/db/tests/scored-exam-binary-result.test.ts',
       'packages/db/tests/scored-exam-manual-evidence-proposal.test.ts',
+      'packages/db/tests/atm-evidence*.test.ts',
       'tests/operator-scored-exam-client.test.ts',
       'tests/operator-scored-exam-loader.test.ts',
       'packages/db/tests/checkpoint-write-window-proposal.test.ts',
@@ -49,6 +50,8 @@ export default defineConfig({
       'apps/web/lib/learning/*.test.ts',
       'apps/web/lib/raids/*.test.ts',
       'apps/web/lib/invitations/*.test.ts',
+      'apps/web/lib/atm-evidence/*.test.ts',
+      'apps/web/app/api/internal/atm-evidence/**/route.test.ts',
     ],
   },
 });
