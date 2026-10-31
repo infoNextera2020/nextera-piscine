@@ -1,6 +1,6 @@
-# Concrete current-contract counterexamples
+# Historical baseline counterexamples — reporting addendum now explicit
 
-These are synthetic specification witnesses, not executions or grades. Scenario: correct login, deposit `25` from `100`, ask to show the balance.
+These are synthetic witnesses for the original 29 October baseline, not executions or grades. The 31 October owner-approved Report addendum now closes the framing gap in the actual learner handoff; the invisible-source-state limit remains. Scenario: correct login, deposit `25` from `100`, ask to show the balance.
 
 ## A lossy numeric comparison accepts a wrong balance
 

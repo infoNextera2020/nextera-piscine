@@ -1,46 +1,23 @@
-# Week 1 ATM single-file source proposal
+# Approved ATM learner reporting handoff v1
 
-31 October 2026. Inactive engineering proposal; no curriculum publication, test pack, grader, score, PASS, upload, team mutation or runtime execution is performed here.
+The actual learner handoff is [learner-pack/learner-en.md](learner-pack/learner-en.md), with [one main.go starter](learner-pack/main.go) and a [short pack README](learner-pack/README.md). It contains the complete retained business brief plus the owner-approved supplied `Report(event string, balance *int)` helper and explicit stdout/stderr/terminal-balance obligations. The main function is TODO-only; no full ATM solution is supplied.
 
-The already approved educational scope is retained: three learners, one invented account, mock PIN, integer balance, deposit, withdrawal and exit. The original baseline and its historical proposed-value/status labels stay byte-for-byte intact. This proposal resolves only source packaging and describes a comparison policy; it does not register its numbers or examples as platform policy.
+The starter includes the original scanner declaration and ReadLine function as one exact 433-byte region. The original 474-byte `scaffold/input.go` remains byte-for-byte unchanged in the baseline; package/import coalescing in the new main.go means that entire file is no longer claimed as a contiguous copy. Report's exact helper hash and the original input region hash are in [the reporting source contract](learner-pack/reporting-contract.json).
 
-## Delivery decision already resolved technically
+The original two-file input demo is copied unchanged into [learner-pack/input-demo](learner-pack/input-demo/main.go). The new [report-only example](learner-pack/report-demo/main.go) uses fixed illustrative values, no input, no parser and no ATM business implementation. Both examples remain separate from the team's submitted main. Human examples are readable stderr messages; stdout contains only the six documented JSON-array event kinds.
 
-The project submission is one standalone `main.go`. Put the supplied scanner declaration and `ReadLine` helper in the same file as the team's program, with one `package main`, one merged import list and one ATM `main` function. No new product layout, archive upload, companion-file intake or learner-visible grader interface is needed for this representation.
+The required README information stays in a top-of-main.go comment: actual team, local run command, actual checks and unresolved issues. Nothing is silently waived, no extra attachment feature is needed, and source comments are not trusted evidence of executed checks.
 
-[The proposal scaffold](scaffold/main.go) contains the entire original 474-byte `scaffold/input.go` unchanged as a contiguous byte sequence, followed by a TODO-only ATM `main`. The scanner/helper region itself remains exact if a learner later adds an import such as `fmt`. This is a starter, not an ATM implementation. The combined file compiles with the installed Go 1.26.2 Windows toolchain, and the original helper test plus its five subtests pass against it with downloads disabled. The ATM main remains TODO-only and was never executed; no ATM business behavior is verified.
+## Preserved source and authorization
 
-The local ATM command becomes `go run main.go`. Existing compiler/launch and published test-pack readiness still need their normal engineering verification before release. This proposal adds no CPU, memory, output, timeout, retry or storage default and changes no existing resources.
+The original approved educational baseline at [content/source-baselines/project1-atm-v1](../../content/source-baselines/project1-atm-v1/BASELINE_STATUS.md) is unchanged, including its historical proposed-value/status labels. All business numbers, whole-line input distinctions, task scope, three-person team, schedule independence from Exam 1 and original resources remain intact. The new visible reporting/delivery amendment is separately authorized by owner message `Sentinel_1cbce2e598b88191964a8d4af844e811` on 31 October 2026. This is approval of this limited source contract, not runtime/publication/security authority.
 
-## What “README” means here
+The original hand-in wording is preserved as provenance: “Prepare the source file or files for the project platform's upload path and a short README explaining the proposed local run command, the team members and the checks you performed.” It never mandated a separate README.md filename.
 
-The exact learner submission wording is:
+## Verification and integration limits
 
-> Prepare the source file or files for the project platform's upload path and a short README explaining the proposed local run command, the team members and the checks you performed. Do not include real personal or financial data. Keep the input demonstration separate from the ATM submission.
+[The comparison implementation and trusted-capture source contract](../week1-atm-semantic-oracle-proposal-20261031/README.md) compare observed JSON facts to an independent exact-input model. They do not trust helper calls, learner PASS claims, README assertions or stderr as business authority. A missing trusted capture producer stays unavailable. Observation matching is not an academic PASS and does not bypass automated-result or assigned-mentor requirements.
 
-The brief also says:
+The current immutable content manifest is still development Hello Go and Even or Odd only. No ATM node, published business testpack, required capture/resource binding or progression transition is registered here. [The exact gap inventory](integration-gap.md) records those remaining artifacts. No Auth/compiler/migration/Runner/service or original baseline file is edited by this handoff. No production resource defaults are added.
 
-> Your README describes what you actually checked, including any unresolved issue.
-
-There are two different roles. The package's own `README.md` and `scaffold/README.md` are instructional material. The team's short README is an explicitly requested deliverable containing the command, actual team members, actual checks and unresolved issues. The brief defines neither README points nor an automatic README pass gate.
-
-The current project screen accepts one shared source file. It does not transport an extra README attachment. Preserve all requested team-README information inside a top-of-`main.go` block comment headed `README`, as shown in the scaffold. The brief does not mandate a separate `README.md` filename, so this representation does not waive the deliverable or require a new attachment feature. The comment is part of the exact uploaded source revision and source digest. It is not independently verified evidence that the declared checks occurred; mentor review still checks the same submitted attempt. Do not invent team identities, check results or a README score.
-
-## Preserved supporting material
-
-- [Approved learner brief](../../content/source-baselines/project1-atm-v1/learner-en.md): stages, roles, input rules, examples and business behavior remain unchanged.
-- [Original input helper](../../content/source-baselines/project1-atm-v1/scaffold/input.go): exact source retained in the proposal scaffold.
-- [Input-only demo](../../content/source-baselines/project1-atm-v1/input-demo/main.go) and [its helper](../../content/source-baselines/project1-atm-v1/input-demo/input.go): untouched separate local program. Its existing local command, from `input-demo/`, stays `go run main.go input.go`. Do not copy the demo's `main` into the ATM submission or upload the demo in place of the ATM.
-- [Scaffold explanation](../../content/source-baselines/project1-atm-v1/scaffold/README.md) and [source map](../../content/source-baselines/project1-atm-v1/source-map.md): existing educational explanations and references retained. The ATM-specific old two-file command is superseded only by the [delivery addendum](learner-delivery-addendum.md); the demo command is not.
-- Existing optional references remain [Scanner.Scan](https://pkg.go.dev/bufio#Scanner.Scan) and [ScanLines](https://pkg.go.dev/bufio#ScanLines). These are the existing baseline links, not newly assigned reading or a claim of a new web verification.
-- The [pinned historical project](https://github.com/Anasmoner2022/piscine-go/blob/4e25fdc4354592a898b55444b39bbdd8aeaebf82/01-atm-banking-system.md) remains provenance, not a replacement for the approved beginner adaptation. No mentor-only archive or owner-review prose is copied into learner delivery.
-
-## Observable behavior and remaining judgments
-
-[The comparison proposal](comparison-policy.md) distinguishes fixed business/input facts from flexible prose. It preserves the brief's “Exact message wording is flexible, but the outcome must be clear.” It does not add magic output markers, required function names, a golden transcript or an implemented automatic grader.
-
-No new owner decision is needed to package the same program and README information in one file. A separate README filename would require an explicit delivery amendment only if the owner later requests that additional constraint. Likewise, changing any business value, arbitrary-prose flexibility, required features, scores, deadlines or retry policy would be a substantive policy decision; none is changed or requested here. Existing publication/configuration decisions recorded in the baseline remain outstanding on their own track. Technical inability to infer arbitrary prose is an implementation gap, not a reason to silently restrict the task.
-
-## Evidence
-
-`verification.json` pins all eight retained baseline files, all four previously materialized Library source artifacts, archive-entry equality and this proposal's files. Verification consists of local byte/hash/ZIP/source checks, compilation of this exact combined starter and the original helper-only test with its five subtests. External downloads were disabled. No ATM program, business-behavior grader, SQL, Auth or service was executed. These checks establish source packaging and the input helper only; they do not establish a completed ATM solution or platform grading readiness. Prior baseline verification remains historical and unchanged.
+See verification.json for the exact source pins, starter/example compiler checks, provided input/report helper tests, reference/negative/ambiguity/capture tests and the checks not performed. Full ATM business implementation and real end-to-end grading remain unverified because they are not supplied/enabled here.

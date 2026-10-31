@@ -1,0 +1,18 @@
+{
+  "version": 1,
+  "id": "atm-observable-report-v1",
+  "ownerDecisionMessageId": "Sentinel_1cbce2e598b88191964a8d4af844e811",
+  "businessBaselineLearnerSha256": "8d8ff72fdbc241e0c7fdcfe1692cef8223ee426ca68d373f004f63cf15f28a1b",
+  "readLineRegionSha256": "6e0a1e3ce7688dbff3853f3d9789b263b28614eb3a95a1ef9d52e1e7e58666a3",
+  "reportHelperSha256": "373ba6c999e5470b5b4f1380bf75c06a10c1f9184c46562f8d69a5f7870a2cc8",
+  "events": ["menu", "amount", "balance", "accepted", "rejected", "end"],
+  "stdout": "one JSON array [event,balance] per line; no human prose",
+  "stderr": "clear human messages with flexible wording",
+  "beforeLoginBalance": null,
+  "terminalBalanceRequired": true,
+  "sourceStatus": "owner-approved handoff; inactive publication",
+  "graderEnabled": false,
+  "originalFullInputHelperBytes": 474,
+  "preservedScannerAndReadLineRegionBytes": 433,
+  "originalFullInputHelperSha256": "ce71d84089a9d950208be1479bbd731a0a1f86280370a75af4fd46fab5820bd3"
+}

@@ -1,19 +1,20 @@
 /*
 README - required submission information
 Local run command: go run main.go
-Team of three: TODO - record the actual assigned team members.
-Checks actually performed: TODO - list inputs, observed balances and exit behavior.
-Unresolved issues: TODO - state any remaining issue honestly; do not claim unrun checks.
-Use only invented account data. Never put real financial information in this file.
+Team of three: TODO - list your actual assigned team members.
+Checks actually performed: TODO - record inputs and observations honestly.
+Unresolved issues: TODO - state any remaining issue.
+Use invented account data only. Never include real financial information.
 
-SOURCE PROPOSAL SCAFFOLD ONLY: the ATM behavior below is not implemented.
-This file is not a working ATM solution, submitted attempt or grading result.
+STARTER ONLY: the supplied helpers are complete; the ATM logic is your task.
+This empty main is not a working ATM or an automatic grading result.
 */
 
 package main
 
 import (
 	"bufio"
+	"encoding/json"
 	"os"
 )
 
@@ -30,9 +31,31 @@ func ReadLine() (line string, ok bool) {
 	return inputScanner.Text(), true
 }
 
-// Add the team's ATM functions here. If needed, extend the import list above.
-// Keep the supplied inputScanner declaration and ReadLine helper unchanged.
+// Report writes one structured observation. Human messages belong on os.Stderr.
+// Use nil only before login, for a rejected PIN or the end of an unauthenticated session.
+// This helper serializes observations; the independent model checks their correctness.
+func Report(event string, balance *int) {
+	switch event {
+	case "menu", "amount", "balance", "accepted", "rejected", "end":
+	default:
+		panic("Report: unknown event")
+	}
+	if balance == nil {
+		if event != "rejected" && event != "end" {
+			panic("Report: this event requires the current balance")
+		}
+	} else if *balance < 0 || *balance > 10000 {
+		panic("Report: balance outside the task range")
+	}
+	if err := json.NewEncoder(os.Stdout).Encode([2]any{event, balance}); err != nil {
+		panic("Report: stdout unavailable")
+	}
+}
+
 func main() {
-	// TODO: implement the approved brief's login, menu, validation and state changes.
-	// TODO: use ReadLine at every prompt; false ends without a pending transaction.
+	// TODO: implement the brief's login, menu, validation and balance changes.
+	// TODO: use the exact supplied ReadLine helper at every prompt.
+	// TODO: print human prompts/explanations to os.Stderr; use Report for stdout.
+	// TODO: Report("end", nil) before ending without login, or
+	//       Report("end", &balance) before ending after login, including EOF at an amount.
 }

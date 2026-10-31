@@ -1,13 +1,15 @@
 """Inactive developer prototype. Never executes, rewrites, grades or trusts learner code.
 
-Only compares externally captured records under a NEW, explicit candidate contract.
-The current approved brief has no such projection; its automatic result is unresolved.
+Compares records under the owner-approved Report source contract.
+No immutable ATM pack or trusted capture producer is registered by this module.
 """
 from dataclasses import dataclass
 import json
 
 CURRENT_BRIEF_SHA256 = '8d8ff72fdbc241e0c7fdcfe1692cef8223ee426ca68d373f004f63cf15f28a1b'
-CANDIDATE_CONTRACT = 'atm-observable-projection-candidate-v1'
+APPROVED_REPORTING_CONTRACT = 'atm-observable-report-v1'
+# Retained test alias; no runtime feature switch.
+CANDIDATE_CONTRACT = APPROVED_REPORTING_CONTRACT
 KINDS = frozenset(('menu', 'amount', 'balance', 'accepted', 'rejected', 'end'))
 
 
@@ -120,7 +122,7 @@ def compare(stdin: bytes, stdout: bytes, *, contract: str | None = None,
             process_terminated: bool | None = None) -> Comparison:
     # This is a specification selector in an isolated test prototype, not a production flag.
     if contract != CANDIDATE_CONTRACT:
-        return Comparison('unresolved_contract', 'Current brief has no machine-readable output projection.')
+        return Comparison('unresolved_contract', 'Exact owner-approved Report contract has not been selected; no result is inferred.')
     if process_terminated is not True:
         return Comparison('incomplete_observation', 'No independently captured process termination is available.')
     try:
@@ -133,4 +135,4 @@ def compare(stdin: bytes, stdout: bytes, *, contract: str | None = None,
         return Comparison('projection_mismatch', str(exc), expected)
     if observed != expected:
         return Comparison('projection_mismatch', 'Captured facts differ from the independent model.', expected, observed)
-    return Comparison('observations_match', 'Candidate observable trace matches; this is not an academic PASS.', expected, observed)
+    return Comparison('observations_match', 'Approved-source observable trace matches; this is not an academic PASS.', expected, observed)

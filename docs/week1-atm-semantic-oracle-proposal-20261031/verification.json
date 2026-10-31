@@ -1,61 +1,108 @@
 {
-  "status": "inactive developer oracle candidate; no current-contract grade",
-  "tests": {
-    "command": "python3 -m unittest discover -s docs/week1-atm-semantic-oracle-proposal-20261031/prototype -p 'test_*.py' -v",
-    "testCount": 27,
-    "exitCode": 0,
-    "syntheticFixturesOnly": true
+  "status": "owner-approved Report learner handoff source; live ATM grading/publication inactive",
+  "ownerDecisionMessageId": "Sentinel_1cbce2e598b88191964a8d4af844e811",
+  "reportingContractId": "atm-observable-report-v1",
+  "reportingContractFramedSha256": "f09da2b66999409f6dc08ea8f54ef5c34ac259d48cccf5b1d66ecb63ad4c1007",
+  "checks": {
+    "pureReferenceNegativeAmbiguityCaptureTests": 38,
+    "pureTestsExitCode": 0,
+    "goHelperTopLevelTests": 7,
+    "goHelperSubtests": 13,
+    "goTestsExitCode": 0,
+    "starterCompile": 0,
+    "reportDemoCompile": 0,
+    "inputDemoCompile": 0,
+    "reportOnlyDemoExecution": 0,
+    "originalFullHelperBytesUnchanged": 474,
+    "originalDemoHelperSha256": "ce71d84089a9d950208be1479bbd731a0a1f86280370a75af4fd46fab5820bd3",
+    "originalDemoMainSha256": "c0e05fbe9712a491552304a712724ffb377c2804e5a01feaf8f4b24ac4f5005b",
+    "scannerAndReadLineRegionBytesExact": 433,
+    "businessInputTeamExamplesPreservedIgnoringMarkdownFormattingOutsideCode": true,
+    "allEightOriginalBaselineFilesExact": true,
+    "localMarkdownLinks": true,
+    "noAtmOrInputDemoOrStarterExecution": true
   },
-  "sourceModel": "exact whole-line input -> independently computed observable trace",
-  "currentBriefMode": "unresolved_contract",
-  "candidateMatchResult": "observations_match; not academic PASS",
-  "counterexamples": [
-    "valid/invalid current-balance prose shares digits+word bag",
-    "identical full visible trace can hide internal reset immediately before return"
-  ],
+  "toolchain": "go version go1.26.2 windows/amd64",
+  "externalDownloads": "disabled",
   "baselineFilesPreserved": {
-    "content/source-baselines/project1-atm-v1/README.md": "96f4bde77efb16b4dfa77f61315427093cbf0eac696973c580467fe408116051",
-    "content/source-baselines/project1-atm-v1/input-demo/input.go": "ce71d84089a9d950208be1479bbd731a0a1f86280370a75af4fd46fab5820bd3",
-    "content/source-baselines/project1-atm-v1/input-demo/main.go": "c0e05fbe9712a491552304a712724ffb377c2804e5a01feaf8f4b24ac4f5005b",
-    "content/source-baselines/project1-atm-v1/learner-en.md": "8d8ff72fdbc241e0c7fdcfe1692cef8223ee426ca68d373f004f63cf15f28a1b",
-    "content/source-baselines/project1-atm-v1/scaffold/README.md": "cacb3dc9611e619c5aa3d120f5fad91e3a8ac6d246bf743fab2b8ad165314234",
-    "content/source-baselines/project1-atm-v1/scaffold/input.go": "ce71d84089a9d950208be1479bbd731a0a1f86280370a75af4fd46fab5820bd3",
-    "content/source-baselines/project1-atm-v1/source-map.md": "97c4175d1ff91e9fb8de4be34f3b29beb3734ecbc30077176ce5b48f3100a58c",
-    "content/source-baselines/project1-atm-v1/review-ar.md": "49985d6c0456db0ea63cc7eab202814e2305ea966e588c84d5c974f4e3ce544f"
+    "content/source-baselines/project1-atm-v1/README.md": {
+      "bytes": 3115,
+      "sha256": "96f4bde77efb16b4dfa77f61315427093cbf0eac696973c580467fe408116051"
+    },
+    "content/source-baselines/project1-atm-v1/input-demo/input.go": {
+      "bytes": 474,
+      "sha256": "ce71d84089a9d950208be1479bbd731a0a1f86280370a75af4fd46fab5820bd3"
+    },
+    "content/source-baselines/project1-atm-v1/input-demo/main.go": {
+      "bytes": 317,
+      "sha256": "c0e05fbe9712a491552304a712724ffb377c2804e5a01feaf8f4b24ac4f5005b"
+    },
+    "content/source-baselines/project1-atm-v1/learner-en.md": {
+      "bytes": 12235,
+      "sha256": "8d8ff72fdbc241e0c7fdcfe1692cef8223ee426ca68d373f004f63cf15f28a1b"
+    },
+    "content/source-baselines/project1-atm-v1/scaffold/README.md": {
+      "bytes": 2841,
+      "sha256": "cacb3dc9611e619c5aa3d120f5fad91e3a8ac6d246bf743fab2b8ad165314234"
+    },
+    "content/source-baselines/project1-atm-v1/scaffold/input.go": {
+      "bytes": 474,
+      "sha256": "ce71d84089a9d950208be1479bbd731a0a1f86280370a75af4fd46fab5820bd3"
+    },
+    "content/source-baselines/project1-atm-v1/source-map.md": {
+      "bytes": 5293,
+      "sha256": "97c4175d1ff91e9fb8de4be34f3b29beb3734ecbc30077176ce5b48f3100a58c"
+    },
+    "content/source-baselines/project1-atm-v1/review-ar.md": {
+      "bytes": 11012,
+      "sha256": "49985d6c0456db0ea63cc7eab202814e2305ea966e588c84d5c974f4e3ce544f"
+    }
   },
   "files": {
     "docs/week1-atm-semantic-oracle-proposal-20261031/README.md": {
-      "bytes": 6167,
-      "sha256": "23d264022c13184885881d2a5878e2ebbe282b1879e72ca66c6ddc1beda59823"
+      "bytes": 4099,
+      "sha256": "34e0334514ea76f8dd0445a87b768c066ff670897050861d1c22365382678828"
     },
     "docs/week1-atm-semantic-oracle-proposal-20261031/projection-contract.md": {
-      "bytes": 6559,
-      "sha256": "bda545a250fe1d3747dd73b2c5afd7090eb878c939247632106b6e64d9b6b5f2"
+      "bytes": 6175,
+      "sha256": "582e62f65858eed10c2e6f5928784706cc56d03e145aee96ecd3af82e118470a"
     },
     "docs/week1-atm-semantic-oracle-proposal-20261031/counterexamples.md": {
-      "bytes": 3733,
-      "sha256": "0e2ced36530624ffafea115ab9b6ff93a1e30b0d75eed33f7fdd61267680de81"
+      "bytes": 3932,
+      "sha256": "4933d6e8392dd218a98cf2ebf5de0af09a70111ec986252f42c40ce76f32cfea"
     },
     "docs/week1-atm-semantic-oracle-proposal-20261031/prototype/oracle.py": {
-      "bytes": 5848,
-      "sha256": "a4124b85fe9bb9a1be4318ea8f24610120934ccee69fa0c22c45c611fbc61ef1"
+      "bytes": 5949,
+      "sha256": "c0e0bcfff77fe2cad6bb2a314e2a35c3e5b451c1a0d2c719a0be91c6c2b15bd0"
+    },
+    "docs/week1-atm-semantic-oracle-proposal-20261031/prototype/capture.py": {
+      "bytes": 4460,
+      "sha256": "be94fc075af3df25554358c00cf7d8164c1bc20ee9084b97d21d699ac219c3cd"
     },
     "docs/week1-atm-semantic-oracle-proposal-20261031/prototype/test_oracle.py": {
       "bytes": 12132,
       "sha256": "7b0ffcfc5aa1a420ddc18570974b37b2a5a4eeb23424474aa658a8e2e7993d05"
+    },
+    "docs/week1-atm-semantic-oracle-proposal-20261031/prototype/report_helper_test.go": {
+      "bytes": 3181,
+      "sha256": "879fff9d949313c0fd2e3cbe6da609565ac558a55833d281c28996fe913f0994"
+    },
+    "docs/week1-atm-semantic-oracle-proposal-20261031/prototype/test_capture.py": {
+      "bytes": 5599,
+      "sha256": "8134a79c6afc3ec08e7c4ef6aa29547136283c4b113f0319ac0cbd1f26ccd272"
     }
   },
-  "checks": {
-    "prettier": true,
-    "localMarkdownLinks": true,
-    "baselineGitDiffEmpty": true
+  "manifest": {
+    "path": "content/piscine-v1/manifest.yaml",
+    "sha256": "92552b494ce7f051ef1fae7605b5a44aa84bf9280af78381a9492f4a70cdf68d",
+    "status": "development",
+    "nodes": ["hello-go", "even-or-odd"],
+    "atmRegistered": false
   },
-  "learnerCodeExecutedOrModified": false,
-  "goCompilerExecuted": false,
-  "nativeSqlExecuted": false,
-  "runnerOrServicesExecuted": false,
-  "networkUsed": false,
-  "publicationOrGraderEnabled": false,
-  "mentorOrAutomatedGateWaived": false,
-  "remainingStep": "publish explicit observable projection and provide trusted immutable-attempt capture/serializer before automatic enforcement; retain exact-attempt qualitative/source review"
+  "trustedCaptureProducerConfigured": false,
+  "noGradeOrAcademicPassWritten": true,
+  "atmBusinessImplementationProvidedOrExecuted": false,
+  "nativeSqlAuthServicesOrCredentialsUsed": false,
+  "publicationOrRunnerChanged": false,
+  "sourceScope": "only the two owned ATM docs trees; Root owns any future package integration"
 }
