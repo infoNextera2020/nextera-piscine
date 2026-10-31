@@ -28,6 +28,128 @@ function freezeMarkedSource<T>(value: T): T {
   return value;
 }
 
+/** ATM resources cannot be dropped into the legacy publisher or activated by caller flags. */
+export const ATM_PUBLICATION_MISSING_CAPABILITIES = Object.freeze([
+  'content_addressed_public_resource_persistence_and_authorized_readback',
+  'explicit_cohort_schedule_activation_independent_of_exam1_result',
+  'abi4_trusted_capture_registration_and_result_activation',
+] as const);
+
+export class AtmPublicationPreparationError extends Error {
+  readonly code = 'ATM_PUBLICATION_PREPARATION_REQUIRED';
+  readonly missingCapabilities = ATM_PUBLICATION_MISSING_CAPABILITIES;
+  constructor() {
+    super(
+      'ATM/ABI4 publication blocked before database access: ' +
+        ATM_PUBLICATION_MISSING_CAPABILITIES.join(', ') +
+        '. Source validation remains available.',
+    );
+  }
+}
+function publicationRecord(value: unknown): Record<string, unknown> | null {
+  return value !== null && typeof value === 'object' && !Array.isArray(value)
+    ? (value as Record<string, unknown>)
+    : null;
+}
+function atmEvaluationMarker(value: unknown): boolean {
+  const spec = publicationRecord(value);
+  if (!spec) return false;
+  if ('semantic_profile_digest' in spec) return true;
+  const contract = publicationRecord(spec.execution_contract);
+  return contract?.version === 4 || contract?.version === '4';
+}
+function atmCheckpointMarker(value: unknown): boolean {
+  const definition = publicationRecord(value);
+  return (
+    !!definition &&
+    (atmEvaluationMarker(definition) ||
+      (Array.isArray(definition.tasks) &&
+        definition.tasks.some((task) => {
+          const item = publicationRecord(task);
+          return !!item && atmEvaluationMarker(item.evaluationSpec);
+        })))
+  );
+}
+/** Keep the ATM exclusion invariant stable across awaits without invoking input getters.
+ * Plain legacy finite numbers (including CPU fractions) and absent/undefined fields retain their values. */
+function capturePublicationData<T>(value: T, active = new Set<object>()): T {
+  if (
+    value === null ||
+    value === undefined ||
+    typeof value === 'string' ||
+    typeof value === 'boolean'
+  )
+    return value;
+  if (typeof value === 'number' && Number.isFinite(value)) return value;
+  if (typeof value !== 'object')
+    throw new Error('Curriculum publication requires plain finite data without accessors.');
+  const object = value as object,
+    prototype = Object.getPrototypeOf(object);
+  if (
+    (!Array.isArray(value) && prototype !== Object.prototype && prototype !== null) ||
+    active.has(object)
+  )
+    throw new Error('Curriculum publication requires plain finite data without cycles.');
+  const descriptors = Object.getOwnPropertyDescriptors(object),
+    names = Object.keys(descriptors);
+  if (
+    Reflect.ownKeys(descriptors).length !== names.length ||
+    names.some((name) => !Object.hasOwn(descriptors[name]!, 'value'))
+  )
+    throw new Error('Curriculum publication requires plain finite data without accessors.');
+  active.add(object);
+  try {
+    if (Array.isArray(value)) {
+      const length = descriptors.length?.value as unknown;
+      if (
+        typeof length !== 'number' ||
+        !Number.isSafeInteger(length) ||
+        length < 0 ||
+        names.length !== length + 1 ||
+        Array.from({ length }, (_, index) => String(index)).some(
+          (name) => !Object.hasOwn(descriptors, name),
+        )
+      )
+        throw new Error('Curriculum publication requires complete plain arrays.');
+      return Object.freeze(
+        Array.from({ length }, (_, index) =>
+          capturePublicationData(descriptors[String(index)]!.value, active),
+        ),
+      ) as T;
+    }
+    if (names.some((name) => descriptors[name]!.enumerable !== true))
+      throw new Error('Curriculum publication requires enumerable plain data.');
+    const copy = Object.create(prototype) as Record<string, unknown>;
+    for (const name of names)
+      Object.defineProperty(copy, name, {
+        value: capturePublicationData(descriptors[name]!.value, active),
+        enumerable: true,
+        writable: true,
+        configurable: true,
+      });
+    return Object.freeze(copy) as T;
+  } finally {
+    active.delete(object);
+  }
+}
+
+function assertAtmPublicationPrepared(
+  curriculum: Curriculum<CheckpointDefinition>,
+  evaluations: readonly EvaluationProjection[] | undefined,
+): void {
+  if (
+    curriculum.nodes.some((node) => 'projectSource' in node) ||
+    evaluations?.some(
+      (evaluation) =>
+        atmEvaluationMarker(evaluation.spec) ||
+        atmCheckpointMarker(evaluation.checkpoint) ||
+        atmCheckpointMarker(evaluation.spec.checkpoint_definition),
+    )
+  ) {
+    throw new AtmPublicationPreparationError();
+  }
+}
+
 /** A draft is a validated source receipt, with no incomplete node projections. */
 export async function importCurriculum(
   db: OperationalDatabase,
@@ -35,19 +157,22 @@ export async function importCurriculum(
   gitCommitSha: string,
   evaluations?: EvaluationProjection[],
 ) {
+  // Exact source/preparation boundary: never create even a draft receipt that loses ATM resources.
+  const input = capturePublicationData({ curriculum, evaluations });
+  assertAtmPublicationPrepared(input.curriculum, input.evaluations);
   // Capture marked projections before the first await. There is no publication/default authority here.
   // Only marked source takes this new snapshot path. Do not freeze/mutate caller objects.
-  const markedSource = curriculum.nodes.some(
+  const markedSource = input.curriculum.nodes.some(
     (node) =>
       node.checkpoint?.policyVersion === 3 ||
       (node.checkpoint && Object.hasOwn(node.checkpoint, 'examScoring')),
   );
   const source: Curriculum<CheckpointDefinition> = markedSource
     ? freezeMarkedSource(
-        JSON.parse(checkpointCanonicalJson(curriculum)) as Curriculum<CheckpointDefinition>,
+        JSON.parse(checkpointCanonicalJson(input.curriculum)) as Curriculum<CheckpointDefinition>,
       )
-    : curriculum;
-  const projections = evaluations?.map((evaluation) => {
+    : input.curriculum;
+  const projections = input.evaluations?.map((evaluation) => {
     const definition = evaluation.checkpoint;
     const nested = evaluation.spec.checkpoint_definition as Record<string, unknown> | undefined;
     const marked =
