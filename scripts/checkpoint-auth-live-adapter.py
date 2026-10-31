@@ -87,7 +87,7 @@ def validate_effective(c,plan,expected_images):
         if '/'+plan.database not in json.dumps(c['services'][name].get('environment',{})):raise scope.ScopeError('Split product/auth/storage database')
 
 
-GATE = "import os,sys; token=sys.stdin.buffer.read(1); sys.exit(0) if token!=b'1' else os.execvpe(sys.argv[1],sys.argv[1:],os.environ)"
+GATE = "import os,sys; token=os.read(0,1); sys.exit(0) if token!=b'1' else os.execvpe(sys.argv[1],sys.argv[1:],os.environ)"
 
 
 UNRELATED_DIRTY_ALLOWLIST=frozenset({

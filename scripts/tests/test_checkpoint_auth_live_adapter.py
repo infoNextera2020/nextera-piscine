@@ -1,7 +1,9 @@
-"""No real process/socket/provider is used. Only deterministic scope and command tests."""
+"""Injected scope contracts and public local subprocess gate tests; no sockets/providers."""
 from pathlib import Path
 from unittest.mock import patch, Mock, MagicMock, call
 import importlib.util
+import os
+import subprocess
 import sys
 import json
 import hashlib
@@ -16,6 +18,62 @@ class FakeCommands:
     def run(self,args,**kwargs):
         self.calls.append((args,kwargs))
         return b'expected-head\n' if args[:2]==['git','rev-parse'] else ('\n'.join('new-'+str(i) for i in range(8))+'\n').encode() if args[:3]==['docker','ps','-aq'] else b''
+
+
+class NativeCommandGateTests(unittest.TestCase):
+    CHILD = r"from pathlib import Path;import sys;Path(sys.argv[1]).write_text('executed');sys.stdout.buffer.write(b'child-executed\x00'+sys.stdin.buffer.read())"
+
+    def test_valid_gate_preserves_exact_small_large_nul_and_empty_stdin_after_identity_journal(self):
+        payloads = [('small', b'{"public":"gate payload"}'),
+                    ('large', bytes(range(256)) * 4096),
+                    ('nul', b'\x00first\x00middle\xfflast\x00'), ('empty', b'')]
+        for name, payload in payloads:
+            with self.subTest(payload=name), tempfile.TemporaryDirectory(prefix='public-native-command-gate-') as directory:
+                marker = Path(directory) / 'child-executed'
+                observed = []
+                write_identity = h.protected
+                def record_identity(path, value):
+                    if not value['finished']:
+                        self.assertFalse(marker.exists(), 'Child ran before identity was journaled')
+                    write_identity(path, value)
+                    observed.append(value['finished'])
+                with patch.object(h, 'protected', side_effect=record_identity):
+                    output = h.Commands().run([sys.executable, '-c', self.CHILD, str(marker)],
+                        env={'PATH': '/usr/bin:/bin', 'LANG': 'C.UTF-8', 'CHECKPOINT_REHEARSAL_CONTROL': directory},
+                        cwd=directory, input=payload, timeout=5)
+                expected = b'child-executed\x00' + payload
+                self.assertEqual(len(output), len(expected), 'Gate consumed or added payload bytes')
+                self.assertTrue(output == expected, 'Gate changed child stdin bytes')
+                self.assertEqual(marker.read_text(), 'executed')
+                self.assertEqual(observed, [False, True])
+                identity = json.loads((Path(directory) / 'phase-process.json').read_text())
+                self.assertTrue(identity['finished'])
+                self.assertEqual(identity['cwd'], directory)
+                self.assertEqual(identity['uid'], os.getuid())
+                self.assertGreater(identity['pid'], 0)
+                self.assertTrue(identity['ticks'])
+
+    def test_invalid_token_or_eof_never_executes_the_native_child(self):
+        for data in [b'', b'01public', b'\x001public', b'\n1public']:
+            with self.subTest(gate=data[:1]), tempfile.TemporaryDirectory(prefix='public-native-command-gate-') as directory:
+                marker = Path(directory) / 'child-executed'
+                result = subprocess.run([sys.executable, '-c', h.GATE, sys.executable, '-c', self.CHILD, str(marker)],
+                    env={'PATH': '/usr/bin:/bin', 'LANG': 'C.UTF-8'}, cwd=directory, input=data,
+                    capture_output=True, timeout=5)
+                self.assertEqual(result.returncode, 0)
+                self.assertEqual(result.stdout, b'')
+                self.assertEqual(result.stderr, b'')
+                self.assertFalse(marker.exists())
+
+    def test_identity_journal_failure_sends_eof_and_never_executes_native_child(self):
+        with tempfile.TemporaryDirectory(prefix='public-native-command-gate-') as directory:
+            marker = Path(directory) / 'child-executed'
+            with patch.object(h, 'protected', side_effect=OSError('public injected journal failure')):
+                with self.assertRaisesRegex(OSError, 'public injected journal failure'):
+                    h.Commands().run([sys.executable, '-c', self.CHILD, str(marker)],
+                        env={'PATH': '/usr/bin:/bin', 'LANG': 'C.UTF-8', 'CHECKPOINT_REHEARSAL_CONTROL': directory},
+                        cwd=directory, input=b'public payload', timeout=5)
+            self.assertFalse(marker.exists())
 
 
 class AdapterTests(unittest.TestCase):
