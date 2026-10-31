@@ -49,8 +49,11 @@ type Snapshot struct {
 	Source        Source `json:"artifact"`
 	TestOnly      bool   `json:"test_only,omitempty"`
 	// Verified claim identity is host-only and never changes frozen snapshot bytes.
-	VerifiedJob    string `json:"-"`
-	VerifiedDigest string `json:"-"`
+	VerifiedJob          string `json:"-"`
+	VerifiedDigest       string `json:"-"`
+	VerifiedJudgeAttempt string `json:"-"`
+	VerifiedWorker       string `json:"-"`
+	VerifiedGeneration   int64  `json:"-"`
 }
 type Claim struct {
 	Job        string          `json:"job_id"`
@@ -109,7 +112,7 @@ func Verify(c Claim, catalog artifact.Catalog, runner, layouts string, local boo
 		return s, "", ErrIdentity
 	}
 	contract, contractErr := artifact.ContractFor(s.PackID, entry.Contract)
-	if contractErr != nil || !reflect.DeepEqual(s.Contract, entry.Contract) || s.Source.Filename != contract.File || !sourceKeyMatches(s, contract) || len(s.Node) > 100 || !regexp.MustCompile(`^[a-z0-9]+(?:-[a-z0-9]+)*$`).MatchString(s.Node) || (entry.Contract == nil && s.Node != contract.Item) {
+	if contractErr != nil || !artifact.ValidSemanticProfile(contract, s.SemanticProfileDigest) || !bytes.Equal(s.SemanticProfileDigest, entry.SemanticProfileDigest) || !reflect.DeepEqual(s.Contract, entry.Contract) || s.Source.Filename != contract.File || !sourceKeyMatches(s, contract) || len(s.Node) > 100 || !regexp.MustCompile(`^[a-z0-9]+(?:-[a-z0-9]+)*$`).MatchString(s.Node) || (entry.Contract == nil && s.Node != contract.Item) {
 		return s, "", ErrIdentity
 	}
 	layout := filepath.Join(layouts, s.PackID)
@@ -130,6 +133,9 @@ func Verify(c Claim, catalog artifact.Catalog, runner, layouts string, local boo
 	}
 	s.VerifiedJob = c.Job
 	s.VerifiedDigest = c.Digest
+	s.VerifiedJudgeAttempt = c.Attempt
+	s.VerifiedWorker = c.Worker
+	s.VerifiedGeneration = c.Generation
 	return s, layout, nil
 }
 

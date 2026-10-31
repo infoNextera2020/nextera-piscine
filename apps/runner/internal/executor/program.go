@@ -36,7 +36,7 @@ func compilationPlan(s protocol.Snapshot, source []byte) (map[string][]byte, []s
 		command := "cp -as /opt/go-cache /workspace/cache && mkdir /workspace/piscine /workspace/cmd && cp -- /workspace/" + c.File + " /workspace/piscine/" + c.File + " && cp -- /workspace/function-transport /workspace/cmd/main.go && cd /workspace && GOTOOLCHAIN=local GOPROXY=off GOSUMDB=off GOWORK=off exec go build -trimpath -buildvcs=false -p=1 -ldflags=-buildid= -o /workspace/program ./cmd"
 		return files, []string{"/bin/sh", "-c", command}, nil
 	}
-	if c.Version == 2 {
+	if c.Version == 2 || c.Version == 4 {
 		// A non-main package can make go build emit an archive with exit zero.
 		// Classify that learner input before the binary-transfer integrity check,
 		// preserving exact source bytes and leaving all later syntax to Go build.

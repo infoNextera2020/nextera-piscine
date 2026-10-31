@@ -12,6 +12,7 @@ import (
 	"net/http"
 	"net/url"
 	"nextera.local/runner/internal/artifact"
+	"nextera.local/runner/internal/atm"
 	"nextera.local/runner/internal/feedback"
 	"nextera.local/runner/internal/protocol"
 	"nextera.local/runner/internal/sandbox"
@@ -24,12 +25,14 @@ import (
 )
 
 type Executor struct {
+	ATMContext            *atm.Context
 	Engine                *sandbox.Engine
 	StorageURL, TokenFile string
 	// Injected only by package tests; production uses the existing sandbox engine.
 	engine gradingEngine
 }
 type Result struct {
+	ATM           *atm.Evidence `json:"-"`
 	Verdict, Code string
 	Metrics       map[string]int64
 	Functional    *protocol.FunctionalReport
@@ -167,6 +170,9 @@ func (e Executor) Evaluate(ctx context.Context, s protocol.Snapshot, layout stri
 // Called only after private pack and source verification in Evaluate. Tests use
 // synthetic bytes and fake phases; no learner or sandbox is executed.
 func (e Executor) evaluateLoaded(ctx context.Context, s protocol.Snapshot, source []byte, files map[string][]byte, contract artifact.ExecutionContract) Result {
+	if contract.Version == 4 {
+		return e.evaluateATM(ctx, s, source, files)
+	}
 	inputs, expected, err := casesFor(files, contract)
 	if err != nil {
 		return infrastructure("INCOMPATIBLE_ENVIRONMENT")

@@ -6,6 +6,7 @@ import (
 	"flag"
 	"io"
 	"nextera.local/runner/internal/artifact"
+	"nextera.local/runner/internal/atm"
 	"nextera.local/runner/internal/executor"
 	"nextera.local/runner/internal/protocol"
 	"nextera.local/runner/internal/queue"
@@ -42,6 +43,7 @@ func work(args []string) error {
 	storage := flags.String("storage-url", "", "Supabase Storage endpoint")
 	token := flags.String("storage-token-file", "", "read-only Storage credential file")
 	local := flags.Bool("local-fixtures", false, "disposable fixture database only")
+	atmConfig := flags.String("atm-evidence-config", "", "disabled unless an explicit protected local endpoint/outbox policy is provided")
 	once := flags.Bool("once", false, "process at most one job")
 	publisherConfig := flags.String("functional-publisher-config", "", "disabled unless an explicit protected per-item evaluator/outbox configuration is provided")
 	if flags.Parse(args) != nil || flags.NArg() != 0 {
@@ -52,6 +54,14 @@ func work(args []string) error {
 	queueConfig, publisher, err := localConnections(*local, *publisherConfig, os.Getenv)
 	if err != nil {
 		return artifact.ErrInvalid
+	}
+	atmClient, err := atm.Load(*atmConfig)
+	if err != nil {
+		return artifact.ErrInvalid
+	}
+	var atmSink atmEvidenceSink
+	if atmClient != nil {
+		atmSink = atmClient
 	}
 	catalog, err := artifact.ReadCandidate(*candidate)
 	if err != nil {
@@ -155,6 +165,7 @@ func work(args []string) error {
 			}
 		}()
 		snapshot, layout, verifyErr := protocol.Verify(*claim, catalog, *image, *layouts, *local)
+		mayPersist := true
 		result := executor.Result{Verdict: "system_error", Code: "INCOMPATIBLE_ENVIRONMENT", Metrics: map[string]int64{}}
 		if verifyErr == nil {
 			if client.Start(runCtx, claim) != nil {
@@ -167,9 +178,15 @@ func work(args []string) error {
 				continue
 			}
 			logEvent("evaluation_started", claim, "")
-			result = evaluator.Evaluate(runCtx, snapshot, layout)
+			result, mayPersist = evaluationWithEvidence(runCtx, *claim, snapshot, layout, atmSink, func(ctx context.Context, s protocol.Snapshot, layout string, binding *atm.Context) executor.Result {
+				evaluator.ATMContext = binding
+				return evaluator.Evaluate(ctx, s, layout)
+			})
 		}
-		if runCtx.Err() == nil {
+		if !mayPersist {
+			logEvent("atm_evidence_pending", claim, "")
+		}
+		if runCtx.Err() == nil && mayPersist {
 			// Identical replay handles an ambiguous commit/connection loss. Never replace a
 			// learner outcome with an infrastructure error just because acknowledgement failed.
 			var persistErr error

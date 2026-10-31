@@ -60,10 +60,11 @@ type Environment struct {
 	Generation   Generation `json:"case_generation"`
 }
 type Entry struct {
-	Contract *ExecutionContract `json:"execution_contract,omitempty"`
-	Digest   string             `json:"test_pack_digest"`
-	Artifact *string            `json:"test_pack_artifact"`
-	Runner   string             `json:"runner_image_digest"`
+	SemanticProfileDigest json.RawMessage    `json:"semantic_profile_digest,omitempty"`
+	Contract              *ExecutionContract `json:"execution_contract,omitempty"`
+	Digest                string             `json:"test_pack_digest"`
+	Artifact              *string            `json:"test_pack_artifact"`
+	Runner                string             `json:"runner_image_digest"`
 	Environment
 }
 type Catalog struct {
@@ -76,9 +77,10 @@ type Candidate struct {
 	Catalog  Catalog  `json:"catalog"`
 }
 type Metadata struct {
-	Contract *ExecutionContract `json:"execution_contract,omitempty"`
-	Format   int                `json:"format_version"`
-	ID       string             `json:"test_pack_id"`
+	SemanticProfileDigest json.RawMessage    `json:"semantic_profile_digest,omitempty"`
+	Contract              *ExecutionContract `json:"execution_contract,omitempty"`
+	Format                int                `json:"format_version"`
+	ID                    string             `json:"test_pack_id"`
 	Environment
 }
 type Descriptor struct {
@@ -159,8 +161,8 @@ func (c Catalog) Validate(allowLocal bool) error {
 		return ErrInvalid
 	}
 	for id, e := range c.Packs {
-		_, contractError := ContractFor(id, e.Contract)
-		ok := len(id) <= 100 && itemPattern.MatchString(id) && contractError == nil
+		contract, contractError := ContractFor(id, e.Contract)
+		ok := len(id) <= 100 && itemPattern.MatchString(id) && contractError == nil && ValidSemanticProfile(contract, e.SemanticProfileDigest)
 		if !ok || !digestPattern.MatchString("sha256:"+e.Digest) || !digestPattern.MatchString(e.Runner) || !e.Environment.Valid() {
 			return ErrInvalid
 		}
@@ -217,7 +219,8 @@ func blob(layout string, d Descriptor) ([]byte, error) {
 
 // Verify reads only digest-addressed blobs; it never extracts or runs pack code.
 func Verify(layout, id string, entry Entry) error {
-	if !digestPattern.MatchString("sha256:"+entry.Digest) || !entry.Environment.Valid() {
+	contract, contractErr := ContractFor(id, entry.Contract)
+	if contractErr != nil || !ValidSemanticProfile(contract, entry.SemanticProfileDigest) || !digestPattern.MatchString("sha256:"+entry.Digest) || !entry.Environment.Valid() {
 		return ErrInvalid
 	}
 	format, err := limitedFile(filepath.Join(layout, "oci-layout"), 1024)
@@ -277,7 +280,7 @@ func Verify(layout, id string, entry Entry) error {
 		}
 		if h.Name == "metadata.json" {
 			var meta Metadata
-			if Strict(data, &meta) != nil || meta.Format != 1 || meta.ID != id || !reflect.DeepEqual(meta.Environment, entry.Environment) || !reflect.DeepEqual(meta.Contract, entry.Contract) {
+			if Strict(data, &meta) != nil || meta.Format != 1 || meta.ID != id || !reflect.DeepEqual(meta.Environment, entry.Environment) || !reflect.DeepEqual(meta.Contract, entry.Contract) || !ValidSemanticProfile(contract, meta.SemanticProfileDigest) || !bytes.Equal(meta.SemanticProfileDigest, entry.SemanticProfileDigest) {
 				return ErrInvalid
 			}
 		}
