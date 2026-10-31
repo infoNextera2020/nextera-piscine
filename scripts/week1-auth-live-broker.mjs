@@ -1975,6 +1975,146 @@ export function projectWeek1WebCredentials(control, broker, config) {
     maxCookieBytes: control.spec.maxCookieBytes,
   };
 }
+const WEEK1_AUTH_NUMERIC_ENV = Object.freeze({
+  GOTRUE_API_PORT: [9999, 9999],
+  GOTRUE_JWT_EXP: [1, 300],
+  GOTRUE_SMTP_PORT: [2500, 2500],
+});
+const WEEK1_AUTH_BOOLEAN_ENV = Object.freeze([
+  'GOTRUE_DISABLE_SIGNUP',
+  'GOTRUE_EXTERNAL_EMAIL_ENABLED',
+  'GOTRUE_EXTERNAL_ANONYMOUS_USERS_ENABLED',
+  'GOTRUE_MAILER_AUTOCONFIRM',
+  'GOTRUE_EXTERNAL_PHONE_ENABLED',
+  'GOTRUE_SMS_AUTOCONFIRM',
+]);
+const WEEK1_AUTH_STRING_ENV = Object.freeze([
+  'GOTRUE_API_HOST',
+  'API_EXTERNAL_URL',
+  'GOTRUE_DB_DRIVER',
+  'GOTRUE_DB_DATABASE_URL',
+  'GOTRUE_SITE_URL',
+  'GOTRUE_URI_ALLOW_LIST',
+  'GOTRUE_JWT_ADMIN_ROLES',
+  'GOTRUE_JWT_AUD',
+  'GOTRUE_JWT_DEFAULT_GROUP_NAME',
+  'GOTRUE_JWT_SECRET',
+  'GOTRUE_JWT_ISSUER',
+  'GOTRUE_SMTP_ADMIN_EMAIL',
+  'GOTRUE_SMTP_HOST',
+  'GOTRUE_SMTP_USER',
+  'GOTRUE_SMTP_PASS',
+  'GOTRUE_SMTP_SENDER_NAME',
+  'GOTRUE_MAILER_URLPATHS_INVITE',
+  'GOTRUE_MAILER_URLPATHS_CONFIRMATION',
+  'GOTRUE_MAILER_URLPATHS_RECOVERY',
+  'GOTRUE_MAILER_URLPATHS_EMAIL_CHANGE',
+]);
+const WEEK1_EMPTY_SMTP_ENV = Object.freeze([
+  'GOTRUE_SMTP_HOST',
+  'GOTRUE_SMTP_USER',
+  'GOTRUE_SMTP_PASS',
+]);
+export function validateWeek1AuthEnvironment(environment, spec) {
+  const keys = [
+    ...Object.keys(WEEK1_AUTH_NUMERIC_ENV),
+    ...WEEK1_AUTH_BOOLEAN_ENV,
+    ...WEEK1_AUTH_STRING_ENV,
+  ];
+  check(same(Object.keys(environment ?? {}).sort(), keys.sort()), 'AUTH_ENV_KEYS');
+  for (const [key, value] of Object.entries(environment))
+    check(
+      typeof value === 'string' &&
+        !/[$\r\n\0]/.test(value) &&
+        (value.length > 0 || WEEK1_EMPTY_SMTP_ENV.includes(key)),
+      'AUTH_ENV_REQUIRED',
+    );
+  for (const [key, [minimum, maximum]] of Object.entries(WEEK1_AUTH_NUMERIC_ENV)) {
+    const value = environment[key];
+    check(
+      /^(0|[1-9][0-9]*)$/.test(value) &&
+        Number.isSafeInteger(Number(value)) &&
+        Number(value) >= minimum &&
+        Number(value) <= maximum,
+      'AUTH_ENV_NUMBER',
+    );
+  }
+  for (const key of WEEK1_AUTH_BOOLEAN_ENV)
+    check(['true', 'false'].includes(environment[key]), 'AUTH_ENV_BOOLEAN');
+  check(
+    WEEK1_EMPTY_SMTP_ENV.every((key) => environment[key] === ''),
+    'AUTH_ENV_SMTP_DISABLED',
+  );
+  check(
+    environment.GOTRUE_JWT_EXP === String(spec.authJwtSeconds) &&
+      environment.GOTRUE_MAILER_AUTOCONFIRM === String(spec.policy.emailConfirmed) &&
+      environment.GOTRUE_DISABLE_SIGNUP === 'true' &&
+      environment.GOTRUE_EXTERNAL_EMAIL_ENABLED === 'true' &&
+      environment.GOTRUE_EXTERNAL_ANONYMOUS_USERS_ENABLED === 'false' &&
+      environment.GOTRUE_EXTERNAL_PHONE_ENABLED === 'false',
+    'AUTH_ENV_POLICY',
+  );
+  return true;
+}
+export function prepareWeek1ComposeEnvironment(template, publicDefaults, spec) {
+  const values = {
+    ...publicDefaults,
+    POSTGRES_DB: WEEK1_TARGET.database,
+    POSTGRES_HOST: 'db',
+    POSTGRES_PORT: '5432',
+    SUPABASE_PUBLIC_URL: WEEK1_TARGET.authOrigin,
+    API_EXTERNAL_URL: WEEK1_TARGET.authOrigin + '/auth/v1',
+    SITE_URL: WEEK1_TARGET.origin,
+    ADDITIONAL_REDIRECT_URLS: WEEK1_TARGET.origin,
+    DISABLE_SIGNUP: 'true',
+    ENABLE_ANONYMOUS_USERS: 'false',
+    ENABLE_PHONE_SIGNUP: 'false',
+    ENABLE_EMAIL_SIGNUP: 'true',
+    ENABLE_EMAIL_AUTOCONFIRM: String(spec.policy.emailConfirmed),
+    JWT_EXPIRY: String(spec.authJwtSeconds),
+  };
+  // Keep the pinned public numeric SMTP_PORT (2500), even with outbound mail disabled.
+  for (const key of [
+    'SMTP_HOST',
+    'SMTP_USER',
+    'SMTP_PASS',
+    'OPENAI_API_KEY',
+    'LOGFLARE_PUBLIC_ACCESS_TOKEN',
+    'LOGFLARE_PRIVATE_ACCESS_TOKEN',
+  ])
+    values[key] = '';
+  for (const key of [
+    'POSTGRES_PASSWORD',
+    'JWT_SECRET',
+    'PG_META_CRYPTO_KEY',
+    'DASHBOARD_PASSWORD',
+    'S3_PROTOCOL_ACCESS_KEY_SECRET',
+    'SECRET_KEY_BASE',
+    'REALTIME_DB_ENC_KEY',
+    'VAULT_ENC_KEY',
+    'S3_PROTOCOL_ACCESS_KEY_ID',
+    'ANON_KEY',
+    'SERVICE_ROLE_KEY',
+  ])
+    values[key] = 'SOURCE_REVIEW_PLACEHOLDER_NOT_FOR_START';
+  for (const value of Object.values(values))
+    check(typeof value === 'string' && !/[\r\n\0]/.test(value), 'PUBLIC_ENV_SCALAR');
+  const compose = buildWeek1Compose(template, spec.images, spec);
+  const authEnvironment = Object.fromEntries(
+    Object.entries(compose.services.auth.environment).map(([key, value]) => {
+      check(['string', 'number', 'boolean'].includes(typeof value), 'AUTH_ENV_REQUIRED');
+      return [
+        key,
+        String(value).replace(/\$\{([A-Z0-9_]+)\}/g, (_match, name) => {
+          check(typeof values[name] === 'string', 'AUTH_ENV_REFERENCE');
+          return values[name];
+        }),
+      ];
+    }),
+  );
+  validateWeek1AuthEnvironment(authEnvironment, spec);
+  return { compose, values, authEnvironment };
+}
 export function buildWeek1Compose(template, images, binding) {
   check(
     HASH.test(binding?.scopeSha256 ?? '') && HASH.test(binding?.sourceLockSha256 ?? ''),
@@ -2036,7 +2176,7 @@ export function buildWeek1Compose(template, images, binding) {
   c.networks = { default: { name: WEEK1_TARGET.project + '_default' } };
   return c;
 }
-export function validateWeek1EffectiveCompose(c, images) {
+export function validateWeek1EffectiveCompose(c, images, spec) {
   check(
     c.name === WEEK1_TARGET.project &&
       same(Object.keys(c.services ?? {}).sort(), [...WEEK1_SERVICES].sort()),
@@ -2078,6 +2218,7 @@ export function validateWeek1EffectiveCompose(c, images) {
       JSON.stringify(c.services[name].environment).includes('/' + WEEK1_TARGET.database),
       'EFFECTIVE_DATABASE',
     );
+  validateWeek1AuthEnvironment(c.services.auth.environment, spec);
   return true;
 }
 
@@ -2194,54 +2335,14 @@ export async function executePhase(phase, run, repo, operatorOutput) {
     generic.copyVerifiedPublicTemplates(control.template, run + '/stack', lock.templates);
     const dotenv = req('dotenv'),
       yaml = req('yaml'),
-      values = dotenv.parse(fs.readFileSync(run + '/stack/.env.example'));
-    Object.assign(values, {
-      POSTGRES_DB: WEEK1_TARGET.database,
-      POSTGRES_HOST: 'db',
-      POSTGRES_PORT: '5432',
-      SUPABASE_PUBLIC_URL: WEEK1_TARGET.authOrigin,
-      API_EXTERNAL_URL: WEEK1_TARGET.authOrigin + '/auth/v1',
-      SITE_URL: WEEK1_TARGET.origin,
-      ADDITIONAL_REDIRECT_URLS: WEEK1_TARGET.origin,
-      DISABLE_SIGNUP: 'true',
-      ENABLE_ANONYMOUS_USERS: 'false',
-      ENABLE_PHONE_SIGNUP: 'false',
-      ENABLE_EMAIL_SIGNUP: 'true',
-      ENABLE_EMAIL_AUTOCONFIRM: String(spec.policy.emailConfirmed),
-      JWT_EXPIRY: String(spec.authJwtSeconds),
-    });
-    for (const k of [
-      'SMTP_HOST',
-      'SMTP_PORT',
-      'SMTP_USER',
-      'SMTP_PASS',
-      'OPENAI_API_KEY',
-      'LOGFLARE_PUBLIC_ACCESS_TOKEN',
-      'LOGFLARE_PRIVATE_ACCESS_TOKEN',
-    ])
-      values[k] = '';
-    const c = buildWeek1Compose(
-      yaml.parse(fs.readFileSync(run + '/stack/docker-compose.yml', 'utf8')),
-      spec.images,
-      spec,
-    );
+      { compose: c, values } = prepareWeek1ComposeEnvironment(
+        yaml.parse(fs.readFileSync(run + '/stack/docker-compose.yml', 'utf8')),
+        dotenv.parse(fs.readFileSync(run + '/stack/.env.example')),
+        spec,
+      );
     generic.writePrivateText(run + '/stack/docker-compose.yml', yaml.stringify(c));
     writeWeek1PublicJwtTemplate(run + '/stack/volumes/db/jwt.sql', generic.DB_JWT_INIT_SQL);
     generic.validateInitEnvironment([generic.DB_JWT_INIT_SQL], c.services.db.environment);
-    for (const key of [
-      'POSTGRES_PASSWORD',
-      'JWT_SECRET',
-      'PG_META_CRYPTO_KEY',
-      'DASHBOARD_PASSWORD',
-      'S3_PROTOCOL_ACCESS_KEY_SECRET',
-      'SECRET_KEY_BASE',
-      'REALTIME_DB_ENC_KEY',
-      'VAULT_ENC_KEY',
-      'S3_PROTOCOL_ACCESS_KEY_ID',
-      'ANON_KEY',
-      'SERVICE_ROLE_KEY',
-    ])
-      values[key] = 'SOURCE_REVIEW_PLACEHOLDER_NOT_FOR_START';
     writePrivateText(
       run + '/stack/.env',
       Object.entries(values)
@@ -2278,7 +2379,7 @@ export async function executePhase(phase, run, repo, operatorOutput) {
         },
       ),
     );
-    validateWeek1EffectiveCompose(effective, spec.images);
+    validateWeek1EffectiveCompose(effective, spec.images, spec);
     save('effective-compose-before-keys.private.json', effective);
     // Guard is revalidated immediately before the first random/secret operation.
     checkTime();

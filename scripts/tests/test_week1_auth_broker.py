@@ -2,6 +2,7 @@
 import importlib.util
 from pathlib import Path
 import sys
+import tempfile
 import unittest
 from unittest.mock import patch, Mock
 
@@ -66,6 +67,45 @@ class FakePort:
 
 
 class BrokerSourceTests(unittest.TestCase):
+    def test_public_source_template_proof_precedes_shared_typed_renderer(self):
+        with tempfile.TemporaryDirectory(prefix='week1-public-source-test-') as directory:
+            template = Path(directory)
+            public_files = {'.env.example': b'SMTP_PORT=2500\n', 'docker-compose.yml': b'services: {}\n'}
+            for name, content in public_files.items():
+                (template / name).write_bytes(content)
+            adapter = broker.LiveBroker.__new__(broker.LiveBroker)
+            adapter.template, adapter.node = template, '/fake-reviewed-node'
+            adapter.lock = {'templates': {name: broker.sha(content) for name, content in public_files.items()}}
+            adapter.spec = {'scopeSha256': 'a' * 64}
+            result = {'status': 'validated_not_authorized', 'scopeSha256': 'a' * 64, 'runtimeReady': False}
+            adapter.command = Mock(return_value=broker.json.dumps(result).encode())
+            adapter.validate_public_source()
+            args, options = adapter.command.call_args
+            self.assertEqual(args[0], [adapter.node, '--input-type=module', '-e', broker.SOURCE_SPEC_VALIDATE_JS, str(template)])
+            self.assertEqual(broker.json.loads(options['data']), adapter.spec)
+            self.assertEqual(options['timeout'], 10)
+            adapter.command.reset_mock()
+            (template / '.env.example').write_bytes(b'SMTP_PORT=\n')
+            with self.assertRaisesRegex(broker.ScopeError, 'template mismatch'):
+                adapter.validate_public_source()
+            adapter.command.assert_not_called()
+            (template / '.env.example').unlink()
+            (template / '.env.example').symlink_to(template / 'docker-compose.yml')
+            with self.assertRaisesRegex(broker.ScopeError, 'template mismatch'):
+                adapter.validate_public_source()
+            adapter.command.assert_not_called()
+
+    def test_public_source_renderer_failure_cannot_be_treated_as_success(self):
+        adapter = broker.LiveBroker.__new__(broker.LiveBroker)
+        adapter.template, adapter.node = Path('/public-fake-template'), '/fake-reviewed-node'
+        adapter.lock, adapter.spec = {'templates': {}}, {'scopeSha256': 'a' * 64}
+        adapter.command = Mock(side_effect=RuntimeError('fake typed Auth env rejection'))
+        with self.assertRaisesRegex(RuntimeError, 'typed Auth env rejection'):
+            adapter.validate_public_source()
+        adapter.command = Mock(return_value=b'{"runtimeReady":true}')
+        with self.assertRaisesRegex(broker.ScopeError, 'source validation failed'):
+            adapter.validate_public_source()
+
     def test_browser_driver_waits_without_sending_capability_to_command_capture(self):
         p = proposal()
         p['registrationDriver'] = 'operator-browser-learner-b'

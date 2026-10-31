@@ -231,8 +231,13 @@ def isolated_build_plan(bundler, plan):
     return copied
 
 SOURCE_SPEC_VALIDATE_JS = """import fs from 'node:fs';
-import {prepareWeek1AuthBroker} from './scripts/week1-auth-live-broker.mjs';
+import {createRequire} from 'node:module';
+import {prepareWeek1AuthBroker,prepareWeek1ComposeEnvironment} from './scripts/week1-auth-live-broker.mjs';
 const p=prepareWeek1AuthBroker(JSON.parse(fs.readFileSync(0,'utf8')));
+const req=createRequire(process.cwd()+'/package.json'), template=process.argv[1];
+if(!template) throw new Error('Pinned public template directory required.');
+prepareWeek1ComposeEnvironment(req('yaml').parse(fs.readFileSync(template+'/docker-compose.yml','utf8')),
+  req('dotenv').parse(fs.readFileSync(template+'/.env.example')),p);
 process.stdout.write(JSON.stringify({status:'validated_not_authorized',scopeSha256:p.scopeSha256,runtimeReady:false}));
 """
 
@@ -304,6 +309,17 @@ class LiveBroker:
             raise ScopeError('Changed immutable deadline.')
         return c
 
+    def validate_public_source(self):
+        # Prove the public template identities before Node can read either file.
+        for name, expected in self.lock['templates'].items():
+            p = self.template / name
+            if p.is_symlink() or not p.resolve().is_relative_to(self.template) or sha(p.read_bytes()) != expected:
+                raise ScopeError('Pinned public template mismatch.')
+        validated = json.loads(self.command([self.node, '--input-type=module', '-e', SOURCE_SPEC_VALIDATE_JS,
+                                            str(self.template)], data=json.dumps(self.spec).encode(), timeout=10))
+        if validated != {'status': 'validated_not_authorized', 'scopeSha256': self.spec['scopeSha256'], 'runtimeReady': False}:
+            raise ScopeError('Public broker source validation failed.')
+
     def preflight(self):
         admit(self.spec, self.owner, self.now())
         if self.spec.get('hostGuardDriver') != 'native-windows-parent-v1' or self.host is None or not self.host.live():
@@ -334,14 +350,7 @@ class LiveBroker:
                 raise ScopeError('Source lock mismatch.')
         # Validate the FULL public broker policy/mode before reserving any target,
         # starting either guard or minting secrets. Module import performs no I/O.
-        validated = json.loads(self.command([self.node, '--input-type=module', '-e', SOURCE_SPEC_VALIDATE_JS],
-                                           data=json.dumps(self.spec).encode(), timeout=10))
-        if validated != {'status': 'validated_not_authorized', 'scopeSha256': self.spec['scopeSha256'], 'runtimeReady': False}:
-            raise ScopeError('Public broker source validation failed.')
-        for name, expected in self.lock['templates'].items():
-            p = self.template / name
-            if p.is_symlink() or not p.resolve().is_relative_to(self.template) or sha(p.read_bytes()) != expected:
-                raise ScopeError('Pinned public template mismatch.')
+        self.validate_public_source()
         for image in self.spec['images'].values():
             self.command(['docker', 'image', 'inspect', image])
         if self.command(['docker', 'ps', '-aq', '--filter', 'label=com.docker.compose.project=' + PROJECT]).strip():

@@ -32,6 +32,8 @@ import {
   applyWeek1Draft,
   projectWeek1WebCredentials,
   buildWeek1Compose,
+  prepareWeek1ComposeEnvironment,
+  validateWeek1AuthEnvironment,
   validateWeek1EffectiveCompose,
   writeWeek1Private,
   cleanupWeek1AuthAccess,
@@ -871,21 +873,127 @@ test('private writes use exclusive NOFOLLOW descriptors,0600,fsyncfile+directory
   assert.equal(calls[0][3], 0o600);
   assert.equal(calls.filter((v) => v[0] === 'fsync').length, 2);
 });
+function publicAuthFixture() {
+  const defaults = {
+    SMTP_PORT: '2500',
+    SMTP_HOST: 'public-example-mail',
+    SMTP_USER: 'public-example-user',
+    SMTP_PASS: 'public-example-password',
+    SMTP_ADMIN_EMAIL: 'admin@example.invalid',
+    SMTP_SENDER_NAME: 'public-example-sender',
+    ENABLE_PHONE_AUTOCONFIRM: 'true',
+    MAILER_URLPATHS_INVITE: '/auth/v1/verify',
+    MAILER_URLPATHS_CONFIRMATION: '/auth/v1/verify',
+    MAILER_URLPATHS_RECOVERY: '/auth/v1/verify',
+    MAILER_URLPATHS_EMAIL_CHANGE: '/auth/v1/verify',
+  };
+  const environment = {
+    GOTRUE_API_HOST: '0.0.0.0',
+    GOTRUE_API_PORT: 9999,
+    API_EXTERNAL_URL: '${API_EXTERNAL_URL}',
+    GOTRUE_DB_DRIVER: 'postgres',
+    GOTRUE_DB_DATABASE_URL:
+      'postgres://supabase_auth_admin:${POSTGRES_PASSWORD}@${POSTGRES_HOST}:${POSTGRES_PORT}/${POSTGRES_DB}',
+    GOTRUE_SITE_URL: '${SITE_URL}',
+    GOTRUE_URI_ALLOW_LIST: '${ADDITIONAL_REDIRECT_URLS}',
+    GOTRUE_DISABLE_SIGNUP: '${DISABLE_SIGNUP}',
+    GOTRUE_JWT_ADMIN_ROLES: 'service_role',
+    GOTRUE_JWT_AUD: 'authenticated',
+    GOTRUE_JWT_DEFAULT_GROUP_NAME: 'authenticated',
+    GOTRUE_JWT_EXP: '${JWT_EXPIRY}',
+    GOTRUE_JWT_SECRET: '${JWT_SECRET}',
+    GOTRUE_JWT_ISSUER: '${API_EXTERNAL_URL}',
+    GOTRUE_EXTERNAL_EMAIL_ENABLED: '${ENABLE_EMAIL_SIGNUP}',
+    GOTRUE_EXTERNAL_ANONYMOUS_USERS_ENABLED: '${ENABLE_ANONYMOUS_USERS}',
+    GOTRUE_MAILER_AUTOCONFIRM: '${ENABLE_EMAIL_AUTOCONFIRM}',
+    GOTRUE_SMTP_ADMIN_EMAIL: '${SMTP_ADMIN_EMAIL}',
+    GOTRUE_SMTP_HOST: '${SMTP_HOST}',
+    GOTRUE_SMTP_PORT: '${SMTP_PORT}',
+    GOTRUE_SMTP_USER: '${SMTP_USER}',
+    GOTRUE_SMTP_PASS: '${SMTP_PASS}',
+    GOTRUE_SMTP_SENDER_NAME: '${SMTP_SENDER_NAME}',
+    GOTRUE_MAILER_URLPATHS_INVITE: '${MAILER_URLPATHS_INVITE}',
+    GOTRUE_MAILER_URLPATHS_CONFIRMATION: '${MAILER_URLPATHS_CONFIRMATION}',
+    GOTRUE_MAILER_URLPATHS_RECOVERY: '${MAILER_URLPATHS_RECOVERY}',
+    GOTRUE_MAILER_URLPATHS_EMAIL_CHANGE: '${MAILER_URLPATHS_EMAIL_CHANGE}',
+    GOTRUE_EXTERNAL_PHONE_ENABLED: '${ENABLE_PHONE_SIGNUP}',
+    GOTRUE_SMS_AUTOCONFIRM: '${ENABLE_PHONE_AUTOCONFIRM}',
+  };
+  const template = {
+    services: Object.fromEntries(
+      WEEK1_SERVICES.map((name) => [
+        name,
+        {
+          environment:
+            name === 'auth' ? environment : { DATABASE_URL: 'postgres://fake@db/postgres' },
+          volumes: [],
+          image: 'old',
+          ports: [],
+        },
+      ]),
+    ),
+  };
+  return { template, defaults };
+}
+test('shared stage/preflight renderer preserves numeric public SMTP port with outbound mail disabled', () => {
+  const { template, defaults } = publicAuthFixture(),
+    before = globalThis.structuredClone({ template, defaults }),
+    s = spec(),
+    out = prepareWeek1ComposeEnvironment(template, defaults, s);
+  assert.equal(out.values.SMTP_PORT, '2500');
+  assert.equal(out.authEnvironment.GOTRUE_SMTP_PORT, '2500');
+  assert.equal(Object.keys(out.authEnvironment).length, 29);
+  for (const key of ['SMTP_HOST', 'SMTP_USER', 'SMTP_PASS']) assert.equal(out.values[key], '');
+  assert.equal(out.values.JWT_SECRET, 'SOURCE_REVIEW_PLACEHOLDER_NOT_FOR_START');
+  assert.equal(out.authEnvironment.GOTRUE_JWT_EXP, String(s.authJwtSeconds));
+  assert.equal(out.authEnvironment.GOTRUE_MAILER_AUTOCONFIRM, 'true');
+  assert.equal(out.compose.services.auth.environment.GOTRUE_SMTP_PORT, '${SMTP_PORT}');
+  assert.deepEqual({ template, defaults }, before);
+  assert.equal(validateWeek1AuthEnvironment(out.authEnvironment, s), true);
+  const unconfirmed = prepareWeek1ComposeEnvironment(template, defaults, {
+    ...s,
+    policy: { ...s.policy, emailConfirmed: false },
+  });
+  assert.equal(unconfirmed.authEnvironment.GOTRUE_MAILER_AUTOCONFIRM, 'false');
+});
+test('typed public Auth environment rejects blank SMTP port before any live phase', () => {
+  const { template, defaults } = publicAuthFixture(),
+    s = spec();
+  for (const value of [undefined, '', 'not-a-port', '2500.0', ' 2500', '0', '65536'])
+    assert.throws(
+      () => prepareWeek1ComposeEnvironment(template, { ...defaults, SMTP_PORT: value }, s),
+      /AUTH_ENV_|PUBLIC_ENV_SCALAR/,
+    );
+  const good = prepareWeek1ComposeEnvironment(template, defaults, s).authEnvironment;
+  for (const key of Object.keys(good)) {
+    const missing = { ...good };
+    delete missing[key];
+    assert.throws(() => validateWeek1AuthEnvironment(missing, s), /AUTH_ENV_KEYS/);
+  }
+  for (const key of ['GOTRUE_API_PORT', 'GOTRUE_JWT_EXP', 'GOTRUE_SMTP_PORT'])
+    for (const value of ['', '-1', '1e3', '1.5', 'NaN', 'Infinity', '2500\n', true, null])
+      assert.throws(() => validateWeek1AuthEnvironment({ ...good, [key]: value }, s), /AUTH_ENV_/);
+  for (const key of Object.keys(good).filter((key) =>
+    /ENABLED|AUTOCONFIRM|DISABLE_SIGNUP/.test(key),
+  ))
+    for (const value of ['', 'TRUE', '1', true, undefined])
+      assert.throws(() => validateWeek1AuthEnvironment({ ...good, [key]: value }, s), /AUTH_ENV_/);
+  assert.throws(
+    () => validateWeek1AuthEnvironment({ ...good, GOTRUE_JWT_EXP: '301' }, s),
+    /AUTH_ENV_NUMBER/,
+  );
+  assert.throws(
+    () => validateWeek1AuthEnvironment({ ...good, GOTRUE_SMTP_HOST: 'mail.example.invalid' }, s),
+    /AUTH_ENV_SMTP_DISABLED/,
+  );
+  assert.throws(
+    () => validateWeek1AuthEnvironment({ ...good, GOTRUE_DB_DATABASE_URL: '${UNRESOLVED}' }, s),
+    /AUTH_ENV_REQUIRED/,
+  );
+});
 test('pure compose transformation pins images,no restart,exactloopbackports and freshvolumes', () => {
   const s = spec(),
-    template = {
-      services: Object.fromEntries(
-        WEEK1_SERVICES.map((name) => [
-          name,
-          {
-            environment: { DATABASE_URL: 'postgres://fake@db/postgres' },
-            volumes: [],
-            image: 'old',
-            ports: [],
-          },
-        ]),
-      ),
-    },
+    { template, defaults } = publicAuthFixture(),
     out = buildWeek1Compose(template, s.images, s);
   assert.equal(out.name, WEEK1_TARGET.project);
   assert.equal(out.services.db.restart, 'no');
@@ -895,9 +1003,17 @@ test('pure compose transformation pins images,no restart,exactloopbackports and 
   const effective = globalThis.structuredClone(out);
   effective.services.db.ports = [{ host_ip: '127.0.0.1', published: '56532' }];
   effective.services['api-gw'].ports = [{ host_ip: '127.0.0.1', published: '56531' }];
-  assert.equal(validateWeek1EffectiveCompose(effective, s.images), true);
+  effective.services.auth.environment = prepareWeek1ComposeEnvironment(
+    template,
+    defaults,
+    s,
+  ).authEnvironment;
+  assert.equal(validateWeek1EffectiveCompose(effective, s.images, s), true);
+  const emptySmtp = globalThis.structuredClone(effective);
+  emptySmtp.services.auth.environment.GOTRUE_SMTP_PORT = '';
+  assert.throws(() => validateWeek1EffectiveCompose(emptySmtp, s.images, s), /AUTH_ENV_REQUIRED/);
   effective.services.db.ports[0].host_ip = '0.0.0.0';
-  assert.throws(() => validateWeek1EffectiveCompose(effective, s.images));
+  assert.throws(() => validateWeek1EffectiveCompose(effective, s.images, s));
 });
 
 import { assertWeek1RestrictedLogin } from '../week1-auth-live-broker.mjs';
@@ -1624,4 +1740,39 @@ test('an already-sent bootstrap issuer creation also stays unverified until its 
       }),
     /ISSUER_CREATE_ACK/,
   );
+});
+
+test('public renderer rejects unsupported interpolation and multiline dotenv values', () => {
+  const s = spec();
+  for (const value of [
+    '$MISSING',
+    '$${SMTP_USER}',
+    '${MISSING:-fallback}',
+    '${MISSING-fallback}',
+    '${MISSING?required}',
+    '${${SMTP_USER}}',
+    'admin@example.invalid\nEXTRA_ENV=enabled',
+    'admin@example.invalid\r',
+    'admin@example.invalid\0',
+  ]) {
+    const { template, defaults } = publicAuthFixture();
+    assert.throws(
+      () => prepareWeek1ComposeEnvironment(template, { ...defaults, SMTP_ADMIN_EMAIL: value }, s),
+      /AUTH_ENV_|PUBLIC_ENV_SCALAR/,
+    );
+    template.services.auth.environment.GOTRUE_SMTP_ADMIN_EMAIL = value;
+    assert.throws(() => prepareWeek1ComposeEnvironment(template, defaults, s), /AUTH_ENV_/);
+  }
+  const { template, defaults } = publicAuthFixture();
+  assert.throws(
+    () =>
+      prepareWeek1ComposeEnvironment(
+        template,
+        { ...defaults, UNUSED_PUBLIC_EXAMPLE: 'example\nEXTRA_ENV=enabled' },
+        s,
+      ),
+    /PUBLIC_ENV_SCALAR/,
+  );
+  template.services.auth.environment.GOTRUE_API_HOST = null;
+  assert.throws(() => prepareWeek1ComposeEnvironment(template, defaults, s), /AUTH_ENV_REQUIRED/);
 });
