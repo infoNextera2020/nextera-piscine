@@ -75,7 +75,7 @@ export class CheckpointDraftSync {
   private epoch = 0;
   private blocked: string | null = null;
   constructor(
-    private readonly bootstrap: EditorBootstrap,
+    private readonly bootstrap: Pick<EditorBootstrap, 'window' | 'draft' | 'sourceBytes'>,
     private readonly deps: {
       now(): number;
       requestId(): string;

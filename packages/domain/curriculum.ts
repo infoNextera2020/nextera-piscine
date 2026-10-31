@@ -1,4 +1,4 @@
-import type { CheckpointDefinition } from './checkpoints.ts';
+import type { CheckpointDefinition, LegacyCheckpointDefinition } from './checkpoints.ts';
 import type { ProgressState } from './states.ts';
 
 export const NODE_KINDS = ['challenge', 'project', 'checkpoint'] as const;
@@ -13,8 +13,10 @@ export interface SubmissionRules {
   allowed_extensions: string[];
   max_size_kb: number;
 }
-export interface CurriculumNode {
-  checkpoint?: CheckpointDefinition;
+export interface CurriculumNode<
+  TCheckpoint extends CheckpointDefinition = LegacyCheckpointDefinition,
+> {
+  checkpoint?: TCheckpoint;
   key: string;
   questKey: string;
   kind: NodeKind;
@@ -29,13 +31,13 @@ export interface CurriculumNode {
   testPackId: string;
   declaredLimits: { timeout_ms: number; memory_mb: number; output_kb: number };
 }
-export interface Curriculum {
+export interface Curriculum<TCheckpoint extends CheckpointDefinition = LegacyCheckpointDefinition> {
   key: string;
   version: string;
   contentDigest: string;
   digestFormatVersion: 1;
   quests: { key: string; title: string; position: number }[];
-  nodes: CurriculumNode[];
+  nodes: CurriculumNode<TCheckpoint>[];
   prerequisites: Prerequisite[];
   roots: string[];
 }

@@ -1,4 +1,4 @@
-import { describe, it, expect, vi } from 'vitest';
+import { afterEach, describe, it, expect, vi } from 'vitest';
 vi.mock('server-only', () => ({}));
 import type { OperationalDatabase } from '@nextera/db/operations/curriculum';
 import { createPostgresCheckpointOfficialSubmitAuthority } from './postgres-editor-context';
@@ -32,6 +32,7 @@ function setup(value: unknown = context) {
   const database = vi.fn(() => ({ execute }) as unknown as OperationalDatabase);
   return { execute, database };
 }
+afterEach(() => vi.unstubAllEnvs());
 describe('Lazy authoritative official checkpoint context', () => {
   it('opens no database at factory construction and projects verified context only', async () => {
     const f = setup(),
@@ -92,5 +93,68 @@ describe('Explicit draft storage opt-in is not a readiness bypass', () => {
     await expect(backend.read(actor, context.scope)).rejects.toMatchObject({ code: 'UNAVAILABLE' });
     expect(database).toHaveBeenCalledTimes(2);
     expect(execute).toHaveBeenCalledTimes(2);
+  });
+});
+
+describe('marked official Submit HTTP readiness is independent from legacy/draft limits', () => {
+  it('keeps marked read and draft context while disabling NEW Submit with missing/invalid storage policy', async () => {
+    vi.stubEnv(
+      'CHECKPOINT_ANSWER_HTTP_POLICY_V1',
+      JSON.stringify({ version: 1, maxBodyBytes: 1024, bodyTimeoutMs: 1 }),
+    );
+    const marked = {
+      ...context,
+      scope: { ...context.scope, taskKey: 'q1' },
+      scoredExam: { version: 1, form: 'A', rubricDigest: 'b'.repeat(64) },
+    };
+    for (const policy of [
+      '',
+      JSON.stringify({ version: 1 }),
+      JSON.stringify({ version: 1, timeoutMs: 0 }),
+    ]) {
+      vi.stubEnv('CHECKPOINT_SCORED_CODE_STORAGE_POLICY_V1', policy);
+      const f = setup(marked);
+      const read = await createPostgresCheckpointOfficialSubmitAuthority(f.database).context(
+        actor,
+        { ...task, taskKey: 'q1' },
+      );
+      expect(read).toEqual({ ...marked, submitAllowed: false });
+      expect(read.readAllowed).toBe(true);
+    }
+  });
+
+  it('never promises marked Submit with missing or undersized HTTP policy, and opens nothing on construction', async () => {
+    const marked = {
+      ...context,
+      scope: { ...context.scope, taskKey: 'q1' },
+      scoredExam: { version: 1, form: 'A', rubricDigest: 'b'.repeat(64) },
+    };
+    for (const policy of [
+      '',
+      JSON.stringify({ version: 1, maxBodyBytes: 512, bodyTimeoutMs: 1 }),
+    ]) {
+      vi.stubEnv('CHECKPOINT_ANSWER_HTTP_POLICY_V1', policy);
+      const f = setup(marked);
+      const service = createPostgresCheckpointOfficialSubmitAuthority(f.database);
+      expect(f.database).not.toHaveBeenCalled();
+      await expect(service.context(actor, { ...task, taskKey: 'q1' })).rejects.toMatchObject({
+        code: 'UNAVAILABLE',
+      });
+    }
+    vi.stubEnv(
+      'CHECKPOINT_ANSWER_HTTP_POLICY_V1',
+      JSON.stringify({ version: 1, maxBodyBytes: 1024, bodyTimeoutMs: 1 }),
+    );
+    vi.stubEnv(
+      'CHECKPOINT_SCORED_CODE_STORAGE_POLICY_V1',
+      JSON.stringify({ version: 1, timeoutMs: 1000 }),
+    );
+    const f = setup(marked);
+    expect(
+      await createPostgresCheckpointOfficialSubmitAuthority(f.database).context(actor, {
+        ...task,
+        taskKey: 'q1',
+      }),
+    ).toEqual(marked);
   });
 });

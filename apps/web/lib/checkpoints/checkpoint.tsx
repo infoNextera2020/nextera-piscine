@@ -1,7 +1,11 @@
 'use client';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
-import { parseCheckpointView } from '@nextera/domain';
+import {
+  parseCheckpointView,
+  checkpointScoredExamMetadata,
+  checkpointScoredExamResult,
+} from '@nextera/domain';
 import {
   checkpointPresentation,
   type CheckpointPresentation,
@@ -146,7 +150,9 @@ export function Checkpoint({
       if (action === 'finish') closeFinish();
       setMessage(
         action === 'finish'
-          ? 'Finish accepted. Already accepted work continues evaluation.'
+          ? checkpointScoredExamMetadata(view.scored_exam)
+            ? 'Exam finished. Accepted answers continue evaluation; the final result remains provisional until mentor review.'
+            : 'Finish accepted. Already accepted work continues evaluation.'
           : 'Checkpoint started.',
       );
       await refresh();
@@ -179,8 +185,17 @@ export function Checkpoint({
         </section>
       </LearningSurface>
     );
+  const scoredExam = checkpointScoredExamMetadata(view.scored_exam);
   const resultHref = `/app/cohorts/${cohort}/checkpoints/${node}/result`;
-  const state = view.attempt?.status ?? (view.eligible ? 'available' : 'locked');
+  const scoredResult = scoredExam ? checkpointScoredExamResult(view.scored_result) : null;
+  const state =
+    scoredExam && view.attempt
+      ? scoredResult?.status === 'passed' || scoredResult?.status === 'failed'
+        ? scoredResult.status
+        : view.attempt.status === 'active'
+          ? 'active'
+          : 'evaluating'
+      : (view.attempt?.status ?? (view.eligible ? 'available' : 'locked'));
   const expired = seconds === 0 || !view.display.intakeOpen;
   return (
     <LearningSurface page="checkpoint">
@@ -191,9 +206,16 @@ export function Checkpoint({
             <StatusBadge state={state} />
             <p>
               {view.tasks.length
-                ? `${view.tasks.length} questions · choose any question`
+                ? `${view.tasks.length} questions · choose any question${scoredExam ? ' · 3 hours · one exam attempt' : ''}`
                 : 'Questions appear after an authorized attempt starts.'}
             </p>
+            {scoredExam && (
+              <p>
+                {scoredResult && ['passed', 'failed'].includes(scoredResult.status)
+                  ? `Final result: ${scoredResult.total_points} / 100 · ${scoredResult.coding_points} / 75 coding`
+                  : 'The final weighted result remains provisional until evaluation and required reviews are complete.'}
+              </p>
+            )}
           </div>
           <div className={e.headerActions}>
             {view.attempt && (
@@ -242,7 +264,8 @@ export function Checkpoint({
             deadline.
           </div>
         )}
-        {['passed', 'failed', 'infrastructure_blocked'].includes(state) && (
+        {(['passed', 'failed', 'infrastructure_blocked'].includes(state) ||
+          (scoredExam && view.attempt && !view.display.intakeOpen)) && (
           <div className={e.dialogActions}>
             <Link className={e.button} href={resultHref}>
               View authoritative result
@@ -290,13 +313,13 @@ export function Checkpoint({
             {busy ? 'Starting…' : 'Start next checkpoint attempt'}
           </button>
         )}
-        {view.attempt?.retake_at && (
+        {!scoredExam && view.attempt?.retake_at && (
           <p className={e.notice}>
             Earliest policy retake time: {formatMoment(view.attempt.retake_at)}. Current access and
             server approval are required.
           </p>
         )}
-        {view.replacement_available && (
+        {!scoredExam && view.replacement_available && (
           <p className={e.notice}>
             An authorized replacement grant is recorded. Starting still requires current access.
           </p>
@@ -312,9 +335,23 @@ export function Checkpoint({
                 <li key={h.id} className={s.record}>
                   <span>
                     {h.kind === 'normal' ? 'Standard' : 'Replacement'} attempt {h.normal_slot}
-                    {h.points !== null ? ` · ${h.points} points` : ''}
+                    {!checkpointScoredExamMetadata(h.scored_exam) && h.points !== null
+                      ? ` · ${h.points} points`
+                      : ''}
                   </span>
-                  <StatusBadge state={h.status} />
+                  <StatusBadge
+                    state={
+                      checkpointScoredExamMetadata(h.scored_exam)
+                        ? checkpointScoredExamResult(h.scored_result)?.status === 'passed'
+                          ? 'passed'
+                          : checkpointScoredExamResult(h.scored_result)?.status === 'failed'
+                            ? 'failed'
+                            : h.status === 'active'
+                              ? 'active'
+                              : 'evaluating'
+                        : h.status
+                    }
+                  />
                   {checkpointResultHref(cohort, node, h) && (
                     <Link
                       className={e.button}
@@ -360,8 +397,9 @@ export function Checkpoint({
         >
           <h2 id="finish-title">Finish checkpoint now?</h2>
           <p>
-            This is irreversible. New submissions stop immediately. Unanswered tasks contribute
-            zero. Already accepted work continues to authoritative finalization.
+            {scoredExam
+              ? 'New submissions stop immediately. Finishing does not submit drafts. Already accepted answers continue evaluation and later mentor review; you do not need to wait for a mentor to finish this exam.'
+              : 'This is irreversible. New submissions stop immediately. Unanswered tasks contribute zero. Already accepted work continues to authoritative finalization.'}
           </p>
           {draftWarning && (
             <p role="alert">

@@ -1,3 +1,4 @@
+import { CHECKPOINT_CODE_DRAFT_WRITE_WINDOW_SQL } from './checkpoint-write-window';
 import { createHash } from 'node:crypto';
 import { sql } from 'drizzle-orm';
 import { isRequestId } from '@nextera/domain';
@@ -37,7 +38,7 @@ const ceiling = 262144,
   task = /^[a-z0-9-]{1,100}$/;
 
 /** Read-only catalogs; readiness is not a successful live persistence test. */
-export const CHECKPOINT_DRAFT_READINESS_SQL = `SELECT
+export const CHECKPOINT_DRAFT_RETAINED_READINESS_SQL = `SELECT
  NOT EXISTS(SELECT FROM (VALUES ('checkpoint_draft_context','uuid,uuid,text'),('read_checkpoint_draft','uuid,uuid,text,text,uuid'),('save_checkpoint_draft','uuid,uuid,text,text,uuid,bigint,bytea,text')) req(name,args)
  WHERE NOT EXISTS(SELECT FROM pg_catalog.pg_proc p JOIN pg_catalog.pg_namespace n ON n.oid=p.pronamespace JOIN pg_catalog.pg_roles o ON o.oid=p.proowner
  WHERE n.nspname='app' AND p.proname=req.name AND replace(pg_catalog.oidvectortypes(p.proargtypes),' ','')=req.args AND p.prosecdef AND p.proconfig @> ARRAY['search_path=pg_catalog']
@@ -51,6 +52,13 @@ export const CHECKPOINT_DRAFT_READINESS_SQL = `SELECT
  AND pg_catalog.pg_has_role(current_user,'nextera_web','USAGE') AND NOT pg_catalog.pg_has_role(current_user,'nextera_checkpoint_owner','USAGE') AND NOT pg_catalog.pg_has_role(current_user,'nextera_checkpoint_owner','SET')) AS web_caller,
  (SELECT count(*) FROM pg_catalog.pg_trigger t JOIN pg_catalog.pg_class c ON c.oid=t.tgrelid JOIN pg_catalog.pg_namespace n ON n.oid=c.relnamespace
  WHERE n.nspname='app' AND NOT t.tgisinternal AND t.tgenabled='O' AND ((c.relname='checkpoint_draft_revisions' AND t.tgname='checkpoint_draft_revision_immutable') OR(c.relname='checkpoint_draft_policies' AND t.tgname='checkpoint_draft_policy_immutable')))=2 AS guards`;
+
+/** NEW writes/capability checks require the repaired POST window. Retained reads
+ * preserve the original catalog, ownership, ACL and payload-validator checks. */
+export const CHECKPOINT_DRAFT_READINESS_SQL = CHECKPOINT_DRAFT_RETAINED_READINESS_SQL.replace(
+  'SELECT\n',
+  `SELECT\n ${CHECKPOINT_CODE_DRAFT_WRITE_WINDOW_SQL} AND\n`,
+);
 
 function fail(code: DraftStorageCode = 'unavailable'): never {
   throw new CheckpointDraftStorageError(code);
@@ -69,9 +77,18 @@ function mapError(error: unknown): never {
   }
   fail();
 }
-export async function readCheckpointDraftReadiness(db: OperationalDatabase) {
+export async function readCheckpointDraftReadiness(
+  db: OperationalDatabase,
+  access: 'read' | 'write' = 'write',
+) {
   try {
-    const [row] = await db.execute(sql.raw(CHECKPOINT_DRAFT_READINESS_SQL));
+    const [row] = await db.execute(
+      sql.raw(
+        access === 'read'
+          ? CHECKPOINT_DRAFT_RETAINED_READINESS_SQL
+          : CHECKPOINT_DRAFT_READINESS_SQL,
+      ),
+    );
     return {
       ready:
         !!row &&
@@ -82,8 +99,12 @@ export async function readCheckpointDraftReadiness(db: OperationalDatabase) {
     return { ready: false, livePersistenceVerified: false as const };
   }
 }
-async function rpc(db: OperationalDatabase, statement: ReturnType<typeof sql>) {
-  if (!(await readCheckpointDraftReadiness(db)).ready) fail();
+async function rpc(
+  db: OperationalDatabase,
+  statement: ReturnType<typeof sql>,
+  access: 'read' | 'write' = 'write',
+) {
+  if (!(await readCheckpointDraftReadiness(db, access)).ready) fail();
   try {
     const [row] = await db.execute(statement);
     if (!row || !('data' in row)) fail();
@@ -198,6 +219,7 @@ export async function readCheckpointDraftContext(
     await rpc(
       db,
       sql`SELECT app.checkpoint_draft_context(${authId}::uuid,${attemptId}::uuid,${taskKey}) AS data`,
+      'read',
     ),
   );
   const scope = parseScope(r.scope);
@@ -238,6 +260,7 @@ export async function readCheckpointDraft(
   const raw = await rpc(
     db,
     sql`SELECT app.read_checkpoint_draft(${authId}::uuid,${scope.attemptId}::uuid,${scope.taskKey},${scope.definitionDigest},${requestId ?? null}::uuid) AS data`,
+    'read',
   );
   if (raw === null) return null;
   const result = record(raw, scope);

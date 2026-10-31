@@ -1,9 +1,11 @@
 import { createHash } from 'node:crypto';
 import { describe, expect, it, vi } from 'vitest';
 import { PgDialect } from 'drizzle-orm/pg-core';
+import type { SQL } from 'drizzle-orm';
 import type { OperationalDatabase } from '../operations/curriculum';
 import {
   CHECKPOINT_DRAFT_READINESS_SQL,
+  CHECKPOINT_DRAFT_RETAINED_READINESS_SQL,
   CheckpointDraftStorageError,
   encodeCheckpointDraft,
   readCheckpointDraftContext,
@@ -42,6 +44,60 @@ function db(data: unknown) {
 const input = { authId: id, scope, requestId: request, baseVersion: 0, source: 'package main\r\n' };
 
 describe('Checkpoint draft repository readiness', () => {
+  it('retains closed-attempt context and exact GET receipts when only the repaired write pin is absent', async () => {
+    const retained = {
+      scope,
+      readAllowed: true,
+      status: 'closed',
+      serverNow: '2026-10-27T10:00:00Z',
+      deadline: '2026-10-27T09:00:00Z',
+      sourceBytes: 128,
+      filename: 'answer.go',
+    };
+    const execute = vi.fn(async (statement: SQL) => {
+      const query = new PgDialect().sqlToQuery(statement);
+      if (query.sql === CHECKPOINT_DRAFT_READINESS_SQL) return [{ ...ready, contract: false }];
+      if (query.sql === CHECKPOINT_DRAFT_RETAINED_READINESS_SQL) return [ready];
+      if (query.sql.startsWith('SELECT app.checkpoint_draft_context(')) return [{ data: retained }];
+      if (query.sql.startsWith('SELECT app.read_checkpoint_draft('))
+        return [{ data: wire('retained original') }];
+      throw Error('An unexpected application RPC was attempted');
+    });
+    const database = { execute } as unknown as OperationalDatabase;
+    expect(await readCheckpointDraftReadiness(database)).toEqual({
+      ready: false,
+      livePersistenceVerified: false,
+    });
+    expect(await readCheckpointDraftContext(database, id, id, scope.taskKey)).toEqual(retained);
+    expect(await readCheckpointDraft(database, id, scope, request)).toEqual({
+      source: 'retained original',
+      version: 1,
+      requestId: request,
+    });
+    await expect(saveCheckpointDraft(database, input)).rejects.toMatchObject({
+      code: 'unavailable',
+    });
+    const applicationSql = execute.mock.calls.map(
+      ([statement]) => new PgDialect().sqlToQuery(statement).sql,
+    );
+    expect(
+      applicationSql.filter((sql) => sql.startsWith('SELECT app.read_checkpoint_draft(')),
+    ).toHaveLength(1);
+    expect(applicationSql.some((sql) => sql.startsWith('SELECT app.save_checkpoint_draft('))).toBe(
+      false,
+    );
+  });
+  it('still denies retained reads when the original catalog or ACL predicate fails', async () => {
+    const execute = vi.fn().mockResolvedValue([{ ...ready, contract: false }]);
+    await expect(
+      readCheckpointDraft({ execute } as unknown as OperationalDatabase, id, scope, request),
+    ).rejects.toMatchObject({ code: 'unavailable' });
+    expect(execute).toHaveBeenCalledOnce();
+    expect(new PgDialect().sqlToQuery(execute.mock.calls[0]![0]).sql).toBe(
+      CHECKPOINT_DRAFT_RETAINED_READINESS_SQL,
+    );
+  });
+
   it.each(['contract', 'isolated_tables', 'web_caller', 'guards'])(
     'requires %s before any application RPC',
     async (key) => {

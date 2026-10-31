@@ -105,12 +105,8 @@ func Verify(c Claim, catalog artifact.Catalog, runner, layouts string, local boo
 	if expected != s.SpecDigest {
 		return s, "", ErrIdentity
 	}
-	parts := strings.Split(s.Source.Key, "/")
-	if len(parts) != 4 || !uuid.MatchString(parts[0]) || parts[1] != s.Cohort || !uuid.MatchString(parts[2]) || parts[3] != s.Source.Digest {
-		return s, "", ErrIdentity
-	}
 	contract, contractErr := artifact.ContractFor(s.PackID, entry.Contract)
-	if contractErr != nil || !reflect.DeepEqual(s.Contract, entry.Contract) || s.Source.Filename != contract.File || len(s.Node) > 100 || !regexp.MustCompile(`^[a-z0-9]+(?:-[a-z0-9]+)*$`).MatchString(s.Node) || (entry.Contract == nil && s.Node != contract.Item) {
+	if contractErr != nil || !reflect.DeepEqual(s.Contract, entry.Contract) || s.Source.Filename != contract.File || !sourceKeyMatches(s, contract) || len(s.Node) > 100 || !regexp.MustCompile(`^[a-z0-9]+(?:-[a-z0-9]+)*$`).MatchString(s.Node) || (entry.Contract == nil && s.Node != contract.Item) {
 		return s, "", ErrIdentity
 	}
 	layout := filepath.Join(layouts, s.PackID)
@@ -130,4 +126,24 @@ func Verify(c Claim, catalog artifact.Catalog, runner, layouts string, local boo
 		return s, "", errors.New("ARTIFACT_MISMATCH")
 	}
 	return s, layout, nil
+}
+
+// sourceKeyMatches validates private Storage keys, never host filesystem paths.
+// Auth owner, checkpoint attempt and request have no separate snapshot fields:
+// their relational binding belongs to scored intake SQL. The snapshot digest
+// binds the complete key; it must not be inferred from Claim.Attempt or Learner.
+func sourceKeyMatches(s Snapshot, contract artifact.ExecutionContract) bool {
+	parts := strings.Split(s.Source.Key, "/")
+	if len(parts) == 4 {
+		// Preserve the exact legacy key rule for every existing ABI and Quest.
+		return uuid.MatchString(parts[0]) && parts[1] == s.Cohort && uuid.MatchString(parts[2]) && parts[3] == s.Source.Digest
+	}
+	if len(parts) != 7 || contract.Version != 3 {
+		return false
+	}
+	return uuid.MatchString(parts[0]) && parts[1] == s.Cohort &&
+		parts[2] == "scored-exam-v1" && uuid.MatchString(parts[3]) &&
+		len(parts[4]) == 2 && parts[4][0] == 'q' && parts[4][1] >= '1' && parts[4][1] <= '5' &&
+		parts[4] == contract.Item && uuid.MatchString(parts[5]) &&
+		hash.MatchString(parts[6]) && parts[6] == s.Source.Digest
 }

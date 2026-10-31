@@ -6,7 +6,7 @@ import {
 } from '@nextera/domain';
 import { sameOrigin } from '../submissions/origin';
 import { serializeMixedAnswer } from './checkpoint-answer';
-import type { EditorActor } from './editor-http';
+import type { EditorActor, EditorTaskIdentity } from './editor-http';
 import type { OfficialAnswerSubmissionOutcome } from './answer-submission';
 import {
   AnswerApiError,
@@ -92,19 +92,28 @@ async function actor(deps: Dependencies): Promise<EditorActor> {
 function readIdentity(request: Request) {
   const q = new URL(request.url).searchParams;
   if (
-    [...q.keys()].some((k) => !['attempt', 'task', 'request'].includes(k)) ||
-    ['attempt', 'task', 'request'].some((k) => q.getAll(k).length > 1)
+    [...q.keys()].some((k) => !['attempt', 'task', 'request', 'bootstrap'].includes(k)) ||
+    ['attempt', 'task', 'request', 'bootstrap'].some((k) => q.getAll(k).length > 1)
   )
     return null;
   const attemptId = q.get('attempt'),
     taskKey = q.get('task'),
     requestId = q.get('request');
+  if (
+    (q.has('bootstrap') && q.get('bootstrap') !== '1') ||
+    (q.has('bootstrap') && requestId !== null)
+  )
+    return null;
   return attemptId &&
     isRequestId(attemptId) &&
     taskKey &&
     key.test(taskKey) &&
     (requestId === null || isRequestId(requestId))
-    ? { task: { attemptId: attemptId.toLowerCase(), taskKey }, requestId: requestId?.toLowerCase() }
+    ? {
+        task: { attemptId: attemptId.toLowerCase(), taskKey },
+        requestId: requestId?.toLowerCase(),
+        bootstrap: q.get('bootstrap') === '1',
+      }
     : null;
 }
 function writeIdentity(request: Request) {
@@ -231,6 +240,10 @@ export function createCheckpointAnswerDraftHandlers(
   deps: Dependencies & {
     backend: CheckpointAnswerDraftBackend | null;
     bodyPolicy: AnswerBodyPolicy | null;
+    bootstrap?(
+      actor: EditorActor,
+      task: EditorTaskIdentity,
+    ): Promise<AnswerServerContext & { submitAllowed: boolean }>;
   },
 ) {
   return {
@@ -240,7 +253,10 @@ export function createCheckpointAnswerDraftHandlers(
           identity = readIdentity(request);
         if (!identity) return json({ error: 'INVALID_REQUEST' }, 400);
         if (!deps.backend || !configured(deps.bodyPolicy)) throw new AnswerApiError('UNAVAILABLE');
-        const context = await deps.backend.context(who, identity.task);
+        if (identity.bootstrap && !deps.bootstrap) throw new AnswerApiError('UNAVAILABLE');
+        const context = identity.bootstrap
+          ? await deps.bootstrap!(who, identity.task)
+          : await deps.backend.context(who, identity.task);
         assertAnswerContext(context, who, identity.task);
         const record = await deps.backend.read(
           who,
@@ -248,6 +264,29 @@ export function createCheckpointAnswerDraftHandlers(
           context.answerContract.digest,
           identity.requestId,
         );
+        if (identity.bootstrap) {
+          if (!('submitAllowed' in context) || typeof context.submitAllowed !== 'boolean')
+            throw new AnswerApiError('UNAVAILABLE');
+          return json({
+            schema: 1,
+            context: {
+              scope: context.scope,
+              readAllowed: context.readAllowed,
+              status: context.status,
+              serverNow: context.serverNow,
+              deadline: context.deadline,
+              answerContract: context.answerContract,
+              capabilities: {
+                draftsV1: true,
+                officialSubmit:
+                  context.submitAllowed &&
+                  context.status === 'active' &&
+                  Date.parse(context.serverNow) < Date.parse(context.deadline),
+              },
+            },
+            draft: record ? publicDraft(record, context) : null,
+          });
+        }
         if (!record) return json({ error: 'ANSWER_DRAFT_NOT_FOUND' }, 404);
         if (identity.requestId && record.requestId !== identity.requestId)
           throw new AnswerApiError('UNAVAILABLE');
@@ -317,6 +356,7 @@ export function createCheckpointAnswerSubmissionHandler(
   deps: Dependencies & {
     service: OfficialAnswerSubmitPort | null;
     bodyPolicy: AnswerBodyPolicy | null;
+    authorize?(actor: EditorActor, task: EditorTaskIdentity): Promise<void>;
   },
 ) {
   return async function POST(request: Request) {
@@ -326,6 +366,7 @@ export function createCheckpointAnswerSubmissionHandler(
         identity = writeIdentity(request);
       if (!identity) throw new WireError('INVALID_REQUEST', 400);
       if (!deps.service || !configured(deps.bodyPolicy)) throw new AnswerApiError('UNAVAILABLE');
+      await deps.authorize?.(who, identity.task);
       const prepared = await answerBody(request, deps.bodyPolicy);
       const result = await deps.service.submit(who, {
         ...identity.task,

@@ -24,7 +24,11 @@
     "./checkpoint-answer-submissions": "./queries/checkpoint-answer-submissions.ts",
     "./invitation-runtime-readers": "./queries/invitation-runtime-readers.ts",
     "./exam-scoring-review": "./queries/exam-scoring-review.ts",
-    "./scored-exam-intake": "./queries/scored-exam-intake.ts"
+    "./scored-exam-intake": "./queries/scored-exam-intake.ts",
+    "./scored-exam-review-context": "./queries/scored-exam-review-context.ts",
+    "./operations/scored-exam-publication": "./operations/scored-exam-publication.ts",
+    "./scored-exam-outcomes": "./queries/scored-exam-outcomes.ts",
+    "./scored-exam-code-upload": "./queries/scored-exam-code-upload.ts"
   },
   "scripts": {
     "build": "tsc -p tsconfig.json",

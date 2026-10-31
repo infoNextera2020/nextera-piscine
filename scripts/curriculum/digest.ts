@@ -41,3 +41,14 @@ export function canonicalJson(value: unknown): string {
 }
 export const evaluationDigest = (spec: unknown) =>
   sha256(`nextera-evaluation-spec\0v1\0${canonicalJson(spec)}`);
+
+export {
+  checkpointCanonicalJson,
+  assertScoredExamExecutionTask,
+  scoredExamDefinitionCoreDigest,
+  scoredExamEvaluationDigest,
+  scoredExamRubricDigest,
+  scoredExamFramedDigest,
+  assertScoredExamSourceBinding,
+  prepareScoredExamPublication,
+} from '@nextera/db/operations/scored-exam-publication';

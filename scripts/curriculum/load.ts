@@ -1,3 +1,4 @@
+import { parseScoredExamSource } from './scored-exam-source';
 import { execFileSync } from 'node:child_process';
 import { parseDocument } from 'yaml';
 import {
@@ -46,10 +47,25 @@ function knownFields(value: Record<string, unknown>, allowed: readonly string[],
   if (Object.keys(value).some((field) => !allowed.includes(field)))
     fail(`${context}: unsupported metadata field.`);
 }
+export function parseCurriculum(files: readonly SourceFile[], directory?: string): Curriculum;
+export function parseCurriculum(
+  files: readonly SourceFile[],
+  directory: string | undefined,
+  options: { allowScoredExams: true },
+): Curriculum<CheckpointDefinition>;
 export function parseCurriculum(
   files: readonly SourceFile[],
   directory = 'content/piscine-v1',
-): Curriculum {
+  options?: { allowScoredExams: true },
+): Curriculum<CheckpointDefinition> {
+  if (
+    options !== undefined &&
+    (!options ||
+      Reflect.ownKeys(options).length !== 1 ||
+      !Object.hasOwn(options, 'allowScoredExams') ||
+      options.allowScoredExams !== true)
+  )
+    fail('Unsupported curriculum capability options.');
   const digest = contentDigest(files);
   const sources = new Map(files.map((file) => [file.path, file.bytes]));
   const used = new Set<string>();
@@ -127,6 +143,40 @@ export function parseCurriculum(
     if (kind === 'checkpoint') {
       const configPath = `${folder}/checkpoint.yaml`;
       const config = yaml(configPath);
+      if (config.policy_version === 3) {
+        if (options?.allowScoredExams !== true)
+          fail('Scored Exam1 source requires explicit opt-in.');
+        if (config.id !== nodeKey || config.title !== n.title)
+          fail('Scored checkpoint identity mismatch.');
+        const checkpoint = parseScoredExamSource(config, folder, {
+          yaml,
+          read,
+          bytes: (path) => sources.get(path) ?? fail('Missing source bytes: ' + path),
+        });
+        const anchor = checkpoint.tasks[0]!;
+        const anchorPack =
+          anchor.testPackId ?? fail('Scored checkpoint requires a real coding pack.');
+        const anchorLimits =
+          anchor.declaredLimits ?? fail('Scored checkpoint requires real coding limits.');
+        const subject = read(`${folder}/subject.md`);
+        if (!subject.trim()) fail('Empty checkpoint subject.');
+        return {
+          key: nodeKey,
+          questKey,
+          kind,
+          title: text(n.title, 'node.title'),
+          position: positive(n.order, 'node.order'),
+          difficulty: positive(n.difficulty, 'difficulty'),
+          subjectMarkdown: subject,
+          subjectDigest: sha256(sources.get(`${folder}/subject.md`)!),
+          configurationDigest: sha256(sources.get(configPath)!),
+          skills: [],
+          submissionRules: anchor.submissionRules,
+          testPackId: anchorPack,
+          declaredLimits: anchorLimits,
+          checkpoint,
+        };
+      }
       knownFields(
         config,
         config.policy_version === 2
@@ -363,5 +413,9 @@ export function loadGitCurriculum(repository: string, ref = 'HEAD') {
         return fail('Curriculum must contain regular Git blobs without symlinks/submodules.');
       return { path: match[3]!, bytes: git(['cat-file', 'blob', match[2]!]) };
     });
-  return { gitCommitSha, curriculum: parseCurriculum(files), files };
+  return {
+    gitCommitSha,
+    curriculum: parseCurriculum(files, undefined, { allowScoredExams: true }),
+    files,
+  };
 }

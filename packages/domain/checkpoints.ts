@@ -1,3 +1,6 @@
+import { checkpointExamAnswerKind } from './scored-exam-lifecycle.ts';
+import type { CheckpointAnswerFormat } from './checkpoint-view.ts';
+import type { ExamForm } from './exam-scoring.ts';
 import type { SubmissionState } from './states.ts';
 export const CHECKPOINT_POLICY = Object.freeze({
   version: 1,
@@ -41,7 +44,24 @@ export type CheckpointTask = {
 type CheckpointPolicyHeader =
   | { policyVersion: 1; durationSeconds: 5400 }
   | { policyVersion: 2; durationSeconds: 5400; passPoints: number };
-export type CheckpointDefinition = CheckpointPolicyHeader & { tasks: CheckpointTask[] };
+export type LegacyCheckpointDefinition = CheckpointPolicyHeader & { tasks: CheckpointTask[] };
+/** Source metadata contains profile keys, never derived recursive binding hashes. */
+export type ScoredExamSourceTask = Omit<CheckpointTask, 'testPackId' | 'declaredLimits'> & {
+  answerFormat: CheckpointAnswerFormat;
+  testPackId: string | null;
+  declaredLimits: CheckpointTask['declaredLimits'] | null;
+  scoredSubmissionPolicy?: Readonly<Record<string, unknown>>;
+  answerContract?: Readonly<Record<string, unknown>>;
+  officialAnswerPolicy?: Readonly<Record<string, unknown>>;
+  answerEvaluator?: Readonly<Record<string, unknown>>;
+};
+export type ScoredExamSourceDefinition = {
+  policyVersion: 3;
+  durationSeconds: 10800;
+  examScoring: { version: 1; form: ExamForm; rubricProfile: string };
+  tasks: ScoredExamSourceTask[];
+};
+export type CheckpointDefinition = LegacyCheckpointDefinition | ScoredExamSourceDefinition;
 export type CheckpointScoringDefinition = CheckpointPolicyHeader & {
   tasks: readonly unknown[];
 };
@@ -49,7 +69,10 @@ export type CheckpointScoringDefinition = CheckpointPolicyHeader & {
 /** Trusted frozen definition only. v2 never inherits a global passing threshold.
  * This is pure source support, not evidence that a database supports policy v2.
  */
-export function checkpointScoringPolicy(definition: CheckpointScoringDefinition) {
+export function checkpointScoringPolicy(
+  definition: CheckpointScoringDefinition | ScoredExamSourceDefinition,
+) {
+  if (Object.hasOwn(definition, 'examScoring')) throw new Error('CHECKPOINT_POLICY');
   if (
     definition.durationSeconds !== CHECKPOINT_POLICY.durationSeconds ||
     !Array.isArray(definition.tasks) ||
@@ -74,6 +97,61 @@ export function checkpointScoringPolicy(definition: CheckpointScoringDefinition)
   )
     throw new Error('CHECKPOINT_POLICY');
   return Object.freeze({ version: 2 as const, taskCount, passPoints: definition.passPoints });
+}
+/** Lifecycle validation only. Graded allowances/rates and scoring are not legacy quota/pass points. */
+export function checkpointLifecyclePolicy(definition: CheckpointDefinition) {
+  if (definition.policyVersion !== 3) {
+    const legacy = checkpointScoringPolicy(definition);
+    return Object.freeze({
+      version: legacy.version,
+      durationSeconds: 5400 as const,
+      normalAttempts: 2 as const,
+      replacementAllowed: true as const,
+      taskCount: legacy.taskCount,
+    });
+  }
+  const marker = definition.examScoring;
+  if (
+    definition.durationSeconds !== 10800 ||
+    Object.hasOwn(definition, 'passPoints') ||
+    !marker ||
+    Reflect.ownKeys(marker).length !== 3 ||
+    !['version', 'form', 'rubricProfile'].every((key) => Object.hasOwn(marker, key)) ||
+    marker.version !== 1 ||
+    !['A', 'B', 'C', 'D'].includes(marker.form) ||
+    typeof marker.rubricProfile !== 'string' ||
+    !/^[a-z][a-z0-9-]{0,99}$/.test(marker.rubricProfile) ||
+    !Array.isArray(definition.tasks) ||
+    definition.tasks.length !== 8
+  )
+    throw new Error('CHECKPOINT_EXAM_POLICY');
+  for (const [index, task] of definition.tasks.entries()) {
+    const format = task.answerFormat;
+    if (
+      task.key !== 'q' + (index + 1) ||
+      !format ||
+      Reflect.ownKeys(format).length !== 2 ||
+      !['version', 'kind'].every((key) => Object.hasOwn(format, key)) ||
+      format.version !== 1 ||
+      format.kind !== checkpointExamAnswerKind(index) ||
+      (format.kind === 'trace_with_reason' &&
+        (task.testPackId !== null ||
+          task.declaredLimits !== null ||
+          task.submissionRules.required_files.length !== 0)) ||
+      (format.kind !== 'trace_with_reason' &&
+        (!task.testPackId ||
+          !task.declaredLimits ||
+          task.submissionRules.required_files.length !== 1))
+    )
+      throw new Error('CHECKPOINT_EXAM_POLICY');
+  }
+  return Object.freeze({
+    version: 3 as const,
+    durationSeconds: 10800 as const,
+    normalAttempts: 1 as const,
+    replacementAllowed: false as const,
+    taskCount: 8 as const,
+  });
 }
 export function aggregateCheckpoint(
   tasks: readonly { passed: boolean; pending: boolean; infrastructure: boolean }[],

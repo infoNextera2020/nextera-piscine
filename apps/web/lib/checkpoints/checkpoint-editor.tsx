@@ -1,11 +1,18 @@
 'use client';
 import { useEffect, useRef, useState } from 'react';
-import { checkpointAnswerFormat } from '@nextera/domain';
-import type { CheckpointPresentation } from '../learning/checkpoint-presentation';
-import { displayState } from '../learning/display';
+import {
+  checkpointAnswerFormat,
+  checkpointScoredExamMetadata,
+  checkpointScoredExamResult,
+} from '@nextera/domain';
+import {
+  scoredCheckpointExecutionLabel,
+  type CheckpointPresentation,
+} from '../learning/checkpoint-presentation';
+import { displayState, formatMoment } from '../learning/display';
 import { SubmissionIntents } from '../submissions/retry-intent';
 import { HairlineIcon } from '../../components/learning/hairline-icon';
-import { Subject, SafeHistory } from '../../components/learning/workspace-parts';
+import { Subject, SafeHistory, RecordDetails } from '../../components/learning/workspace-parts';
 import {
   captureCheckpointSource,
   hasUnsubmittedDrafts,
@@ -17,20 +24,16 @@ import {
   type QuestionDrafts,
 } from './checkpoint-source';
 import e from './checkpoint-editor.module.css';
+import w from '../../components/learning/workspace.module.css';
 import { useEditorSession } from './use-editor-session';
 import type { QuestionSession } from './editor-session';
 import { CheckpointAnswerInput } from './checkpoint-answer-input';
-import {
-  checkpointAnswerActionBlock,
-  checkpointSourceTaskKey,
-  editMixedAnswer,
-  hasMixedAnswerDrafts,
-  mixedAnswerDraft,
-  type MixedAnswerDrafts,
-} from './checkpoint-answer';
+import { useCheckpointMixedAnswerSession } from './use-answer-session';
+import { checkpointSourceTaskKey, hasMixedAnswerDrafts } from './checkpoint-answer';
 
 function questionStatus(task: CheckpointPresentation['display']['tasks'][number] | undefined) {
   if (!task) return 'Closed';
+  if ('stateLabel' in task && task.stateLabel) return task.stateLabel;
   if (task.state === 'available') return task.submitAvailable ? 'Open' : 'No slots available';
   if (task.state === 'system_error')
     return task.submitAvailable ? 'System retry' : 'Infrastructure issue';
@@ -62,8 +65,48 @@ export function CheckpointEditor({
   const [selected, setSelected] = useState(view.tasks[0]?.key ?? '');
   const [panel, setPanel] = useState<'statement' | 'editor' | 'history'>('editor');
   const [acceptedSources, setAcceptedSources] = useState<Record<string, string>>({});
-  const [mixedDrafts, setMixedDrafts] = useState<MixedAnswerDrafts>({});
   const selectedTask = view.tasks.find((task) => task.key === selected) ?? view.tasks[0];
+  const selectedFormat = selectedTask ? checkpointAnswerFormat(selectedTask.answer_format) : null;
+  const scoredExam = checkpointScoredExamMetadata(view.scored_exam) !== null;
+  const finalResult = scoredExam ? checkpointScoredExamResult(view.scored_result) : null;
+  const finalOutcomeKnown = finalResult?.status === 'passed' || finalResult?.status === 'failed';
+  const { session: answerSession, states: answerStates } = useCheckpointMixedAnswerSession({
+    learnerId: learnerId ?? '',
+    cohortId: cohort,
+    attemptId: view.attempt?.id ?? '',
+    selected:
+      scoredExam && selectedTask && selectedFormat && selectedFormat.kind !== 'coding'
+        ? { key: selectedTask.key, kind: selectedFormat.kind }
+        : null,
+    paused,
+    closed: expired || !view.display.intakeOpen,
+    serverNow: view.server_now,
+    newSubmitAllowed:
+      view.display.tasks.find((task) => task.key === selectedTask?.key)?.submitAvailable ?? false,
+    deadline: view.attempt?.deadline_at ?? view.server_now,
+    onAccessRemoved,
+  });
+  const answerState =
+    selectedTask && selectedFormat && selectedFormat.kind !== 'coding'
+      ? answerSession.state(selectedTask.key, selectedFormat.kind)
+      : undefined;
+  useEffect(() => {
+    if (
+      !selectedTask ||
+      !answerState ||
+      paused ||
+      expired ||
+      !view.display.intakeOpen ||
+      answerState.phase !== 'ready' ||
+      answerState.status !== 'unsaved' ||
+      !hasMixedAnswerDrafts({ answer: answerState.answer })
+    )
+      return;
+    const timer = setTimeout(() => {
+      void answerSession.save(selectedTask.key);
+    }, 500);
+    return () => clearTimeout(timer);
+  }, [answerSession, selectedTask, answerState, paused, expired, view.display.intakeOpen]);
   const { session, drafts: questionSessions } = useEditorSession({
     learnerId,
     cohortId: cohort,
@@ -92,8 +135,8 @@ export function CheckpointEditor({
   const busy = useRef(false);
   const mounted = useRef(true);
   const textarea = useRef<HTMLTextAreaElement>(null);
-  const latest = useRef({ view, paused, expired });
-  latest.current = { view, paused, expired };
+  const latest = useRef({ view, paused, expired, questionSessions });
+  latest.current = { view, paused, expired, questionSessions };
   const intents = useRef<SubmissionIntents | null>(null);
   if (!intents.current) intents.current = new SubmissionIntents(() => sessionStorage);
   useEffect(() => {
@@ -104,7 +147,12 @@ export function CheckpointEditor({
   }, []);
   const unsaved =
     hasUnsubmittedDrafts(drafts) ||
-    hasMixedAnswerDrafts(mixedDrafts) ||
+    Object.values(answerStates).some(
+      (state) =>
+        state.submitPending ||
+        (hasMixedAnswerDrafts({ answer: state.answer }) &&
+          JSON.stringify(state.answer) !== state.acceptedPayload),
+    ) ||
     Object.keys(pending).length > 0;
   useEffect(() => {
     onDraftWarning(unsaved);
@@ -130,13 +178,29 @@ export function CheckpointEditor({
   const draft = questionDraft(drafts, item.key);
   const intake = !paused && !expired && view.display.intakeOpen;
   const format = checkpointAnswerFormat(item.answer_format);
-  const mixed =
-    format.kind === 'coding' ? null : mixedAnswerDraft(mixedDrafts, item.key, format.kind);
+  const mixed = format.kind === 'coding' ? null : (answerState?.answer ?? null);
   const submitAllowed =
-    intake && !!taskState?.submitAvailable && !checkpointAnswerActionBlock(format, 'submit');
+    intake &&
+    (format.kind === 'coding'
+      ? !!taskState?.submitAvailable &&
+        (!scoredExam ||
+          (questionSessions[item.key]?.phase === 'ready' &&
+            questionSessions[item.key]?.officialSubmit === true))
+      : scoredExam &&
+        answerState?.phase === 'ready' &&
+        ((!!taskState?.submitAvailable && answerState.canSubmit) || answerState.submitPending));
   const ambiguous = Object.hasOwn(pending, item.key) ? pending[item.key] : undefined;
   async function submit(retry?: OfficialSnapshot) {
-    if (busy.current || !submitAllowed || format.kind !== 'coding' || !item || !view.attempt)
+    if (
+      busy.current ||
+      !(
+        submitAllowed ||
+        (scoredExam && retry && intake && questionSessions[retry.taskKey]?.phase === 'ready')
+      ) ||
+      format.kind !== 'coding' ||
+      !item ||
+      !view.attempt
+    )
       return;
     busy.current = true;
     setSending(item.key);
@@ -165,7 +229,10 @@ export function CheckpointEditor({
         checkpointSourceTaskKey(
           current.view.tasks.find((task) => task.key === snapshot!.taskKey),
         ) !== snapshot.taskKey ||
-        !current.view.display.tasks.find((t) => t.key === snapshot!.taskKey)?.submitAvailable
+        (scoredExam && current.questionSessions[snapshot.taskKey]?.phase !== 'ready') ||
+        (!(scoredExam && retry) &&
+          (!current.view.display.tasks.find((t) => t.key === snapshot!.taskKey)?.submitAvailable ||
+            (scoredExam && current.questionSessions[snapshot.taskKey]?.officialSubmit !== true)))
       ) {
         setFeedback((old) => ({
           ...old,
@@ -228,9 +295,14 @@ export function CheckpointEditor({
             const dirty =
               taskFormat.kind === 'coding'
                 ? isQuestionDraftDirty(local)
-                : hasMixedAnswerDrafts({
-                    answer: mixedAnswerDraft(mixedDrafts, t.key, taskFormat.kind),
-                  });
+                : (() => {
+                    const state = answerSession.state(t.key, taskFormat.kind);
+                    return (
+                      state.submitPending ||
+                      (hasMixedAnswerDrafts({ answer: state.answer }) &&
+                        JSON.stringify(state.answer) !== state.acceptedPayload)
+                    );
+                  })();
             return (
               <button
                 key={t.key}
@@ -302,8 +374,14 @@ export function CheckpointEditor({
             </p>
           )}
           <p>
-            {item.reserved} submission slots used or pending. The server controls the remaining
-            allowance.
+            {scoredExam ? (
+              'Question resubmissions are separate from finishing the exam. The server controls intake and rate limits.'
+            ) : (
+              <>
+                {item.reserved} submission slots used or pending. The server controls the remaining
+                allowance.
+              </>
+            )}
           </p>
         </div>
       </section>
@@ -323,19 +401,90 @@ export function CheckpointEditor({
               answer={mixed}
               maxBytes={Math.min(262144, item.rules.max_size_kb * 1024)}
               readOnly={expired || !view.display.intakeOpen}
-              onChange={(answer) => setMixedDrafts((old) => editMixedAnswer(old, item.key, answer))}
+              onChange={(answer) => answerSession.edit(item.key, answer)}
             />
-            <div className={e.saveStatus} data-phase="unavailable">
+            <div
+              className={e.saveStatus}
+              data-phase={answerState?.phase ?? 'idle'}
+              data-status={answerState?.status ?? 'unsaved'}
+            >
               <span className={e.eyebrow}>Draft status</span>
-              <strong role="status">Mixed-answer saving unavailable</strong>
+              <strong role="status">
+                {answerState?.phase === 'loading'
+                  ? 'Checking autosave…'
+                  : answerState?.phase !== 'ready'
+                    ? 'Mixed-answer saving unavailable'
+                    : (
+                        {
+                          unsaved: 'Not saved to server',
+                          saving: 'Saving…',
+                          saved: 'Saved to server',
+                          failed: 'Save failed',
+                          conflict: 'Choose a draft version',
+                          closed: 'Autosave closed',
+                        } as const
+                      )[answerState.status]}
+              </strong>
               <p id="checkpoint-mixed-status">
-                This answer stays on this page only. The server does not support saving or official
-                submission for this answer type. Leaving or refreshing can lose it. No answer has
-                been saved or submitted from this page.
+                {!scoredExam
+                  ? 'This answer stays on this page only. The server does not support saving or official submission for this answer type. Leaving or refreshing can lose it. No answer has been saved or submitted from this page.'
+                  : answerState?.phase === 'ready'
+                    ? 'Saving keeps an answer draft. Only Submit this question sends an immutable answer for evaluation. Device recovery is unavailable without an explicit policy.'
+                    : 'This answer stays on this page until server saving is confirmed. Leaving or refreshing can lose it. No draft is automatically submitted.'}
               </p>
-              <button className={e.button} disabled aria-describedby="checkpoint-mixed-status">
-                Save draft
+              <button
+                className={e.button}
+                disabled={
+                  !scoredExam ||
+                  !intake ||
+                  answerState?.status === 'saving' ||
+                  answerState?.status === 'saved' ||
+                  answerState?.status === 'conflict'
+                }
+                onClick={() =>
+                  void (answerState?.phase === 'ready'
+                    ? answerSession.save(item.key)
+                    : answerSession.load(item.key, mixed.kind))
+                }
+              >
+                {!scoredExam
+                  ? 'Save draft'
+                  : answerState?.phase !== 'ready'
+                    ? 'Recheck autosave'
+                    : answerState.status === 'failed'
+                      ? 'Retry same save'
+                      : 'Save draft'}
               </button>
+              {answerState?.conflict && (
+                <div
+                  className={e.draftConflict}
+                  role="group"
+                  aria-label="Resolve answer draft conflict"
+                >
+                  <p>A newer server answer exists. Your answer has not been overwritten.</p>
+                  <details open>
+                    <summary>Server draft</summary>
+                    <pre tabIndex={0}>{JSON.stringify(answerState.conflict, null, 2)}</pre>
+                  </details>
+                  <p>Your current answer remains in the form.</p>
+                  <div className={e.dialogActions}>
+                    <button
+                      className={e.button}
+                      disabled={!intake}
+                      onClick={() => answerSession.resolve(item.key, 'keep_local')}
+                    >
+                      Keep my draft and save
+                    </button>
+                    <button
+                      className={e.button}
+                      disabled={!intake}
+                      onClick={() => answerSession.resolve(item.key, 'use_server')}
+                    >
+                      Use server draft
+                    </button>
+                  </div>
+                </div>
+              )}
             </div>
           </>
         ) : (
@@ -390,10 +539,28 @@ export function CheckpointEditor({
           <button className={e.button} disabled aria-describedby="checkpoint-run-status">
             Run <HairlineIcon name="arrow" />
           </button>
-          {ambiguous ? (
+          {mixed ? (
             <button
               className={e.primary}
-              disabled={!submitAllowed || sending !== null}
+              disabled={!submitAllowed || answerState?.submitting}
+              onClick={() => void answerSession.submit(item.key).then(onRefresh)}
+            >
+              {answerState?.submitting
+                ? 'Submitting…'
+                : answerState?.submitPending
+                  ? 'Retry original snapshot'
+                  : 'Submit this question'}
+              <HairlineIcon name="arrow" />
+            </button>
+          ) : ambiguous ? (
+            <button
+              className={e.primary}
+              disabled={
+                !(
+                  submitAllowed ||
+                  (scoredExam && intake && questionSessions[ambiguous.taskKey]?.phase === 'ready')
+                ) || sending !== null
+              }
               onClick={() => void submit(ambiguous)}
             >
               {sending === item.key ? 'Submitting…' : 'Retry original snapshot'}
@@ -412,14 +579,18 @@ export function CheckpointEditor({
         </div>
         {!submitAllowed && format.kind === 'coding' && (
           <p className={e.notice}>
-            Official intake is paused, closed, passed, or has no available slot. Refresh confirms
-            current server access and allowance.
+            {scoredExam
+              ? 'Official intake is paused, closed or currently unavailable. Refresh confirms current server access and allowance.'
+              : 'Official intake is paused, closed, passed, or has no available slot. Refresh confirms current server access and allowance.'}
           </p>
         )}
         <p className={e.feedback} role="status">
           {(Object.hasOwn(feedback, item.key) ? feedback[item.key] : undefined) ??
             (mixed
-              ? 'Official submission is unavailable for this answer type. Editing does not submit your work.'
+              ? !scoredExam
+                ? 'Official submission is unavailable for this answer type. Editing does not submit your work.'
+                : answerState?.message ||
+                  'Editing and saving do not submit this answer. Submit this question sends one immutable snapshot.'
               : 'Submit evaluates a fixed snapshot. Editing does not submit your work.')}
         </p>
         {ambiguous && (
@@ -450,7 +621,34 @@ export function CheckpointEditor({
         aria-label="Official submission history"
       >
         <h2>Official submission history</h2>
-        <SafeHistory items={view.submissions.filter((h) => h.task_key === item.key)} />
+        {scoredExam && view.submissions.some((h) => h.task_key === item.key) ? (
+          <ol className={w.history}>
+            {view.submissions
+              .filter((h) => h.task_key === item.key)
+              .map((h) => (
+                <li key={h.id} className={w.record} data-execution-state={h.state}>
+                  <div className={w.recordHead}>
+                    <strong>Submission</strong>
+                    <span className={e.state}>
+                      {scoredCheckpointExecutionLabel(h.state, finalOutcomeKnown)}
+                    </span>
+                  </div>
+                  <p>
+                    {finalOutcomeKnown
+                      ? 'This is recorded execution feedback, not an individual rubric grade. The authoritative finalized exam outcome is shown above.'
+                      : 'This is execution feedback, not the final question grade. Reasoning and published method criteria are reviewed later; you can keep working and finish the exam without waiting.'}
+                  </p>
+                  <RecordDetails>
+                    <span className={w.muted}>Submission ID</span>
+                    <code className={w.identity}>{h.id}</code>
+                  </RecordDetails>
+                  <time dateTime={h.created_at}>{formatMoment(h.created_at)}</time>
+                </li>
+              ))}
+          </ol>
+        ) : (
+          <SafeHistory items={view.submissions.filter((h) => h.task_key === item.key)} />
+        )}
       </section>
     </div>
   );

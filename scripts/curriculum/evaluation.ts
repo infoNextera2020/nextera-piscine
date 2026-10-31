@@ -1,6 +1,13 @@
-import { checkpointScoringPolicy, type Curriculum, type CheckpointTask } from '@nextera/domain';
+import {
+  checkpointScoringPolicy,
+  type Curriculum,
+  type CheckpointDefinition,
+  type CheckpointTask,
+  type ScoredExamSourceTask,
+} from '@nextera/domain';
 import { parseDocument } from 'yaml';
-import { evaluationDigest } from './digest';
+import { evaluationDigest, scoredExamEvaluationDigest } from './digest';
+import { resolveScoredExamEvaluation } from './scored-exam-source';
 import { object, positive, text } from './load';
 
 export class EvaluationBoundaryError extends Error {}
@@ -36,17 +43,23 @@ const fields = (value: Record<string, unknown>, names: string[], context: string
 };
 
 /** Input is a protected, metadata-only catalog supplied by the trusted Judge build owner. */
-export function resolveEvaluations(curriculum: Curriculum, catalog?: unknown) {
+function resolveEvaluationCatalog(curriculum: Curriculum<CheckpointDefinition>, catalog?: unknown) {
   if (!catalog)
     throw new EvaluationBoundaryError(
       'PUBLICATION_BLOCKED: approved test-pack/artifact/image digests, exact toolchain, complete compilation/execution resource limits, and protocol identities are missing. Validated draft receipt only.',
     );
   const root = object(catalog, 'catalog');
-  fields(root, ['format_version', 'test_packs'], 'catalog');
+  fields(root, ['format_version', 'test_packs', 'scored_exam_rubrics'], 'catalog');
   if (root.format_version !== 1)
     throw new EvaluationBoundaryError('Unsupported metadata catalog format.');
   const packs = object(root.test_packs, 'catalog.test_packs');
-  const resolve = (node: Curriculum['nodes'][number] | CheckpointTask, nodeKey: string) => {
+  const resolve = (
+    node: Curriculum<CheckpointDefinition>['nodes'][number] | CheckpointTask | ScoredExamSourceTask,
+    nodeKey: string,
+    scored = false,
+  ) => {
+    if (!node.testPackId || !node.declaredLimits)
+      throw new EvaluationBoundaryError('A real execution pack and limits are required for code.');
     const pack = object(packs[node.testPackId], `Missing approved test pack ${node.testPackId}`);
     fields(
       pack,
@@ -76,6 +89,13 @@ export function resolveEvaluations(curriculum: Curriculum, catalog?: unknown) {
     )
       throw new EvaluationBoundaryError(
         'Test-pack artifact must be an immutable OCI reference matching its digest.',
+      );
+    if (
+      scored &&
+      !new RegExp('^oci://[A-Za-z0-9][A-Za-z0-9./_:-]*@sha256:' + packDigest + '$').test(artifact)
+    )
+      throw new EvaluationBoundaryError(
+        'Marked Exam1 requires the exact native OCI artifact contract.',
       );
     const toolchain = text(pack.toolchain_version, 'toolchain_version');
     if (
@@ -184,6 +204,10 @@ export function resolveEvaluations(curriculum: Curriculum, catalog?: unknown) {
           'Trusted execution contract conflicts with curriculum task.',
         );
     }
+    if (scored && contract?.version !== 3)
+      throw new EvaluationBoundaryError(
+        'Marked Exam1 code requires the restricted function ABI3 profile.',
+      );
     const spec = {
       curriculum_key: curriculum.key,
       curriculum_version: curriculum.version,
@@ -207,11 +231,19 @@ export function resolveEvaluations(curriculum: Curriculum, catalog?: unknown) {
       case_generation: generation,
       ...(contract ? { execution_contract: contract } : {}),
     };
-    return { nodeKey, spec, digest: evaluationDigest(spec) };
+    return {
+      nodeKey,
+      spec,
+      digest: scored ? scoredExamEvaluationDigest(spec) : evaluationDigest(spec),
+    };
   };
   return curriculum.nodes.map((node) => {
     if (node.kind !== 'checkpoint') return resolve(node, node.key);
     if (!node.checkpoint) throw new EvaluationBoundaryError('Checkpoint definition required.');
+    if (node.checkpoint.policyVersion === 3)
+      return resolveScoredExamEvaluation(node, node.checkpoint, root.scored_exam_rubrics, (task) =>
+        resolve(task, node.key, true),
+      );
     checkpointScoringPolicy(node.checkpoint);
     const tasks = node.checkpoint.tasks.map((task) => {
       const resolved = resolve(task, node.key);
@@ -239,4 +271,24 @@ export function resolveEvaluations(curriculum: Curriculum, catalog?: unknown) {
     };
     return { nodeKey: node.key, spec, digest: evaluationDigest(spec), checkpoint: definition };
   });
+}
+
+type AllResolvedEvaluations = ReturnType<typeof resolveEvaluationCatalog>;
+type LegacyResolvedEvaluations = Exclude<
+  AllResolvedEvaluations[number],
+  ReturnType<typeof resolveScoredExamEvaluation>
+>[];
+export function resolveEvaluations(
+  curriculum: Curriculum,
+  catalog?: unknown,
+): LegacyResolvedEvaluations;
+export function resolveEvaluations(
+  curriculum: Curriculum<CheckpointDefinition>,
+  catalog?: unknown,
+): AllResolvedEvaluations;
+export function resolveEvaluations(
+  curriculum: Curriculum<CheckpointDefinition>,
+  catalog?: unknown,
+) {
+  return resolveEvaluationCatalog(curriculum, catalog);
 }

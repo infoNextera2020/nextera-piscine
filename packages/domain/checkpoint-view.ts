@@ -1,9 +1,23 @@
+import {
+  checkpointScoredExamResult,
+  type ScoredExamResultMetadata,
+} from './scored-exam-lifecycle.ts';
+import {
+  checkpointScoredExamMetadata,
+  checkpointScoredSubmissionCapability,
+  checkpointExamAnswerKind,
+  type ScoredExamMetadata,
+  type ScoredExamSubmissionCapability,
+} from './scored-exam-lifecycle.ts';
+
 export type CheckpointAnswerFormat = Readonly<{
   version: 1;
   kind: 'coding' | 'trace_with_reason' | 'debug_with_reason';
 }>;
 
 export type CheckpointView = {
+  scored_result?: ScoredExamResultMetadata | null;
+  scored_exam?: ScoredExamMetadata | null;
   policy?: CheckpointScoringMetadata | null;
   server_now: string;
   eligible: boolean;
@@ -25,16 +39,20 @@ export type CheckpointView = {
     subject: string;
     /** Omitted only for the existing source-only contract. No question type is inferred from copy. */
     answer_format?: CheckpointAnswerFormat;
+    submission?: ScoredExamSubmissionCapability;
     rules: { required_files: string[]; max_size_kb: number };
   }[];
   submissions: {
     id: string;
     task_key: string;
     state: string;
+    scoring_status?: 'provisional' | 'finalized';
     created_at: string;
     feedback?: { message?: string } | null;
   }[];
   history: {
+    scored_result?: ScoredExamResultMetadata | null;
+    scored_exam?: ScoredExamMetadata | null;
     policy?: CheckpointScoringMetadata | null;
     id: string;
     status: string;
@@ -124,6 +142,40 @@ function attemptFields(row: Record<string, unknown>) {
   )
     fail();
 }
+function scoredMetadata(value: unknown) {
+  try {
+    return checkpointScoredExamMetadata(value);
+  } catch {
+    return fail();
+  }
+}
+function scoredAttempt(
+  row: Record<string, unknown>,
+  result: ScoredExamResultMetadata | null,
+  serverNow: string,
+) {
+  const active = row.status === 'active';
+  const finalized = row.status === 'passed' || row.status === 'failed';
+  const beforeDeadline = Date.parse(serverNow) < Date.parse(String(row.deadline_at));
+  if (
+    row.normal_slot !== 1 ||
+    row.kind !== 'normal' ||
+    (Object.hasOwn(row, 'retake_at') && row.retake_at !== null) ||
+    Date.parse(String(row.deadline_at)) - Date.parse(String(row.started_at)) !== 10800000 ||
+    (active && row.completed_at !== null) ||
+    (finalized && row.completed_at === null)
+  )
+    fail();
+  if (
+    result &&
+    ((result.status === 'in_progress' &&
+      (!active || row.completed_at !== null || !beforeDeadline)) ||
+      (result.status === 'provisional' && active && beforeDeadline) ||
+      ((result.status === 'passed' || result.status === 'failed') &&
+        (row.status !== result.status || row.completed_at === null)))
+  )
+    fail();
+}
 /** Validate wire shape/scoring without inferring a v2 threshold or trusting a supplied display object. */
 export function parseCheckpointView(value: unknown): CheckpointView {
   const row = object(value);
@@ -137,8 +189,18 @@ export function parseCheckpointView(value: unknown): CheckpointView {
   )
     return fail();
   const policy = checkpointScoringMetadata(row.policy);
+  const scored = scoredMetadata(row.scored_exam);
+  let scoredResult: ScoredExamResultMetadata | null;
+  try {
+    scoredResult = checkpointScoredExamResult(row.scored_result);
+  } catch {
+    return fail();
+  }
+  if (scoredResult && !scored) fail();
+
+  if (scored && (policy !== null || row.replacement_available !== false)) fail();
   const keys = new Set<string>();
-  for (const raw of row.tasks) {
+  for (const [index, raw] of row.tasks.entries()) {
     const t = object(raw),
       rules = object(t.rules),
       format = checkpointAnswerFormat(t.answer_format);
@@ -156,6 +218,19 @@ export function parseCheckpointView(value: unknown): CheckpointView {
       !integer(rules.max_size_kb, 1)
     )
       fail();
+    if (scored) {
+      if (
+        index > 7 ||
+        t.key !== 'q' + (index + 1) ||
+        format.kind !== checkpointExamAnswerKind(index)
+      )
+        fail();
+      try {
+        checkpointScoredSubmissionCapability(t.submission, format.kind);
+      } catch {
+        fail();
+      }
+    }
     keys.add(t.key as string);
   }
   const attempt = row.attempt === null ? null : object(row.attempt);
@@ -164,6 +239,14 @@ export function parseCheckpointView(value: unknown): CheckpointView {
     if (!optionalInstant(attempt.retake_at) || (policy && row.tasks.length !== policy.task_count))
       fail();
   }
+  if (scored) {
+    if (attempt) {
+      scoredAttempt(attempt, scoredResult, row.server_now);
+      if (row.tasks.length !== 8) fail();
+    } else if (row.tasks.length !== 0) fail();
+  }
+
+  if (scoredResult && !attempt) fail();
   const submissionIds = new Set<string>();
   for (const raw of row.submissions) {
     const s = object(raw);
@@ -175,6 +258,13 @@ export function parseCheckpointView(value: unknown): CheckpointView {
       !instant(s.created_at)
     )
       fail();
+    if (
+      (scored || s.scoring_status !== undefined) &&
+      (typeof s.scoring_status !== 'string' ||
+        !['provisional', 'finalized'].includes(s.scoring_status))
+    )
+      fail();
+    if (scored && !keys.has(s.task_key as string)) fail();
     submissionIds.add(s.id as string);
     if (s.feedback !== undefined && s.feedback !== null) {
       const feedback = object(s.feedback);
@@ -193,6 +283,41 @@ export function parseCheckpointView(value: unknown): CheckpointView {
       fail();
     historyIds.add(String(h.id));
     const historical = checkpointScoringMetadata(h.policy);
+    const historicalScored = scoredMetadata(h.scored_exam);
+    let historicalResult: ScoredExamResultMetadata | null;
+    try {
+      historicalResult = checkpointScoredExamResult(h.scored_result);
+    } catch {
+      return fail();
+    }
+    if (historicalResult && !historicalScored) fail();
+
+    if (historicalScored) {
+      scoredAttempt(h, historicalResult, row.server_now);
+      if (
+        historicalResult &&
+        (historicalResult.status === 'passed' || historicalResult.status === 'failed') &&
+        ((h.points !== null && h.points !== historicalResult.total_points) ||
+          (h.outcome_id !== null && h.outcome_id !== historicalResult.outcome_id))
+      )
+        fail();
+      if (
+        historical !== null ||
+        (h.points !== null && Number(h.points) > 100) ||
+        (h.status === 'passed' && h.points !== null && Number(h.points) < 60)
+      )
+        fail();
+    }
+    if (
+      h.id === attempt?.id &&
+      (scored || historicalScored) &&
+      (!scored ||
+        !historicalScored ||
+        scored.form !== historicalScored.form ||
+        scored.rubric_digest !== historicalScored.rubric_digest)
+    )
+      fail();
+
     if (
       historical &&
       h.points !== null &&

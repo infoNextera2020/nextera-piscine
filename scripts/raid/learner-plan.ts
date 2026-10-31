@@ -1,9 +1,9 @@
-import type { Curriculum, NodeKind } from '@nextera/domain';
+import type { CheckpointDefinition, Curriculum, NodeKind } from '@nextera/domain';
 
 export type RehearsalStep = Readonly<{ nodeKey: string; kind: NodeKind }>;
 /** Read-only planning, not publication/provisioning/authorization or runtime evidence. */
 export function assessConnectedLearnerPlan(
-  curriculum: Curriculum,
+  curriculum: Curriculum<CheckpointDefinition>,
   steps: readonly RehearsalStep[],
 ) {
   const problems: string[] = [];

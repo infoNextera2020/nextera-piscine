@@ -1,3 +1,4 @@
+import { CHECKPOINT_TYPED_DRAFT_WRITE_WINDOW_SQL } from './checkpoint-write-window';
 import { createHash } from 'node:crypto';
 import { sql } from 'drizzle-orm';
 import { isRequestId } from '@nextera/domain';
@@ -188,7 +189,7 @@ export const CHECKPOINT_ANSWER_PAYLOAD_VALIDATOR_READINESS_SQL = `EXISTS(
  WHERE a.grantee<>p.proowner AND a.privilege_type='EXECUTE'))`;
 
 /** Catalog attestation only; no connection is opened or schema inferred at module import. */
-export const CHECKPOINT_ANSWER_DRAFT_READINESS_SQL = `SELECT
+export const CHECKPOINT_ANSWER_DRAFT_RETAINED_READINESS_SQL = `SELECT
  pg_catalog.current_setting('server_encoding')='UTF8' AND NOT EXISTS(SELECT FROM (VALUES
  ('checkpoint_answer_draft_context','uuid,uuid,text'),
  ('read_checkpoint_answer_draft','uuid,uuid,text,text,text,uuid'),
@@ -209,9 +210,27 @@ export const CHECKPOINT_ANSWER_DRAFT_READINESS_SQL = `SELECT
  WHERE n.nspname='app' AND NOT t.tgisinternal AND t.tgenabled='O' AND ((c.relname='checkpoint_answer_draft_revisions' AND t.tgname='checkpoint_answer_draft_revision_immutable')
  OR (c.relname='checkpoint_answer_draft_policies' AND t.tgname='checkpoint_answer_draft_policy_immutable')))=2 AS guards,
  ${CHECKPOINT_ANSWER_PAYLOAD_VALIDATOR_READINESS_SQL} AS canonical_validator`;
-export async function readCheckpointAnswerDraftReadiness(db: OperationalDatabase) {
+
+/** NEW writes/capability checks require the repaired POST window. Retained reads
+ * preserve the original catalog, ownership, ACL and payload-validator checks. */
+export const CHECKPOINT_ANSWER_DRAFT_READINESS_SQL =
+  CHECKPOINT_ANSWER_DRAFT_RETAINED_READINESS_SQL.replace(
+    'SELECT\n',
+    `SELECT\n ${CHECKPOINT_TYPED_DRAFT_WRITE_WINDOW_SQL} AND\n`,
+  );
+
+export async function readCheckpointAnswerDraftReadiness(
+  db: OperationalDatabase,
+  access: 'read' | 'write' = 'write',
+) {
   try {
-    const [row] = await db.execute(sql.raw(CHECKPOINT_ANSWER_DRAFT_READINESS_SQL));
+    const [row] = await db.execute(
+      sql.raw(
+        access === 'read'
+          ? CHECKPOINT_ANSWER_DRAFT_RETAINED_READINESS_SQL
+          : CHECKPOINT_ANSWER_DRAFT_READINESS_SQL,
+      ),
+    );
     return {
       ready:
         !!row &&
@@ -238,8 +257,12 @@ function mapError(error: unknown): never {
   }
   return fail();
 }
-async function rpc(db: OperationalDatabase, statement: ReturnType<typeof sql>) {
-  if (!(await readCheckpointAnswerDraftReadiness(db)).ready) return fail();
+async function rpc(
+  db: OperationalDatabase,
+  statement: ReturnType<typeof sql>,
+  access: 'read' | 'write' = 'write',
+) {
+  if (!(await readCheckpointAnswerDraftReadiness(db, access)).ready) return fail();
   try {
     const [row] = await db.execute(statement);
     if (!row || !Object.hasOwn(row, 'data')) return fail();
@@ -259,6 +282,7 @@ export async function readCheckpointAnswerDraftContext(
     await rpc(
       db,
       sql`SELECT app.checkpoint_answer_draft_context(${authId}::uuid,${attemptId}::uuid,${taskKey}) AS data`,
+      'read',
     ),
   );
   const s = scope(r.scope),
@@ -383,6 +407,7 @@ export async function readCheckpointAnswerDraft(
   const raw = await rpc(
     db,
     sql`SELECT app.read_checkpoint_answer_draft(${authId}::uuid,${context.scope.attemptId}::uuid,${context.scope.taskKey},${context.scope.definitionDigest},${answerContractDigest},${requestId ?? null}::uuid) AS data`,
+    'read',
   );
   if (raw === null) return null;
   const result = record(raw, context);
@@ -418,7 +443,7 @@ export async function saveCheckpointAnswerDraft(
     encoded.byteLength > context.answerContract.maxBytes
   )
     return fail('definition_mismatch');
-  // The atomic RPC reconciles an existing immutable receipt before checking the write deadline.
+  // DRAFT0030 checks the live write window before returning even an exact POST receipt replay.
   // It alone performs CAS/storage accounting; this call never creates an official submission or Run.
   const raw = object(
     await rpc(

@@ -1,9 +1,11 @@
 import { createHash } from 'node:crypto';
 import { describe, expect, it, vi } from 'vitest';
 import { PgDialect } from 'drizzle-orm/pg-core';
+import type { SQL } from 'drizzle-orm';
 import type { OperationalDatabase } from '../operations/curriculum';
 import {
   CHECKPOINT_ANSWER_DRAFT_READINESS_SQL,
+  CHECKPOINT_ANSWER_DRAFT_RETAINED_READINESS_SQL,
   CHECKPOINT_ANSWER_PAYLOAD_VALIDATOR_READINESS_SQL,
   checkpointAnswerContractDigest,
   encodeCheckpointAnswerDraft,
@@ -80,6 +82,46 @@ function setup(data: unknown, ctx: unknown = context) {
   return { execute, db: { execute } as unknown as OperationalDatabase };
 }
 describe('Structured draft readiness and frozen contract authority', () => {
+  it('retains typed context and exact GET receipts with an unrepaired POST pin, then blocks the save RPC', async () => {
+    const retained = { ...context, status: 'closed', deadline: '2026-10-30T09:00:00Z' };
+    const execute = vi.fn(async (statement: SQL) => {
+      const query = new PgDialect().sqlToQuery(statement);
+      if (query.sql === CHECKPOINT_ANSWER_DRAFT_READINESS_SQL)
+        return [{ ...ready, contract: false }];
+      if (query.sql === CHECKPOINT_ANSWER_DRAFT_RETAINED_READINESS_SQL) return [ready];
+      if (query.sql.startsWith('SELECT app.checkpoint_answer_draft_context('))
+        return [{ data: retained }];
+      if (query.sql.startsWith('SELECT app.read_checkpoint_answer_draft('))
+        return [{ data: wire() }];
+      throw Error('An unexpected application RPC was attempted');
+    });
+    const database = { execute } as unknown as OperationalDatabase;
+    expect(await readCheckpointAnswerDraftReadiness(database)).toEqual({
+      ready: false,
+      livePersistenceVerified: false,
+    });
+    expect(await readCheckpointAnswerDraftContext(database, id, id, scope.taskKey)).toEqual(
+      retained,
+    );
+    expect(
+      await readCheckpointAnswerDraft(database, id, scope, contract.digest, request),
+    ).toMatchObject({ payload, version: 1, requestId: request });
+    const beforeSave = execute.mock.calls.length;
+    await expect(saveCheckpointAnswerDraft(database, input)).rejects.toMatchObject({
+      code: 'unavailable',
+    });
+    const saveSql = execute.mock.calls
+      .slice(beforeSave)
+      .map(([statement]) => new PgDialect().sqlToQuery(statement).sql);
+    expect(saveSql).toHaveLength(3);
+    expect(saveSql[0]).toBe(CHECKPOINT_ANSWER_DRAFT_RETAINED_READINESS_SQL);
+    expect(saveSql[1]).toContain('SELECT app.checkpoint_answer_draft_context(');
+    expect(saveSql[2]).toBe(CHECKPOINT_ANSWER_DRAFT_READINESS_SQL);
+    expect(saveSql.some((sql) => sql.startsWith('SELECT app.save_checkpoint_answer_draft('))).toBe(
+      false,
+    );
+  });
+
   it.each([false, undefined, null, 'true', 1])(
     'rejects an absent or unproven canonical validator attestation %s before any draft RPC',
     async (canonical_validator) => {

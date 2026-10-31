@@ -10,6 +10,7 @@ export type QuestionSession = Readonly<{
   conflict: null | { source: string; version: number };
   recovery: null | { source: string; remote: string; conflict: boolean };
   localStatus: 'disabled' | 'stored' | 'failed';
+  officialSubmit?: boolean;
 }>;
 type Entry = {
   buffer: string;
@@ -85,6 +86,7 @@ export class CheckpointEditorSession {
         conflict: s?.draft.save.kind === 'conflict' ? s.draft.save.remote : null,
         recovery: e.recovery,
         localStatus: e.localStatus,
+        ...(e.boot ? { officialSubmit: e.boot.window.capabilities.officialSubmit } : {}),
       };
     }
     this.snapshot = next;

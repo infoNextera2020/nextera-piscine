@@ -1,3 +1,5 @@
+import { checkpointScoredExamMetadata, checkpointScoredExamResult } from '@nextera/domain';
+import { scoredCheckpointExecutionLabel } from '../../lib/learning/checkpoint-presentation';
 import Link from 'next/link';
 import type { CheckpointPresentation } from '../../lib/learning/checkpoint-presentation';
 import type { LearningOverview } from '../../lib/learning/types';
@@ -42,6 +44,27 @@ export function CheckpointResult({
   attemptId?: string | undefined;
 }) {
   const attempt = view.history.find((h) => h.id === (attemptId ?? view.attempt?.id));
+  const selectedCurrent = !!attempt && attempt.id === view.attempt?.id;
+  const selectedMarker = checkpointScoredExamMetadata(
+    attempt?.scored_exam ?? (selectedCurrent ? view.scored_exam : undefined),
+  );
+  const markedNode = checkpointScoredExamMetadata(view.scored_exam);
+  if (selectedMarker || (markedNode && !selectedCurrent)) {
+    const result = selectedMarker
+      ? checkpointScoredExamResult(selectedCurrent ? view.scored_result : attempt?.scored_result)
+      : null;
+    return (
+      <ScoredCheckpointResult
+        view={view}
+        overview={overview}
+        cohort={cohort}
+        node={node}
+        attempt={attempt}
+        result={result}
+        current={selectedCurrent}
+      />
+    );
+  }
   const outcome =
     attempt &&
     attempt.outcome_id &&
@@ -234,6 +257,167 @@ export function CheckpointResult({
               <RecordDetails>
                 <p className={s.muted}>Checkpoint outcome</p>
                 <code className={s.identity}>{attempt.outcome_id}</code>
+                <p className={s.muted}>Attempt identity</p>
+                <code className={s.identity}>{attempt.id}</code>
+              </RecordDetails>
+            </section>
+          </div>
+        </div>
+      </div>
+    </LearningSurface>
+  );
+}
+
+/** The enclosing selected attempt binds this native projection. Never use current totals
+ * for a historical selection, legacy task-pass counts, or job verdicts as rubric grades. */
+function ScoredCheckpointResult({
+  view,
+  overview,
+  cohort,
+  node,
+  attempt,
+  result,
+  current,
+}: {
+  view: CheckpointPresentation;
+  overview: LearningOverview;
+  cohort: string;
+  node: string;
+  attempt: CheckpointPresentation['history'][number] | undefined;
+  result: ReturnType<typeof checkpointScoredExamResult>;
+  current: boolean;
+}) {
+  const base = `/app/cohorts/${cohort}/checkpoints/${node}`;
+  if (
+    !attempt ||
+    !result ||
+    !['passed', 'failed'].includes(result.status) ||
+    result.total_points === null ||
+    result.coding_points === null ||
+    result.outcome_id === null
+  )
+    return (
+      <LearningSurface page="checkpoint">
+        <section className={s.card + ' ' + c.pending}>
+          <h1>Exam result</h1>
+          <WorkspaceEmpty
+            title={
+              result?.status === 'in_progress'
+                ? 'Exam in progress'
+                : 'Result provisional — awaiting evaluation and review'
+            }
+          >
+            {attempt
+              ? 'Your weighted result is available after evaluation and the required review. Submitted answers remain separate from saved drafts. You do not need to wait for a mentor to finish the exam.'
+              : 'No matching authoritative attempt result is available.'}
+          </WorkspaceEmpty>
+          <div className={s.actions}>
+            <Link className={s.button + ' ' + c.button} href={base}>
+              Return to checkpoint
+            </Link>
+            <RefreshLearning />
+          </div>
+        </section>
+      </LearningSurface>
+    );
+  const passed = result.status === 'passed';
+  const mastered = overview.nodes.find((n) => n.key === node)?.state === 'mastered';
+  return (
+    <LearningSurface page="checkpoint">
+      <div className={s.stack + ' ' + c.results}>
+        <section
+          className={s.card + ' ' + s.result + ' ' + c.outcome}
+          data-state={result.status}
+          aria-label="Authoritative exam result"
+        >
+          <div className={s.score + ' ' + c.score}>
+            <strong>{result.total_points} / 100</strong>
+            <span>Final weighted result</span>
+            <span>{result.coding_points} / 75 coding</span>
+          </div>
+          <div>
+            <StatusBadge state={result.status} label={passed ? 'PASS' : 'NOT PASSED'} />
+            <h1>{passed ? 'The exam was passed.' : 'The exam was not passed.'}</h1>
+            <p>
+              This result comes from the authoritative finalized scoring record for this exact
+              attempt, including the required review evidence.
+            </p>
+            <div className={s.actions}>
+              <Link
+                className={s.button + ' ' + c.button + ' ' + (passed ? c.primary : c.navigation)}
+                href={'/app/cohorts/' + cohort}
+              >
+                See updated Roadmap
+              </Link>
+              <Link
+                className={s.button + ' ' + c.button}
+                href={'/app/cohorts/' + cohort + '/evidence'}
+              >
+                View Evidence
+              </Link>
+            </div>
+          </div>
+        </section>
+        <div className={s.equalColumns + ' ' + c.columns}>
+          <section className={s.card}>
+            <h2>Recorded answer evidence</h2>
+            <p>Execution feedback alone does not determine the question grade.</p>
+            {current ? (
+              <ul className={s.history}>
+                {view.tasks.map((task) => (
+                  <li key={task.key} className={s.record}>
+                    <strong>{task.title}</strong>
+                    {view.submissions
+                      .filter((submission) => submission.task_key === task.key)
+                      .map((submission) => (
+                        <p key={submission.id}>
+                          {scoredCheckpointExecutionLabel(submission.state, true)}
+                        </p>
+                      ))}
+                  </li>
+                ))}
+              </ul>
+            ) : (
+              <p className={s.muted}>
+                This historical attempt’s finalized outcome is retained. Current-attempt answer
+                history is not substituted for historical evidence.
+              </p>
+            )}
+          </section>
+          <div className={s.stack}>
+            <section className={s.card}>
+              <h2>Journey update</h2>
+              <p>
+                {passed
+                  ? mastered
+                    ? 'Exam mastery is stored in your current progress.'
+                    : 'Refresh to view the latest stored progression.'
+                  : 'This finalized result did not meet the published mastery criteria. No automatic retake is granted.'}
+              </p>
+              <h3 style={{ marginTop: 20 }}>Current available progression</h3>
+              <p className={s.muted}>
+                The stored cohort schedule and access remain authoritative; no release is inferred
+                from this screen.
+              </p>
+              <ul className={s.context} style={{ marginTop: 16 }}>
+                {overview.nodes
+                  .filter((n) => n.state === 'available')
+                  .map((n) => (
+                    <li key={n.key}>
+                      {n.href ? <Link href={n.href}>{n.title}</Link> : n.title}
+                      <StatusBadge state={n.state} />
+                    </li>
+                  ))}
+              </ul>
+            </section>
+            <section className={s.card}>
+              <h2>Durable outcome record</h2>
+              {attempt.completed_at && (
+                <time dateTime={attempt.completed_at}>{formatMoment(attempt.completed_at)}</time>
+              )}
+              <RecordDetails>
+                <p className={s.muted}>Scored exam outcome</p>
+                <code className={s.identity}>{result.outcome_id}</code>
                 <p className={s.muted}>Attempt identity</p>
                 <code className={s.identity}>{attempt.id}</code>
               </RecordDetails>

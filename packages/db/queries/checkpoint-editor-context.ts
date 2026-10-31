@@ -7,6 +7,34 @@ export class CheckpointEditorContextError extends Error {
     super('CHECKPOINT_EDITOR_' + code.toUpperCase());
   }
 }
+export type ScoredExamContextMarker = Readonly<{
+  version: 1;
+  form: 'A' | 'B' | 'C' | 'D';
+  rubricDigest: string;
+}>;
+export function parseScoredExamContextMarker(raw: unknown): ScoredExamContextMarker {
+  if (!raw || typeof raw !== 'object' || Array.isArray(raw)) fail();
+  const descriptors = Object.getOwnPropertyDescriptors(raw);
+  const keys = Reflect.ownKeys(descriptors);
+  if (
+    keys.length !== 3 ||
+    !['version', 'form', 'rubricDigest'].every(
+      (k) => Object.hasOwn(descriptors, k) && Object.hasOwn(descriptors[k]!, 'value'),
+    )
+  )
+    fail();
+  const version = descriptors.version!.value;
+  const form = descriptors.form!.value;
+  const rubricDigest = descriptors.rubricDigest!.value;
+  if (
+    version !== 1 ||
+    !['A', 'B', 'C', 'D'].includes(form) ||
+    typeof rubricDigest !== 'string' ||
+    !/^[a-f0-9]{64}$/.test(rubricDigest)
+  )
+    fail();
+  return Object.freeze({ version: 1, form, rubricDigest });
+}
 export type CheckpointOfficialContext = Readonly<{
   scope: Readonly<{
     learnerId: string;
@@ -22,6 +50,7 @@ export type CheckpointOfficialContext = Readonly<{
   sourceBytes: number;
   filename: string;
   submitAllowed: boolean;
+  scoredExam?: ScoredExamContextMarker;
 }>;
 
 /** Attestation for the exact new read-only function; not proof of a live rehearsal. */
@@ -105,7 +134,12 @@ export async function readCheckpointEditorContext(
       (value.status !== 'active' || Date.parse(value.serverNow) >= Date.parse(value.deadline)))
   )
     fail();
+  const scoredExam = Object.hasOwn(value, 'scoredExam')
+    ? parseScoredExamContextMarker(value.scoredExam)
+    : undefined;
+  if (scoredExam && !/^q[1-5]$/.test(taskKey)) fail();
   return Object.freeze({
+    ...(scoredExam ? { scoredExam } : {}),
     scope: Object.freeze({
       learnerId: scope.learnerId as string,
       cohortId: scope.cohortId as string,

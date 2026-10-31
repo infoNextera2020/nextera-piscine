@@ -12,3 +12,5 @@ export * from './checkpoint-view';
 export * from './piscine-pilot-policy';
 
 export * from './exam-scoring';
+
+export * from './scored-exam-lifecycle';

@@ -1,6 +1,11 @@
 import { and, eq, sql } from 'drizzle-orm';
 import type { PostgresJsDatabase } from 'drizzle-orm/postgres-js';
-import type { Curriculum } from '@nextera/domain';
+import type { Curriculum, ExamScoringRubric, CheckpointDefinition } from '@nextera/domain';
+import {
+  prepareScoredExamPublication,
+  checkpointCanonicalJson,
+  type ScoredExamSourceBinding,
+} from './scored-exam-publication';
 import * as schema from '../schema/index';
 
 export type OperationalDatabase = PostgresJsDatabase<typeof schema>;
@@ -9,27 +14,88 @@ export type EvaluationProjection = {
   spec: Record<string, unknown>;
   digest: string;
   checkpoint?: Record<string, unknown>;
+  definitionDigest?: string;
+  scoringRubric?: ExamScoringRubric;
+  scoringSourceBinding?: ScoredExamSourceBinding;
+  scoringSourceBindingDigest?: string;
 };
+
+function freezeMarkedSource<T>(value: T): T {
+  if (value && typeof value === 'object') {
+    Object.values(value).forEach(freezeMarkedSource);
+    Object.freeze(value);
+  }
+  return value;
+}
 
 /** A draft is a validated source receipt, with no incomplete node projections. */
 export async function importCurriculum(
   db: OperationalDatabase,
-  curriculum: Curriculum,
+  curriculum: Curriculum<CheckpointDefinition>,
   gitCommitSha: string,
   evaluations?: EvaluationProjection[],
 ) {
+  // Capture marked projections before the first await. There is no publication/default authority here.
+  // Only marked source takes this new snapshot path. Do not freeze/mutate caller objects.
+  const markedSource = curriculum.nodes.some(
+    (node) =>
+      node.checkpoint?.policyVersion === 3 ||
+      (node.checkpoint && Object.hasOwn(node.checkpoint, 'examScoring')),
+  );
+  const source: Curriculum<CheckpointDefinition> = markedSource
+    ? freezeMarkedSource(
+        JSON.parse(checkpointCanonicalJson(curriculum)) as Curriculum<CheckpointDefinition>,
+      )
+    : curriculum;
+  const projections = evaluations?.map((evaluation) => {
+    const definition = evaluation.checkpoint;
+    const nested = evaluation.spec.checkpoint_definition as Record<string, unknown> | undefined;
+    const marked =
+      definition?.policyVersion === 3 ||
+      (definition && Object.hasOwn(definition, 'examScoring')) ||
+      nested?.policyVersion === 3 ||
+      (nested && Object.hasOwn(nested, 'examScoring'));
+    if (marked) {
+      const publication = prepareScoredExamPublication(evaluation);
+      const node = source.nodes.find((n) => n.key === publication.nodeKey);
+      if (
+        !node ||
+        node.kind !== 'checkpoint' ||
+        node.checkpoint?.policyVersion !== 3 ||
+        publication.spec.curriculum_key !== source.key ||
+        publication.spec.curriculum_version !== source.version ||
+        publication.spec.content_digest !== source.contentDigest ||
+        publication.spec.subject_digest !== node.subjectDigest ||
+        publication.spec.configuration_digest !== node.configurationDigest ||
+        node.checkpoint.examScoring.form !==
+          (publication.checkpoint.examScoring as Record<string, unknown>).form
+      )
+        throw new Error('Scored projection differs from the immutable source identity.');
+      return publication;
+    }
+    if (
+      evaluation.definitionDigest !== undefined ||
+      evaluation.scoringRubric !== undefined ||
+      evaluation.scoringSourceBinding !== undefined ||
+      evaluation.scoringSourceBindingDigest !== undefined
+    )
+      throw new Error('Scored publication metadata is forbidden on a legacy node.');
+    return markedSource
+      ? freezeMarkedSource(JSON.parse(checkpointCanonicalJson(evaluation)) as EvaluationProjection)
+      : evaluation;
+  });
   return db.transaction(async (tx) => {
     await tx.execute(
-      sql`SELECT pg_advisory_xact_lock(hashtextextended(${`${curriculum.key}/${curriculum.version}`}, 0))`,
+      sql`SELECT pg_advisory_xact_lock(hashtextextended(${`${source.key}/${source.version}`}, 0))`,
     );
     await tx
       .insert(schema.curriculumVersions)
       .values({
-        curriculumKey: curriculum.key,
-        version: curriculum.version,
+        curriculumKey: source.key,
+        version: source.version,
         gitCommitSha,
-        contentDigest: curriculum.contentDigest,
-        digestFormatVersion: curriculum.digestFormatVersion,
+        contentDigest: source.contentDigest,
+        digestFormatVersion: source.digestFormatVersion,
         status: 'draft',
       })
       .onConflictDoNothing();
@@ -38,56 +104,90 @@ export async function importCurriculum(
       .from(schema.curriculumVersions)
       .where(
         and(
-          eq(schema.curriculumVersions.curriculumKey, curriculum.key),
-          eq(schema.curriculumVersions.version, curriculum.version),
+          eq(schema.curriculumVersions.curriculumKey, source.key),
+          eq(schema.curriculumVersions.version, source.version),
         ),
       )
       .for('update');
     if (
       !version ||
-      version.contentDigest !== curriculum.contentDigest ||
-      version.digestFormatVersion !== curriculum.digestFormatVersion
+      version.contentDigest !== source.contentDigest ||
+      version.digestFormatVersion !== source.digestFormatVersion
     )
       throw new Error(
         'Version already identifies different content. Use a new curriculum version.',
       );
-    if (!evaluations) return version;
+    if (!projections) return version;
     if (
-      evaluations.length !== curriculum.nodes.length ||
-      new Set(evaluations.map((e) => e.nodeKey)).size !== curriculum.nodes.length ||
-      curriculum.nodes.some((n) => !evaluations.some((e) => e.nodeKey === n.key))
+      projections.length !== source.nodes.length ||
+      new Set(projections.map((e) => e.nodeKey)).size !== source.nodes.length ||
+      source.nodes.some((n) => !projections.some((e) => e.nodeKey === n.key))
     )
       throw new Error('Every node requires one resolved evaluation specification.');
+    const verifyRubric = async (evaluation: EvaluationProjection, insert: boolean) => {
+      if (
+        !evaluation.scoringRubric ||
+        !evaluation.scoringSourceBinding ||
+        !evaluation.scoringSourceBindingDigest ||
+        !evaluation.definitionDigest
+      )
+        throw new Error('Source-bound scored rubric unavailable.');
+      const rubric = evaluation.scoringRubric;
+      if (insert)
+        await tx.execute(sql`INSERT INTO app.exam_scoring_rubrics
+        (rubric_digest,definition_digest,form,rubric,source_binding,source_binding_digest)
+        VALUES(${rubric.digest},${evaluation.definitionDigest},${rubric.form},${JSON.stringify(rubric)}::jsonb,
+          ${JSON.stringify(evaluation.scoringSourceBinding)}::jsonb,${evaluation.scoringSourceBindingDigest})
+        ON CONFLICT DO NOTHING`);
+      const [stored] =
+        await tx.execute(sql`SELECT rubric_digest,definition_digest,form,rubric,source_binding,source_binding_digest
+        FROM app.exam_scoring_rubrics WHERE rubric_digest=${rubric.digest}`);
+      if (
+        !stored ||
+        stored.rubric_digest !== rubric.digest ||
+        stored.definition_digest !== evaluation.definitionDigest ||
+        stored.form !== rubric.form ||
+        stored.source_binding_digest !== evaluation.scoringSourceBindingDigest ||
+        checkpointCanonicalJson(stored.rubric) !== checkpointCanonicalJson(rubric) ||
+        checkpointCanonicalJson(stored.source_binding) !==
+          checkpointCanonicalJson(evaluation.scoringSourceBinding)
+      )
+        throw new Error('Existing scored rubric differs; no adoption or partial publication.');
+    };
     const existing = await tx
       .select()
       .from(schema.curriculumNodes)
       .where(eq(schema.curriculumNodes.curriculumVersionId, version.id));
     if (version.status === 'published') {
       if (
-        existing.length !== evaluations.length ||
+        existing.length !== projections.length ||
         existing.some(
           (n) =>
-            !evaluations.some(
+            !projections.some(
               (e) => e.nodeKey === n.nodeKey && e.digest === n.evaluationSpecDigest,
             ),
         )
       )
         throw new Error('Published evaluation identity differs. Use a new curriculum version.');
+      for (const evaluation of projections)
+        if (evaluation.scoringRubric) await verifyRubric(evaluation, false);
       return version;
     }
     if (existing.length)
       throw new Error('Draft contains unexpected partial projections; manual review required.');
     await tx.insert(schema.quests).values(
-      curriculum.quests.map((q) => ({
+      source.quests.map((q) => ({
         curriculumVersionId: version.id,
         questKey: q.key,
         title: q.title,
         position: q.position,
       })),
     );
+    for (const evaluation of projections)
+      if (evaluation.scoringRubric) await verifyRubric(evaluation, true);
     await tx.insert(schema.curriculumNodes).values(
-      curriculum.nodes.map((n) => {
-        const evaluation = evaluations.find((e) => e.nodeKey === n.key)!;
+      source.nodes.map((n) => {
+        const evaluation = projections.find((e) => e.nodeKey === n.key)!;
         return {
           curriculumVersionId: version.id,
           nodeKey: n.key,
@@ -105,15 +205,15 @@ export async function importCurriculum(
         };
       }),
     );
-    for (const evaluation of evaluations) {
+    for (const evaluation of projections) {
       if (evaluation.checkpoint) {
         await tx.execute(sql`INSERT INTO app.checkpoint_definitions(curriculum_version_id,node_key,definition_digest,definition)
-          VALUES(${version.id}::uuid,${evaluation.nodeKey},${evaluation.digest},${JSON.stringify(evaluation.checkpoint)}::jsonb)`);
+          VALUES(${version.id}::uuid,${evaluation.nodeKey},${evaluation.definitionDigest ?? evaluation.digest},${JSON.stringify(evaluation.checkpoint)}::jsonb)`);
       }
     }
-    if (curriculum.prerequisites.length)
+    if (source.prerequisites.length)
       await tx.insert(schema.nodePrerequisites).values(
-        curriculum.prerequisites.map((e) => ({
+        source.prerequisites.map((e) => ({
           curriculumVersionId: version.id,
           prerequisiteNodeKey: e.from,
           dependentNodeKey: e.to,
