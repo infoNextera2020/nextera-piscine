@@ -1,10 +1,13 @@
 import 'server-only';
 import * as nodeFs from 'node:fs';
 import { createHash } from 'node:crypto';
-import type { ProtectedInput, ReviewedInvitationBinding } from './runtime-configuration-core';
+import {
+  INVITATION_RUNTIME_SOURCE_BINDING,
+  type ProtectedInput,
+  type ReviewedInvitationBinding,
+} from './runtime-configuration-core';
 
-export const INVITATION_ROOT =
-  '/home/anas/.local/share/nextera-judge/week1-auth-20261030-invitation1/run-001';
+export const INVITATION_ROOT = INVITATION_RUNTIME_SOURCE_BINDING.target.root;
 export type NativeFileStat = Readonly<{
   dev: bigint;
   ino: bigint;
@@ -179,7 +182,7 @@ function freeze<T>(value: T): T {
 }
 type AnchorData = Readonly<{
   version: 1;
-  profile: 'week1-auth-20261030-invitation1';
+  profile: typeof INVITATION_RUNTIME_SOURCE_BINDING.profile;
   root: string;
   uid: number;
   reviewed: ReviewedInvitationBinding;
@@ -205,7 +208,7 @@ export function readNativeInvitationStartupAnchor(
   if (
     Object.keys(a).sort().join() !== 'credentialsSha256,profile,reviewed,root,uid,version' ||
     a.version !== 1 ||
-    a.profile !== 'week1-auth-20261030-invitation1' ||
+    a.profile !== INVITATION_RUNTIME_SOURCE_BINDING.profile ||
     a.root !== INVITATION_ROOT ||
     a.uid !== uid ||
     typeof a.credentialsSha256 !== 'string' ||

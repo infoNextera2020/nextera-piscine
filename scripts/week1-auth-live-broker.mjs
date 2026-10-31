@@ -20,20 +20,20 @@ import {
 import { INVITATION_AUTH_DRAFTS } from './invitation-auth-migration-plan.mjs';
 
 export const WEEK1_TARGET = Object.freeze({
-  profile: 'week1-auth-20261030-invitation1',
-  root: '/home/anas/.local/share/nextera-judge/week1-auth-20261030-invitation1/run-002',
-  project: '01coding-week1-auth-20261030-invitation1',
-  database: 'foundation_test_week1_auth_20261030_invitation1',
+  profile: 'week1-auth-20261031-smtp1',
+  root: '/home/anas/.local/share/nextera-judge/week1-auth-20261031-smtp1/run-001',
+  project: '01coding-week1-auth-20261031-smtp1',
+  database: 'foundation_test_week1_auth_20261031_smtp1',
   origin: 'http://127.0.0.1:3151',
   authOrigin: 'http://127.0.0.1:56531',
   dbHost: '127.0.0.1',
   dbPort: 56532,
   dba: 'supabase_admin',
-  actor: 'week1_auth_migrator_20261030_invitation1',
+  actor: 'week1_auth_migrator_20261031_smtp1',
   roles: Object.freeze({
-    issuer: 'week1_auth_issuer_20261030_invitation1',
-    activation: 'week1_auth_activate_20261030_invitation1',
-    web: 'week1_auth_web_20261030_invitation1',
+    issuer: 'week1_auth_issuer_20261031_smtp1',
+    activation: 'week1_auth_activate_20261031_smtp1',
+    web: 'week1_auth_web_20261031_smtp1',
   }),
 });
 export const WEEK1_SERVICES = Object.freeze([

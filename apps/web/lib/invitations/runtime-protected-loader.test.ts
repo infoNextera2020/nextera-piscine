@@ -77,7 +77,7 @@ function fixture() {
   };
   const anchor = encode({
     version: 1,
-    profile: 'week1-auth-20261030-invitation1',
+    profile: 'week1-auth-20261031-smtp1',
     root: ROOT,
     uid: 1000,
     reviewed,
@@ -264,7 +264,7 @@ async function withRealDescriptorFixture<T>(
     const reviewed = fixture().reviewed;
     const anchorBytes = encode({
       version: 1,
-      profile: 'week1-auth-20261030-invitation1',
+      profile: 'week1-auth-20261031-smtp1',
       root: ROOT,
       uid,
       reviewed,
@@ -384,3 +384,71 @@ describe.skipIf(process.platform !== 'linux')(
     });
   },
 );
+
+it('rejects an exactly rehashed closed-profile startup anchor using only fake descriptors', () => {
+  for (const change of [
+    { profile: 'week1-auth-20261030-invitation1' },
+    { root: '/home/anas/.local/share/nextera-judge/week1-auth-20261030-invitation1/run-002' },
+  ]) {
+    const f = fixture(),
+      n = f.paths.get(ROOT + '/startup-anchor.json')!;
+    const old = { ...JSON.parse(new TextDecoder().decode(n.bytes)), ...change };
+    n.bytes = encode(old);
+    n.s = { ...n.s, size: BigInt(n.bytes.length) };
+    expect(() => readNativeInvitationStartupAnchor(hash(n.bytes), 1000, f.fs)).toThrow(
+      'INVITATION_PROTECTED_INPUT_UNAVAILABLE',
+    );
+    expect(f.fds.size).toBe(0);
+  }
+});
+
+it('imports only public source bindings without private selectors or native ports', async () => {
+  const never = vi.fn(() => {
+    throw new Error('Unexpected native import action');
+  });
+  const originalEnvironment = process.env;
+  const privateSelectors = new Set([
+    'DATABASE_URL',
+    'SUPABASE_SERVICE_ROLE_KEY',
+    'NEXTERA_WEEK1_INVITATION_STARTUP_SHA256',
+    'NEXTERA_WEEK1_AUTH_PROFILE',
+  ]);
+  vi.resetModules();
+  vi.doMock('node:fs', () => ({
+    constants: C,
+    openSync: never,
+    fstatSync: never,
+    readSync: never,
+    readFileSync: never,
+    closeSync: never,
+  }));
+  vi.doMock('postgres', () => {
+    throw new Error('DB module imported');
+  });
+  vi.doMock('@supabase/supabase-js', () => {
+    throw new Error('Provider module imported');
+  });
+  const network = vi.spyOn(globalThis, 'fetch').mockImplementation(never);
+  process.env = new Proxy(originalEnvironment, {
+    get(target, key) {
+      if (typeof key === 'string' && privateSelectors.has(key))
+        throw new Error('Private selector read');
+      return Reflect.get(target, key);
+    },
+  });
+  try {
+    const core = await import('./runtime-configuration-core');
+    const loader = await import('./runtime-protected-loader');
+    expect(loader.INVITATION_ROOT).toBe(core.INVITATION_RUNTIME_SOURCE_BINDING.target.root);
+    expect(Object.isFrozen(core.INVITATION_RUNTIME_SOURCE_BINDING.target.roles)).toBe(true);
+    expect(never).not.toHaveBeenCalled();
+    expect(network).not.toHaveBeenCalled();
+  } finally {
+    process.env = originalEnvironment;
+    network.mockRestore();
+    vi.doUnmock('node:fs');
+    vi.doUnmock('postgres');
+    vi.doUnmock('@supabase/supabase-js');
+    vi.resetModules();
+  }
+});

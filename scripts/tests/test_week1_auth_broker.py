@@ -81,7 +81,7 @@ class BrokerSourceTests(unittest.TestCase):
             adapter.command = Mock(return_value=broker.json.dumps(result).encode())
             adapter.validate_public_source()
             args, options = adapter.command.call_args
-            self.assertEqual(args[0], [adapter.node, '--input-type=module', '-e', broker.SOURCE_SPEC_VALIDATE_JS, str(template)])
+            self.assertEqual(args[0], [adapter.node, '--conditions=react-server', '--input-type=module', '-e', broker.SOURCE_SPEC_VALIDATE_JS, str(template)])
             self.assertEqual(broker.json.loads(options['data']), adapter.spec)
             self.assertEqual(options['timeout'], 10)
             adapter.command.reset_mock()
@@ -249,13 +249,13 @@ class BrokerSourceTests(unittest.TestCase):
     def test_native_driver_is_explicit_required_and_old_root_cannot_reopen(self):
         p = proposal()
         for change in [{'hostGuardDriver': None}, {'hostGuardDriver': 'wsl-interop'},
-                       {'target': {**p['target'], 'root': broker.ROOT.replace('run-002','run-001')}}]:
+                       {'target': {**p['target'], 'root': '/home/anas/.local/share/nextera-judge/week1-auth-20261030-invitation1/run-002'}}]:
             value = {**p, **change}
             value['scopeSha256'] = broker.scope_sha256(value)
             with self.assertRaises(broker.ScopeError):
                 broker.admit(value, owner(value, '7'), NOW+1)
         self.assertNotIn('/mnt/c/Windows/System32', source.read_text())
-        self.assertIn('run-002', broker.ROOT)
+        self.assertEqual(broker.ROOT, '/home/anas/.local/share/nextera-judge/week1-auth-20261031-smtp1/run-001')
 
     def test_pipe_loss_blocks_work_even_when_controller_and_linux_guard_are_alive(self):
         adapter = broker.LiveBroker.__new__(broker.LiveBroker)

@@ -13,8 +13,8 @@ param(
     [string]$ManifestSha256
 )
 $ErrorActionPreference = 'Stop'
-$ProfileId = 'week1-auth-20261030-invitation1'
-$OwnedRoot = '/home/anas/.local/share/nextera-judge/week1-auth-20261030-invitation1/run-002'
+$ProfileId = 'week1-auth-20261031-smtp1'
+$OwnedRoot = '/home/anas/.local/share/nextera-judge/week1-auth-20261031-smtp1/run-001'
 $DockerCli = 'C:\Program Files\Docker\Docker\resources\bin\docker.exe'
 $WindowsPowerShell = 'C:\Windows\System32\WindowsPowerShell\v1.0\powershell.exe'
 $LocalEndpoint = 'npipe:////./pipe/docker_engine'

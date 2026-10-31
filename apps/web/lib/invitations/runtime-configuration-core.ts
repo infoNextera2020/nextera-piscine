@@ -6,9 +6,27 @@ import type { InvitationAssemblySettings } from './assembly';
 import type { InvitationIssuanceAssemblySettings } from './issuance-assembly';
 import type { InvitationSignupPublicPolicy } from './signup-settings';
 
-const ROOT = '/home/anas/.local/share/nextera-judge/week1-auth-20261030-invitation1/run-001';
-const PROFILE = 'week1-auth-20261030-invitation1';
-const TOKEN = '20261030_invitation1';
+const ROOT = '/home/anas/.local/share/nextera-judge/week1-auth-20261031-smtp1/run-001';
+const PROFILE = 'week1-auth-20261031-smtp1';
+const TOKEN = '20261031_smtp1';
+/** Public source binding, shared by exact runtime validation and pre-reservation proof. */
+export const INVITATION_RUNTIME_SOURCE_BINDING = Object.freeze({
+  profile: PROFILE,
+  target: Object.freeze({
+    root: ROOT,
+    project: '01coding-' + PROFILE,
+    database: 'foundation_test_week1_auth_' + TOKEN,
+    origin: 'http://127.0.0.1:3151',
+    authOrigin: 'http://127.0.0.1:56531',
+    dbHost: '127.0.0.1',
+    dbPort: 56532,
+    roles: Object.freeze({
+      issuer: 'week1_auth_issuer_' + TOKEN,
+      activation: 'week1_auth_activate_' + TOKEN,
+      web: 'week1_auth_web_' + TOKEN,
+    }),
+  }),
+});
 const HASH = /^[a-f0-9]{64}$/;
 const UUID = /^[a-f0-9]{8}(?:-[a-f0-9]{4}){3}-[a-f0-9]{12}$/;
 const CLOSED_MESSAGES = new Set([
@@ -212,7 +230,7 @@ function configuration(value: unknown): InvitationRuntimeConfiguration {
   ]);
   if (
     r.version !== 1 ||
-    r.profile !== PROFILE ||
+    r.profile !== INVITATION_RUNTIME_SOURCE_BINDING.profile ||
     ![r.scopeSha256, r.sourceLockSha256].every((v) => typeof v === 'string' && HASH.test(v)) ||
     typeof r.reviewedHead !== 'string' ||
     !/^[a-f0-9]{40}$/.test(r.reviewedHead) ||
@@ -231,21 +249,13 @@ function configuration(value: unknown): InvitationRuntimeConfiguration {
     'dbPort',
     'roles',
   ]);
-  const expected = {
-    root: ROOT,
-    project: '01coding-week1-auth-20261030-invitation1',
-    database: 'foundation_test_week1_auth_' + TOKEN,
-    origin: 'http://127.0.0.1:3151',
-    authOrigin: 'http://127.0.0.1:56531',
-    dbHost: '127.0.0.1',
-    dbPort: 56532,
-  };
+  const { roles: expectedRoles, ...expected } = INVITATION_RUNTIME_SOURCE_BINDING.target;
   if (Object.entries(expected).some(([key, v]) => t[key] !== v)) reject();
   const roles = record(t.roles, ['issuer', 'activation', 'web']);
   if (
-    roles.issuer !== 'week1_auth_issuer_' + TOKEN ||
-    roles.activation !== 'week1_auth_activate_' + TOKEN ||
-    roles.web !== 'week1_auth_web_' + TOKEN
+    roles.issuer !== expectedRoles.issuer ||
+    roles.activation !== expectedRoles.activation ||
+    roles.web !== expectedRoles.web
   )
     reject();
   if (!Array.isArray(r.learners) || r.learners.length !== 2) reject();

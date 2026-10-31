@@ -25,13 +25,13 @@ function fixture() {
     mono = 1000,
     nonce = 0;
   const roles = {
-    issuer: 'week1_auth_issuer_20261030_invitation1',
-    activation: 'week1_auth_activate_20261030_invitation1',
-    web: 'week1_auth_web_20261030_invitation1',
+    issuer: 'week1_auth_issuer_20261031_smtp1',
+    activation: 'week1_auth_activate_20261031_smtp1',
+    web: 'week1_auth_web_20261031_smtp1',
   };
   const c = {
     version: 1,
-    profile: 'week1-auth-20261030-invitation1',
+    profile: 'week1-auth-20261031-smtp1',
     scopeSha256: 'a'.repeat(64),
     sourceLockSha256: 'b'.repeat(64),
     reviewedHead: 'c'.repeat(40),
@@ -39,9 +39,9 @@ function fixture() {
     cohortId: id,
     curriculumVersionId: id,
     target: {
-      root: '/home/anas/.local/share/nextera-judge/week1-auth-20261030-invitation1/run-001',
-      project: '01coding-week1-auth-20261030-invitation1',
-      database: 'foundation_test_week1_auth_20261030_invitation1',
+      root: '/home/anas/.local/share/nextera-judge/week1-auth-20261031-smtp1/run-001',
+      project: '01coding-week1-auth-20261031-smtp1',
+      database: 'foundation_test_week1_auth_20261031_smtp1',
       origin,
       authOrigin,
       dbHost: '127.0.0.1',

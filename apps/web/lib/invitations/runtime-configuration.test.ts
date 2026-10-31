@@ -5,6 +5,7 @@ import { createInvitationActivation, type Phase } from './activation';
 import { createInvitationActivationHandler } from './http';
 import {
   createInvitationRequestConfiguration,
+  INVITATION_RUNTIME_SOURCE_BINDING,
   type InvitationRuntimeConfiguration,
   type ImmutableInvitationLease,
   type InvitationRuntimeDependencies,
@@ -12,7 +13,7 @@ import {
   type ProtectedInput,
 } from './runtime-configuration-core';
 
-const root = '/home/anas/.local/share/nextera-judge/week1-auth-20261030-invitation1/run-001';
+const root = '/home/anas/.local/share/nextera-judge/week1-auth-20261031-smtp1/run-001';
 const id = '10000000-0000-4000-8000-000000000001';
 const origin = 'http://127.0.0.1:3151';
 const encode = (v: unknown) => new TextEncoder().encode(JSON.stringify(v));
@@ -25,9 +26,9 @@ function fixture(
   let wall = start + 700000,
     mono = 1700000;
   const roles = {
-    issuer: 'week1_auth_issuer_20261030_invitation1',
-    activation: 'week1_auth_activate_20261030_invitation1',
-    web: 'week1_auth_web_20261030_invitation1',
+    issuer: 'week1_auth_issuer_20261031_smtp1',
+    activation: 'week1_auth_activate_20261031_smtp1',
+    web: 'week1_auth_web_20261031_smtp1',
   };
   const rate = (profile: string, maxRequests: number) => ({
     profile,
@@ -38,14 +39,14 @@ function fixture(
   const sourceLock = encode({ syntheticSourceOnly: true });
   const c: InvitationRuntimeConfiguration = {
     version: 1,
-    profile: 'week1-auth-20261030-invitation1',
+    profile: 'week1-auth-20261031-smtp1',
     scopeSha256: 'a'.repeat(64),
     sourceLockSha256: hash(sourceLock),
     reviewedHead: 'b'.repeat(40),
     target: {
       root,
-      project: '01coding-week1-auth-20261030-invitation1',
-      database: 'foundation_test_week1_auth_20261030_invitation1',
+      project: '01coding-week1-auth-20261031-smtp1',
+      database: 'foundation_test_week1_auth_20261031_smtp1',
       origin,
       authOrigin: 'http://127.0.0.1:56531',
       dbHost: '127.0.0.1',
@@ -610,4 +611,32 @@ describe('injected request-time invitation configuration (no native I/O)', () =>
     expect(await f.app().activation(req())).toBeNull();
     expect(f.close).toHaveBeenCalledTimes(1);
   });
+});
+
+it('uses one exact immutable source binding and rejects closed profile fields before client acquisition', async () => {
+  const binding = INVITATION_RUNTIME_SOURCE_BINDING;
+  expect(Object.isFrozen(binding)).toBe(true);
+  expect(Object.isFrozen(binding.target)).toBe(true);
+  expect(Object.isFrozen(binding.target.roles)).toBe(true);
+  const current = fixture();
+  expect(current.c.profile).toBe(binding.profile);
+  expect(current.c.target).toEqual(binding.target);
+  for (const change of [
+    (c: InvitationRuntimeConfiguration) =>
+      Object.assign(c, { profile: 'week1-auth-20261030-invitation1' }),
+    (c: InvitationRuntimeConfiguration) =>
+      Object.assign(c.target, {
+        root: '/home/anas/.local/share/nextera-judge/week1-auth-20261030-invitation1/run-002',
+      }),
+    (c: InvitationRuntimeConfiguration) =>
+      Object.assign(c.target, { project: '01coding-week1-auth-20261030-invitation1' }),
+    (c: InvitationRuntimeConfiguration) =>
+      Object.assign(c.target, { database: 'foundation_test_week1_auth_20261030_invitation1' }),
+    (c: InvitationRuntimeConfiguration) =>
+      Object.assign(c.target.roles, { web: 'week1_auth_web_20261030_invitation1' }),
+  ]) {
+    const old = fixture(change);
+    expect(await old.app().activation(req())).toBeNull();
+    expect(old.deps.acquireClients).not.toHaveBeenCalled();
+  }
 });

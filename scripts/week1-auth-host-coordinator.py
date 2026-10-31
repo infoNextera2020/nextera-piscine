@@ -20,15 +20,15 @@ import threading
 import time
 
 DRIVER = 'native-windows-parent-v1'
-PROFILE = 'week1-auth-20261030-invitation1'
-ROOT = '/home/anas/.local/share/nextera-judge/' + PROFILE + '/run-002'
+PROFILE = 'week1-auth-20261031-smtp1'
+ROOT = '/home/anas/.local/share/nextera-judge/' + PROFILE + '/run-001'
 PROJECT = '01coding-' + PROFILE
 WINDOWS_PYTHON = r'C:\Python315\python.exe'
 WSL = r'C:\Windows\System32\wsl.exe'
 POWERSHELL = r'C:\Windows\System32\WindowsPowerShell\v1.0\powershell.exe'
 DOCKER = r'C:\Program Files\Docker\Docker\resources\bin\docker.exe'
 ENDPOINT = 'npipe:////./pipe/docker_engine'
-GUARD = r'C:\Users\lap\Documents\Codex\2026-10-24\task\verification\host-coordinator-source-20261031\week1-auth-host-guard.ps1'
+GUARD = r'C:\Users\lap\Documents\Codex\2026-10-24\task\verification\host-coordinator-smtp-source-20261031\week1-auth-host-guard.ps1'
 MAX_FRAME = 65536
 HASH = re.compile(r'^[a-f0-9]{64}$')
 BINDING_KEYS = {'driver', 'session', 'scopeSha256', 'sourceLockSha256', 'reviewedHead', 'profile', 'root', 'project'}

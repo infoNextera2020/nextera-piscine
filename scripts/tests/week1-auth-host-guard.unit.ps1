@@ -6,7 +6,7 @@ function Assert-True($value) { if (-not $value) { throw 'Fake host guard asserti
 function Assert-Rejected([scriptblock]$work) { $denied = $false; try { & $work | Out-Null } catch { $denied = $true }; Assert-True $denied }
 # All inputs are synthetic metadata; no file/process/Docker/provider function is called.
 $m = [pscustomobject]@{
-    version=1;profile='week1-auth-20261030-invitation1';root='/home/anas/.local/share/nextera-judge/week1-auth-20261030-invitation1/run-002';project='01coding-week1-auth-20261030-invitation1';scopeSha256=('a'*64);sourceLockSha256=('b'*64);reviewedHead=('c'*40);engineId='synthetic-engine-123';dockerCliSha256=('d'*64)
+    version=1;profile='week1-auth-20261031-smtp1';root='/home/anas/.local/share/nextera-judge/week1-auth-20261031-smtp1/run-001';project='01coding-week1-auth-20261031-smtp1';scopeSha256=('a'*64);sourceLockSha256=('b'*64);reviewedHead=('c'*40);engineId='synthetic-engine-123';dockerCliSha256=('d'*64)
     startedUtc='2026-10-30T12:00:00.0000000+00:00';deadlineUtc='2026-10-30T13:00:00.0000000+00:00';cleanupAtUtc='2026-10-30T12:57:00.0000000+00:00';baselineContainerIds=@(('f'*64));services=[pscustomobject]@{}
 }
 foreach ($name in @('db','auth','rest','storage','imgproxy','meta','studio','api-gw')) { $m.services | Add-Member -NotePropertyName $name -NotePropertyValue ('fixture.invalid/'+$name+'@sha256:'+('e'*64)) }
@@ -69,3 +69,10 @@ Assert-True (($script:IdentityCalls -join ',') -ceq 'handle,identity,kill-exact-
 $script:IdentityCalls = @()
 Assert-Rejected { Stop-Week1SealedGuardProcess $fake 987655 'C:\Windows\System32\WindowsPowerShell\v1.0\powershell.exe' }
 Assert-True ($script:IdentityCalls -cnotcontains 'kill-exact-object')
+
+
+foreach ($field in @('profile','root','project')) {
+    $closed=$m|Select-Object *
+    $closed.$field=@{profile='week1-auth-20261030-invitation1';root='/home/anas/.local/share/nextera-judge/week1-auth-20261030-invitation1/run-002';project='01coding-week1-auth-20261030-invitation1'}[$field]
+    Assert-Rejected { Assert-Week1Manifest $closed }
+}

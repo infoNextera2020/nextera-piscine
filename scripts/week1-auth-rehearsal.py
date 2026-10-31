@@ -21,10 +21,10 @@ import sys
 import tarfile
 import time
 
-PROFILE = 'week1-auth-20261030-invitation1'
-ROOT = '/home/anas/.local/share/nextera-judge/' + PROFILE + '/run-002'
+PROFILE = 'week1-auth-20261031-smtp1'
+ROOT = '/home/anas/.local/share/nextera-judge/' + PROFILE + '/run-001'
 PROJECT = '01coding-' + PROFILE
-DATABASE = 'foundation_test_week1_auth_20261030_invitation1'
+DATABASE = 'foundation_test_week1_auth_20261031_smtp1'
 SERVICES = ('db', 'auth', 'rest', 'storage', 'imgproxy', 'meta', 'studio', 'api-gw')
 PORTS = (56531, 56532, 3151)
 CLOSED_MESSAGES = frozenset({
@@ -231,18 +231,25 @@ def isolated_build_plan(bundler, plan):
     return copied
 
 SOURCE_SPEC_VALIDATE_JS = """import fs from 'node:fs';
+import assert from 'node:assert/strict';
 import {createRequire} from 'node:module';
 import {prepareWeek1AuthBroker,prepareWeek1ComposeEnvironment} from './scripts/week1-auth-live-broker.mjs';
 const p=prepareWeek1AuthBroker(JSON.parse(fs.readFileSync(0,'utf8')));
 const req=createRequire(process.cwd()+'/package.json'), template=process.argv[1];
 if(!template) throw new Error('Pinned public template directory required.');
+req('tsx/cjs');
+const {INVITATION_RUNTIME_SOURCE_BINDING:binding}=req('./apps/web/lib/invitations/runtime-configuration-core.ts');
+const {INVITATION_ROOT}=req('./apps/web/lib/invitations/runtime-protected-loader.ts');
+assert.strictEqual(binding.profile,p.target.profile);
+assert.deepStrictEqual(Object.fromEntries(Object.keys(binding.target).map(key=>[key,p.target[key]])),binding.target);
+assert.strictEqual(INVITATION_ROOT,binding.target.root);
 prepareWeek1ComposeEnvironment(req('yaml').parse(fs.readFileSync(template+'/docker-compose.yml','utf8')),
   req('dotenv').parse(fs.readFileSync(template+'/.env.example')),p);
 process.stdout.write(JSON.stringify({status:'validated_not_authorized',scopeSha256:p.scopeSha256,runtimeReady:false}));
 """
 
-HOST_GUARD_LOCAL_SOURCE = r'C:\Users\lap\Documents\Codex\2026-10-24\task\verification\host-coordinator-source-20261031\week1-auth-host-guard.ps1'
-HOST_GUARD_MOUNTED_SOURCE = '/mnt/c/Users/lap/Documents/Codex/2026-10-24/task/verification/host-coordinator-source-20261031/week1-auth-host-guard.ps1'
+HOST_GUARD_LOCAL_SOURCE = r'C:\Users\lap\Documents\Codex\2026-10-24\task\verification\host-coordinator-smtp-source-20261031\week1-auth-host-guard.ps1'
+HOST_GUARD_MOUNTED_SOURCE = '/mnt/c/Users/lap/Documents/Codex/2026-10-24/task/verification/host-coordinator-smtp-source-20261031/week1-auth-host-guard.ps1'
 
 def host_driver_helpers():
     file = Path(__file__).with_name('week1-auth-host-coordinator.py')
@@ -315,7 +322,7 @@ class LiveBroker:
             p = self.template / name
             if p.is_symlink() or not p.resolve().is_relative_to(self.template) or sha(p.read_bytes()) != expected:
                 raise ScopeError('Pinned public template mismatch.')
-        validated = json.loads(self.command([self.node, '--input-type=module', '-e', SOURCE_SPEC_VALIDATE_JS,
+        validated = json.loads(self.command([self.node, '--conditions=react-server', '--input-type=module', '-e', SOURCE_SPEC_VALIDATE_JS,
                                             str(self.template)], data=json.dumps(self.spec).encode(), timeout=10))
         if validated != {'status': 'validated_not_authorized', 'scopeSha256': self.spec['scopeSha256'], 'runtimeReady': False}:
             raise ScopeError('Public broker source validation failed.')
