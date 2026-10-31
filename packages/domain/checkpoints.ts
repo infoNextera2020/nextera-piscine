@@ -25,6 +25,13 @@ export type ExecutionContract = {
 } & (
   | { version: 1; function: string; input_type: 'string' | 'int64'; output_type: 'string' }
   | { version: 2; function: ''; input_type: 'stdin_utf8'; output_type: 'stdout_utf8_exact' }
+  | {
+      version: 4;
+      learner_file: 'main.go';
+      function: '';
+      input_type: 'stdin_utf8';
+      output_type: 'atm_report_events_v1';
+    }
   | ({ version: 3; function: string } & (
       | { input_type: 'int_int' | 'string'; output_type: 'int' }
       | { input_type: 'pointer_int_int'; output_type: 'pointer_int' }

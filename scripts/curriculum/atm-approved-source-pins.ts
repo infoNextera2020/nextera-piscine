@@ -1,0 +1,58 @@
+export const APPROVED_ATM_PUBLIC_FILES = [
+  {
+    path: 'learner-en.md',
+    role: 'subject',
+    media_type: 'text/markdown',
+    bytes: 19145,
+    sha256: '931b5abf6fc2034c06f7a6580dc82be6d04acfb08b539373c9292d002ec6073f',
+  },
+  {
+    path: 'main.go',
+    role: 'starter',
+    media_type: 'text/x-go',
+    bytes: 2160,
+    sha256: '6451c668624034d7d7e050b2bcdd8fede254a2740d4b3d13fa20b64c8d7494df',
+  },
+  {
+    path: 'README.md',
+    role: 'guide',
+    media_type: 'text/markdown',
+    bytes: 2238,
+    sha256: 'cb8656ecb13539c256eee020ebda7f38827df74eaad257cf396bf007b32ff35b',
+  },
+  {
+    path: 'reporting-contract.json',
+    role: 'reporting_contract',
+    media_type: 'application/json',
+    bytes: 968,
+    sha256: '3746d209342fba415387e66caff82114a5957e9ff71fb02f65faab54049e0305',
+  },
+  {
+    path: 'input-demo/main.go',
+    role: 'input_demo',
+    media_type: 'text/x-go',
+    bytes: 317,
+    sha256: 'c0e05fbe9712a491552304a712724ffb377c2804e5a01feaf8f4b24ac4f5005b',
+  },
+  {
+    path: 'input-demo/input.go',
+    role: 'input_demo',
+    media_type: 'text/x-go',
+    bytes: 474,
+    sha256: 'ce71d84089a9d950208be1479bbd731a0a1f86280370a75af4fd46fab5820bd3',
+  },
+  {
+    path: 'report-demo/main.go',
+    role: 'report_demo',
+    media_type: 'text/x-go',
+    bytes: 1743,
+    sha256: '2bf2c3b3bfe737ac14f379796680e8abd0313285857fdea53b4fde7aac41b525',
+  },
+  {
+    path: 'resources.md',
+    role: 'references',
+    media_type: 'text/markdown',
+    bytes: 902,
+    sha256: 'a4a72d8d7001300ca2630bae9c62526d0dc72ebd228403cec4ca2cd44d46e468',
+  },
+] as const;

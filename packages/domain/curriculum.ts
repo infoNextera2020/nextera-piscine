@@ -13,10 +13,36 @@ export interface SubmissionRules {
   allowed_extensions: string[];
   max_size_kb: number;
 }
+export type AtmProjectSource = Readonly<{
+  version: 1;
+  packageId: 'project1-atm-report-v2';
+  sourcePackageDigest: string;
+  semanticProfileDigest: string;
+  teamSize: 3;
+  releasePolicy: 'scheduled_independent_of_exam1_result';
+  subjectMarkdown: string;
+  subjectDigest: string;
+  resources: readonly Readonly<{
+    path: string;
+    role:
+      | 'subject'
+      | 'starter'
+      | 'guide'
+      | 'reporting_contract'
+      | 'input_demo'
+      | 'report_demo'
+      | 'references';
+    mediaType: 'text/markdown' | 'text/x-go' | 'application/json';
+    byteLength: number;
+    sha256: string;
+    text: string;
+  }>[];
+}>;
 export interface CurriculumNode<
   TCheckpoint extends CheckpointDefinition = LegacyCheckpointDefinition,
 > {
   checkpoint?: TCheckpoint;
+  projectSource?: AtmProjectSource;
   key: string;
   questKey: string;
   kind: NodeKind;

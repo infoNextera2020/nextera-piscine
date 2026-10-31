@@ -1,4 +1,8 @@
 import {
+  APPROVED_ATM_SEMANTIC_PROFILE_DIGEST,
+  assertApprovedAtmProjectSource,
+} from './atm-project-source';
+import {
   checkpointScoringPolicy,
   type Curriculum,
   type CheckpointDefinition,
@@ -78,6 +82,7 @@ function resolveEvaluationCatalog(curriculum: Curriculum<CheckpointDefinition>, 
         'snapshot_format_version',
         'case_generation',
         'execution_contract',
+        'semantic_profile_digest',
       ],
       node.testPackId,
     );
@@ -177,6 +182,12 @@ function resolveEvaluationCatalog(curriculum: Curriculum<CheckpointDefinition>, 
         contract.input_type === 'stdin_utf8' &&
         contract.output_type === 'stdout_utf8_exact' &&
         contract.learner_file === 'main.go';
+      const v4 =
+        contract.version === 4 &&
+        contract.function === '' &&
+        contract.input_type === 'stdin_utf8' &&
+        contract.output_type === 'atm_report_events_v1' &&
+        contract.learner_file === 'main.go';
       const v3 =
         contract.version === 3 &&
         functionName &&
@@ -187,7 +198,7 @@ function resolveEvaluationCatalog(curriculum: Curriculum<CheckpointDefinition>, 
           ((contract.input_type === 'int_slice_int_int' || contract.input_type === 'int_slice') &&
             contract.output_type === 'int_slice_preserved'));
       if (
-        !(v1 || v2 || v3) ||
+        !(v1 || v2 || v3 || v4) ||
         contract.item_key !== node.key ||
         typeof contract.item_key !== 'string' ||
         contract.item_key.length > 100 ||
@@ -195,7 +206,7 @@ function resolveEvaluationCatalog(curriculum: Curriculum<CheckpointDefinition>, 
         typeof contract.learner_file !== 'string' ||
         contract.learner_file.length > 100 ||
         !/^[A-Za-z0-9_][A-Za-z0-9_.-]*[.]go$/.test(contract.learner_file) ||
-        ((contract.version === 2 || contract.version === 3) &&
+        ((contract.version === 2 || contract.version === 3 || contract.version === 4) &&
           ['hello-go-v1', 'even-or-odd-v1'].includes(node.testPackId)) ||
         node.submissionRules.required_files.length !== 1 ||
         node.submissionRules.required_files[0] !== contract.learner_file
@@ -203,6 +214,30 @@ function resolveEvaluationCatalog(curriculum: Curriculum<CheckpointDefinition>, 
         throw new EvaluationBoundaryError(
           'Trusted execution contract conflicts with curriculum task.',
         );
+    }
+    const projectSource = 'projectSource' in node ? node.projectSource : undefined;
+    if (contract?.version === 4) {
+      if (generation.mode !== 'static' || Reflect.ownKeys(generation).length !== 1)
+        throw new EvaluationBoundaryError(
+          'ABI4 requires explicit exact static input-only case generation.',
+        );
+      if (projectSource) assertApprovedAtmProjectSource(projectSource);
+      if (
+        !('kind' in node) ||
+        node.kind !== 'project' ||
+        !projectSource ||
+        projectSource.semanticProfileDigest !== APPROVED_ATM_SEMANTIC_PROFILE_DIGEST ||
+        !Object.hasOwn(pack, 'semantic_profile_digest') ||
+        hash(pack.semantic_profile_digest, 'semantic_profile_digest') !==
+          projectSource.semanticProfileDigest
+      )
+        throw new EvaluationBoundaryError(
+          'ABI4 requires the exact approved ATM source package and semantic profile digest.',
+        );
+    } else if (Object.hasOwn(pack, 'semantic_profile_digest') || projectSource) {
+      throw new EvaluationBoundaryError(
+        'ATM semantic profile metadata is forbidden for legacy ABI1/2/3 or implicit contracts.',
+      );
     }
     if (scored && contract?.version !== 3)
       throw new EvaluationBoundaryError(
@@ -229,6 +264,7 @@ function resolveEvaluationCatalog(curriculum: Curriculum<CheckpointDefinition>, 
       protocol_version: positive(pack.protocol_version, 'protocol_version'),
       snapshot_format_version: positive(pack.snapshot_format_version, 'snapshot_format_version'),
       case_generation: generation,
+      ...(contract?.version === 4 ? { semantic_profile_digest: pack.semantic_profile_digest } : {}),
       ...(contract ? { execution_contract: contract } : {}),
     };
     return {

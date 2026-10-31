@@ -1,3 +1,4 @@
+import { parseAtmProjectSourcePackage } from './atm-project-source';
 import { parseScoredExamSource } from './scored-exam-source';
 import { execFileSync } from 'node:child_process';
 import { parseDocument } from 'yaml';
@@ -293,7 +294,9 @@ export function parseCurriculum(
     const config = yaml(configPath);
     knownFields(
       config,
-      ['id', 'title', 'language', 'submission', 'limits', 'judge', 'skills'],
+      kind === 'project'
+        ? ['id', 'title', 'language', 'submission', 'limits', 'judge', 'skills', 'source_package']
+        : ['id', 'title', 'language', 'submission', 'limits', 'judge', 'skills'],
       configPath,
     );
     const title = text(n.title, 'node.title');
@@ -323,8 +326,26 @@ export function parseCurriculum(
     knownFields(limits, ['timeout_ms', 'memory_mb', 'output_kb'], 'limits');
     const judge = object(config.judge, 'judge');
     knownFields(judge, ['testpack'], 'judge');
+    const projectSource =
+      kind === 'project' && Object.hasOwn(config, 'source_package')
+        ? (() => {
+            if (config.source_package !== 'source-package.json')
+              return fail('ATM project requires the exact local source-package.json path.');
+            if (
+              requiredFiles.length !== 1 ||
+              requiredFiles[0] !== 'main.go' ||
+              extensions.length !== 1 ||
+              extensions[0] !== '.go'
+            )
+              return fail('ATM project requires one main.go submission.');
+            return parseAtmProjectSourcePackage(folder, {
+              read,
+              bytes: (path) => sources.get(path) ?? fail('Missing ATM public source bytes ' + path),
+            });
+          })()
+        : undefined;
     const subjectPath = `${folder}/subject.md`;
-    const subjectMarkdown = read(subjectPath);
+    const subjectMarkdown = projectSource?.subjectMarkdown ?? read(subjectPath);
     if (!subjectMarkdown.trim()) fail(`${nodeKey}: empty subject.`);
     const skills = list(config.skills, 'skills').map((v) => key(v, 'skill'));
     unique(skills, 'skills');
@@ -343,7 +364,8 @@ export function parseCurriculum(
       position: positive(n.order, 'node.order'),
       difficulty: positive(n.difficulty, 'node.difficulty'),
       subjectMarkdown,
-      subjectDigest: sha256(sources.get(subjectPath)!),
+      subjectDigest: projectSource?.subjectDigest ?? sha256(sources.get(subjectPath)!),
+      ...(projectSource ? { projectSource } : {}),
       configurationDigest: sha256(sources.get(configPath)!),
       skills,
       submissionRules,
@@ -373,6 +395,17 @@ export function parseCurriculum(
       rule: 'requires_pass' as const,
     };
   });
+  if (
+    nodes.some(
+      (node) =>
+        'projectSource' in node &&
+        node.projectSource &&
+        prerequisites.some((edge) => edge.to === node.key),
+    )
+  )
+    fail(
+      'ATM scheduled project source cannot inherit a requires-pass gate; release is independent of Exam1 result.',
+    );
   let roots: string[];
   try {
     roots = curriculumRoots(
