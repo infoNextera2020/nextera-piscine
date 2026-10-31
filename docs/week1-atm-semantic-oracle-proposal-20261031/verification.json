@@ -1,0 +1,61 @@
+{
+  "status": "inactive developer oracle candidate; no current-contract grade",
+  "tests": {
+    "command": "python3 -m unittest discover -s docs/week1-atm-semantic-oracle-proposal-20261031/prototype -p 'test_*.py' -v",
+    "testCount": 27,
+    "exitCode": 0,
+    "syntheticFixturesOnly": true
+  },
+  "sourceModel": "exact whole-line input -> independently computed observable trace",
+  "currentBriefMode": "unresolved_contract",
+  "candidateMatchResult": "observations_match; not academic PASS",
+  "counterexamples": [
+    "valid/invalid current-balance prose shares digits+word bag",
+    "identical full visible trace can hide internal reset immediately before return"
+  ],
+  "baselineFilesPreserved": {
+    "content/source-baselines/project1-atm-v1/README.md": "96f4bde77efb16b4dfa77f61315427093cbf0eac696973c580467fe408116051",
+    "content/source-baselines/project1-atm-v1/input-demo/input.go": "ce71d84089a9d950208be1479bbd731a0a1f86280370a75af4fd46fab5820bd3",
+    "content/source-baselines/project1-atm-v1/input-demo/main.go": "c0e05fbe9712a491552304a712724ffb377c2804e5a01feaf8f4b24ac4f5005b",
+    "content/source-baselines/project1-atm-v1/learner-en.md": "8d8ff72fdbc241e0c7fdcfe1692cef8223ee426ca68d373f004f63cf15f28a1b",
+    "content/source-baselines/project1-atm-v1/scaffold/README.md": "cacb3dc9611e619c5aa3d120f5fad91e3a8ac6d246bf743fab2b8ad165314234",
+    "content/source-baselines/project1-atm-v1/scaffold/input.go": "ce71d84089a9d950208be1479bbd731a0a1f86280370a75af4fd46fab5820bd3",
+    "content/source-baselines/project1-atm-v1/source-map.md": "97c4175d1ff91e9fb8de4be34f3b29beb3734ecbc30077176ce5b48f3100a58c",
+    "content/source-baselines/project1-atm-v1/review-ar.md": "49985d6c0456db0ea63cc7eab202814e2305ea966e588c84d5c974f4e3ce544f"
+  },
+  "files": {
+    "docs/week1-atm-semantic-oracle-proposal-20261031/README.md": {
+      "bytes": 6167,
+      "sha256": "23d264022c13184885881d2a5878e2ebbe282b1879e72ca66c6ddc1beda59823"
+    },
+    "docs/week1-atm-semantic-oracle-proposal-20261031/projection-contract.md": {
+      "bytes": 6559,
+      "sha256": "bda545a250fe1d3747dd73b2c5afd7090eb878c939247632106b6e64d9b6b5f2"
+    },
+    "docs/week1-atm-semantic-oracle-proposal-20261031/counterexamples.md": {
+      "bytes": 3733,
+      "sha256": "0e2ced36530624ffafea115ab9b6ff93a1e30b0d75eed33f7fdd61267680de81"
+    },
+    "docs/week1-atm-semantic-oracle-proposal-20261031/prototype/oracle.py": {
+      "bytes": 5848,
+      "sha256": "a4124b85fe9bb9a1be4318ea8f24610120934ccee69fa0c22c45c611fbc61ef1"
+    },
+    "docs/week1-atm-semantic-oracle-proposal-20261031/prototype/test_oracle.py": {
+      "bytes": 12132,
+      "sha256": "7b0ffcfc5aa1a420ddc18570974b37b2a5a4eeb23424474aa658a8e2e7993d05"
+    }
+  },
+  "checks": {
+    "prettier": true,
+    "localMarkdownLinks": true,
+    "baselineGitDiffEmpty": true
+  },
+  "learnerCodeExecutedOrModified": false,
+  "goCompilerExecuted": false,
+  "nativeSqlExecuted": false,
+  "runnerOrServicesExecuted": false,
+  "networkUsed": false,
+  "publicationOrGraderEnabled": false,
+  "mentorOrAutomatedGateWaived": false,
+  "remainingStep": "publish explicit observable projection and provide trusted immutable-attempt capture/serializer before automatic enforcement; retain exact-attempt qualitative/source review"
+}
