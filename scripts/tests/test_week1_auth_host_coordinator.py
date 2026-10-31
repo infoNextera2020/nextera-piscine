@@ -26,6 +26,18 @@ def spec():
                        ['db','auth','rest','storage','imgproxy','meta','studio','api-gw']}}
 
 
+class FakeBrowser:
+    def __init__(self, config):
+        self.config = config; self.checked = 0; self.finished = False; self.closed = False
+        self.fail = False
+    def check(self):
+        self.checked += 1
+        if self.fail: raise h.DriverError('Synthetic worker failed')
+    def finish(self, seconds):
+        self.check(); self.finished = True; self.close()
+    def close(self): self.closed = True
+
+
 class SessionTests(unittest.TestCase):
     def setUp(self):
         self.spec = spec()
@@ -45,7 +57,8 @@ class SessionTests(unittest.TestCase):
         def run(args, **kwargs):
             self.calls.append((args, kwargs))
             return json.dumps(self.answers[len(self.calls)-1]).encode()
-        self.session = h.NativeSession(self.bound, self.spec, self.guard_sha, run=run, verify_sources=lambda:True)
+        self.session = h.NativeSession(self.bound, self.spec, self.guard_sha, run=run, verify_sources=lambda:True,
+            browser_factory=FakeBrowser, browser_config={'repo':'fixture-only'})
 
     def probe_request(self):
         return h.frame(self.bound, 1, 'probe', {'linuxEngineId': self.probe['engineId'],
@@ -86,7 +99,8 @@ class SessionTests(unittest.TestCase):
         with self.assertRaises(TimeoutError): self.session.handle(self.probe_request())
         with self.assertRaises(h.DriverError): self.session.handle(self.probe_request())
         self.assertTrue(self.session.failed)
-        fresh = h.NativeSession(self.bound, self.spec, self.guard_sha, run=lambda *_a,**_k: json.dumps(self.probe).encode(), verify_sources=lambda:True)
+        fresh = h.NativeSession(self.bound, self.spec, self.guard_sha, run=lambda *_a,**_k: json.dumps(self.probe).encode(), verify_sources=lambda:True,
+            browser_factory=FakeBrowser, browser_config={'repo':'fixture-only'})
         fresh.handle(self.probe_request())
         fresh.run = self.session.run
         with self.assertRaises(TimeoutError): fresh.handle(self.arm_request())
@@ -127,6 +141,42 @@ class SessionTests(unittest.TestCase):
         self.session.monotonic_end = h.time.monotonic()-1
         with self.assertRaises(h.DriverError): self.session.remaining(30)
 
+    def test_arm_starts_worker_before_ack_with_original_scope_and_cleanup_clock(self):
+        self.session.handle(self.probe_request())
+        request = self.arm_request()
+        result = self.session.handle(request)
+        self.assertEqual(result['status'], 'ok')
+        worker = self.session.browser
+        self.assertEqual(worker.checked, 1)
+        self.assertEqual(worker.config['binding'], self.bound)
+        self.assertEqual(worker.config['cache'], self.guard['cache'])
+        self.assertEqual(worker.config['manifestSha256'], self.guard['manifestSha256'])
+        self.assertEqual(worker.config['deadline'] - worker.config['started'], 3600000)
+        self.assertEqual(worker.config['deadline'] - worker.config['cleanupAt'], 180000)
+
+    def test_missing_browser_configuration_or_start_failure_fails_arm_after_guard_not_replayed(self):
+        for failure in ['config', 'start']:
+            self.setUp(); self.session.handle(self.probe_request())
+            if failure == 'config': self.session.browser_config = None
+            else: self.session.browser_factory = lambda _: (_ for _ in ()).throw(h.DriverError('synthetic start failure'))
+            with self.subTest(failure=failure), self.assertRaises(h.DriverError): self.session.handle(self.arm_request())
+            self.assertTrue(self.session.failed); self.assertIsNotNone(self.session.guard)
+            self.assertEqual(len(self.calls), 2)
+
+    def test_completion_requires_worker_success_before_native_guard_complete(self):
+        self.session.handle(self.probe_request()); self.session.handle(self.arm_request())
+        self.session.browser.fail = True
+        with self.assertRaises(h.DriverError):
+            self.session.handle(h.frame(self.bound, 3, 'complete', {'linuxCleanupVerified':True}))
+        self.assertTrue(self.session.browser.closed)
+        self.assertEqual(len(self.calls), 2)  # Do not claim native guard stopped.
+
+    def test_idle_parent_pipe_wait_checks_browser_failure(self):
+        import io
+        with self.assertRaises(h.DriverError):
+            h.read_line_bounded(io.BytesIO(b'{}\n'), 1,
+                check=lambda: (_ for _ in ()).throw(h.DriverError('worker failed')))
+
     def test_only_exact_four_preserved_dirty_paths_are_allowed_as_structured_names(self):
         h.validate_changed_paths(sorted(h.UNRELATED_PATHS))
         h.validate_changed_paths([])
@@ -144,7 +194,7 @@ class SessionTests(unittest.TestCase):
 class LinuxPipeTests(unittest.TestCase):
     def test_actual_public_metadata_reader_keeps_structured_tracked_untracked_names(self):
         compile(h.PUBLIC_PACKET_READER, '<public-source-reader>', 'exec')
-        repo = Path(__file__).resolve().parents[2]
+        repo = Path(os.environ.get('WEEK1_UNIT_SOURCE_REPO', Path(__file__).resolve().parents[2]))
         with tempfile.TemporaryDirectory(prefix='public-metadata-reader-test-') as directory:
             fixture = Path(directory)
             (fixture/'spec.json').write_text('{"fixtureOnly":true}')

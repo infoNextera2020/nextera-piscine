@@ -213,7 +213,7 @@ def native_run(args, timeout=20, data=None):
     return output
 
 
-def read_line_bounded(stream, timeout):
+def read_line_bounded(stream, timeout, check=None):
     result = queue.Queue(maxsize=1)
     def read():
         try:
@@ -221,10 +221,17 @@ def read_line_bounded(stream, timeout):
         except Exception:
             result.put(b'')
     threading.Thread(target=read, daemon=True).start()
-    try:
-        return decode(result.get(timeout=timeout))
-    except queue.Empty:
-        raise DriverError('Native pipe timeout; no replay')
+    deadline = time.monotonic() + timeout
+    while True:
+        if check is not None:
+            check()
+        remaining = deadline - time.monotonic()
+        if remaining <= 0:
+            raise DriverError('Native pipe timeout; no replay')
+        try:
+            return decode(result.get(timeout=min(.25, remaining)))
+        except queue.Empty:
+            pass
 
 
 # Public test processes only: a blocked "controller", its independently inherited
@@ -327,14 +334,33 @@ def validate_manifest(manifest, bound, probe):
         raise DriverError('Original host lifetime/engine changed')
 
 
+def browser_helpers():
+    source = Path(__file__).with_name('week1-auth-browser-host.py')
+    setup = importlib.util.spec_from_file_location('native_private_browser_host', source)
+    helper = importlib.util.module_from_spec(setup)
+    setup.loader.exec_module(helper)
+    return helper
+
+
 class NativeSession:
-    def __init__(self, bound, spec, guard_sha, run=native_run, verify_sources=None):
+    def __init__(self, bound, spec, guard_sha, run=native_run, verify_sources=None,
+                 browser_factory=None, browser_config=None):
         self.bound, self.spec, self.guard_sha, self.run = bound, spec, guard_sha, run
         coordinator_sha = digest(Path(__file__).read_bytes())
         self.verify_sources = verify_sources or (lambda: digest(Path(GUARD).read_bytes()) == guard_sha and
                                                 digest(Path(__file__).read_bytes()) == coordinator_sha)
         self.sequence, self.failed, self.probe, self.guard, self.arm_attempted = 0, False, None, None, False
         self.deadline, self.monotonic_end = None, None
+        self.browser, self.browser_config = None, browser_config
+        self.browser_factory = browser_factory or (lambda config: browser_helpers().start(config))
+
+    def check_browser(self):
+        if self.browser is not None:
+            self.browser.check()
+
+    def close_browser(self):
+        if self.browser is not None:
+            self.browser.close()
 
     def remaining(self, ceiling):
         if self.deadline is None:
@@ -391,10 +417,25 @@ class NativeSession:
                         not HASH.fullmatch(result['manifestSha256'])):
                     raise DriverError('Native installer acknowledgement rejected')
                 self.guard = result
+                if self.browser_config is None:
+                    raise DriverError('Source-bound native browser configuration required')
+                manifest = payload['manifest']
+                def millis(key):
+                    return round(datetime.fromisoformat(manifest[key]).timestamp() * 1000)
+                browser_config = {**self.browser_config, 'binding': self.bound, 'cache': result['cache'],
+                    'manifestSha256': result['manifestSha256'], 'started': millis('startedUtc'),
+                    'deadline': millis('deadlineUtc'), 'cleanupAt': millis('cleanupAtUtc')}
+                # Worker begins with stdin GO; factory assigns exact retained HANDLE to
+                # its kill-on-close Job before releasing GO. It waits for the WSL marker.
+                self.browser = self.browser_factory(browser_config)
+                self.browser.check()
             else:
                 exact(payload, {'linuxCleanupVerified'})
                 if payload['linuxCleanupVerified'] is not True or not self.guard:
                     raise DriverError('Native fail-safe retained; Linux cleanup unverified')
+                if self.browser is None:
+                    raise DriverError('Native browser worker completion unavailable')
+                self.browser.finish(self.remaining(10))
                 result = json.loads(self.run(host_command('Complete', self.spec['hostGuardExecutionPolicy'],
                             '-ManifestPath', str(Path(self.guard['cache']) / 'manifest.json'),
                             '-ManifestSha256', self.guard['manifestSha256'], '-GuardPid', str(self.guard['pid']),
@@ -406,6 +447,7 @@ class NativeSession:
             return frame(self.bound, self.sequence, operation, result, status='ok')
         except Exception:
             self.failed = True
+            self.close_browser()
             raise
 
 
@@ -440,10 +482,25 @@ def execute(args):
             public['sourceHashes'] != lock['sources'] or digest(Path(__file__).read_bytes()) != lock['sources'].get('scripts/week1-auth-host-coordinator.py') or
             digest(Path(GUARD).read_bytes()) != lock['sources'].get('scripts/week1-auth-host-guard.ps1')):
         raise DriverError('Native coordinator/source packet mismatch')
+    browser_source = Path(__file__).with_name('week1-auth-browser-host.py')
+    consumer_source = Path(__file__).with_name('week1-auth-browser-consumer.mjs')
+    if (digest(browser_source.read_bytes()) != lock['sources'].get('scripts/week1-auth-browser-host.py') or
+            digest(consumer_source.read_bytes()) != lock['sources'].get('scripts/week1-auth-browser-consumer.mjs')):
+        raise DriverError('Native browser source copy differs from reviewed packet')
     actual_probe = public_probe(args.repo)  # Real supported cross-platform/engine/EOF path, before any reservation.
     session_id = digest((str(os.getpid()) + ':' + str(time.monotonic_ns()) + ':' + args.scope_sha256).encode())
     bound = binding(spec, session_id)
-    session = NativeSession(bound, spec, lock['sources']['scripts/week1-auth-host-guard.ps1'])
+    browser_config = {'repo': args.repo,
+        'helperSha256': lock['sources']['scripts/week1-auth-rehearsal.py'],
+        'brokerSha256': lock['sources']['scripts/week1-auth-live-broker.mjs'],
+        'consumerSha256': lock['sources']['scripts/week1-auth-browser-consumer.mjs'],
+        'hostSha256': lock['sources']['scripts/week1-auth-browser-host.py']}
+    session = NativeSession(bound, spec, lock['sources']['scripts/week1-auth-host-guard.ps1'],
+        browser_config=browser_config,
+        verify_sources=lambda: all(digest(path.read_bytes()) == wanted for path, wanted in [
+            (Path(GUARD), lock['sources']['scripts/week1-auth-host-guard.ps1']),
+            (Path(__file__), lock['sources']['scripts/week1-auth-host-coordinator.py']),
+            (browser_source, browser_config['hostSha256']), (consumer_source, browser_config['consumerSha256'])]))
     command = wsl_args(args.repo, ['/usr/bin/python3','-B',args.repo+'/scripts/week1-auth-rehearsal.py','--execute'])
     for name in ['repo','template','spec','source_lock','source_lock_sha256','approval_receipt','owner_message_id','owner_approved_at','scope_sha256','browser_context']:
         command += ['--'+name.replace('_','-'), getattr(args,name)]
@@ -452,7 +509,8 @@ def execute(args):
                 close_fds=True, env=windows_env(), creationflags=subprocess.CREATE_NO_WINDOW)
     try:
         for _ in range(3):
-            request = read_line_bounded(child.stdout, session.remaining(3600) if session.sequence == 2 else 60)
+            request = read_line_bounded(child.stdout, session.remaining(3600) if session.sequence == 2 else 60,
+                check=session.check_browser)
             reply = session.handle(request)
             child.stdin.write(encode(reply)); child.stdin.flush()
         child.stdin.close()
@@ -464,8 +522,11 @@ def execute(args):
     finally:
         # EOF wakes the independently inherited Linux watcher even if the
         # controller is blocked in an owned phase. Do not kill wsl.exe first.
-        if not child.stdin.closed:
-            child.stdin.close()
+        try:
+            session.close_browser()
+        finally:
+            if not child.stdin.closed:
+                child.stdin.close()
         if child.poll() is None:
             try:
                 child.wait(timeout=session.remaining(15))

@@ -4,12 +4,15 @@ import fs from 'node:fs';
 import crypto from 'node:crypto';
 import { Buffer } from 'node:buffer';
 import { URL } from 'node:url';
+import process from 'node:process';
 import {
   week1PendingAuthCreations,
   readWeek1BrowserFacts,
   week1RegistrationDriver,
   week1AuthPhases,
   validateWeek1BrowserProof,
+  recordWeek1BrowserProof,
+  readWeek1BrowserProofStdin,
   awaitWeek1BrowserRegistration,
   WEEK1_TARGET,
   WEEK1_SERVICES,
@@ -1775,4 +1778,359 @@ test('public renderer rejects unsupported interpolation and multiline dotenv val
   );
   template.services.auth.environment.GOTRUE_API_HOST = null;
   assert.throws(() => prepareWeek1ComposeEnvironment(template, defaults, s), /AUTH_ENV_REQUIRED/);
+});
+
+function browserWriterFixture() {
+  const run = WEEK1_TARGET.root,
+    now = 1002000,
+    mono = 52000,
+    uid = 1000;
+  const source = Buffer.from('fake-broker-source-only');
+  const lock = Buffer.from(
+    JSON.stringify({
+      sources: {
+        'scripts/week1-auth-live-broker.mjs': crypto
+          .createHash('sha256')
+          .update(source)
+          .digest('hex'),
+      },
+    }),
+  );
+  const s = JSON.parse(JSON.stringify(spec()));
+  s.registrationDriver = 'operator-browser-learner-b';
+  s.sourceLockSha256 = crypto.createHash('sha256').update(lock).digest('hex');
+  s.scopeSha256 = week1ScopeSha256(s);
+  const lease = {
+    ownerMessageId: 'Sentinel_' + '0'.repeat(32),
+    ownerApprovedAt: '2026-10-31T00:00:00Z',
+    started: 1000000,
+    deadline: 4600000,
+    cleanupAt: 4420000,
+    monotonicStarted: 50000,
+    monotonicDeadline: 3650000,
+    parentPid: 100,
+    parentTicks: '1000',
+    guardPid: 101,
+    guardTicks: '1001',
+  };
+  const c = {
+    ...lease,
+    profile: WEEK1_TARGET.profile,
+    project: WEEK1_TARGET.project,
+    database: WEEK1_TARGET.database,
+    uid,
+    scopeSha256: s.scopeSha256,
+    sourceLockSha256: s.sourceLockSha256,
+    spec: s,
+  };
+  const active = {
+    ...lease,
+    profile: c.profile,
+    scopeSha256: c.scopeSha256,
+    sourceLockSha256: c.sourceLockSha256,
+    configurationSha256: 'c'.repeat(64),
+    reviewedHead: s.reviewedHead,
+    state: 'active',
+    phase: 'invitations_active',
+  };
+  const waiting = {
+    registrationDriver: s.registrationDriver,
+    scopeSha256: c.scopeSha256,
+    sourceLockSha256: c.sourceLockSha256,
+    startedAt: 1001000,
+  };
+  const ack = {
+    version: 1,
+    scopeSha256: c.scopeSha256,
+    sourceLockSha256: c.sourceLockSha256,
+    nonce: id(901),
+    issueRequestId: id(902),
+    origin: WEEK1_TARGET.origin,
+    cohortId: id(903),
+    ...WEEK1_LEARNERS[1],
+    expiresAt: 1060000,
+    tokenSha256: 'd'.repeat(64),
+    issuedAt: 1001500,
+  };
+  const proof = {
+    version: 1,
+    scopeSha256: ack.scopeSha256,
+    sourceLockSha256: ack.sourceLockSha256,
+    nonce: ack.nonce,
+    issueRequestId: ack.issueRequestId,
+    tokenSha256: ack.tokenSha256,
+    origin: ack.origin,
+    email: ack.email,
+    cohortId: ack.cohortId,
+    observedAt: now,
+    browser: 'chrome',
+    checks: {
+      fragmentRemoved: true,
+      inviteEmailFixed: true,
+      activationSucceeded: true,
+      ordinaryLoginSucceeded: true,
+    },
+  };
+  const files = new Map(),
+    descriptors = new Map(),
+    reads = [],
+    events = [];
+  let sequence = 10,
+    inode = 30;
+  const put = (name, value) =>
+    files.set(run + '/' + name, {
+      bytes: Buffer.isBuffer(value) ? value : Buffer.from(JSON.stringify(value)),
+      ino: inode++,
+      synced: false,
+    });
+  put('broker-control.private.json', c);
+  put('control.json', active);
+  put('browser-awaiting.private.json', waiting);
+  put('browser-handoff-ack.private.json', ack);
+  put('adapter-code/week1-auth-source-lock.json', lock);
+  const io = {
+    constants: fs.constants,
+    lstatSync: () => ({
+      uid,
+      mode: 0o40700,
+      dev: 1,
+      ino: 2,
+      isDirectory: () => true,
+      isSymbolicLink: () => false,
+    }),
+    existsSync: (name) => files.has(name),
+    openSync(name, flags, mode) {
+      if (flags & fs.constants.O_CREAT) {
+        assert.ok(flags & fs.constants.O_EXCL);
+        assert.ok(flags & fs.constants.O_NOFOLLOW);
+        assert.equal(mode, 0o600);
+        if (files.has(name)) throw Object.assign(new Error('exists'), { code: 'EEXIST' });
+        files.set(name, { bytes: Buffer.alloc(0), ino: inode++, synced: false });
+        events.push('create-temp');
+      } else if (name !== run) {
+        assert.ok(files.has(name), 'Only public fixture metadata can be read');
+        reads.push(name);
+      }
+      const fd = ++sequence;
+      descriptors.set(fd, name);
+      return fd;
+    },
+    fstatSync(fd) {
+      const row = files.get(descriptors.get(fd));
+      return {
+        uid,
+        mode: 0o100600,
+        nlink: 1,
+        dev: 1,
+        ino: row.ino,
+        size: row.bytes.length,
+        mtimeMs: 1,
+        ctimeMs: 1,
+        isFile: () => true,
+      };
+    },
+    readSync(fd, buffer, offset, length, position) {
+      return files.get(descriptors.get(fd)).bytes.copy(buffer, offset, position, position + length);
+    },
+    writeFileSync(fd, body) {
+      files.get(descriptors.get(fd)).bytes = Buffer.from(body);
+      events.push('write-temp');
+    },
+    fsyncSync(fd) {
+      const row = files.get(descriptors.get(fd));
+      if (row) row.synced = true;
+    },
+    closeSync(fd) {
+      descriptors.delete(fd);
+    },
+    linkSync(from, to) {
+      if (files.has(to)) throw Object.assign(new Error('exists'), { code: 'EEXIST' });
+      assert.ok(files.get(from).synced);
+      assert.ok(files.get(from).bytes.length);
+      files.set(to, files.get(from));
+      events.push('publish');
+    },
+    unlinkSync(name) {
+      assert.ok(name.endsWith('.pending.private.json'));
+      files.delete(name);
+      events.push('remove-owned-temp');
+    },
+  };
+  const input = {
+    run,
+    proof,
+    io,
+    uid,
+    now: () => now,
+    monotonic: () => mono,
+    sourceBytes: () => source,
+    processIdentity: (pid) => ({ pid, uid, ticks: pid === 100 ? '1000' : '1001' }),
+  };
+  return { input, files, reads, events, put, active, waiting, ack };
+}
+
+test('browser proof writer publishes atomically from public metadata; exact replay only', () => {
+  const f = browserWriterFixture();
+  const first = recordWeek1BrowserProof(f.input);
+  assert.equal(first.status, 'recorded');
+  assert.equal(first.replayed, false);
+  assert.deepEqual(f.events, ['create-temp', 'write-temp', 'publish', 'remove-owned-temp']);
+  const second = recordWeek1BrowserProof(f.input);
+  assert.equal(second.replayed, true);
+  assert.equal(second.proofSha256, first.proofSha256);
+  assert.equal(f.events.filter((x) => x === 'publish').length, 1);
+  assert.ok(f.reads.every((name) => !/credential|session|\.env/.test(name)));
+  assert.equal(f.files.size, 6);
+  const changed = JSON.parse(JSON.stringify(f.input.proof));
+  changed.observedAt--;
+  assert.throws(
+    () => recordWeek1BrowserProof({ ...f.input, proof: changed }),
+    /BROWSER_WRITER_CONFLICT/,
+  );
+});
+
+test('writer rejects stale, inactive, wrong source/nonce/checks and dead identity before publication', () => {
+  for (const change of [
+    (f) => {
+      f.input.now = () => 1151000;
+    },
+    (f) => {
+      f.input.monotonic = () => 202000;
+    },
+    (f) => {
+      f.active.state = 'closed';
+      f.put('control.json', f.active);
+    },
+    (f) => {
+      f.put('cleanup.lock', { started: true });
+    },
+    (f) => {
+      f.put('cleanup.private.json', { stopped: true });
+    },
+    (f) => {
+      f.input.sourceBytes = () => Buffer.from('different source');
+    },
+    (f) => {
+      f.input.proof.nonce = id(904);
+    },
+    (f) => {
+      f.input.proof.checks.activationSucceeded = false;
+    },
+    (f) => {
+      f.input.processIdentity = (pid) => ({ pid, uid: 1000, ticks: 'reused' });
+    },
+    (f) => {
+      f.input.proof.rawToken = 'fake-secret-not-accepted';
+    },
+  ]) {
+    const f = browserWriterFixture();
+    change(f);
+    assert.throws(() => recordWeek1BrowserProof(f.input));
+    assert.deepEqual(f.events, []);
+  }
+});
+
+test('writer rereads active control before link and retains an acknowledged final proof unchanged', () => {
+  const f = browserWriterFixture(),
+    original = f.input.io.writeFileSync;
+  f.input.io.writeFileSync = (...args) => {
+    original(...args);
+    f.active.state = 'closed';
+    f.put('control.json', f.active);
+  };
+  assert.throws(() => recordWeek1BrowserProof(f.input), /BROWSER_WRITER_ACTIVE/);
+  assert.ok(!f.events.includes('publish'));
+  assert.ok(f.events.includes('remove-owned-temp'));
+  const g = browserWriterFixture();
+  recordWeek1BrowserProof(g.input);
+  const originalBytes = Buffer.from(g.files.get(g.input.run + '/browser-proof.private.json').bytes);
+  g.active.state = 'closed';
+  g.put('control.json', g.active);
+  assert.throws(() => recordWeek1BrowserProof(g.input), /BROWSER_WRITER_ACTIVE/);
+  assert.deepEqual(g.files.get(g.input.run + '/browser-proof.private.json').bytes, originalBytes);
+});
+
+test('writer does not adopt a pending file or overwrite a racing different receipt', () => {
+  const f = browserWriterFixture();
+  f.put('browser-proof-' + f.input.proof.nonce + '.pending.private.json', { unknown: true });
+  assert.throws(() => recordWeek1BrowserProof(f.input), /exists/);
+  assert.deepEqual(f.events, []);
+  const g = browserWriterFixture(),
+    link = g.input.io.linkSync;
+  g.input.io.linkSync = (from, to) => {
+    g.put('browser-proof.private.json', { ...g.input.proof, observedAt: 1001999 });
+    return link(from, to);
+  };
+  assert.throws(() => recordWeek1BrowserProof(g.input), /BROWSER_WRITER_CONFLICT/);
+  assert.equal(
+    JSON.parse(g.files.get(g.input.run + '/browser-proof.private.json').bytes).observedAt,
+    1001999,
+  );
+});
+
+test('proof stdin is one bounded compact nonsecret frame; CLI rejects safely before runtime access', async () => {
+  const { Readable } = await import('node:stream');
+  const { spawnSync } = await import('node:child_process');
+  const proof = browserWriterFixture().input.proof,
+    raw = Buffer.from(JSON.stringify(proof) + '\n');
+  assert.deepEqual(await readWeek1BrowserProofStdin(Readable.from([raw])), proof);
+  for (const bytes of [
+    Buffer.concat([raw, raw]),
+    Buffer.alloc(4097, 32),
+    Buffer.from('{"version":2,' + JSON.stringify(proof).slice(1) + '\n'),
+  ])
+    await assert.rejects(readWeek1BrowserProofStdin(Readable.from([bytes])));
+  const result = spawnSync(
+    process.execPath,
+    [
+      new URL('../week1-auth-live-broker.mjs', import.meta.url).pathname,
+      '--record-browser-proof-stdin',
+      '/not-an-active-run',
+    ],
+    { input: '{"private":"fake-never-real"}\n', encoding: 'utf8', timeout: 5000, maxBuffer: 4096 },
+  );
+  assert.equal(result.status, 1);
+  assert.equal(result.stdout, '');
+  assert.equal(result.stderr, 'WEEK1_BROWSER_PROOF_REJECTED; no automatic retry.\n');
+});
+
+test('proof replay rejects changed stored bytes even when parsed JSON values match', () => {
+  for (const kind of ['whitespace', 'key-order', 'duplicate-key']) {
+    const f = browserWriterFixture();
+    recordWeek1BrowserProof(f.input);
+    const row = f.files.get(f.input.run + '/browser-proof.private.json');
+    const parsed = JSON.parse(row.bytes);
+    if (kind === 'whitespace') row.bytes = Buffer.from(JSON.stringify(parsed, null, 2) + '\n');
+    if (kind === 'key-order')
+      row.bytes = Buffer.from(
+        JSON.stringify(Object.fromEntries(Object.entries(parsed).reverse())) + '\n',
+      );
+    if (kind === 'duplicate-key')
+      row.bytes = Buffer.from(
+        row.bytes.toString().replace('"version":1', '"version":1,"version":1'),
+      );
+    assert.deepEqual(JSON.parse(row.bytes), parsed);
+    const tampered = Buffer.from(row.bytes),
+      eventCount = f.events.length;
+    assert.throws(() => recordWeek1BrowserProof(f.input), /BROWSER_WRITER_CONFLICT/);
+    assert.deepEqual(row.bytes, tampered);
+    assert.equal(f.events.length, eventCount);
+  }
+});
+
+test('proof publication readback compares raw stored bytes and never acknowledges tamper', () => {
+  const f = browserWriterFixture(),
+    link = f.input.io.linkSync;
+  f.input.io.linkSync = (from, to) => {
+    link(from, to);
+    const row = f.files.get(to);
+    row.bytes = Buffer.concat([Buffer.from(' '), row.bytes]);
+  };
+  assert.throws(() => recordWeek1BrowserProof(f.input), /BROWSER_WRITER_READBACK/);
+  const row = f.files.get(f.input.run + '/browser-proof.private.json');
+  const retained = Buffer.from(row.bytes);
+  assert.equal(row.bytes[0], 32);
+  assert.throws(() => recordWeek1BrowserProof(f.input), /BROWSER_WRITER_CONFLICT/);
+  assert.deepEqual(row.bytes, retained);
+  assert.equal(f.events.filter((event) => event === 'publish').length, 1);
 });

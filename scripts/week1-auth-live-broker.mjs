@@ -3145,8 +3145,285 @@ export async function executePhase(phase, run, repo, operatorOutput) {
     await admin.end({ timeout: 3 });
   }
 }
+/** Narrow metadata-only publication. No Auth client, SQL client or credential read. */
+export function recordWeek1BrowserProof({
+  run,
+  proof,
+  io = fs,
+  now = Date.now,
+  monotonic = () => Number(process.hrtime.bigint() / 1000000n),
+  uid = process.getuid(),
+  sourceBytes = () => fs.readFileSync(fileURLToPath(import.meta.url)),
+  processIdentity = (pid) => {
+    const directory = fs.lstatSync('/proc/' + pid);
+    const tail = fs
+      .readFileSync('/proc/' + pid + '/stat', 'utf8')
+      .split(') ')
+      .at(-1)
+      .split(' ');
+    check(['R', 'S', 'D', 'I'].includes(tail[0]), 'BROWSER_WRITER_PROCESS');
+    return { pid, uid: directory.uid, ticks: tail[19] };
+  },
+}) {
+  proof = JSON.parse(JSON.stringify(proof)); // Capture the one immutable nonsecret envelope before I/O.
+  const canonical = (value) =>
+    JSON.stringify(value, (_key, item) =>
+      item && typeof item === 'object' && !Array.isArray(item)
+        ? Object.fromEntries(
+            Object.keys(item)
+              .sort()
+              .map((key) => [key, item[key]]),
+          )
+        : item,
+    );
+  check(run === WEEK1_TARGET.root && Number.isSafeInteger(uid) && uid >= 0, 'BROWSER_WRITER_RUN');
+  const permitted = new Set([
+    'broker-control.private.json',
+    'control.json',
+    'browser-awaiting.private.json',
+    'browser-handoff-ack.private.json',
+    'adapter-code/week1-auth-source-lock.json',
+    'browser-proof.private.json',
+  ]);
+  const read = (name, binary = false) => {
+    check(permitted.has(name), 'BROWSER_WRITER_FILE');
+    const fd = io.openSync(run + '/' + name, io.constants.O_RDONLY | io.constants.O_NOFOLLOW);
+    try {
+      const before = io.fstatSync(fd);
+      check(
+        before.isFile() &&
+          before.uid === uid &&
+          (before.mode & 0o7777) === 0o600 &&
+          before.nlink === 1 &&
+          before.size > 0 &&
+          before.size <= 1048576,
+        'BROWSER_WRITER_PRIVATE',
+      );
+      const bytes = Buffer.alloc(before.size);
+      let offset = 0;
+      while (offset < bytes.length) {
+        const count = io.readSync(fd, bytes, offset, bytes.length - offset, offset);
+        check(count > 0, 'BROWSER_WRITER_READ');
+        offset += count;
+      }
+      const after = io.fstatSync(fd);
+      check(
+        ['dev', 'ino', 'uid', 'mode', 'nlink', 'size', 'mtimeMs', 'ctimeMs'].every(
+          (key) => before[key] === after[key],
+        ),
+        'BROWSER_WRITER_CHANGED',
+      );
+      return binary ? bytes : JSON.parse(new TextDecoder('utf8', { fatal: true }).decode(bytes));
+    } finally {
+      io.closeSync(fd);
+    }
+  };
+  const context = () => {
+    check(
+      !io.existsSync(run + '/cleanup.lock') && !io.existsSync(run + '/cleanup.private.json'),
+      'BROWSER_WRITER_CLEANUP_STARTED',
+    );
+    const root = io.lstatSync(run);
+    check(
+      root.isDirectory() &&
+        !root.isSymbolicLink() &&
+        root.uid === uid &&
+        (root.mode & 0o7777) === 0o700,
+      'BROWSER_WRITER_ROOT',
+    );
+    const c = read('broker-control.private.json'),
+      active = read('control.json');
+    const waiting = read('browser-awaiting.private.json'),
+      ack = read('browser-handoff-ack.private.json');
+    const lockBytes = read('adapter-code/week1-auth-source-lock.json', true),
+      lock = JSON.parse(lockBytes);
+    const spec = prepareWeek1AuthBroker(c.spec),
+      wall = now(),
+      mono = monotonic();
+    const parent = processIdentity(c.parentPid),
+      guard = processIdentity(c.guardPid);
+    check(parent.uid === uid && guard.uid === uid && c.uid === uid, 'BROWSER_WRITER_UID');
+    validateWeek1Lease(c, wall, mono, parent, guard);
+    check(
+      c.project === WEEK1_TARGET.project &&
+        c.database === WEEK1_TARGET.database &&
+        spec.registrationDriver === 'operator-browser-learner-b' &&
+        c.scopeSha256 === spec.scopeSha256 &&
+        c.sourceLockSha256 === spec.sourceLockSha256 &&
+        digest(lockBytes) === c.sourceLockSha256 &&
+        digest(sourceBytes()) === lock.sources['scripts/week1-auth-live-broker.mjs'],
+      'BROWSER_WRITER_SOURCE',
+    );
+    const leaseKeys = [
+      'ownerMessageId',
+      'ownerApprovedAt',
+      'started',
+      'deadline',
+      'cleanupAt',
+      'monotonicStarted',
+      'monotonicDeadline',
+      'parentPid',
+      'parentTicks',
+      'guardPid',
+      'guardTicks',
+    ];
+    check(
+      active.profile === c.profile &&
+        active.state === 'active' &&
+        active.phase === 'invitations_active' &&
+        active.scopeSha256 === c.scopeSha256 &&
+        active.sourceLockSha256 === c.sourceLockSha256 &&
+        active.reviewedHead === spec.reviewedHead &&
+        HASH.test(active.configurationSha256 ?? '') &&
+        leaseKeys.every((key) => active[key] === c[key]),
+      'BROWSER_WRITER_ACTIVE',
+    );
+    check(
+      same(
+        Object.keys(waiting).sort(),
+        ['registrationDriver', 'scopeSha256', 'sourceLockSha256', 'startedAt'].sort(),
+      ) &&
+        waiting.registrationDriver === spec.registrationDriver &&
+        waiting.scopeSha256 === c.scopeSha256 &&
+        waiting.sourceLockSha256 === c.sourceLockSha256 &&
+        Number.isSafeInteger(waiting.startedAt) &&
+        waiting.startedAt >= c.started &&
+        waiting.startedAt <= wall,
+      'BROWSER_WRITER_WAIT',
+    );
+    check(
+      same(
+        Object.keys(ack).sort(),
+        [
+          'version',
+          'scopeSha256',
+          'sourceLockSha256',
+          'nonce',
+          'issueRequestId',
+          'origin',
+          'cohortId',
+          'email',
+          'displayName',
+          'expiresAt',
+          'tokenSha256',
+          'issuedAt',
+        ].sort(),
+      ) &&
+        ack.version === 1 &&
+        ack.scopeSha256 === c.scopeSha256 &&
+        ack.sourceLockSha256 === c.sourceLockSha256 &&
+        ack.origin === WEEK1_TARGET.origin &&
+        ack.email === WEEK1_LEARNERS[1].email &&
+        ack.displayName === WEEK1_LEARNERS[1].displayName &&
+        HASH.test(ack.tokenSha256 ?? '') &&
+        [ack.nonce, ack.issueRequestId, ack.cohortId].every((value) => UUID.test(value ?? '')) &&
+        ack.nonce !== ack.issueRequestId &&
+        Number.isSafeInteger(ack.issuedAt) &&
+        Number.isSafeInteger(ack.expiresAt) &&
+        ack.issuedAt >= waiting.startedAt &&
+        ack.issuedAt <= wall &&
+        ack.expiresAt <= c.cleanupAt,
+      'BROWSER_WRITER_ACK',
+    );
+    check(
+      wall < Math.min(waiting.startedAt + 150000, c.cleanupAt, ack.expiresAt) &&
+        mono <
+          c.monotonicStarted +
+            Math.min(waiting.startedAt + 150000, c.cleanupAt, ack.expiresAt) -
+            c.started,
+      'BROWSER_WRITER_CUTOFF',
+    );
+    validateWeek1BrowserProof(proof, ack, wall);
+    return canonical({ root: { dev: root.dev, ino: root.ino }, active, waiting, ack });
+  };
+  const original = context(),
+    body = Buffer.from(canonical(proof) + '\n');
+  const filename = run + '/browser-proof.private.json';
+  const receipt = (replayed) =>
+    Object.freeze({
+      status: 'recorded',
+      replayed,
+      scopeSha256: proof.scopeSha256,
+      nonce: proof.nonce,
+      proofSha256: digest(body),
+    });
+  const replay = () => {
+    check(read('browser-proof.private.json', true).equals(body), 'BROWSER_WRITER_CONFLICT');
+    check(context() === original, 'BROWSER_WRITER_REBOUND');
+    return receipt(true);
+  };
+  if (io.existsSync(filename)) return replay();
+  const temporary = run + '/browser-proof-' + proof.nonce + '.pending.private.json';
+  let created = false,
+    linked = false;
+  try {
+    const fd = io.openSync(
+      temporary,
+      io.constants.O_WRONLY | io.constants.O_CREAT | io.constants.O_EXCL | io.constants.O_NOFOLLOW,
+      0o600,
+    );
+    created = true;
+    try {
+      io.writeFileSync(fd, body);
+      io.fsyncSync(fd);
+    } finally {
+      io.closeSync(fd);
+    }
+    check(context() === original, 'BROWSER_WRITER_REBOUND');
+    try {
+      io.linkSync(temporary, filename);
+      linked = true;
+    } catch (error) {
+      if (error?.code !== 'EEXIST') throw error;
+    }
+    // Remove only this invocation's exclusive temporary link; never delete/adopt a receipt.
+    io.unlinkSync(temporary);
+    created = false;
+    const directory = io.openSync(run, io.constants.O_RDONLY | io.constants.O_DIRECTORY);
+    try {
+      io.fsyncSync(directory);
+    } finally {
+      io.closeSync(directory);
+    }
+    if (!linked) return replay();
+    check(read('browser-proof.private.json', true).equals(body), 'BROWSER_WRITER_READBACK');
+    check(context() === original, 'BROWSER_WRITER_REBOUND');
+    return receipt(false);
+  } finally {
+    if (created) io.unlinkSync(temporary);
+  }
+}
+
+export async function readWeek1BrowserProofStdin(stream) {
+  const chunks = [];
+  let size = 0;
+  for await (const chunk of stream) {
+    size += Buffer.byteLength(chunk);
+    check(size <= 4096, 'BROWSER_WRITER_STDIN_BOUND');
+    chunks.push(Buffer.from(chunk));
+  }
+  const text = new TextDecoder('utf8', { fatal: true }).decode(Buffer.concat(chunks));
+  check(text.endsWith('\n') && !text.slice(0, -1).includes('\n'), 'BROWSER_WRITER_STDIN_FRAME');
+  const value = JSON.parse(text.slice(0, -1));
+  check(JSON.stringify(value) === text.slice(0, -1), 'BROWSER_WRITER_STDIN_CANONICAL');
+  return value;
+}
+
 if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
-  if (process.argv[2] === '--operator-handoff-stdout') {
+  if (process.argv[2] === '--record-browser-proof-stdin') {
+    // Nonsecret proof only. Never dispatch through executePhase or open credentials.
+    Promise.resolve()
+      .then(async () => {
+        check(process.argv.length === 4, 'BROWSER_WRITER_ARGUMENTS');
+        const proof = await readWeek1BrowserProofStdin(process.stdin);
+        const result = recordWeek1BrowserProof({ run: process.argv[3], proof });
+        process.stdout.write(JSON.stringify(result) + '\n');
+      })
+      .catch(() => {
+        process.stderr.write('WEEK1_BROWSER_PROOF_REJECTED; no automatic retry.\n');
+        process.exitCode = 1;
+      });
+  } else if (process.argv[2] === '--operator-handoff-stdout') {
     // Deliberately NOT exposed through Python Commands.run or generic --phase.
     // Caller must retain stdout only in its private in-memory operator pipe.
     try {
