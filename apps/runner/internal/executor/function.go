@@ -211,11 +211,20 @@ func main(){var inputs []` + typ + `;if json.NewDecoder(os.Stdin).Decode(&inputs
 }
 
 func compareFunction(c artifact.ExecutionContract, inputs []json.RawMessage, expected []string, out []byte) string {
+	verdict, _ := compareFunctionObservations(c, inputs, expected, out)
+	return verdict
+}
+
+func compareFunctionObservations(c artifact.ExecutionContract, inputs []json.RawMessage, expected []string, out []byte) (string, []bool) {
+	if len(inputs) != len(expected) {
+		return "runtime_error", nil
+	}
 	var rows []json.RawMessage
 	if !utf8.Valid(out) || artifact.Strict(out, &rows) != nil || len(rows) != len(inputs) {
-		return "runtime_error"
+		return "runtime_error", nil
 	}
 	passed := true
+	observations := make([]bool, 0, len(inputs))
 	for i, row := range rows {
 		keys := []string{"return"}
 		if c.Output == "pointer_int" {
@@ -225,62 +234,69 @@ func compareFunction(c artifact.ExecutionContract, inputs []json.RawMessage, exp
 		}
 		fields, err := functionFields(row, keys...)
 		if err != nil {
-			return "runtime_error"
+			return "runtime_error", nil
 		}
 		actual, err := functionInt(fields[keys[0]])
 		if err != nil {
-			return "runtime_error"
+			return "runtime_error", nil
 		}
 		want, err := functionInt(json.RawMessage(expected[i]))
 		if err != nil {
-			return "runtime_error"
+			return "runtime_error", nil
 		}
-		passed = passed && actual == want
+		matched := actual == want
 		if c.Output == "int_slice_preserved" {
 			original, _ := functionInput(c, inputs[i])
 			post, err := functionSlice(fields["slice"])
 			if err != nil {
-				return "runtime_error"
+				return "runtime_error", nil
 			}
-			passed = passed && reflect.DeepEqual(original, post)
+			matched = matched && reflect.DeepEqual(original, post)
 		}
+		observations = append(observations, matched)
+		passed = passed && matched
 	}
 	if !passed {
-		return "failed"
+		return "failed", observations
 	}
-	return "passed"
+	return "passed", observations
 }
 
-func (e Executor) executeFunction(ctx context.Context, s protocol.Snapshot, program []byte, inputs []json.RawMessage, expected []string, metrics map[string]int64) (verdict string, err error) {
+func (e Executor) executeFunction(ctx context.Context, s protocol.Snapshot, program []byte, inputs []json.RawMessage, expected []string, metrics map[string]int64) (string, error) {
+	verdict, _, err := e.executeFunctionObserved(ctx, s, program, inputs, expected, metrics)
+	return verdict, err
+}
+
+func (e Executor) executeFunctionObserved(ctx context.Context, s protocol.Snapshot, program []byte, inputs []json.RawMessage, expected []string, metrics map[string]int64) (verdict string, observations []bool, err error) {
 	c, err := artifact.ContractFor(s.PackID, s.Contract)
 	if err != nil || c.Version != 3 || !s.Environment.Valid() || len(inputs) == 0 || len(inputs) != len(expected) {
-		return "", artifact.ErrInvalid
+		return "", nil, artifact.ErrInvalid
 	}
 	for i, input := range inputs {
 		if _, err := functionInput(c, input); err != nil {
-			return "", err
+			return "", nil, err
 		}
 		if _, err := functionInt(json.RawMessage(expected[i])); err != nil {
-			return "", err
+			return "", nil, err
 		}
 	}
 	if ctx.Err() != nil {
-		return "", ctx.Err()
+		return "", nil, ctx.Err()
 	}
 	p, err := e.runtimeEngine().Create(ctx, s.Sandbox, false)
 	if err != nil {
-		return "", err
+		return "", nil, err
 	}
 	defer func() {
 		if stopGradingPhase(p) != nil {
-			verdict, err = "", sandbox.ErrInfrastructure
+			verdict, observations, err = "", nil, sandbox.ErrInfrastructure
 		}
 	}()
 	if p.Import(ctx, map[string][]byte{"program": program}) != nil {
-		return "", sandbox.ErrInfrastructure
+		return "", nil, sandbox.ErrInfrastructure
 	}
 	if _, _, exit, err := p.Exec(ctx, []string{"/bin/chmod", "500", "/workspace/program"}, nil, nil, 65536); err != nil || exit != 0 {
-		return "", sandbox.ErrInfrastructure
+		return "", nil, sandbox.ErrInfrastructure
 	}
 	input, _ := json.Marshal(inputs)
 	phase, cancel := context.WithTimeout(ctx, time.Duration(s.Resources.Execution.Timeout)*time.Millisecond)
@@ -289,31 +305,32 @@ func (e Executor) executeFunction(ctx context.Context, s protocol.Snapshot, prog
 	out, stderr, exit, execErr := p.Exec(phase, []string{"/bin/sh", "-c", "exec /workspace/program 3>&1 1>&2"}, nil, input, s.Resources.Execution.Output)
 	metrics["execution_ms"] = time.Since(started).Milliseconds()
 	if ctx.Err() != nil {
-		return "", ctx.Err()
+		return "", nil, ctx.Err()
 	}
 	if errors.Is(execErr, context.DeadlineExceeded) || errors.Is(phase.Err(), context.DeadlineExceeded) {
-		return "timeout", nil
+		return "timeout", nil, nil
 	}
 	if errors.Is(execErr, sandbox.ErrOutput) {
-		return "runtime_error", nil
+		return "runtime_error", nil, nil
 	}
 	if execErr != nil {
-		return "", sandbox.ErrInfrastructure
+		return "", nil, sandbox.ErrInfrastructure
 	}
 	if exit != 0 || len(stderr) != 0 {
-		return "runtime_error", nil
+		return "runtime_error", nil, nil
 	}
 	if resourceErr := programResources(phase, p); resourceErr != nil {
 		if ctx.Err() != nil {
-			return "", ctx.Err()
+			return "", nil, ctx.Err()
 		}
 		if errors.Is(phase.Err(), context.DeadlineExceeded) {
-			return "timeout", nil
+			return "timeout", nil, nil
 		}
 		if errors.Is(resourceErr, errProgramResources) {
-			return "runtime_error", nil
+			return "runtime_error", nil, nil
 		}
-		return "", sandbox.ErrInfrastructure
+		return "", nil, sandbox.ErrInfrastructure
 	}
-	return compareFunction(c, inputs, expected, out), nil
+	verdict, observations = compareFunctionObservations(c, inputs, expected, out)
+	return verdict, observations, nil
 }

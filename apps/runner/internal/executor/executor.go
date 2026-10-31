@@ -32,6 +32,9 @@ type Executor struct {
 type Result struct {
 	Verdict, Code string
 	Metrics       map[string]int64
+	Functional    *protocol.FunctionalReport
+	// Internal only: absent observations are not failed groups or product feedback.
+	FunctionalUnavailable string
 }
 
 func infrastructure(code string) Result {
@@ -146,7 +149,8 @@ func (e Executor) source(ctx context.Context, s protocol.Source) ([]byte, error)
 	return bytes, nil
 }
 func (e Executor) Evaluate(ctx context.Context, s protocol.Snapshot, layout string) Result {
-	if _, err := artifact.ContractFor(s.PackID, s.Contract); err != nil {
+	contract, contractErr := artifact.ContractFor(s.PackID, s.Contract)
+	if contractErr != nil {
 		return infrastructure("INCOMPATIBLE_ENVIRONMENT")
 	}
 	source, err := e.source(ctx, s.Source)
@@ -157,46 +161,74 @@ func (e Executor) Evaluate(ctx context.Context, s protocol.Snapshot, layout stri
 	if err != nil {
 		return infrastructure("ARTIFACT_MISMATCH")
 	}
-	inputs, expected, err := casesFor(files, func() artifact.ExecutionContract { c, _ := artifact.ContractFor(s.PackID, s.Contract); return c }())
+	return e.evaluateLoaded(ctx, s, source, files, contract)
+}
+
+// Called only after private pack and source verification in Evaluate. Tests use
+// synthetic bytes and fake phases; no learner or sandbox is executed.
+func (e Executor) evaluateLoaded(ctx context.Context, s protocol.Snapshot, source []byte, files map[string][]byte, contract artifact.ExecutionContract) Result {
+	inputs, expected, err := casesFor(files, contract)
 	if err != nil {
 		return infrastructure("INCOMPATIBLE_ENVIRONMENT")
+	}
+	manifest, manifestErr := artifact.LoadScoring(files, contract)
+	if manifestErr != nil {
+		return infrastructure("ARTIFACT_MISMATCH")
 	}
 	if e.runtimeEngine().VerifyImage(ctx, s.Sandbox) != nil {
 		return infrastructure("ARTIFACT_UNAVAILABLE")
 	}
 	metrics := map[string]int64{}
-	program, verdict, err := e.compile(ctx, s, source, metrics)
+	program, verdict, compileCause, err := e.compileObserved(ctx, s, source, metrics)
 	if err != nil {
 		return infrastructure("CONTAINER_FAILURE")
 	}
 	if verdict != "" {
-		return Result{Verdict: verdict, Metrics: metrics}
+		return Result{Verdict: verdict, Metrics: metrics, FunctionalUnavailable: compileCause}
 	}
-	verdict, err = e.execute(ctx, s, program, inputs, expected, metrics)
+	var observations []bool
+	if manifest != nil {
+		verdict, observations, err = e.executeFunctionObserved(ctx, s, program, inputs, expected, metrics)
+	} else {
+		verdict, err = e.execute(ctx, s, program, inputs, expected, metrics)
+	}
 	if err != nil {
 		return infrastructure("CONTAINER_FAILURE")
 	}
-	return Result{Verdict: feedback.Project(verdict).Verdict, Metrics: metrics}
+	result := Result{Verdict: feedback.Project(verdict).Verdict, Metrics: metrics, FunctionalUnavailable: "manifest_missing"}
+	if manifest != nil {
+		result.FunctionalUnavailable = "execution_unobserved"
+		if report, reportErr := protocol.FunctionalFromObservations(s, manifest, observations); reportErr == nil {
+			result.Functional = report
+			result.FunctionalUnavailable = ""
+		}
+	}
+	return result
 }
-func (e Executor) compile(ctx context.Context, s protocol.Snapshot, source []byte, metrics map[string]int64) (program []byte, verdict string, err error) {
+func (e Executor) compile(ctx context.Context, s protocol.Snapshot, source []byte, metrics map[string]int64) ([]byte, string, error) {
+	program, verdict, _, err := e.compileObserved(ctx, s, source, metrics)
+	return program, verdict, err
+}
+
+func (e Executor) compileObserved(ctx context.Context, s protocol.Snapshot, source []byte, metrics map[string]int64) (program []byte, verdict string, failureCause string, err error) {
 	files, command, planErr := compilationPlan(s, source)
 	if planErr != nil {
 		if errors.Is(planErr, errProgramSource) {
-			return nil, "compile_error", nil
+			return nil, "compile_error", "source_profile_rejected", nil
 		}
-		return nil, "", planErr
+		return nil, "", "infrastructure_unknown", planErr
 	}
 	c, err := e.runtimeEngine().Create(ctx, s.Sandbox, true)
 	if err != nil {
-		return nil, "", err
+		return nil, "", "infrastructure_unknown", err
 	}
 	defer func() {
 		if stopGradingPhase(c) != nil {
-			program, verdict, err = nil, "", sandbox.ErrInfrastructure
+			program, verdict, failureCause, err = nil, "", "infrastructure_unknown", sandbox.ErrInfrastructure
 		}
 	}()
 	if c.Import(ctx, files) != nil {
-		return nil, "", sandbox.ErrInfrastructure
+		return nil, "", "infrastructure_unknown", sandbox.ErrInfrastructure
 	}
 	phase, cancel := context.WithTimeout(ctx, time.Duration(s.Resources.Compilation.Timeout)*time.Millisecond)
 	started := time.Now()
@@ -204,26 +236,31 @@ func (e Executor) compile(ctx context.Context, s protocol.Snapshot, source []byt
 	metrics["compilation_ms"] = time.Since(started).Milliseconds()
 	cancel()
 	if ctx.Err() != nil {
-		return nil, "", ctx.Err()
+		return nil, "", "infrastructure_unknown", ctx.Err()
 	}
-	if errors.Is(err, context.DeadlineExceeded) || errors.Is(err, sandbox.ErrOutput) || (err == nil && exit != 0) {
-		return nil, "compile_error", nil
+	if errors.Is(err, context.DeadlineExceeded) || errors.Is(err, sandbox.ErrOutput) {
+		return nil, "compile_error", "compilation_unobserved", nil
+	}
+	// A nonzero phase exit is an observation, not proof of learner fault
+	// (it may include resource/infrastructure failure) and grants no score.
+	if err == nil && exit != 0 {
+		return nil, "compile_error", "observed_compiler_nonzero", nil
 	}
 	if err != nil {
-		return nil, "", err
+		return nil, "", "infrastructure_unknown", err
 	}
 	transfer, cancel := context.WithTimeout(ctx, 10*time.Second)
 	defer cancel()
 	raw, _, exit, err := c.Exec(transfer, []string{"/bin/tar", "--format=ustar", "-cf", "-", "-C", "/workspace", "program"}, nil, nil, 8<<20)
 	if err != nil || exit != 0 {
-		return nil, "", sandbox.ErrInfrastructure
+		return nil, "", "infrastructure_unknown", sandbox.ErrInfrastructure
 	}
 	program, err = sandbox.Compiled(raw)
 	if err != nil {
-		return nil, "", err
+		return nil, "", "infrastructure_unknown", err
 	}
 	metrics["compiled_bytes"] = int64(len(program))
-	return program, "", nil
+	return program, "", "", nil
 }
 func (e Executor) execute(ctx context.Context, s protocol.Snapshot, program []byte, inputs []json.RawMessage, expected []string, metrics map[string]int64) (verdict string, err error) {
 	if s.Contract != nil && s.Contract.Version == 2 {

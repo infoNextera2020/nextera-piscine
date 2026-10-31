@@ -28,7 +28,8 @@
     "./scored-exam-review-context": "./queries/scored-exam-review-context.ts",
     "./operations/scored-exam-publication": "./operations/scored-exam-publication.ts",
     "./scored-exam-outcomes": "./queries/scored-exam-outcomes.ts",
-    "./scored-exam-code-upload": "./queries/scored-exam-code-upload.ts"
+    "./scored-exam-code-upload": "./queries/scored-exam-code-upload.ts",
+    "./scored-exam-functional-producer": "./queries/scored-exam-functional-producer.ts"
   },
   "scripts": {
     "build": "tsc -p tsconfig.json",

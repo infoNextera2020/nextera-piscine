@@ -48,6 +48,9 @@ type Snapshot struct {
 	Accepted      string `json:"accepted_at"`
 	Source        Source `json:"artifact"`
 	TestOnly      bool   `json:"test_only,omitempty"`
+	// Verified claim identity is host-only and never changes frozen snapshot bytes.
+	VerifiedJob    string `json:"-"`
+	VerifiedDigest string `json:"-"`
 }
 type Claim struct {
 	Job        string          `json:"job_id"`
@@ -125,6 +128,8 @@ func Verify(c Claim, catalog artifact.Catalog, runner, layouts string, local boo
 	if artifact.Verify(layout, s.PackID, entry) != nil {
 		return s, "", errors.New("ARTIFACT_MISMATCH")
 	}
+	s.VerifiedJob = c.Job
+	s.VerifiedDigest = c.Digest
 	return s, layout, nil
 }
 

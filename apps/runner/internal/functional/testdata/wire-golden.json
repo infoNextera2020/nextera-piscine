@@ -1,0 +1,96 @@
+{
+  "synthetic": true,
+  "operationId": "00000000-0000-0000-0000-000000000006",
+  "context": {
+    "version": 1,
+    "submissionId": "00000000-0000-0000-0000-000000000001",
+    "jobId": "00000000-0000-0000-0000-000000000002",
+    "attemptId": "00000000-0000-0000-0000-000000000003",
+    "learnerId": "00000000-0000-0000-0000-000000000004",
+    "cohortId": "00000000-0000-0000-0000-000000000005",
+    "questionKey": "q1",
+    "answerSha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+    "definitionDigest": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+    "snapshotDigest": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+    "rubricDigest": "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd",
+    "rubricSourceBindingDigest": "eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee",
+    "publishedCriteriaDigest": "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
+    "evaluatorKey": "official-code",
+    "evaluatorDigest": "1111111111111111111111111111111111111111111111111111111111111111",
+    "evaluationSnapshotDigest": "2222222222222222222222222222222222222222222222222222222222222222",
+    "evaluationSpecDigest": "1111111111111111111111111111111111111111111111111111111111111111",
+    "testPackId": "synthetic-pack-v1",
+    "testPackDigest": "3333333333333333333333333333333333333333333333333333333333333333",
+    "manifestSha256": "4444444444444444444444444444444444444444444444444444444444444444",
+    "publicCasesSha256": "5555555555555555555555555555555555555555555555555555555555555555",
+    "privateCasesSha256": "6666666666666666666666666666666666666666666666666666666666666666",
+    "caseCount": 3,
+    "manifestBindingDigest": "7777777777777777777777777777777777777777777777777777777777777777",
+    "expectedRevision": "9007199254740993",
+    "groups": [
+      {
+        "groupKey": "synthetic-ordinary",
+        "criteriaDigest": "8888888888888888888888888888888888888888888888888888888888888888"
+      },
+      {
+        "groupKey": "synthetic-boundary",
+        "criteriaDigest": "9999999999999999999999999999999999999999999999999999999999999999"
+      }
+    ]
+  },
+  "report": {
+    "version": 1,
+    "jobId": "00000000-0000-0000-0000-000000000002",
+    "submissionId": "00000000-0000-0000-0000-000000000001",
+    "itemKey": "q1",
+    "evaluationSnapshotDigest": "2222222222222222222222222222222222222222222222222222222222222222",
+    "evaluationSpecDigest": "1111111111111111111111111111111111111111111111111111111111111111",
+    "artifactSha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+    "testPackId": "synthetic-pack-v1",
+    "testPackDigest": "3333333333333333333333333333333333333333333333333333333333333333",
+    "manifestSha256": "4444444444444444444444444444444444444444444444444444444444444444",
+    "publicCasesSha256": "5555555555555555555555555555555555555555555555555555555555555555",
+    "privateCasesSha256": "6666666666666666666666666666666666666666666666666666666666666666",
+    "caseCount": 3,
+    "groups": [
+      {
+        "groupKey": "synthetic-ordinary",
+        "criteriaDigest": "8888888888888888888888888888888888888888888888888888888888888888",
+        "passed": false
+      },
+      {
+        "groupKey": "synthetic-boundary",
+        "criteriaDigest": "9999999999999999999999999999999999999999999999999999999999999999",
+        "passed": true
+      }
+    ]
+  },
+  "evidenceDigest": "4d286b03746e27a7976b466c22843a71608cdff82a86d1e2c21497a6be030c73",
+  "body": {
+    "state": "evaluated",
+    "evidence": {
+      "submissionId": "00000000-0000-0000-0000-000000000001",
+      "questionKey": "q1",
+      "answerSha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "rubricDigest": "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd",
+      "publishedCriteriaDigest": "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
+      "evidenceDigest": "4d286b03746e27a7976b466c22843a71608cdff82a86d1e2c21497a6be030c73",
+      "kind": "groups",
+      "outcomes": [
+        {
+          "groupKey": "synthetic-ordinary",
+          "criteriaDigest": "8888888888888888888888888888888888888888888888888888888888888888",
+          "passed": false
+        },
+        {
+          "groupKey": "synthetic-boundary",
+          "criteriaDigest": "9999999999999999999999999999999999999999999999999999999999999999",
+          "passed": true
+        }
+      ]
+    }
+  },
+  "payloadDigest": "adb207eaa5af5e76c5f9c89e619133c824d4c4c358ae5f37ac1917a577d43f4a",
+  "canonicalEvidence": "{\"context\":{\"answerSha256\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"attemptId\":\"00000000-0000-0000-0000-000000000003\",\"caseCount\":3,\"cohortId\":\"00000000-0000-0000-0000-000000000005\",\"definitionDigest\":\"bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb\",\"evaluationSnapshotDigest\":\"2222222222222222222222222222222222222222222222222222222222222222\",\"evaluationSpecDigest\":\"1111111111111111111111111111111111111111111111111111111111111111\",\"evaluatorDigest\":\"1111111111111111111111111111111111111111111111111111111111111111\",\"evaluatorKey\":\"official-code\",\"expectedRevision\":\"9007199254740993\",\"groups\":[{\"criteriaDigest\":\"8888888888888888888888888888888888888888888888888888888888888888\",\"groupKey\":\"synthetic-ordinary\"},{\"criteriaDigest\":\"9999999999999999999999999999999999999999999999999999999999999999\",\"groupKey\":\"synthetic-boundary\"}],\"jobId\":\"00000000-0000-0000-0000-000000000002\",\"learnerId\":\"00000000-0000-0000-0000-000000000004\",\"manifestBindingDigest\":\"7777777777777777777777777777777777777777777777777777777777777777\",\"manifestSha256\":\"4444444444444444444444444444444444444444444444444444444444444444\",\"privateCasesSha256\":\"6666666666666666666666666666666666666666666666666666666666666666\",\"publicCasesSha256\":\"5555555555555555555555555555555555555555555555555555555555555555\",\"publishedCriteriaDigest\":\"ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff\",\"questionKey\":\"q1\",\"rubricDigest\":\"dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd\",\"rubricSourceBindingDigest\":\"eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee\",\"snapshotDigest\":\"cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc\",\"submissionId\":\"00000000-0000-0000-0000-000000000001\",\"testPackDigest\":\"3333333333333333333333333333333333333333333333333333333333333333\",\"testPackId\":\"synthetic-pack-v1\",\"version\":1},\"report\":{\"artifactSha256\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"caseCount\":3,\"evaluationSnapshotDigest\":\"2222222222222222222222222222222222222222222222222222222222222222\",\"evaluationSpecDigest\":\"1111111111111111111111111111111111111111111111111111111111111111\",\"groups\":[{\"criteriaDigest\":\"8888888888888888888888888888888888888888888888888888888888888888\",\"groupKey\":\"synthetic-ordinary\",\"passed\":false},{\"criteriaDigest\":\"9999999999999999999999999999999999999999999999999999999999999999\",\"groupKey\":\"synthetic-boundary\",\"passed\":true}],\"itemKey\":\"q1\",\"jobId\":\"00000000-0000-0000-0000-000000000002\",\"manifestSha256\":\"4444444444444444444444444444444444444444444444444444444444444444\",\"privateCasesSha256\":\"6666666666666666666666666666666666666666666666666666666666666666\",\"publicCasesSha256\":\"5555555555555555555555555555555555555555555555555555555555555555\",\"submissionId\":\"00000000-0000-0000-0000-000000000001\",\"testPackDigest\":\"3333333333333333333333333333333333333333333333333333333333333333\",\"testPackId\":\"synthetic-pack-v1\",\"version\":1},\"version\":1}",
+  "canonicalBody": "{\"evidence\":{\"answerSha256\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"evidenceDigest\":\"4d286b03746e27a7976b466c22843a71608cdff82a86d1e2c21497a6be030c73\",\"kind\":\"groups\",\"outcomes\":[{\"criteriaDigest\":\"8888888888888888888888888888888888888888888888888888888888888888\",\"groupKey\":\"synthetic-ordinary\",\"passed\":false},{\"criteriaDigest\":\"9999999999999999999999999999999999999999999999999999999999999999\",\"groupKey\":\"synthetic-boundary\",\"passed\":true}],\"publishedCriteriaDigest\":\"ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff\",\"questionKey\":\"q1\",\"rubricDigest\":\"dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd\",\"submissionId\":\"00000000-0000-0000-0000-000000000001\"},\"state\":\"evaluated\"}"
+}

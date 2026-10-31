@@ -27,6 +27,40 @@ export async function applyResult(db: OperationalDatabase, resultId: string) {
       sql`SELECT pg_has_role(session_user,'nextera_result_application','USAGE') AS allowed`,
     );
     if (!auth?.allowed) throw new Error('RESULT_APPLICATION_UNAUTHORIZED');
+    // Marked scored exams have their own binary display receipt path. It never
+    // turns a judge verdict into final points, closure, mastery or progression.
+    const [scoredInstalled] = await tx.execute(
+      sql`SELECT to_regprocedure('app.apply_scored_exam_binary_result(uuid)') IS NOT NULL AS available`,
+    );
+    if (scoredInstalled?.available) {
+      const [scored] = await tx.execute(
+        sql`SELECT app.apply_scored_exam_binary_result(${resultId}::uuid) AS receipt`,
+      );
+      if (!scored || !Object.hasOwn(scored, 'receipt'))
+        throw new Error('SCORED_EXAM_BINARY_RECEIPT_UNAVAILABLE');
+      if (scored.receipt !== null) {
+        const receipt = scored.receipt as Record<string, unknown> | undefined;
+        if (
+          !receipt ||
+          typeof receipt !== 'object' ||
+          Array.isArray(receipt) ||
+          receipt.id !== resultId ||
+          !['applied', 'superseded'].includes(String(receipt.application_status)) ||
+          !receipt.processed_at
+        )
+          throw new Error('SCORED_EXAM_BINARY_RECEIPT_CONFLICT');
+        return receipt as unknown as Identity;
+      }
+    } else {
+      const [scoredSource] = await tx.execute(sql`
+        SELECT EXISTS(SELECT FROM judge.results r JOIN judge.jobs j ON j.id=r.job_id
+        JOIN app.submissions s ON s.id=j.submission_id LEFT JOIN app.checkpoint_attempts a ON a.id=s.checkpoint_attempt_id
+        WHERE r.id=${resultId}::uuid AND ((a.snapshot->'definition') ? 'examScoring'
+        OR a.snapshot->'definition'->'policyVersion'='3'::jsonb
+        OR (j.evaluation_snapshot->'checkpoint_definition') ? 'examScoring'
+        OR j.evaluation_snapshot->'checkpoint_definition'->'policyVersion'='3'::jsonb)) AS marked`);
+      if (scoredSource?.marked) throw new Error('SCORED_EXAM_BINARY_REGISTRAR_UNAVAILABLE');
+    }
     // Dedicated shared-project registrar: records automated evidence only, never mastery.
     const [raidInstalled] = await tx.execute(
       sql`SELECT to_regprocedure('app.apply_raid_automated_result(uuid)') IS NOT NULL AS available`,

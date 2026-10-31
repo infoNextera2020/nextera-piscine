@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"flag"
 	"io"
-	"net/url"
 	"nextera.local/runner/internal/artifact"
 	"nextera.local/runner/internal/executor"
 	"nextera.local/runner/internal/protocol"
@@ -15,7 +14,6 @@ import (
 	"os/signal"
 	"path/filepath"
 	"runtime"
-	"strings"
 	"syscall"
 	"time"
 )
@@ -45,18 +43,16 @@ func work(args []string) error {
 	token := flags.String("storage-token-file", "", "read-only Storage credential file")
 	local := flags.Bool("local-fixtures", false, "disposable fixture database only")
 	once := flags.Bool("once", false, "process at most one job")
+	publisherConfig := flags.String("functional-publisher-config", "", "disabled unless an explicit protected per-item evaluator/outbox configuration is provided")
 	if flags.Parse(args) != nil || flags.NArg() != 0 {
 		return artifact.ErrInvalid
 	}
-	database := os.Getenv("JUDGE_DATABASE_URL")
-	if *local {
-		u, e := url.Parse(database)
-		if e != nil || !(u.Hostname() == "127.0.0.1" || u.Hostname() == "localhost") || !strings.HasPrefix(u.Path, "/foundation_test") {
-			return artifact.ErrInvalid
-		}
-	} else {
+	// Private registry deployment remains unapproved. Gate the queue BEFORE
+	// loading publisher configuration; freeze every permitted connection.
+	queueConfig, publisher, err := localConnections(*local, *publisherConfig, os.Getenv)
+	if err != nil {
 		return artifact.ErrInvalid
-	} // Private registry deployment is not approved by Foundation 004.
+	}
 	catalog, err := artifact.ReadCandidate(*candidate)
 	if err != nil {
 		return err
@@ -87,7 +83,7 @@ func work(args []string) error {
 	if err != nil || json.Unmarshal(raw, &receipt) != nil || receipt["runner"].Manifest != *image || receipt["runner"].Source != revision {
 		return artifact.ErrInvalid
 	}
-	client := queue.Client{URL: database}
+	client := queue.Client{Config: queueConfig}
 	evaluator := executor.Executor{Engine: engine, StorageURL: *storage, TokenFile: *token}
 	if client.Heartbeat(ctx) != nil || engine.Cleanup(ctx) != nil {
 		if ctx.Err() != nil {
@@ -192,6 +188,7 @@ func work(args []string) error {
 				}
 			}
 			if persistErr == nil {
+				publishAfterAcknowledgement(ctx, cancel, renewalDone, publisher, claim, snapshot, result)
 				event := "evaluation_completed"
 				if result.Verdict == "system_error" {
 					event = "system_failure"

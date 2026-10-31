@@ -257,7 +257,8 @@ func Verify(layout, id string, entry Entry) error {
 	}
 	r := tar.NewReader(bytes.NewReader(layer))
 	seen := map[string]bool{}
-	allowed := map[string]bool{"metadata.json": true, "cases/public.json": true, "cases/private.json": true, "harness/bridge.go": true, "feedback.json": true}
+	scoringFiles := map[string][]byte{}
+	allowed := map[string]bool{"metadata.json": true, "cases/public.json": true, "cases/private.json": true, "harness/bridge.go": true, "feedback.json": true, ScoringManifestPath: true}
 	for {
 		h, e := r.Next()
 		if e == io.EOF {
@@ -271,6 +272,9 @@ func Verify(layout, id string, entry Entry) error {
 		if e != nil {
 			return ErrInvalid
 		}
+		if h.Name == ScoringManifestPath || h.Name == "cases/public.json" || h.Name == "cases/private.json" {
+			scoringFiles[h.Name] = data
+		}
 		if h.Name == "metadata.json" {
 			var meta Metadata
 			if Strict(data, &meta) != nil || meta.Format != 1 || meta.ID != id || !reflect.DeepEqual(meta.Environment, entry.Environment) || !reflect.DeepEqual(meta.Contract, entry.Contract) {
@@ -278,8 +282,19 @@ func Verify(layout, id string, entry Entry) error {
 			}
 		}
 	}
-	if len(seen) != len(allowed) {
-		return ErrInvalid
+	for _, name := range []string{"metadata.json", "cases/public.json", "cases/private.json", "harness/bridge.go", "feedback.json"} {
+		if !seen[name] {
+			return ErrInvalid
+		}
+	}
+	if seen[ScoringManifestPath] {
+		contract, err := ContractFor(id, entry.Contract)
+		if err != nil {
+			return ErrInvalid
+		}
+		if _, err = LoadScoring(scoringFiles, contract); err != nil {
+			return ErrInvalid
+		}
 	}
 	return nil
 }

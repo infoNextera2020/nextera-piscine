@@ -9,13 +9,22 @@ import (
 	"time"
 )
 
-type Client struct{ URL string }
+type Client struct {
+	URL    string
+	Config *pgx.ConnConfig
+}
 
 // Each short call owns its connection. No transaction/connection spans sandbox execution.
 func (c Client) call(ctx context.Context, query string, args ...any) ([]byte, error) {
 	ctx, cancel := context.WithTimeout(ctx, 5*time.Second)
 	defer cancel()
-	conn, err := pgx.Connect(ctx, c.URL)
+	var conn *pgx.Conn
+	var err error
+	if c.Config != nil {
+		conn, err = pgx.ConnectConfig(ctx, c.Config.Copy())
+	} else {
+		conn, err = pgx.Connect(ctx, c.URL)
+	}
 	if err != nil {
 		return nil, err
 	}
