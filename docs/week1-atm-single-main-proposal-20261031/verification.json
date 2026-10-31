@@ -1,0 +1,121 @@
+{
+  "status": "inactive_source_docs_proposal_only",
+  "sourceApprovalStatus": "approved_learning_source_baseline_not_published",
+  "sourceArtifactsVerified": [
+    {
+      "path": "content/source-baselines/project1-atm-v1/README.md",
+      "bytes": 3115,
+      "sha256": "96f4bde77efb16b4dfa77f61315427093cbf0eac696973c580467fe408116051"
+    },
+    {
+      "path": "content/source-baselines/project1-atm-v1/input-demo/input.go",
+      "bytes": 474,
+      "sha256": "ce71d84089a9d950208be1479bbd731a0a1f86280370a75af4fd46fab5820bd3"
+    },
+    {
+      "path": "content/source-baselines/project1-atm-v1/input-demo/main.go",
+      "bytes": 317,
+      "sha256": "c0e05fbe9712a491552304a712724ffb377c2804e5a01feaf8f4b24ac4f5005b"
+    },
+    {
+      "path": "content/source-baselines/project1-atm-v1/learner-en.md",
+      "bytes": 12235,
+      "sha256": "8d8ff72fdbc241e0c7fdcfe1692cef8223ee426ca68d373f004f63cf15f28a1b"
+    },
+    {
+      "path": "content/source-baselines/project1-atm-v1/scaffold/README.md",
+      "bytes": 2841,
+      "sha256": "cacb3dc9611e619c5aa3d120f5fad91e3a8ac6d246bf743fab2b8ad165314234"
+    },
+    {
+      "path": "content/source-baselines/project1-atm-v1/scaffold/input.go",
+      "bytes": 474,
+      "sha256": "ce71d84089a9d950208be1479bbd731a0a1f86280370a75af4fd46fab5820bd3"
+    },
+    {
+      "path": "content/source-baselines/project1-atm-v1/source-map.md",
+      "bytes": 5293,
+      "sha256": "97c4175d1ff91e9fb8de4be34f3b29beb3734ecbc30077176ce5b48f3100a58c"
+    },
+    {
+      "path": "content/source-baselines/project1-atm-v1/review-ar.md",
+      "bytes": 11012,
+      "sha256": "49985d6c0456db0ea63cc7eab202814e2305ea966e588c84d5c974f4e3ce544f"
+    },
+    {
+      "path": ".tools/library-atm-20261029/files/atm-project-learner-en.md",
+      "bytes": 12235,
+      "sha256": "8d8ff72fdbc241e0c7fdcfe1692cef8223ee426ca68d373f004f63cf15f28a1b",
+      "libraryFileId": "libfile_9a5215af72808191bcd6c90c0425fcc6",
+      "version": 0
+    },
+    {
+      "path": ".tools/library-atm-20261029/files/atm-project-learner-source-v1.zip",
+      "bytes": 11787,
+      "sha256": "13c824ca4768915d83f29f0e306875c7557eb1d7f20fd7de08c56d04aa30636b",
+      "libraryFileId": "libfile_8c8418cdbf1c8191904efe8142db2bc4",
+      "version": 0
+    },
+    {
+      "path": ".tools/library-atm-20261029/files/atm-project-mentor-only-v1.zip",
+      "bytes": 6488,
+      "sha256": "0968e09d28327810b9b7ad7211c06751e36166beb679320b1315265ba9595686",
+      "libraryFileId": "libfile_9279a45649588191a3fc71d10182013a",
+      "version": 0
+    },
+    {
+      "path": ".tools/library-atm-20261029/files/atm-project-review-ar.md",
+      "bytes": 11012,
+      "sha256": "49985d6c0456db0ea63cc7eab202814e2305ea966e588c84d5c974f4e3ce544f",
+      "libraryFileId": "libfile_6cbbccb9c8f08191b795abad7876668e",
+      "version": 0
+    }
+  ],
+  "sourceZipEntryEquality": true,
+  "allEightBaselineFilesPreserved": true,
+  "exactFullHelperBytesEmbedded": 474,
+  "fullHelperSha256": "ce71d84089a9d950208be1479bbd731a0a1f86280370a75af4fd46fab5820bd3",
+  "exactScannerAndReadLineRegionBytes": 433,
+  "scannerAndReadLineRegionSha256": "6e0a1e3ce7688dbff3853f3d9789b263b28614eb3a95a1ef9d52e1e7e58666a3",
+  "inputDemoUnchangedAndSeparate": true,
+  "requiredReadmeInformationInSameSourceArtifact": true,
+  "businessValuesChanged": false,
+  "activePublicationChanged": false,
+  "graderImplemented": false,
+  "goCompilerExecuted": true,
+  "programExecuted": false,
+  "networkUsed": false,
+  "nativeSqlExecuted": false,
+  "files": {
+    "docs/week1-atm-single-main-proposal-20261031/README.md": {
+      "bytes": 6690,
+      "sha256": "78eeeffa3accf90c3f37e32a12e47d77978b135547f527615dfb90ada16d72bd"
+    },
+    "docs/week1-atm-single-main-proposal-20261031/learner-delivery-addendum.md": {
+      "bytes": 2304,
+      "sha256": "9186bd6696aff9006b0835d77eaff5cdcd1eeb272e10d603cada557ef3d93717"
+    },
+    "docs/week1-atm-single-main-proposal-20261031/comparison-policy.md": {
+      "bytes": 11144,
+      "sha256": "83b8f6154f51f7cd4a7e2a7aa37e3591b8cce1748f72f5cb7a33db0a333e764f"
+    },
+    "docs/week1-atm-single-main-proposal-20261031/scaffold/main.go": {
+      "bytes": 1367,
+      "sha256": "3096a44b1cd598ca3deab6ad32a952fb9bec0a71bc882879880e127722a84ff9"
+    }
+  },
+  "providedHelperTestsExecuted": true,
+  "atmProgramExecuted": false,
+  "goChecks": {
+    "toolchain": "go version go1.26.2 windows/amd64",
+    "externalDownloads": "disabled",
+    "combinedScaffoldCompileExitCode": 0,
+    "providedHelperTopLevelTestsPassed": 1,
+    "providedHelperSubtestsPassed": 5,
+    "providedHelperTestsFailed": 0,
+    "helperTestSha256": "94f5e4a3e7ae95a9964131bbd9b601067d0a8ee5c80734bd1b778d98f8a18b09",
+    "fullAtmBusinessBehaviorTested": false,
+    "fullAtmImplemented": false,
+    "graderImplemented": false
+  }
+}
