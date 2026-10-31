@@ -38,3 +38,13 @@ Microsoft documents session policy storage and inheritance in [about Execution P
 ## Isolated source build evidence
 
 The clean source checkout passed source tests, typecheck, lint and formatting. Default Turbopack rejected vendor symlinks outside its workspace. The reviewed isolated Webpack build succeeded with installed dependencies and no download or runtime service. The controller now requires the explicit scope-bound buildBundler=webpack value and adds only --webpack to the already-validated direct Next build plan. Domain/DB commands, local workspace aliases, installed compiler pins and source-environment checks remain in force. No broad filesystem-root setting is needed.
+
+## Browser transport versus page evidence
+
+Before launch, the receipt records the actually verified Chrome URL separately from allowedTargetOrigin. A verified blank/new tab can prove transport readiness; it cannot prove the unstarted3151page. The old ambiguous origin-only receipt is rejected. Post-start browser navigation and registration assertions must be captured against the actual3151page after nativeHTTP readiness, without any denied-route or security bypass.
+
+## Operator browser registration and cleanup evidence
+
+The source-bound registrationDriver is operator-browser-learner-b. Learner A exercises native HTTP activation; learner B is activated only through the actual local Chrome signup page, followed by ordinary login. No HTTP activation fallback is permitted for B. The dedicated pipe-only operator CLI hands the short-lived private link and synthetic password directly to the operator in memory. They must not enter command arguments, logs, screenshots or retained receipts. A nonce-bound, digest-only proof is checked against native invitation, Auth, enrollment and cohort facts; browser assertions are not inferred from HTTP success.
+
+Cleanup must stop and verify owned web work before its final provider/account verification. Any unresolved provider request or durable auth_pending operation makes revocation unverified even if an instantaneous account/session count is zero. Best-effort access disabling and owned-resource shutdown still run on that failure; uncertainty must appear in the final report.

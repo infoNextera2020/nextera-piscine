@@ -213,6 +213,157 @@ function combinedCheckpointMode(spec) {
   );
   return spec.rehearsalChecks === 'auth-invitation-checkpoint';
 }
+export function week1RegistrationDriver(spec) {
+  check(
+    ['http-only', 'operator-browser-learner-b'].includes(spec?.registrationDriver),
+    'REGISTRATION_DRIVER',
+  );
+  return spec.registrationDriver;
+}
+export function week1AuthPhases(spec, native = false) {
+  return [
+    'stage',
+    'stack',
+    ...(native ? ['baseline', 'migrate'] : ['migrations']),
+    'bootstrap',
+    'web',
+    'invitations',
+    ...(week1RegistrationDriver(spec) === 'operator-browser-learner-b' ? ['await_browser'] : []),
+    'assert_http',
+  ];
+}
+
+// These are synthetic operator QA receipts, never product authorization. Native
+// Auth/enrollment facts below remain authoritative. No raw capability is retained.
+export function validateWeek1BrowserProof(proof, acknowledgement, now) {
+  const fields = [
+    'version',
+    'scopeSha256',
+    'sourceLockSha256',
+    'nonce',
+    'issueRequestId',
+    'tokenSha256',
+    'origin',
+    'email',
+    'cohortId',
+    'observedAt',
+    'browser',
+    'checks',
+  ];
+  check(proof && same(Object.keys(proof).sort(), fields.sort()), 'BROWSER_PROOF_FIELDS');
+  for (const key of [
+    'version',
+    'scopeSha256',
+    'sourceLockSha256',
+    'nonce',
+    'issueRequestId',
+    'tokenSha256',
+    'origin',
+    'email',
+    'cohortId',
+  ])
+    check(proof[key] === acknowledgement[key], 'BROWSER_PROOF_BINDING');
+  check(
+    proof.browser === 'chrome' &&
+      Number.isSafeInteger(proof.observedAt) &&
+      proof.observedAt >= acknowledgement.issuedAt &&
+      proof.observedAt <= now &&
+      proof.observedAt < acknowledgement.expiresAt &&
+      now < acknowledgement.expiresAt,
+    'BROWSER_PROOF_TIME',
+  );
+  const checks = [
+    'fragmentRemoved',
+    'inviteEmailFixed',
+    'activationSucceeded',
+    'ordinaryLoginSucceeded',
+  ];
+  check(
+    proof.checks &&
+      same(Object.keys(proof.checks).sort(), checks.sort()) &&
+      checks.every((key) => proof.checks[key] === true),
+    'BROWSER_PROOF_CHECKS',
+  );
+  return true;
+}
+export async function readWeek1BrowserFacts(
+  client,
+  { acknowledgement: ack, issuerId, curriculumVersionId },
+  checkTime,
+) {
+  checkTime();
+  check(
+    UUID.test(ack.issueRequestId ?? '') &&
+      HASH.test(ack.tokenSha256 ?? '') &&
+      UUID.test(issuerId ?? '') &&
+      UUID.test(ack.cohortId ?? '') &&
+      UUID.test(curriculumVersionId ?? '') &&
+      ack.email === WEEK1_LEARNERS[1].email &&
+      ack.displayName === WEEK1_LEARNERS[1].displayName &&
+      Number.isSafeInteger(ack.expiresAt),
+    'BROWSER_NATIVE_SCOPE',
+  );
+  const rows = await client.unsafe(
+    "SELECT u.auth_user_id::text AS \"authId\", u.id::text AS \"userId\" FROM app.invitation_acceptances a JOIN app.invitation_activations i ON i.id=a.invitation_id AND i.accepted_admission_id=a.id JOIN app.invitation_enrollment_receipts e ON e.invitation_id=i.id AND e.request_id=i.request_id AND e.admission_id=a.id AND e.auth_user_id=i.auth_user_id JOIN app.users u ON u.id=e.domain_user_id AND u.auth_user_id=i.auth_user_id JOIN auth.users au ON au.id=u.auth_user_id JOIN app.cohort_memberships m ON m.user_id=u.id AND m.cohort_id=e.cohort_id WHERE a.request_id=$1::uuid AND i.token_digest=$2 AND a.issuer_id=$3::uuid AND a.cohort_id=$4::uuid AND a.curriculum_version_id=$5::uuid AND e.cohort_id=a.cohort_id AND e.curriculum_version_id=a.curriculum_version_id AND a.email=$6 AND au.email=a.email AND a.display_name=$7 AND u.display_name=a.display_name AND a.expires_at_ms=$8 AND i.phase='complete' AND i.revoked_at IS NULL AND i.completed_at IS NOT NULL AND u.active AND u.role='learner' AND m.status='active'",
+    [
+      ack.issueRequestId,
+      ack.tokenSha256,
+      issuerId,
+      ack.cohortId,
+      curriculumVersionId,
+      ack.email,
+      ack.displayName,
+      ack.expiresAt,
+    ],
+  );
+  check(rows.length <= 1, 'BROWSER_NATIVE_DUPLICATE');
+  checkTime();
+  if (rows.length === 0) return null;
+  check(
+    same(Object.keys(rows[0]).sort(), ['authId', 'userId']) &&
+      UUID.test(rows[0].authId ?? '') &&
+      UUID.test(rows[0].userId ?? ''),
+    'BROWSER_NATIVE_IDENTITY',
+  );
+  return { ...rows[0] };
+}
+
+export async function awaitWeek1BrowserRegistration({
+  acknowledgement,
+  readProof,
+  readFacts,
+  signIn,
+  checkTime,
+  now,
+  sleep,
+  deadline = Infinity,
+}) {
+  const cutoff = Math.min(now() + 150000, acknowledgement.expiresAt, deadline);
+  while (now() < cutoff) {
+    checkTime();
+    const proof = await readProof();
+    if (proof !== null) {
+      validateWeek1BrowserProof(proof, acknowledgement, now());
+      const facts = await readFacts(acknowledgement);
+      if (facts !== null) {
+        check(
+          UUID.test(facts.authId ?? '') && UUID.test(facts.userId ?? ''),
+          'BROWSER_NATIVE_FACTS',
+        );
+        checkTime();
+        await signIn(facts);
+        checkTime();
+        check(same(await readFacts(acknowledgement), facts), 'BROWSER_NATIVE_FACTS_CHANGED');
+        checkTime();
+        check(now() < cutoff, 'BROWSER_WAIT_EXPIRED');
+        return facts;
+      }
+    }
+    await sleep(250);
+  }
+  throw new Error('WEEK1_BROKER_BROWSER_WAIT_EXPIRED');
+}
+
 export function week1LearnerSessionCount(spec, index) {
   const enabled = combinedCheckpointMode(spec);
   check(index === 0 || index === 1, 'LEARNER_SESSION_SCOPE');
@@ -225,6 +376,7 @@ export async function runWeek1SelectedCheckpoint(spec, operation) {
 }
 export function prepareWeek1AuthBroker(spec) {
   combinedCheckpointMode(spec);
+  week1RegistrationDriver(spec);
   check(spec.hostGuardExecutionPolicy === 'process-RemoteSigned', 'HOST_GUARD_EXECUTION_POLICY');
   check(spec?.version === 1 && same(spec.target, WEEK1_TARGET), 'TARGET');
   check(
@@ -1013,6 +1165,86 @@ export function createWeek1AuthHttpPort({
       });
       return reply.data.user.id;
     },
+    async issueOperatorLearner(person, scope, { intent, acknowledge, emit }) {
+      check(
+        same({ email: person.email, displayName: person.displayName }, WEEK1_LEARNERS[1]),
+        'OPERATOR_LEARNER_SCOPE',
+      );
+      check(
+        scope.registrationDriver === 'operator-browser-learner-b' &&
+          HASH.test(scope.scopeSha256 ?? '') &&
+          HASH.test(scope.sourceLockSha256 ?? ''),
+        'OPERATOR_SCOPE',
+      );
+      const expiresAt = Math.min(config.cleanupAt, config.now() + config.policy.maxLifetimeMs);
+      const receipt = {
+        version: 1,
+        scopeSha256: scope.scopeSha256,
+        sourceLockSha256: scope.sourceLockSha256,
+        nonce: uuid(),
+        issueRequestId: uuid(),
+        origin: target.origin,
+        cohortId: config.cohortId,
+        email: person.email,
+        displayName: person.displayName,
+        expiresAt,
+      };
+      check(
+        UUID.test(receipt.nonce) &&
+          UUID.test(receipt.issueRequestId) &&
+          receipt.nonce !== receipt.issueRequestId,
+        'OPERATOR_NONCE',
+      );
+      // EXCLUSIVE durable intent seals this lease even when issuance has an unknown outcome.
+      await intent(receipt);
+      checkTime();
+      const response = await post(
+        '/api/invitations/issue',
+        {
+          requestId: receipt.issueRequestId,
+          cohortId: receipt.cohortId,
+          email: receipt.email,
+          displayName: receipt.displayName,
+          expiresAt,
+        },
+        await issuerCookie(),
+      );
+      check(
+        response.http === 201 &&
+          response.value.status === 'issued' &&
+          response.value.expiresAt === expiresAt,
+        'OPERATOR_ISSUE_UNPROVEN',
+      );
+      const link = new URL(response.value.link);
+      const token = new URLSearchParams(link.hash.slice(1)).get('invitation');
+      check(
+        link.origin === target.origin &&
+          link.pathname === '/signup' &&
+          !link.search &&
+          /^[A-Za-z0-9_-]{43}$/.test(token ?? '') &&
+          link.hash === '#invitation=' + token,
+        'OPERATOR_LINK',
+      );
+      const acknowledgement = {
+        ...receipt,
+        tokenSha256: digest(Buffer.from(token, 'ascii')),
+        issuedAt: config.now(),
+      };
+      await acknowledge(acknowledgement);
+      const inspected = await post('/api/invitations/inspect', { token });
+      check(
+        inspected.http === 200 &&
+          inspected.value.status === 'valid' &&
+          inspected.value.email === receipt.email &&
+          inspected.value.displayName === receipt.displayName &&
+          same(Object.keys(inspected.value).sort(), ['displayName', 'email', 'status']),
+        'OPERATOR_INSPECTION_BINDING',
+      );
+      checkTime();
+      // Only the dedicated CLI may supply this transient output callback. Never journal it.
+      await emit({ ...acknowledgement, url: link.href, password: person.password });
+      return acknowledgement;
+    },
     async activateLearner(person) {
       check(
         WEEK1_LEARNERS.some(
@@ -1550,15 +1782,7 @@ export async function exerciseWeek1AuthInjected(io, plan) {
   let passed, cleanupVerified;
   try {
     await io.guard(reservation);
-    for (const phase of [
-      'stage',
-      'stack',
-      'migrations',
-      'bootstrap',
-      'web',
-      'invitations',
-      'assert_http',
-    ]) {
+    for (const phase of week1AuthPhases(p)) {
       await io.checkLease();
       await io.journal({ phase, state: 'intent' });
       await io.phase(phase, reservation);
@@ -1592,6 +1816,26 @@ export async function exerciseWeek1AuthInjected(io, plan) {
 /** Cleanup's provider and SQL branches are independent. A failed/ambiguous
  * inventory never prevents disabling application access or restricted logins.
  * Every success flag still requires concrete native count rows from verify. */
+export function week1PendingAuthCreations(
+  ledgerPending,
+  { intent, acknowledgement, scopeSha256, email },
+) {
+  check(Number.isSafeInteger(ledgerPending) && ledgerPending >= 0, 'PENDING_AUTH_COUNT');
+  if (!intent) {
+    check(!acknowledgement, 'ISSUER_CREATE_INTENT_MISSING');
+    return ledgerPending;
+  }
+  check(intent.scopeSha256 === scopeSha256 && intent.email === email, 'ISSUER_CREATE_SCOPE');
+  if (!acknowledgement) return ledgerPending + 1;
+  check(
+    acknowledgement.scopeSha256 === scopeSha256 &&
+      acknowledgement.email === email &&
+      UUID.test(acknowledgement.authId ?? ''),
+    'ISSUER_CREATE_ACK',
+  );
+  return ledgerPending;
+}
+
 export async function cleanupWeek1AuthAccess(io) {
   const failures = [];
   let provider = null,
@@ -1648,6 +1892,8 @@ export async function cleanupWeek1AuthAccess(io) {
   } catch {
     failures.push({ reason: 'native_cleanup_counts_unverified' });
   }
+  if (counts?.pending_auth_operations !== 0)
+    failures.push({ reason: 'provider_creation_quiescence_unverified' });
   const zero = (key) => counts?.[key] === 0;
   return {
     providerRevoked:
@@ -1655,7 +1901,8 @@ export async function cleanupWeek1AuthAccess(io) {
       !failures.some((f) => /provider|inventory|ban|native_cleanup/.test(f.reason)) &&
       zero('sessions') &&
       zero('refresh_tokens') &&
-      zero('unbanned_users'),
+      zero('unbanned_users') &&
+      zero('pending_auth_operations'),
     appDisabled: appAttempt && zero('active_users') && zero('active_memberships'),
     sqlDisabled: sqlAttempt && zero('logins') && zero('login_memberships'),
     inventoryIds: owned.map((p) => p.id),
@@ -1835,19 +2082,65 @@ export function validateWeek1EffectiveCompose(c, images) {
 
 /* Native phase implementation intentionally has no automatically supplied approval.
  * Controller starts this only after protected source/lease/guard verification. */
-export async function executePhase(phase, run, repo) {
+export async function executePhase(phase, run, repo, operatorOutput) {
+  check(phase !== 'operator_handoff' || typeof operatorOutput === 'function', 'OPERATOR_PIPE_ONLY');
+  check(
+    [
+      'stage',
+      'baseline',
+      'migrate',
+      'bootstrap',
+      'invitations',
+      'await_browser',
+      'operator_handoff',
+      'assert_http',
+      'cleanup',
+    ].includes(phase),
+    'PHASE_ALLOWLIST',
+  );
   check(run === WEEK1_TARGET.root, 'RUN');
+  const rootStat = fs.lstatSync(run);
+  check(
+    rootStat.isDirectory() &&
+      !rootStat.isSymbolicLink() &&
+      rootStat.uid === process.getuid() &&
+      (rootStat.mode & 0o777) === 0o700,
+    'PRIVATE_ROOT',
+  );
   const privateRead = (name) => {
-    const file = path.join(run, name),
-      s = fs.lstatSync(file);
-    check(
-      !s.isSymbolicLink() && s.isFile() && s.uid === process.getuid() && (s.mode & 0o777) === 0o600,
-      'PRIVATE_FILE',
-    );
-    return JSON.parse(fs.readFileSync(file, 'utf8'));
+    const fd = fs.openSync(path.join(run, name), fs.constants.O_RDONLY | fs.constants.O_NOFOLLOW);
+    try {
+      const before = fs.fstatSync(fd);
+      check(
+        before.isFile() &&
+          before.uid === process.getuid() &&
+          (before.mode & 0o777) === 0o600 &&
+          before.size > 0 &&
+          before.size <= 1048576,
+        'PRIVATE_FILE',
+      );
+      const bytes = fs.readFileSync(fd);
+      const after = fs.fstatSync(fd);
+      check(
+        before.dev === after.dev &&
+          before.ino === after.ino &&
+          before.size === after.size &&
+          before.mtimeMs === after.mtimeMs &&
+          before.ctimeMs === after.ctimeMs &&
+          bytes.length === before.size,
+        'PRIVATE_FILE_CHANGED',
+      );
+      return JSON.parse(bytes.toString('utf8'));
+    } finally {
+      fs.closeSync(fd);
+    }
   };
   const control = privateRead('broker-control.private.json'),
     spec = prepareWeek1AuthBroker(control.spec);
+  check(
+    control.scopeSha256 === spec.scopeSha256 && control.sourceLockSha256 === spec.sourceLockSha256,
+    'CONTROL_SCOPE_BINDING',
+  );
   const proc = (pid) => ({
     pid,
     ticks: fs
@@ -1869,6 +2162,11 @@ export async function executePhase(phase, run, repo) {
   const frozen = fs.readFileSync(run + '/adapter-code/week1-auth-source-lock.json');
   check(digest(frozen) === control.sourceLockSha256, 'SOURCE_LOCK');
   const lock = JSON.parse(frozen);
+  check(
+    digest(fs.readFileSync(fileURLToPath(import.meta.url))) ===
+      lock.sources['scripts/week1-auth-live-broker.mjs'],
+    'BROKER_SOURCE_LOCK',
+  );
   const source = phase === 'stage' ? repo : run + '/app-source',
     req = createRequire(source + '/package.json');
   req('tsx/cjs');
@@ -2085,6 +2383,70 @@ export async function executePhase(phase, run, repo) {
       save('operation-' + crypto.randomUUID() + '.private.json', value);
     },
   });
+  async function learnerCookieSessions(index, person, authId) {
+    checkTime();
+    const reqWeb = createRequire(source + '/apps/web/package.json');
+    const { createServerClient } = reqWeb('@supabase/ssr');
+    const users = await admin.unsafe(
+      "SELECT u.id::text AS id FROM app.users u JOIN app.cohort_memberships m ON m.user_id=u.id WHERE u.auth_user_id=$1::uuid AND u.role='learner' AND u.active AND m.cohort_id=$2::uuid AND m.status='active'",
+      [authId, config.cohortId],
+    );
+    check(users.length === 1 && UUID.test(users[0].id), 'CHECKPOINT_LEARNER_BINDING');
+    // The second login creates a distinct provider session for learner A;
+    // it is never a copied cookie pretending to be a second device.
+    for (let session = 0; session < week1LearnerSessionCount(spec, index); session++) {
+      const jar = [];
+      const client = createServerClient(WEEK1_TARGET.authOrigin, credentials.ANON_KEY, {
+        cookieOptions: { name: spec.cookieName },
+        cookies: {
+          getAll: () => jar,
+          setAll: (items) => {
+            for (const item of items) {
+              const old = jar.find((v) => v.name === item.name);
+              if (old) old.value = item.value;
+              else jar.push({ name: item.name, value: item.value });
+            }
+          },
+        },
+      });
+      const login = await client.auth.signInWithPassword({
+        email: person.email,
+        password: person.password,
+      });
+      check(
+        !login.error && login.data.user?.id === authId && login.data.session,
+        'LEARNER_COOKIE_SIGNIN',
+      );
+      const claims = JSON.parse(
+        Buffer.from(login.data.session.access_token.split('.')[1] ?? '', 'base64url').toString(
+          'utf8',
+        ),
+      );
+      check(claims.sub === authId && UUID.test(claims.session_id ?? ''), 'LEARNER_SESSION_ID');
+      save('learner-' + index + (session === 1 ? '-second' : '') + '-session.private.json', {
+        sessionId: claims.session_id,
+        authId,
+        userId: users[0].id,
+        cookie: jar.map((c) => c.name + '=' + c.value).join('; '),
+      });
+    }
+  }
+  const operatorScope = () => ({
+    registrationDriver: spec.registrationDriver,
+    scopeSha256: control.scopeSha256,
+    sourceLockSha256: control.sourceLockSha256,
+  });
+  const readBrowserFacts = (ack) =>
+    readWeek1BrowserFacts(
+      admin,
+      {
+        acknowledgement: ack,
+        issuerId: config.issuerId,
+        curriculumVersionId: config.curriculumVersionId,
+      },
+      checkTime,
+    );
+
   try {
     await identity(admin, WEEK1_TARGET.dba);
     if (phase === 'baseline') {
@@ -2185,7 +2547,16 @@ export async function executePhase(phase, run, repo) {
           journal,
         ),
       );
+      save('issuer-create-intent.private.json', {
+        scopeSha256: control.scopeSha256,
+        email: credentials.issuer.email,
+      });
       const issuerAuthId = await http.createIssuer(credentials.issuer);
+      save('issuer-create-ack.private.json', {
+        scopeSha256: control.scopeSha256,
+        email: credentials.issuer.email,
+        authId: issuerAuthId,
+      });
       const [issuer] = await admin.unsafe(
         "INSERT INTO app.users(auth_user_id,display_name,role,active) VALUES($1::uuid,'Week 1 Synthetic Issuer','admin',true) RETURNING id",
         [issuerAuthId],
@@ -2332,51 +2703,109 @@ export async function executePhase(phase, run, repo) {
         cookie: cookies.map((c) => c.name + '=' + c.value).join('; '),
       });
       for (const [index, person] of credentials.learners.entries()) {
+        if (index === 1 && spec.registrationDriver === 'operator-browser-learner-b') continue;
         const authId = await http.activateLearner(person);
-        const users = await admin.unsafe(
-          "SELECT u.id::text AS id FROM app.users u JOIN app.cohort_memberships m ON m.user_id=u.id WHERE u.auth_user_id=$1::uuid AND u.role='learner' AND u.active AND m.cohort_id=$2::uuid AND m.status='active'",
-          [authId, config.cohortId],
-        );
-        check(users.length === 1 && UUID.test(users[0].id), 'CHECKPOINT_LEARNER_BINDING');
-        // The second login creates a distinct provider session for learner A;
-        // it is never a copied cookie pretending to be a second device.
-        for (let session = 0; session < week1LearnerSessionCount(spec, index); session++) {
-          const jar = [];
-          const client = createServerClient(WEEK1_TARGET.authOrigin, credentials.ANON_KEY, {
-            cookieOptions: { name: spec.cookieName },
-            cookies: {
-              getAll: () => jar,
-              setAll: (items) => {
-                for (const item of items) {
-                  const old = jar.find((v) => v.name === item.name);
-                  if (old) old.value = item.value;
-                  else jar.push({ name: item.name, value: item.value });
-                }
-              },
-            },
-          });
-          const login = await client.auth.signInWithPassword({
-            email: person.email,
-            password: person.password,
-          });
-          check(
-            !login.error && login.data.user?.id === authId && login.data.session,
-            'LEARNER_COOKIE_SIGNIN',
-          );
-          const claims = JSON.parse(
-            Buffer.from(login.data.session.access_token.split('.')[1] ?? '', 'base64url').toString(
-              'utf8',
-            ),
-          );
-          check(claims.sub === authId && UUID.test(claims.session_id ?? ''), 'LEARNER_SESSION_ID');
-          save('learner-' + index + (session === 1 ? '-second' : '') + '-session.private.json', {
-            sessionId: claims.session_id,
-            authId,
-            userId: users[0].id,
-            cookie: jar.map((c) => c.name + '=' + c.value).join('; '),
-          });
-        }
+        await learnerCookieSessions(index, person, authId);
       }
+      return;
+    }
+    if (phase === 'operator_handoff') {
+      check(spec.registrationDriver === 'operator-browser-learner-b', 'OPERATOR_DRIVER');
+      const active = privateRead('control.json');
+      check(
+        active.state === 'active' &&
+          active.phase === 'invitations_active' &&
+          active.scopeSha256 === control.scopeSha256,
+        'OPERATOR_ACTIVE',
+      );
+      // Awaiting marker is controller-owned; an operator cannot race ahead of setup.
+      const waiting = privateRead('browser-awaiting.private.json');
+      check(
+        waiting.scopeSha256 === control.scopeSha256 &&
+          waiting.sourceLockSha256 === control.sourceLockSha256,
+        'OPERATOR_AWAITING',
+      );
+      const baseline = privateRead('auth-baseline.private.json');
+      const fixture = privateRead('fixture.private.json');
+      const learnerA = privateRead('learner-0-session.private.json');
+      check(
+        baseline.scopeSha256 === control.scopeSha256 &&
+          baseline.empty === true &&
+          config.scopeSha256 === control.scopeSha256 &&
+          config.sourceLockSha256 === control.sourceLockSha256 &&
+          config.profile === WEEK1_TARGET.profile &&
+          config.target?.origin === WEEK1_TARGET.origin &&
+          fixture.cohortId === config.cohortId &&
+          fixture.curriculumVersionId === config.curriculumVersionId,
+        'OPERATOR_FRESH_BINDING',
+      );
+      const pre = await http.inventory();
+      check(
+        pre.length === 2 &&
+          pre.some((u) => u.email === credentials.issuer.email && u.id === fixture.issuerAuthId) &&
+          pre.some((u) => u.email === WEEK1_LEARNERS[0].email && u.id === learnerA.authId) &&
+          !pre.some((u) => u.email === WEEK1_LEARNERS[1].email),
+        'OPERATOR_FRESH_LEARNER',
+      );
+      await http.issueOperatorLearner(credentials.learners[1], operatorScope(), {
+        intent: async (r) => save('browser-handoff-intent.private.json', r),
+        acknowledge: async (r) => save('browser-handoff-ack.private.json', r),
+        emit: operatorOutput,
+      });
+      return;
+    }
+    if (phase === 'await_browser') {
+      check(spec.registrationDriver === 'operator-browser-learner-b', 'OPERATOR_DRIVER');
+      save('browser-awaiting.private.json', { ...operatorScope(), startedAt: Date.now() });
+      // Original controller phase timeout and independent guard still bound this wait.
+      const cutoff = Math.min(Date.now() + 150000, control.cleanupAt);
+      let ack;
+      while (Date.now() < cutoff) {
+        checkTime();
+        if (fs.existsSync(run + '/browser-handoff-ack.private.json')) {
+          ack = privateRead('browser-handoff-ack.private.json');
+          break;
+        }
+        await new Promise((resolve) => globalThis.setTimeout(resolve, 250));
+      }
+      check(ack, 'OPERATOR_HANDOFF_WAIT_EXPIRED');
+      const intent = privateRead('browser-handoff-intent.private.json');
+      check(
+        same(
+          intent,
+          Object.fromEntries(
+            Object.entries(ack).filter(([k]) => !['tokenSha256', 'issuedAt'].includes(k)),
+          ),
+        ) &&
+          ack.scopeSha256 === control.scopeSha256 &&
+          ack.sourceLockSha256 === control.sourceLockSha256 &&
+          ack.origin === WEEK1_TARGET.origin &&
+          ack.cohortId === config.cohortId &&
+          ack.email === WEEK1_LEARNERS[1].email &&
+          ack.displayName === WEEK1_LEARNERS[1].displayName &&
+          HASH.test(ack.tokenSha256 ?? ''),
+        'OPERATOR_ACK_BINDING',
+      );
+      const facts = await awaitWeek1BrowserRegistration({
+        acknowledgement: ack,
+        readProof: async () =>
+          fs.existsSync(run + '/browser-proof.private.json')
+            ? privateRead('browser-proof.private.json')
+            : null,
+        readFacts: readBrowserFacts,
+        signIn: async (f) => learnerCookieSessions(1, credentials.learners[1], f.authId),
+        checkTime,
+        now: () => Date.now(),
+        sleep: (ms) => new Promise((resolve) => globalThis.setTimeout(resolve, ms)),
+        deadline: cutoff,
+      });
+      save('browser-verified.private.json', {
+        scopeSha256: control.scopeSha256,
+        nonce: ack.nonce,
+        authId: facts.authId,
+        userId: facts.userId,
+        verifiedAt: Date.now(),
+      });
       return;
     }
     if (phase === 'assert_http') {
@@ -2460,10 +2889,18 @@ export async function executePhase(phase, run, repo) {
       );
       save('http-evidence.private.json', {
         ordinaryIssuerIssued: true,
-        learnersActivatedThroughApi: 2,
+        learnersActivatedThroughApi: spec.registrationDriver === 'http-only' ? 2 : 1,
+        learnersActivatedThroughBrowser:
+          spec.registrationDriver === 'operator-browser-learner-b' ? 1 : 0,
         learnerAndAnonymousIssuanceDenied: true,
         nativeCounts: rows.map((r) => ({ ...r })),
-        browserVerified: false,
+        browserVerificationScope:
+          spec.registrationDriver === 'operator-browser-learner-b'
+            ? ['learner-b-invitation-registration-login']
+            : [],
+        browserVerified:
+          spec.registrationDriver === 'operator-browser-learner-b' &&
+          privateRead('browser-verified.private.json').scopeSha256 === control.scopeSha256,
         rehearsalChecks: spec.rehearsalChecks,
         checkpoint: checkpointEvidence,
       });
@@ -2473,7 +2910,7 @@ export async function executePhase(phase, run, repo) {
       check(fs.existsSync(run + '/auth-baseline.private.json'), 'NO_EXCLUSIVE_AUTH_BASELINE');
       const existingTables = async () => {
         const rows = await admin.unsafe(
-          "SELECT to_regclass('app.users') IS NOT NULL AS users,to_regclass('app.cohort_memberships') IS NOT NULL AS memberships,to_regclass('app.invitation_issuance_policy') IS NOT NULL AS issuance,to_regclass('app.invitation_admission_policy') IS NOT NULL AS admission,to_regclass('app.invitation_runtime_profiles') IS NOT NULL AS runtime",
+          "SELECT to_regclass('app.users') IS NOT NULL AS users,to_regclass('app.cohort_memberships') IS NOT NULL AS memberships,to_regclass('app.invitation_issuance_policy') IS NOT NULL AS issuance,to_regclass('app.invitation_admission_policy') IS NOT NULL AS admission,to_regclass('app.invitation_runtime_profiles') IS NOT NULL AS runtime,to_regclass('app.invitation_activations') IS NOT NULL AS activations",
         );
         check(rows.length === 1, 'CLEANUP_CATALOG');
         return rows[0];
@@ -2567,6 +3004,30 @@ export async function executePhase(phase, run, repo) {
             check(r.length === 1, 'CLEANUP_MEMBERSHIP_COUNT');
             counts.active_memberships = r[0].n;
           }
+          counts.pending_auth_operations = 0;
+          if (tables.activations) {
+            // A killed Next request may already have sent managed-Auth creation.
+            // Its durable auth_pending fence makes that outcome unknown. Shutdown
+            // still proceeds, but zero current users cannot prove no late creation.
+            const pending = await admin.unsafe(
+              "SELECT count(*)::integer AS n FROM app.invitation_activations WHERE phase='auth_pending'",
+            );
+            check(pending.length === 1, 'CLEANUP_PENDING_AUTH_COUNT');
+            counts.pending_auth_operations = pending[0].n;
+          }
+          counts.pending_auth_operations = week1PendingAuthCreations(
+            counts.pending_auth_operations,
+            {
+              intent: fs.existsSync(run + '/issuer-create-intent.private.json')
+                ? privateRead('issuer-create-intent.private.json')
+                : null,
+              acknowledgement: fs.existsSync(run + '/issuer-create-ack.private.json')
+                ? privateRead('issuer-create-ack.private.json')
+                : null,
+              scopeSha256: control.scopeSha256,
+              email: credentials.issuer.email,
+            },
+          );
           return counts;
         },
       });
@@ -2583,7 +3044,30 @@ export async function executePhase(phase, run, repo) {
   }
 }
 if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
-  if (process.argv[2] === '--phase')
+  if (process.argv[2] === '--operator-handoff-stdout') {
+    // Deliberately NOT exposed through Python Commands.run or generic --phase.
+    // Caller must retain stdout only in its private in-memory operator pipe.
+    try {
+      check(!process.stdout.isTTY && fs.fstatSync(1).isFIFO(), 'OPERATOR_PIPE_ONLY');
+    } catch {
+      process.stderr.write('WEEK1_BROKER_OPERATOR_PIPE_REQUIRED\n');
+      process.exit(1);
+    }
+    executePhase(
+      'operator_handoff',
+      process.argv[3],
+      process.argv[4],
+      (value) =>
+        new Promise((resolve, reject) =>
+          process.stdout.write(JSON.stringify(value) + '\n', (error) =>
+            error ? reject(error) : resolve(),
+          ),
+        ),
+    ).catch(() => {
+      process.stderr.write('WEEK1_BROKER_OPERATOR_HANDOFF_FAILED; do not retry issuance.\n');
+      process.exitCode = 1;
+    });
+  } else if (process.argv[2] === '--phase')
     executePhase(process.argv[3], process.argv[4], process.argv[5]).catch(() => {
       process.stderr.write('WEEK1_BROKER_PHASE_FAILED; protected evidence retained.\n');
       process.exitCode = 1;

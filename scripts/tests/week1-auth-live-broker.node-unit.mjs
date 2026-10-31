@@ -5,6 +5,12 @@ import crypto from 'node:crypto';
 import { Buffer } from 'node:buffer';
 import { URL } from 'node:url';
 import {
+  week1PendingAuthCreations,
+  readWeek1BrowserFacts,
+  week1RegistrationDriver,
+  week1AuthPhases,
+  validateWeek1BrowserProof,
+  awaitWeek1BrowserRegistration,
   WEEK1_TARGET,
   WEEK1_SERVICES,
   WEEK1_LEARNERS,
@@ -29,6 +35,7 @@ import {
   validateWeek1EffectiveCompose,
   writeWeek1Private,
   cleanupWeek1AuthAccess,
+  executePhase,
 } from '../week1-auth-live-broker.mjs';
 
 const id = (n) => '10000000-0000-4000-8000-' + String(n).padStart(12, '0');
@@ -37,6 +44,7 @@ const spec = () => {
     version: 1,
     buildBundler: 'webpack',
     rehearsalChecks: 'auth-invitation-checkpoint',
+    registrationDriver: 'http-only',
     hostGuardExecutionPolicy: 'process-RemoteSigned',
     target: WEEK1_TARGET,
     sourceLockSha256: 'a'.repeat(64),
@@ -629,6 +637,7 @@ test('provider inventory failure still bans native-owned IDs and disables app an
       sessions: 0,
       refresh_tokens: 0,
       unbanned_users: 0,
+      pending_auth_operations: 0,
       active_users: 0,
       active_memberships: 0,
       logins: 0,
@@ -657,6 +666,7 @@ test('application disable failure cannot skip SQL disable or manufacture cleanup
       sessions: 0,
       refresh_tokens: 0,
       unbanned_users: 0,
+      pending_auth_operations: 0,
       active_users: 1,
       active_memberships: 1,
       logins: 0,
@@ -1176,4 +1186,439 @@ test('combined mode keeps the full Checkpoint HTTP coverage and two distinct lea
     /REHEARSAL_CHECKS/,
   );
   assert.equal(calls, 1);
+});
+
+test('future invitation flow inspects exact identity, activates once, then rejects distinct-operation replay without creating another account', async () => {
+  const f = authFake();
+  await f.port.activateLearner({ ...WEEK1_LEARNERS[0], password: 'fake-password' });
+  const sent = f.events.filter((e) => e.url);
+  assert.deepEqual(
+    sent.map((e) => new URL(e.url).pathname),
+    [
+      '/api/invitations/issue',
+      '/api/invitations/inspect',
+      '/api/invitations/activate',
+      '/api/invitations/inspect',
+      '/api/invitations/activate',
+    ],
+  );
+  assert.deepEqual(sent[1].input, { token: 'a'.repeat(43) });
+  assert.deepEqual(sent[3].input, { token: 'a'.repeat(43) });
+  assert.notEqual(sent[2].input.requestId, sent[4].input.requestId);
+  assert.ok(sent.every((e) => !new URL(e.url).search));
+  assert.equal(f.users.length, 1);
+  assert.equal(f.creates(), 0);
+  assert.ok(
+    f.events.some((e) => e.kind === 'invitation_replay_check' && e.state === 'rejected_used'),
+  );
+  const operation = f.sessions.find((e) => e.kind === 'activation_operation');
+  assert.equal(operation.token, undefined);
+  assert.equal(
+    operation.tokenSha256,
+    crypto.createHash('sha256').update('a'.repeat(43)).digest('hex'),
+  );
+  assert.ok(
+    f.events
+      .filter((e) => e.kind)
+      .every(
+        (e) =>
+          !Object.hasOwn(e, 'token') && !Object.hasOwn(e, 'password') && !Object.hasOwn(e, 'link'),
+      ),
+  );
+});
+test('an inspection identity mismatch cannot reach activation, while successful used-token replay is a failed rehearsal', async () => {
+  let f = authFake({ badInspect: true });
+  await assert.rejects(
+    f.port.activateLearner({ ...WEEK1_LEARNERS[0], password: 'fake-password' }),
+    /INVITATION_INSPECTION_BINDING/,
+  );
+  assert.equal(f.users.length, 0);
+  assert.ok(!f.events.some((e) => e.url?.endsWith('/activate')));
+  f = authFake({ badReplay: true });
+  await assert.rejects(
+    f.port.activateLearner({ ...WEEK1_LEARNERS[0], password: 'fake-password' }),
+    /INVITATION_REPLAY_DENIAL/,
+  );
+  assert.equal(f.users.length, 1);
+  assert.equal(f.creates(), 0);
+});
+
+test('registration driver is explicit and browser mode adds one bounded wait before assertions', () => {
+  for (const driver of [undefined, 'browser', 'auto']) {
+    assert.throws(
+      () => prepareWeek1AuthBroker(resign({ ...spec(), registrationDriver: driver })),
+      /REGISTRATION_DRIVER/,
+    );
+  }
+  const s = resign({ ...spec(), registrationDriver: 'operator-browser-learner-b' });
+  prepareWeek1AuthBroker(s);
+  assert.equal(week1RegistrationDriver(s), 'operator-browser-learner-b');
+  assert.deepEqual(week1AuthPhases(s, true).slice(-3), [
+    'invitations',
+    'await_browser',
+    'assert_http',
+  ]);
+  assert.ok(!week1AuthPhases(spec()).includes('await_browser'));
+});
+test('generic phase never admits secret handoff and unknown phase is rejected before any filesystem or provider access', async () => {
+  await assert.rejects(
+    executePhase('operator_handoff', 'not-a-runtime', 'not-a-repo'),
+    /OPERATOR_PIPE_ONLY/,
+  );
+  await assert.rejects(executePhase('unknown', 'not-a-runtime', 'not-a-repo'), /PHASE_ALLOWLIST/);
+});
+
+function browserIssueFake({
+  ambiguous = false,
+  ackFailure = false,
+  mismatch = false,
+  emitFailure = false,
+} = {}) {
+  const durable = new Map(),
+    events = [],
+    transient = [];
+  let serial = 900;
+  const person = { ...WEEK1_LEARNERS[1], password: 'fake-never-real-browser-password' };
+  const config = { cohortId: id(2), cleanupAt: 1500000, now: () => 1000000, policy: spec().policy };
+  const port = createWeek1AuthHttpPort({
+    config,
+    admin: {},
+    ordinary: () => {
+      throw Error('no HTTP sign in');
+    },
+    issuerCookie: async () => 'fake-cookie',
+    uuid: () => id(++serial),
+    checkTime: () => {},
+    journal: async (e) => events.push(e),
+    savePrivate: async () => {
+      throw Error('unexpected secret retention');
+    },
+    fetch: async (url, input) => {
+      assert.ok(durable.has('intent'));
+      events.push(url);
+      if (url.endsWith('/issue')) {
+        assert.equal(JSON.parse(input.body).requestId, durable.get('intent').issueRequestId);
+        if (ambiguous) throw Error('fake lost issuance acknowledgement');
+        return globalThis.Response.json(
+          {
+            status: 'issued',
+            expiresAt: 1060000,
+            link: WEEK1_TARGET.origin + '/signup#invitation=' + 'z'.repeat(43),
+          },
+          { status: 201 },
+        );
+      }
+      assert.ok(durable.has('ack'));
+      assert.ok(url.endsWith('/inspect'), 'operator port must never activate');
+      return globalThis.Response.json({
+        status: 'valid',
+        email: mismatch ? 'wrong@example.invalid' : person.email,
+        displayName: person.displayName,
+      });
+    },
+  });
+  const callbacks = {
+    intent: async (r) => {
+      assert.ok(!durable.has('intent'));
+      durable.set('intent', r);
+      events.push('intent');
+    },
+    acknowledge: async (r) => {
+      if (ackFailure) throw Error('fake durable ack failed');
+      durable.set('ack', r);
+      events.push('ack');
+    },
+    emit: async (r) => {
+      assert.ok(durable.has('ack'));
+      if (emitFailure) throw Error('fake broken pipe');
+      transient.push(r);
+      events.push('emit');
+    },
+  };
+  const scope = { ...spec(), registrationDriver: 'operator-browser-learner-b' };
+  return { port, person, callbacks, scope, durable, events, transient };
+}
+test('browser issuance seals intent then acknowledges real token digest before emitting, with no activation or stored capability', async () => {
+  const f = browserIssueFake();
+  const ack = await f.port.issueOperatorLearner(f.person, f.scope, f.callbacks);
+  assert.deepEqual(
+    f.events.map((e) => (typeof e === 'string' && e.startsWith('http') ? new URL(e).pathname : e)),
+    ['intent', '/api/invitations/issue', 'ack', '/api/invitations/inspect', 'emit'],
+  );
+  assert.equal(ack.tokenSha256, crypto.createHash('sha256').update('z'.repeat(43)).digest('hex'));
+  assert.equal(f.transient[0].password, f.person.password);
+  assert.match(f.transient[0].url, /#invitation=/);
+  for (const receipt of f.durable.values())
+    for (const key of ['token', 'password', 'url', 'link']) assert.equal(receipt[key], undefined);
+  await assert.rejects(f.port.issueOperatorLearner(f.person, f.scope, f.callbacks));
+  assert.equal(f.events.filter((e) => String(e).endsWith('/issue')).length, 1);
+});
+for (const failure of ['ambiguous', 'ackFailure', 'mismatch', 'emitFailure']) {
+  test(
+    'browser issue failure seals capability and never retries or emits: ' + failure,
+    async () => {
+      const f = browserIssueFake({ [failure]: true });
+      await assert.rejects(f.port.issueOperatorLearner(f.person, f.scope, f.callbacks));
+      assert.ok(f.durable.has('intent'));
+      assert.equal(f.transient.length, 0);
+      await assert.rejects(f.port.issueOperatorLearner(f.person, f.scope, f.callbacks));
+      assert.equal(f.events.filter((e) => String(e).endsWith('/issue')).length, 1);
+    },
+  );
+}
+test('operator issuance rejects learner A and HTTP-only mode before an issuance intent', async () => {
+  const f = browserIssueFake();
+  await assert.rejects(
+    f.port.issueOperatorLearner({ ...f.person, ...WEEK1_LEARNERS[0] }, f.scope, f.callbacks),
+    /OPERATOR_LEARNER_SCOPE/,
+  );
+  await assert.rejects(
+    f.port.issueOperatorLearner(
+      f.person,
+      { ...f.scope, registrationDriver: 'http-only' },
+      f.callbacks,
+    ),
+    /OPERATOR_SCOPE/,
+  );
+  assert.equal(f.events.length, 0);
+});
+function proofFixture() {
+  const ack = {
+    version: 1,
+    scopeSha256: 'a'.repeat(64),
+    sourceLockSha256: 'b'.repeat(64),
+    nonce: id(4),
+    issueRequestId: id(5),
+    tokenSha256: 'c'.repeat(64),
+    origin: WEEK1_TARGET.origin,
+    email: WEEK1_LEARNERS[1].email,
+    cohortId: id(2),
+    displayName: WEEK1_LEARNERS[1].displayName,
+    issuedAt: 1000000,
+    expiresAt: 1060000,
+  };
+  const identity = Object.fromEntries(
+    Object.entries(ack).filter(([key]) => !['displayName', 'issuedAt', 'expiresAt'].includes(key)),
+  );
+  const proof = {
+    ...identity,
+    browser: 'chrome',
+    observedAt: 1000001,
+    checks: {
+      fragmentRemoved: true,
+      inviteEmailFixed: true,
+      activationSucceeded: true,
+      ordinaryLoginSucceeded: true,
+    },
+  };
+  return { ack, proof };
+}
+test('browser proof rejects secret-bearing/stale/foreign identity and incomplete UI assertions', () => {
+  const { ack, proof } = proofFixture();
+  assert.equal(validateWeek1BrowserProof(proof, ack, 1000002), true);
+  for (const changed of [
+    { ...proof, url: 'forbidden' },
+    { ...proof, nonce: id(99) },
+    { ...proof, email: WEEK1_LEARNERS[0].email },
+    { ...proof, origin: 'http://localhost:3151' },
+    { ...proof, observedAt: 999999 },
+    { ...proof, observedAt: 1000003 },
+    { ...proof, checks: { ...proof.checks, ordinaryLoginSucceeded: false } },
+  ])
+    assert.throws(() => validateWeek1BrowserProof(changed, ack, 1000002), /BROWSER_PROOF/);
+  assert.throws(() => validateWeek1BrowserProof(proof, ack, 1060000), /BROWSER_PROOF_TIME/);
+});
+test('browser proof alone cannot complete: native identity must exist and remain exact through ordinary signin', async () => {
+  const { ack, proof } = proofFixture();
+  let clock = 1000002,
+    probes = 0,
+    signs = 0;
+  const facts = { authId: id(10), userId: id(11) };
+  const result = await awaitWeek1BrowserRegistration({
+    acknowledgement: ack,
+    readProof: async () => proof,
+    readFacts: async () => (++probes === 1 ? null : facts),
+    signIn: async (f) => {
+      assert.deepEqual(f, facts);
+      signs++;
+    },
+    checkTime: () => {},
+    now: () => clock,
+    sleep: async (ms) => {
+      clock += ms;
+    },
+  });
+  assert.deepEqual(result, facts);
+  assert.equal(signs, 1);
+  assert.equal(probes, 3);
+  await assert.rejects(
+    awaitWeek1BrowserRegistration({
+      acknowledgement: ack,
+      readProof: async () => proof,
+      readFacts: async () => (++probes === 4 ? facts : { ...facts, authId: id(12) }),
+      signIn: async () => {},
+      checkTime: () => {},
+      now: () => clock,
+      sleep: async () => {},
+    }),
+    /BROWSER_NATIVE_FACTS_CHANGED/,
+  );
+});
+test('absent browser proof and lost original lease cannot fall back to HTTP activation or extend wait', async () => {
+  const { ack } = proofFixture();
+  let clock = 1000002,
+    signs = 0;
+  await assert.rejects(
+    awaitWeek1BrowserRegistration({
+      acknowledgement: ack,
+      deadline: clock + 500,
+      readProof: async () => null,
+      readFacts: async () => {
+        throw Error('no proof');
+      },
+      signIn: async () => signs++,
+      checkTime: () => {},
+      now: () => clock,
+      sleep: async (ms) => {
+        clock += ms;
+      },
+    }),
+    /BROWSER_WAIT_EXPIRED/,
+  );
+  assert.equal(signs, 0);
+  await assert.rejects(
+    awaitWeek1BrowserRegistration({
+      acknowledgement: ack,
+      readProof: async () => {
+        throw Error('must not read');
+      },
+      readFacts: async () => null,
+      signIn: async () => signs++,
+      checkTime: () => {
+        throw Error('original lease lost');
+      },
+      now: () => clock,
+      sleep: async () => {},
+    }),
+    /original lease lost/,
+  );
+});
+
+test('native browser reader binds digest, issuance request, issuer, cohort and exact active learner receipt without adopting by email', async () => {
+  const { ack } = proofFixture();
+  const result = { authId: id(10), userId: id(11) };
+  let calls = 0;
+  const scope = { acknowledgement: ack, issuerId: id(12), curriculumVersionId: id(13) };
+  const client = {
+    unsafe: async (query, values) => {
+      calls++;
+      assert.deepEqual(values, [
+        ack.issueRequestId,
+        ack.tokenSha256,
+        id(12),
+        ack.cohortId,
+        id(13),
+        ack.email,
+        ack.displayName,
+        ack.expiresAt,
+      ]);
+      for (const authority of [
+        'app.invitation_acceptances',
+        'app.invitation_activations',
+        'app.invitation_enrollment_receipts',
+        'auth.users',
+        'app.users',
+        'app.cohort_memberships',
+        "u.role='learner'",
+        "m.status='active'",
+        "i.phase='complete'",
+        'i.revoked_at IS NULL',
+      ])
+        assert.ok(query.includes(authority), authority);
+      assert.ok(!query.includes(ack.email));
+      return [result];
+    },
+  };
+  assert.deepEqual(await readWeek1BrowserFacts(client, scope, () => {}), result);
+  assert.equal(calls, 1);
+  await assert.rejects(
+    readWeek1BrowserFacts(
+      client,
+      { ...scope, acknowledgement: { ...ack, email: WEEK1_LEARNERS[0].email } },
+      () => {},
+    ),
+    /BROWSER_NATIVE_SCOPE/,
+  );
+  assert.equal(calls, 1);
+  assert.equal(await readWeek1BrowserFacts({ unsafe: async () => [] }, scope, () => {}), null);
+  await assert.rejects(
+    readWeek1BrowserFacts({ unsafe: async () => [result, result] }, scope, () => {}),
+    /BROWSER_NATIVE_DUPLICATE/,
+  );
+  await assert.rejects(
+    readWeek1BrowserFacts(
+      { unsafe: async () => [{ ...result, authId: 'unproven' }] },
+      scope,
+      () => {},
+    ),
+    /BROWSER_NATIVE_IDENTITY/,
+  );
+});
+
+test('pending managed-Auth creation prevents a successful cleanup receipt even when current inventory and session counts are zero', async () => {
+  const result = await cleanupWeek1AuthAccess({
+    journal: async () => {},
+    revokeProviderInventory: async () => ({ users: [], failures: [] }),
+    readOwnedAuthRows: async () => [],
+    banOwnedId: async () => {},
+    disableApplication: async () => {},
+    disableSqlLogins: async () => {},
+    verifyAccess: async () => ({
+      sessions: 0,
+      refresh_tokens: 0,
+      unbanned_users: 0,
+      pending_auth_operations: 1,
+      active_users: 0,
+      active_memberships: 0,
+      logins: 0,
+      login_memberships: 0,
+    }),
+  });
+  assert.equal(result.providerRevoked, false);
+  assert.equal(result.appDisabled, true);
+  assert.equal(result.sqlDisabled, true);
+  assert.equal(result.nativeCounts.pending_auth_operations, 1);
+});
+
+test('an already-sent bootstrap issuer creation also stays unverified until its exact durable acknowledgement exists', () => {
+  const scope = { scopeSha256: 'a'.repeat(64), email: 'synthetic-issuer@example.invalid' };
+  assert.equal(week1PendingAuthCreations(0, { ...scope, intent: null, acknowledgement: null }), 0);
+  assert.equal(week1PendingAuthCreations(0, { ...scope, intent: scope, acknowledgement: null }), 1);
+  assert.equal(week1PendingAuthCreations(1, { ...scope, intent: scope, acknowledgement: null }), 2);
+  assert.equal(
+    week1PendingAuthCreations(0, {
+      ...scope,
+      intent: scope,
+      acknowledgement: { ...scope, authId: id(88) },
+    }),
+    0,
+  );
+  assert.throws(
+    () =>
+      week1PendingAuthCreations(0, {
+        ...scope,
+        intent: null,
+        acknowledgement: { ...scope, authId: id(88) },
+      }),
+    /ISSUER_CREATE_INTENT_MISSING/,
+  );
+  assert.throws(
+    () =>
+      week1PendingAuthCreations(0, {
+        ...scope,
+        intent: scope,
+        acknowledgement: { ...scope, scopeSha256: 'b'.repeat(64), authId: id(88) },
+      }),
+    /ISSUER_CREATE_ACK/,
+  );
 });

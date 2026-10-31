@@ -53,5 +53,6 @@
   "maxCookieBytes": 65536,
   "hostGuardExecutionPolicy": "process-RemoteSigned",
   "rehearsalChecks": "auth-invitation-only",
-  "buildBundler": "webpack"
+  "buildBundler": "webpack",
+  "registrationDriver": "operator-browser-learner-b"
 }

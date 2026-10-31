@@ -94,8 +94,18 @@ def guard_should_stop(control, now_ms, mono_ms, read_process):
             mono_ms >= control['monotonicDeadline'] - 180000)
 
 
+def auth_phases(spec, native=False):
+    driver = spec.get('registrationDriver')
+    if driver not in ('http-only', 'operator-browser-learner-b'):
+        raise ScopeError('Explicit registration driver required.')
+    return (['stage', 'stack'] + (['baseline', 'migrate'] if native else ['migrations']) +
+            ['bootstrap', 'web', 'invitations'] +
+            (['await_browser'] if driver == 'operator-browser-learner-b' else []) + ['assert_http'])
+
+
 def exercise_injected(io_port, spec, owner, now_ms, mono_ms):
     """Fully injected fake contract; never constructs or calls LiveBroker.execute/start."""
+    phases = auth_phases(spec)
     admit(spec, owner, now_ms())
     io_port.preflight(spec)
     admit(spec, owner, now_ms())
@@ -108,7 +118,7 @@ def exercise_injected(io_port, spec, owner, now_ms, mono_ms):
     passed = cleanup = False
     try:
         io_port.arm_guard(reservation, control)
-        for phase in ['stage', 'stack', 'migrations', 'bootstrap', 'web', 'invitations', 'assert_http']:
+        for phase in phases:
             if now_ms() >= control['cleanupAt'] or mono_ms() >= control['monotonicDeadline'] - 180000:
                 raise ScopeError('Original cutoff; no renewal.')
             io_port.check_parent()
@@ -175,6 +185,19 @@ def process_identity(pid):
     return {'pid': pid, 'uid': proc.stat().st_uid,
             'ticks': (proc / 'stat').read_text().rsplit(')', 1)[1].split()[19]}
 
+
+def validate_browser_transport(receipt, now):
+    required = {'transport', 'allowedTargetOrigin', 'observedUrl', 'contextVerified', 'observedAt', 'deniedRouteRetried'}
+    if (not isinstance(receipt, dict) or set(receipt) != required or
+            receipt.get('transport') != 'Chrome extension' or
+            receipt.get('allowedTargetOrigin') != 'http://127.0.0.1:3151' or
+            receipt.get('observedUrl') not in {'about:blank', 'chrome://newtab/',
+                                             'http://127.0.0.1:3118/', 'http://127.0.0.1:3151/'} or
+            receipt.get('contextVerified') is not True or receipt.get('deniedRouteRetried') is not False or
+            not isinstance(receipt.get('observedAt'), int) or isinstance(receipt.get('observedAt'), bool) or
+            not 0 <= now - receipt['observedAt'] <= 300000):
+        raise ScopeError('Fresh verified Chrome transport context required; future origin is not an observed page.')
+    return True
 
 def isolated_build_plan(bundler, plan):
     if bundler != 'webpack' or [step.get('package') for step in plan] != ['@nextera/domain', '@nextera/db', '@nextera/web']:
@@ -266,9 +289,7 @@ class LiveBroker:
             raise ScopeError('Reviewed local Windows guard source mismatch.')
         if self.run.exists() or any(p.is_symlink() for p in [self.run, *self.run.parents]):
             raise ScopeError('Fresh unused root required; never adopt uncertain state.')
-        if (self.browser.get('origin') != 'http://127.0.0.1:3151' or self.browser.get('transport') != 'Chrome extension' or
-                self.browser.get('deniedRouteRetried') is not False or not 0 <= self.now() - self.browser.get('observedAt', 0) <= 300000):
-            raise ScopeError('Fresh permitted browser transport/context proof required.')
+        validate_browser_transport(self.browser, self.now())
         if not isinstance(self.lock_bytes, bytes) or sha(self.lock_bytes) != self.spec['sourceLockSha256']:
             raise ScopeError('Exact frozen source lock bytes required.')
         if self.command(['git', 'rev-parse', 'HEAD']).decode().strip() != self.spec['reviewedHead']:
@@ -407,6 +428,8 @@ class LiveBroker:
         return c
 
     def broker(self, phase, cleanup=False):
+        if phase == 'operator_handoff':
+            raise ScopeError('Secret operator handoff must never pass through Commands.run.')
         c = self.read() if cleanup else self.check_lease()
         remaining = min(c['deadline'] - self.now(), c['monotonicDeadline'] - self.monotonic()) - (30000 if cleanup else 180000)
         if remaining <= 0:
@@ -535,38 +558,60 @@ class LiveBroker:
                         pass
                     except Exception:
                         errors.append('work_process_stop_unverified')
+            # Stop the supervisor first, so it cannot complete a gated launch
+            # after cleanup. Then stop/drain only its separately recorded Next group.
+            for filename in ('web-supervisor.private.json', 'web-process.private.json'):
+                web = self.run / filename
+                if not web.exists():
+                    continue
+                try:
+                    record = json.loads(private_read(web))
+                    try:
+                        actual = process_identity(record['pid'])
+                    except (FileNotFoundError, ProcessLookupError):
+                        actual = None
+                    if actual is not None:
+                        if actual['ticks'] != record['ticks'] or actual['uid'] != c['uid'] or os.getpgid(record['pid']) != record['pid']:
+                            raise ScopeError('Web identity mismatch; no unrelated signal.')
+                        os.killpg(record['pid'], signal.SIGTERM)
+                        end = min(self.now() + 3000, c['deadline'])
+                        while self.now() < end:
+                            try:
+                                process_identity(record['pid'])
+                            except (FileNotFoundError, ProcessLookupError):
+                                break
+                            time.sleep(.05)
+                        else:
+                            if process_identity(record['pid'])['ticks'] == record['ticks']:
+                                os.killpg(record['pid'], signal.SIGKILL)
+                    # Reap only if this is our own child; the guard may not be its
+                    # parent. A surviving group never counts as verified drainage.
+                    try:
+                        os.waitpid(record['pid'], os.WNOHANG)
+                    except ChildProcessError:
+                        pass
+                    try:
+                        os.killpg(record['pid'], 0)
+                    except ProcessLookupError:
+                        pass
+                    else:
+                        raise ScopeError('Owned web group has not drained.')
+                except Exception:
+                    errors.append('web_stop_unverified')
             self.env.pop('CHECKPOINT_REHEARSAL_CONTROL', None)
             try:
                 if (self.run / 'auth-baseline.private.json').exists() and 'work_process_stop_unverified' not in errors:
                     self.broker('cleanup', cleanup=True)
                     access = json.loads(private_read(self.run / 'access-disabled.private.json'))
+                if 'web_stop_unverified' in errors:
+                    # Still perform best-effort disable/revoke, but never attest quiescence.
+                    access['providerRevoked'] = False
+                    errors.append('provider_quiescence_unverified')
                 elif not any(v.get('phase') == 'bootstrap' for v in c['phases']):
                     access = dict(providerRevoked=True, appDisabled=True, sqlDisabled=True)
             except Exception:
                 errors.append('access_cleanup_unverified')
-            # Stop only recorded, identity-verified process groups.
-            web = self.run / 'web-process.private.json'
-            if web.exists():
-                record = json.loads(private_read(web))
-                try:
-                    actual = process_identity(record['pid'])
-                    if actual['ticks'] != record['ticks'] or actual['uid'] != c['uid'] or os.getpgid(record['pid']) != record['pid']:
-                        raise ScopeError('Web identity mismatch.')
-                    os.killpg(record['pid'], signal.SIGTERM)
-                    end = min(self.now() + 3000, c['deadline'])
-                    while self.now() < end:
-                        try:
-                            process_identity(record['pid'])
-                        except OSError:
-                            break
-                        time.sleep(.05)
-                    else:
-                        if process_identity(record['pid'])['ticks'] == record['ticks']:
-                            os.killpg(record['pid'], signal.SIGKILL)
-                except ProcessLookupError:
-                    pass
-                except Exception:
-                    errors.append('web_stop_unverified')
+
             try:
                 owned = self.verify_owned_containers(permit_partial=True)
                 running = [v['id'] for v in owned if v['running']]
@@ -592,7 +637,7 @@ class LiveBroker:
             self.arm_guard()
             self.arm_host_guard()
             self.snapshot()
-            for phase in ['stage', 'stack', 'baseline', 'migrate', 'bootstrap', 'web', 'invitations', 'assert_http']:
+            for phase in auth_phases(self.spec, native=True):
                 self.check_lease()
                 self.journal({'phase': phase, 'state': 'intent'})
                 if phase == 'stack':
@@ -605,7 +650,7 @@ class LiveBroker:
             # A separate supported-browser receipt and real HTTP assertion adapter
             # remain explicit actions; absence never manufactures E2E readiness.
             outcome['assertionsPassed'] = True
-            outcome['status'] = 'native_http_assertions_passed_browser_receipt_pending'
+            outcome['status'] = ('native_http_and_browser_registration_assertions_passed' if self.spec['registrationDriver'] == 'operator-browser-learner-b' else 'native_http_assertions_passed_browser_receipt_pending')
         except Exception:
             outcome['status'] = 'phase_failed_or_unknown_outcome'
         finally:

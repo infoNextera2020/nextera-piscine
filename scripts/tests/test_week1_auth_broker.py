@@ -14,7 +14,7 @@ spec.loader.exec_module(broker)
 
 
 def proposal():
-    value = {'version': 1, 'target': {'root': broker.ROOT, 'database': broker.DATABASE, 'project': broker.PROJECT},
+    value = {'version': 1, 'registrationDriver': 'http-only', 'target': {'root': broker.ROOT, 'database': broker.DATABASE, 'project': broker.PROJECT},
              'bounds': {'ownerApprovalStartSeconds': 600, 'maximumSeconds': 3600, 'cleanupReserveSeconds': 180},
              'explicitFakePolicy': {'notProductionDefaults': True}}
     value['scopeSha256'] = broker.scope_sha256(value)
@@ -66,6 +66,38 @@ class FakePort:
 
 
 class BrokerSourceTests(unittest.TestCase):
+    def test_browser_driver_waits_without_sending_capability_to_command_capture(self):
+        p = proposal()
+        p['registrationDriver'] = 'operator-browser-learner-b'
+        p['scopeSha256'] = broker.scope_sha256(p)
+        fake = FakePort()
+        result = broker.exercise_injected(fake, p, owner(p, digit='e'), lambda: NOW + 1, lambda: 50)
+        self.assertTrue(result['assertionsPassed'])
+        self.assertLess(fake.events.index('invitations'), fake.events.index('await_browser'))
+        self.assertLess(fake.events.index('await_browser'), fake.events.index('assert_http'))
+        adapter = broker.LiveBroker.__new__(broker.LiveBroker)
+        adapter.command = lambda *_a, **_k: self.fail('secret must not reach command capture')
+        with self.assertRaises(broker.ScopeError):
+            adapter.broker('operator_handoff')
+
+    def test_missing_or_unknown_driver_cannot_reserve_and_browser_failure_cleans(self):
+        for driver in (None, 'browser'):
+            p = proposal()
+            p['registrationDriver'] = driver
+            p['scopeSha256'] = broker.scope_sha256(p)
+            fake = FakePort()
+            with self.assertRaises(broker.ScopeError):
+                broker.exercise_injected(fake, p, owner(p), lambda: NOW + 1, lambda: 50)
+            self.assertEqual(fake.events, [])
+        p = proposal()
+        p['registrationDriver'] = 'operator-browser-learner-b'
+        p['scopeSha256'] = broker.scope_sha256(p)
+        fake = FakePort('await_browser')
+        result = broker.exercise_injected(fake, p, owner(p, digit='f'), lambda: NOW + 1, lambda: 50)
+        self.assertFalse(result['assertionsPassed'])
+        self.assertTrue(result['cleanupVerified'])
+        self.assertNotIn('assert_http', fake.events)
+
     def test_fake_lifecycle_never_calls_real_execute_or_start(self):
         p = proposal()
         with patch.object(broker.LiveBroker, 'execute', side_effect=AssertionError('REAL EXECUTE FORBIDDEN')):
@@ -151,6 +183,17 @@ class BrokerSourceTests(unittest.TestCase):
             result = broker.exercise_injected(fake, p, owner(p), lambda: NOW + 1, lambda: 50)
             self.assertFalse(result['cleanupVerified'])
 
+    def test_browser_transport_does_not_fabricate_observation_of_future_listener(self):
+        value = {'transport': 'Chrome extension', 'allowedTargetOrigin': 'http://127.0.0.1:3151',
+                 'observedUrl': 'about:blank', 'contextVerified': True, 'observedAt': NOW,
+                 'deniedRouteRetried': False}
+        self.assertTrue(broker.validate_browser_transport(value, NOW))
+        for change in [{'origin': 'http://127.0.0.1:3151'}, {'contextVerified': False},
+                       {'observedAt': NOW - 300001}, {'observedAt': NOW + 1},
+                       {'observedUrl': 'https://unrelated.invalid/'}, {'deniedRouteRetried': True}]:
+            with self.assertRaises(broker.ScopeError):
+                broker.validate_browser_transport({**value, **change}, NOW)
+
     def test_isolated_build_plan_changes_only_explicit_pinned_next_bundler_argument(self):
         plan = [{'package': name, 'cwd': '/fake/' + name, 'argv': ['/fake/node', '/fake/tsc', '-p', 'tsconfig.json']} for name in ['@nextera/domain', '@nextera/db']]
         plan.append({'package': '@nextera/web', 'cwd': '/fake/web', 'argv': ['/fake/node', '/fake/next', 'build']})
@@ -202,6 +245,58 @@ class BrokerSourceTests(unittest.TestCase):
         self.assertFalse(result['providerRevoked'])
         self.assertTrue(any(command[:2] == ['docker', 'stop'] for command in commands))
         self.assertEqual(writes[-1][0], 'cleanup.private.json')
+
+    def test_cleanup_drains_web_before_revocation_and_fails_closed_if_group_survives(self):
+        for group_survives in (False, True):
+            with self.subTest(group_survives=group_survives):
+                adapter = broker.LiveBroker.__new__(broker.LiveBroker)
+                adapter.run = Path(broker.ROOT)
+                adapter.env = {}
+                adapter.now = lambda: NOW + 1000
+                adapter.read = lambda: {'deadline': NOW + 3600000, 'uid': 1000, 'phases': [{'phase': 'bootstrap'}]}
+                events, writes = [], []
+                state = {'stopped': False, 'late_b': False}
+                record = {'pid': 4321, 'ticks': '77', 'uid': 1000}
+                def process(_pid):
+                    if state['stopped']:
+                        raise FileNotFoundError('fake exited owned web')
+                    return record
+                def kill(_pid, sig):
+                    if sig == broker.signal.SIGTERM:
+                        events.append('web_stop')
+                        state.update(stopped=True, late_b=True)
+                    elif sig == 0 and not group_survives:
+                        raise ProcessLookupError('fake drained process group')
+                def revoke(*_args, **_kwargs):
+                    self.assertTrue(state['stopped'])
+                    self.assertTrue(state['late_b'], 'late B must exist before the final inventory/revoke pass')
+                    events.append('revoke_including_late_b')
+                adapter.broker = revoke
+                adapter.verify_owned_containers = lambda **_kw: []
+                adapter.command = lambda *_a, **_kw: b''
+                def private(path):
+                    if path.name == 'web-process.private.json':
+                        return broker.json.dumps(record).encode()
+                    if path.name == 'access-disabled.private.json':
+                        return broker.json.dumps(dict(providerRevoked=True, appDisabled=True, sqlDisabled=True)).encode()
+                    self.fail('unexpected private read')
+                def exists(path):
+                    return path.name in ('auth-baseline.private.json', 'web-process.private.json')
+                with patch.object(broker.os, 'open', return_value=99), patch.object(broker.os, 'close'), \
+                        patch.object(broker.fcntl, 'flock'), patch.object(Path, 'exists', exists), \
+                        patch.object(broker, 'private_read', side_effect=private), \
+                        patch.object(broker, 'private_write', side_effect=lambda path, value, *_: writes.append((path.name, value))), \
+                        patch.object(broker, 'process_identity', side_effect=process), \
+                        patch.object(broker.os, 'getpgid', return_value=4321), \
+                        patch.object(broker.os, 'killpg', side_effect=kill), \
+                        patch.object(broker.os, 'waitpid', return_value=(4321, 0)):
+                    result = adapter.cleanup()
+                self.assertEqual(events, ['web_stop', 'revoke_including_late_b'])
+                self.assertEqual(result['providerRevoked'], not group_survives)
+                self.assertEqual(result['stopped'], not group_survives)
+                self.assertTrue(result['appDisabled'])
+                self.assertTrue(result['sqlDisabled'])
+                self.assertEqual(writes[-1][0], 'cleanup.private.json')
 
 
 if __name__ == '__main__':
