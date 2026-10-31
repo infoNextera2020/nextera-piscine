@@ -1,3 +1,5 @@
+import { parseManualReviewDisplay } from './scored-exam-manual-contract';
+import type { ManualReviewDisplay } from '@nextera/db/scored-exam-manual-evidence';
 import {
   EXAM_SCORING_POLICY,
   scoreExamAttempt,
@@ -27,6 +29,7 @@ export type MentorReviewSnapshot = Readonly<{
   answerReadAvailable: boolean;
   structuredAnswerReadAvailable: boolean;
   adjudicationPending: boolean;
+  manualReview: ManualReviewDisplay | null;
   persistedOutcome: ScoredExamOutcomeState['currentOutcome'];
 }>;
 export type MentorReviewAnswer = Readonly<
@@ -145,14 +148,17 @@ export function captureMentorJson(value: unknown): unknown {
     Object.fromEntries(keys.map((key) => [key, captureMentorJson(fields[key as string]!.value)])),
   );
 }
-function canonical(value: unknown): string {
+export function mentorCanonical(value: unknown): string {
   if (value === null || typeof value !== 'object') return JSON.stringify(value);
-  if (Array.isArray(value)) return '[' + value.map(canonical).join(',') + ']';
+  if (Array.isArray(value)) return '[' + value.map(mentorCanonical).join(',') + ']';
   return (
     '{' +
     Object.keys(value)
       .sort()
-      .map((key) => JSON.stringify(key) + ':' + canonical((value as Record<string, unknown>)[key]))
+      .map(
+        (key) =>
+          JSON.stringify(key) + ':' + mentorCanonical((value as Record<string, unknown>)[key]),
+      )
       .join(',') +
     '}'
   );
@@ -161,11 +167,11 @@ export async function mentorBytesDigest(bytes: Uint8Array) {
   const result = await crypto.subtle.digest('SHA-256', Uint8Array.from(bytes));
   return [...new Uint8Array(result)].map((b) => b.toString(16).padStart(2, '0')).join('');
 }
-async function framed(value: unknown, domain: string) {
-  return mentorBytesDigest(new TextEncoder().encode(domain + '\0v1\0' + canonical(value)));
+export async function mentorFramedDigest(value: unknown, domain: string) {
+  return mentorBytesDigest(new TextEncoder().encode(domain + '\0v1\0' + mentorCanonical(value)));
 }
 export function mentorReviewPayloadDigest(value: MentorReviewCommand['payload']) {
-  return framed(value, '01coding-exam-scoring-event');
+  return mentorFramedDigest(value, '01coding-exam-scoring-event');
 }
 export function captureMentorMarks(kind: string, value: unknown): ExamManualMarks {
   const limits =
@@ -246,7 +252,8 @@ async function assessment(
     id(event.operationId);
     if (
       decimal(event.revision, true) !== String(index + 1) ||
-      (await framed(event.payload, '01coding-exam-scoring-event')) !== digest(event.payloadDigest)
+      (await mentorFramedDigest(event.payload, '01coding-exam-scoring-event')) !==
+        digest(event.payloadDigest)
     )
       return fail();
     if (event.eventKind === 'functional') {
@@ -303,10 +310,11 @@ export async function parseMentorReviewSnapshot(
   digest(c.snapshotDigest);
   validateExamScoringRubric(c.rubric);
   const { digest: rubricDigest, ...rubricBody } = c.rubric;
-  if ((await framed(rubricBody, '01coding-exam-scoring-rubric')) !== rubricDigest) return fail();
+  if ((await mentorFramedDigest(rubricBody, '01coding-exam-scoring-rubric')) !== rubricDigest)
+    return fail();
   const s = c.attempt.scope;
   if (
-    (await framed(
+    (await mentorFramedDigest(
       {
         version: 1,
         attemptId: s.attemptId,
@@ -382,7 +390,7 @@ export async function parseMentorReviewSnapshot(
     completion: c.completion,
     adjudication: decision as Parameters<typeof scoreExamAttempt>[0]['adjudication'],
   });
-  if (canonical(score) !== canonical(r.score)) return fail();
+  if (mentorCanonical(score) !== mentorCanonical(r.score)) return fail();
   for (const key of [
     'reviewWriteAvailable',
     'answerReadAvailable',
@@ -427,6 +435,7 @@ export async function parseMentorReviewSnapshot(
     structuredAnswerReadAvailable: r.structuredAnswerReadAvailable as boolean,
     adjudicationPending: r.adjudicationPending as boolean,
     persistedOutcome,
+    manualReview: await parseManualReviewDisplay(r.manualReview, { context: c, histories, score }),
   });
 }
 export function mentorAnswerMatches(answer: MentorReviewAnswer, snapshot: MentorReviewSnapshot) {

@@ -21,6 +21,7 @@ export default defineConfig({
       'packages/db/tests/scored-exam-code-upload*.test.ts',
       'packages/db/tests/scored-exam-functional-producer.test.ts',
       'packages/db/tests/scored-exam-binary-result.test.ts',
+      'packages/db/tests/scored-exam-manual-evidence-proposal.test.ts',
       'tests/operator-scored-exam-client.test.ts',
       'tests/operator-scored-exam-loader.test.ts',
       'packages/db/tests/checkpoint-write-window-proposal.test.ts',

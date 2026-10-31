@@ -1,3 +1,12 @@
+import {
+  manualEvidenceDocument,
+  manualEvidenceDigest,
+  MANUAL_EVIDENCE_READINESS_SQL,
+  RECORD_MANUAL_EVIDENCE_SQL,
+  type ManualEvidenceCommand,
+} from '@nextera/db/scored-exam-manual-evidence';
+import { checkpointCanonicalJson } from '../../../../../../../packages/db/operations/scored-exam-publication';
+import { examScoringEventDigest } from '@nextera/db/exam-scoring-review';
 import { beforeEach, afterEach, describe, expect, it, vi } from 'vitest';
 vi.mock('server-only', () => ({}));
 import {
@@ -334,4 +343,98 @@ describe('actual mentor API persisted outcome integration with injected clients 
     expect(applier.calls.filter((c) => c.sql === APPLY_SCORED_EXAM_OUTCOME_SQL)).toHaveLength(1);
     expect(close).toHaveBeenCalledOnce();
   });
+});
+
+describe('documented V2 review route compatibility', () => {
+  async function setup(outcome: 'recorded' | 'missing_reference' | 'failure' = 'recorded') {
+    const c = { ...contextFixture(), acceptances: [acceptance(1)] },
+      base = body();
+    let command: ManualEvidenceCommand = {
+      ...base,
+      version: 2,
+      review: 'primary',
+      evidence: { version: 1, manualCriteriaSha256: hash('c'), notes: 'Exact saved note' },
+    };
+    const document = manualEvidenceDocument(c, command);
+    command = {
+      ...command,
+      payload: { ...command.payload, evidenceDigest: manualEvidenceDigest(document) },
+    };
+    const old = reviewClient(c),
+      calls: readonly unknown[][] = [];
+    const written: unknown[][] = [];
+    const unsafe = vi.fn(async (sql: string, parameters: readonly unknown[] = []) => {
+      if (sql === MANUAL_EVIDENCE_READINESS_SQL) return [{ ready: true }];
+      if (sql === RECORD_MANUAL_EVIDENCE_SQL) {
+        written.push([...parameters]);
+        if (outcome === 'failure') throw Error('transaction evidence insert failed');
+        const receipt = {
+          kind: 'recorded',
+          eventId: id(810),
+          operationId: command.write.operationId,
+          submissionId: command.write.submissionId,
+          revision: '1',
+          payloadDigest: examScoringEventDigest(command.payload),
+          replayed: true,
+        };
+        return [
+          {
+            data:
+              outcome === 'missing_reference'
+                ? receipt
+                : {
+                    ...receipt,
+                    evidenceReference: {
+                      version: 1,
+                      eventId: id(810),
+                      digest: command.payload.evidenceDigest,
+                      byteLength: Buffer.byteLength(checkpointCanonicalJson(document)),
+                      notesStored: true,
+                    },
+                  },
+          },
+        ];
+      }
+      return old.client.unsafe(sql, parameters as never[]);
+    });
+    void calls;
+    mocks.database.mockReturnValue({ $client: { unsafe } });
+    return { command, written };
+  }
+  it('returns only a durable native V2 reference and can replay an original command when criteria config is absent', async () => {
+    const { command, written } = await setup();
+    delete process.env.NEXTERA_SCORED_EXAM_MANUAL_CRITERIA_V1;
+    const response = await POST(post(command));
+    expect(response.status).toBe(202);
+    expect(response.headers.get('cache-control')).toBe('private, no-store');
+    expect(await response.json()).toMatchObject({
+      kind: 'recorded',
+      replayed: true,
+      evidenceReference: { notesStored: true, digest: command.payload.evidenceDigest },
+    });
+    expect(written[0]?.slice(0, 6)).toEqual([id(101), id(3), id(700), id(1001), '0', 'primary']);
+    expect(written[0]?.[8]).toBeNull();
+  });
+  it.each(['missing_reference', 'failure'] as const)(
+    'keeps %s uncertain and same-operation-only',
+    async (outcome) => {
+      const { command, written } = await setup(outcome);
+      const response = await POST(post(command));
+      expect(response.status).toBe(409);
+      expect(await response.json()).toMatchObject({
+        error: 'SCORING_WRITE_OUTCOME_UNKNOWN',
+        retry: 'same_operation_only',
+      });
+      expect(written).toHaveLength(1);
+    },
+  );
+  it.each(['bad\0note', 'bad\ud800note'])(
+    'rejects notes format before native writer: %j',
+    async (notes) => {
+      const { command, written } = await setup();
+      const response = await POST(post({ ...command, evidence: { ...command.evidence, notes } }));
+      expect(response.status).toBe(400);
+      expect(written).toHaveLength(0);
+    },
+  );
 });

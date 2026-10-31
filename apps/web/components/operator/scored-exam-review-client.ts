@@ -1,4 +1,12 @@
 import {
+  captureDocumentedMentorCommand,
+  verifyManualEvidenceReceipt,
+} from './scored-exam-manual-contract';
+import type {
+  ManualEvidenceCommand,
+  ManualEvidenceReference,
+} from '@nextera/db/scored-exam-manual-evidence';
+import {
   MentorReviewAccessError,
   captureMentorJson,
   captureMentorReviewCommand,
@@ -22,6 +30,7 @@ export type MentorReviewReceipt = Readonly<{
   revision: string;
   payloadDigest: string;
   replayed: boolean;
+  evidenceReference?: ManualEvidenceReference;
 }>;
 export type MentorReviewClientState = Readonly<{
   phase: 'idle' | 'loading' | 'ready' | 'unavailable' | 'removed' | 'disposed';
@@ -57,7 +66,7 @@ function binding(snapshot: MentorReviewSnapshot) {
     snapshot.context.assignment.digest,
   ]);
 }
-/** Unmounted browser transport/state only. It stores no protected data on the device,
+/** Browser transport/state for the exact assigned-attempt detail. It stores no protected data on the device,
  * schedules no review or polling, and never grants assignment or finalizes an outcome. */
 export class ScoredExamMentorReviewClient {
   private state: MentorReviewClientState = empty();
@@ -67,7 +76,8 @@ export class ScoredExamMentorReviewClient {
   private readController: AbortController | null = null;
   private answerController: AbortController | null = null;
   private writeController: AbortController | null = null;
-  private pending: MentorReviewCommand | null = null;
+  private preparing = false;
+  private pending: MentorReviewCommand | ManualEvidenceCommand | null = null;
   private pendingBinding: string | null = null;
   private knownRevisions = new Map<string, string>();
   readonly identity: MentorReviewIdentity;
@@ -281,7 +291,7 @@ export class ScoredExamMentorReviewClient {
     this.pendingBinding = null;
     this.publish({ write: { kind: 'idle' }, message: '' });
   }
-  async record(submissionId: string) {
+  async record(submissionId: string, notes?: string | null) {
     const snapshot = this.state.snapshot;
     if (
       this.disposed ||
@@ -290,6 +300,7 @@ export class ScoredExamMentorReviewClient {
       !this.state.fresh ||
       !snapshot.reviewWriteAvailable ||
       snapshot.score.intake.status === 'open' ||
+      this.preparing ||
       ['sending', 'conflict', 'rejected'].includes(this.state.write.kind)
     )
       return;
@@ -310,13 +321,37 @@ export class ScoredExamMentorReviewClient {
         const answer = this.state.answers[submissionId],
           draft = this.state.drafts[submissionId];
         if (!answer || !draft) throw Error('REVIEW_NOT_READY');
-        this.pending = captureMentorReviewCommand(snapshot, answer, draft, this.deps.operationId());
+        const epoch = this.readEpoch;
+        this.preparing = true;
+        let command;
+        try {
+          command =
+            notes === undefined
+              ? captureMentorReviewCommand(snapshot, answer, draft, this.deps.operationId())
+              : await captureDocumentedMentorCommand(
+                  snapshot,
+                  answer,
+                  draft.marks,
+                  notes,
+                  this.deps.operationId(),
+                );
+        } finally {
+          this.preparing = false;
+        }
+        if (
+          this.disposed ||
+          epoch !== this.readEpoch ||
+          snapshot !== this.state.snapshot ||
+          !this.state.fresh
+        )
+          return;
+        this.pending = command;
         this.pendingBinding = binding(snapshot);
       }
     } catch {
       this.publish({
         message:
-          'Verify the accepted answer, reviewer role, published mark ranges and existing evidence digest before recording.',
+          'Verify the accepted answer, assigned role, published criteria, mark ranges and valid UTF-8 notes before recording.',
       });
       return;
     }
@@ -356,6 +391,7 @@ export class ScoredExamMentorReviewClient {
           'revision',
           'payloadDigest',
           'replayed',
+          ...(packet.version === 2 ? ['evidenceReference'] : []),
         ];
         if (
           Object.keys(body).length !== expectedKeys.length ||
@@ -369,8 +405,16 @@ export class ScoredExamMentorReviewClient {
           body.payloadDigest !== (await mentorReviewPayloadDigest(packet.payload))
         )
           throw Error('UNCONFIRMED_RECEIPT');
+        if (packet.version === 2)
+          await verifyManualEvidenceReceipt(body.evidenceReference, packet, snapshot, body.eventId);
         if (this.disposed || controller.signal.aborted || epoch !== this.writeEpoch) return;
-        this.knownRevisions.set(packet.write.submissionId, String(body.revision));
+        const previouslySeen = this.knownRevisions.get(packet.write.submissionId) ?? '0';
+        this.knownRevisions.set(
+          packet.write.submissionId,
+          BigInt(previouslySeen) > BigInt(String(body.revision))
+            ? previouslySeen
+            : String(body.revision),
+        );
         this.pending = null;
         this.pendingBinding = null;
         this.publish({
@@ -428,6 +472,11 @@ export class ScoredExamMentorReviewClient {
         ? 'Request stopped. A server write may still have completed; refresh, then retry only the original operation.'
         : 'Read stopped. Refresh before taking an action.',
     });
+  }
+  hidePrivateContent() {
+    if (this.disposed) return;
+    this.cancel();
+    this.publish({ snapshot: null, answers: {}, drafts: {}, phase: 'idle', fresh: false });
   }
   dispose() {
     if (this.disposed) return;

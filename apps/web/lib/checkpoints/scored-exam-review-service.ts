@@ -1,4 +1,10 @@
 import {
+  captureManualEvidenceCommand,
+  readManualReviewDisplay,
+  recordManualEvidence,
+  type ManualReviewDisplay,
+} from '@nextera/db/scored-exam-manual-evidence';
+import {
   scoreExamAttempt,
   type ExamAssessment,
   type ExamManualReview,
@@ -175,12 +181,14 @@ export function createScoredExamReviewService(
     client: ScoredExamReviewClient;
     bodyPolicy: ScoredExamReviewBodyPolicy;
     artifactReader?: ScoredExamReviewArtifactPort | null;
+    manualCriteria?: Readonly<Record<string, string>>;
   }>,
 ) {
   const { client, bodyPolicy } = input;
   const parsedPolicy = parseScoredExamReviewBodyPolicy(bodyPolicy);
   if (!parsedPolicy) return fail('invalid_input');
   const artifactReader = input.artifactReader ?? null;
+  const manualCriteria = input.manualCriteria ?? {};
   async function readForOutcome(authUserId: string, attemptId: string) {
     const context = await readScoredExamReviewContext(client, authUserId, attemptId);
     const histories: ExamScoringHistory[] = [];
@@ -204,6 +212,23 @@ export function createScoredExamReviewService(
   return Object.freeze({
     bodyPolicy: parsedPolicy,
     readForOutcome,
+    async readManualReview(
+      authUserId: string,
+      context: ScoredExamReviewContext,
+    ): Promise<ManualReviewDisplay | null> {
+      try {
+        return await readManualReviewDisplay(
+          client,
+          authUserId,
+          context,
+          input.manualCriteria ?? {},
+        );
+      } catch (error) {
+        if (error && typeof error === 'object' && 'code' in error && error.code === 'forbidden')
+          return fail('forbidden');
+        return null;
+      }
+    },
     async read(authUserId: string, attemptId: string) {
       const loaded = await readForOutcome(authUserId, attemptId);
       const score = scoreExamAttempt({ ...loaded.snapshot, adjudication: null });
@@ -250,6 +275,21 @@ export function createScoredExamReviewService(
     },
     async review(authUserId: string, value: unknown, signal?: AbortSignal) {
       if (signal?.aborted) return fail();
+      if (value && typeof value === 'object' && 'version' in value && value.version === 2) {
+        const command = captureManualEvidenceCommand(value);
+        await verifyScoredExamReviewWriteCapability(client);
+        const context = await readScoredExamReviewContext(client, authUserId, command.attemptId);
+        if (context.access !== 'assigned_mentor') return fail('forbidden');
+        if (signal?.aborted) return fail();
+        // Native wrapper independently hashes criteria for NEW writes. Null preserves exact retained replay only.
+        return recordManualEvidence(
+          client,
+          authUserId,
+          context,
+          command,
+          manualCriteria[context.rubric.digest] ?? null,
+        );
+      }
       const input = data(value, ['version', 'review', 'attemptId', 'write', 'payload']);
       if (
         input.version !== 1 ||
@@ -346,8 +386,42 @@ export function configuredScoredExamReviewService(
       client: client(),
       bodyPolicy: p,
       artifactReader: artifactReader(),
+      manualCriteria: configuredManualCriteria(environment.NEXTERA_SCORED_EXAM_MANUAL_CRITERIA_V1),
     });
   } catch {
     return null;
+  }
+}
+
+/** Whole private approved documents only. Missing/malformed configuration never supplies draft prose. */
+export function configuredManualCriteria(
+  raw: string | undefined,
+): Readonly<Record<string, string>> {
+  try {
+    const parsed = JSON.parse(raw ?? '');
+    const p = data(parsed, ['version', 'documents']);
+    if (
+      p.version !== 1 ||
+      !p.documents ||
+      typeof p.documents !== 'object' ||
+      Array.isArray(p.documents)
+    )
+      return {};
+    const docs = Object.getOwnPropertyDescriptors(p.documents);
+    if (
+      Reflect.ownKeys(docs).some(
+        (k) =>
+          typeof k !== 'string' ||
+          !/^[0-9a-f]{64}$/.test(k) ||
+          !Object.hasOwn(docs[k]!, 'value') ||
+          typeof docs[k]!.value !== 'string',
+      )
+    )
+      return {};
+    return Object.freeze(
+      Object.fromEntries(Object.entries(docs).map(([k, d]) => [k, d.value as string])),
+    );
+  } catch {
+    return {};
   }
 }

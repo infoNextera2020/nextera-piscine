@@ -7,10 +7,14 @@ const mocks = vi.hoisted(() => ({
   database: vi.fn(),
   queue: vi.fn(),
   read: vi.fn(),
+  exam: vi.fn(),
 }));
 vi.mock('../apps/web/lib/auth/server', () => ({
   authorizePage: mocks.authorize,
   getDatabase: mocks.database,
+}));
+vi.mock('../apps/web/components/operator/scored-exam-review-loader', () => ({
+  loadAssignedScoredExamReview: mocks.exam,
 }));
 vi.mock('@nextera/db/raids', () => ({ readRaidQueue: mocks.queue, readRaid: mocks.read }));
 vi.mock('next/navigation', () => ({ useRouter: () => ({ refresh: vi.fn() }) }));
@@ -48,18 +52,18 @@ beforeEach(() => {
 describe('operator server route assembly', () => {
   it('authorizes before loading protected queues', async () => {
     mocks.authorize.mockRejectedValue(new Error('FORBIDDEN'));
-    await expect(OperatorPage()).rejects.toThrow('FORBIDDEN');
+    await expect(OperatorPage({})).rejects.toThrow('FORBIDDEN');
     expect(mocks.queue).not.toHaveBeenCalled();
     expect(mocks.database).not.toHaveBeenCalled();
   });
   it('keeps the existing exact operator/admin page guard', async () => {
-    await OperatorPage();
+    await OperatorPage({});
     expect(mocks.authorize).toHaveBeenCalledWith(['operator', 'admin']);
     expect(mocks.queue).toHaveBeenCalledWith(mocks.database.mock.results[0]!.value, 'auth-id');
   });
   it('presents queue failure as unavailable without leaking raw database detail', async () => {
     mocks.queue.mockRejectedValue(new Error('private connection information'));
-    const html = renderToStaticMarkup(await OperatorPage());
+    const html = renderToStaticMarkup(await OperatorPage({}));
     expect(html).toContain('Raid reviews are unavailable');
     expect(html).not.toContain('private connection information');
   });
@@ -130,9 +134,31 @@ describe('operator server route assembly', () => {
       role: 'admin',
       authUserId: 'auth-id',
     });
-    const page = renderToStaticMarkup(await OperatorPage());
+    const page = renderToStaticMarkup(await OperatorPage({}));
     expect(page).toContain('Keep the cohort moving.');
     expect(page).not.toContain('60 students');
     expect(page).not.toContain('3 mentors');
+  });
+});
+
+describe('exact assigned exam operator entry', () => {
+  it('uses the protected exact loader and does not enumerate a queue', async () => {
+    mocks.exam.mockResolvedValue({ kind: 'forbidden' });
+    const html = renderToStaticMarkup(
+      await OperatorPage({ searchParams: Promise.resolve({ attempt: team.team_id }) }),
+    );
+    expect(mocks.exam).toHaveBeenCalledWith({ attemptId: team.team_id });
+    expect(mocks.queue).not.toHaveBeenCalled();
+    expect(html).toContain('current assigned staff identity');
+  });
+  it('rejects duplicate/extra selectors without native reads', async () => {
+    const html = renderToStaticMarkup(
+      await OperatorPage({
+        searchParams: Promise.resolve({ attempt: [team.team_id, team.team_id] }),
+      }),
+    );
+    expect(mocks.exam).not.toHaveBeenCalled();
+    expect(mocks.queue).not.toHaveBeenCalled();
+    expect(html).toContain('exact attempt UUID');
   });
 });

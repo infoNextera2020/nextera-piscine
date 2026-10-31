@@ -33,7 +33,7 @@ const uuid = /^[0-9a-f]{8}(?:-[0-9a-f]{4}){3}-[0-9a-f]{12}$/;
 const stopped = (signal?: AbortSignal) => signal?.aborted === true;
 
 /** Protected exact-selection server loader. No queue enumeration, write, role grant,
- * sample attempt or outcome application is performed. Existing pages do not mount it yet. */
+ * sample attempt or outcome application is performed. The exact operator detail mounts it without enumerating attempts. */
 export function createAssignedScoredExamReviewLoader(deps: {
   authenticate(): Promise<DomainUser>;
   review(): ScoredExamReviewService | null;
@@ -91,6 +91,13 @@ export function createAssignedScoredExamReviewLoader(deps: {
           currentOutcome: result.state.currentOutcome,
         };
       }
+      raw = {
+        ...(raw as object),
+        manualReview: await review.readManualReview(
+          user.authUserId,
+          (raw as { context: Parameters<ScoredExamReviewService['readManualReview']>[1] }).context,
+        ),
+      };
       const identity = Object.freeze({
         authUserId: user.authUserId,
         actorUserId: user.id,
@@ -135,7 +142,7 @@ export function createAssignedScoredExamReviewLoader(deps: {
 }
 
 /** The same configured read services as the existing mentor API, with no applier client.
- * Construction reads no account/database; use is intentionally pending UI approval. */
+ * Construction reads no account/database; the exact operator branch uses this loader. */
 export function loadAssignedScoredExamReview(
   input: Readonly<{ attemptId: string; submissionId?: string }>,
   signal?: AbortSignal,

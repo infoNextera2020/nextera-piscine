@@ -1,3 +1,4 @@
+import { ScoredExamManualEvidenceError } from '@nextera/db/scored-exam-manual-evidence';
 import { AccessDenied, assertRole, isRequestId } from '@nextera/domain';
 import { ExamScoringReviewStorageError } from '@nextera/db/exam-scoring-review';
 import { ScoredExamReviewContextError } from '@nextera/db/scored-exam-review-context';
@@ -33,6 +34,7 @@ function failure(error: unknown): Response {
   if (error instanceof BodyError)
     return response({ error: 'SCORING_REVIEW_BODY_INVALID' }, error.status);
   if (
+    error instanceof ScoredExamManualEvidenceError ||
     error instanceof ExamScoringReviewStorageError ||
     error instanceof ScoredExamReviewContextError ||
     error instanceof ScoredExamReviewServiceError ||
@@ -189,11 +191,15 @@ export async function GET(request: Request) {
           adjudicationPending: !loaded.state.adjudication?.current,
           adjudication: loaded.state.adjudication,
           currentOutcome: loaded.state.currentOutcome,
+          manualReview: await service.readManualReview(user.authUserId, loaded.context),
         },
         200,
       );
     }
-    return response(result, 200);
+    return response(
+      { ...result, manualReview: await service.readManualReview(user.authUserId, result.context) },
+      200,
+    );
   } catch (error) {
     return failure(error);
   }
