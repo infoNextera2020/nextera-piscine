@@ -9,8 +9,9 @@ const { path, fixture } = await prepareLearningFixture({ assessments: assessment
 await mkdir('.tools', { recursive: true });
 await writeFile('.tools/ui001-current-fixture-path', path + '\n', { mode: 0o600 });
 try {
+  const pnpmCmd = process.platform === 'win32' ? 'pnpm.cmd' : 'pnpm';
   const run = execFile(
-    'pnpm',
+    pnpmCmd,
     [
       'exec',
       'playwright',
@@ -18,7 +19,11 @@ try {
       '--config',
       assessment ? 'playwright.assessment.config.ts' : 'playwright.learning.config.ts',
     ],
-    { env: { ...process.env, LEARNING_UI_FIXTURE: path }, maxBuffer: 4 << 20 },
+    {
+      env: { ...process.env, LEARNING_UI_FIXTURE: path },
+      maxBuffer: 4 << 20,
+      shell: process.platform === 'win32',
+    },
   );
   run.stdout?.pipe(process.stdout);
   run.stderr?.pipe(process.stderr);

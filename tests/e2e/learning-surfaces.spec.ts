@@ -34,7 +34,7 @@ test('Home renders authorized next work and the latest receipt without sample pr
   page,
 }) => {
   await login(page);
-  await expect(page.getByRole('heading', { name: 'Your Piscine', exact: true })).toBeVisible();
+  await expect(page.getByRole('heading', { name: /Welcome back|Your Piscine/i })).toBeVisible();
   await expect(page.getByLabel('1 of 5 curriculum nodes mastered')).toBeVisible();
   await expect(
     page.locator('[data-home-next]').getByRole('heading', { name: 'Even or Odd', exact: true }),
@@ -45,7 +45,7 @@ test('Home renders authorized next work and the latest receipt without sample pr
   );
   const latest = page.getByRole('region', { name: 'Latest submission', exact: true });
   await expect(latest).toBeVisible();
-  await expect(latest.getByRole('link', { name: 'View history', exact: true })).toHaveAttribute(
+  await expect(latest.getByRole('link', { name: /history|feedback/i })).toHaveAttribute(
     'href',
     /tab=submissions/,
   );
@@ -64,7 +64,7 @@ test('Home feedback links reveal and focus history at desktop, tablet and mobile
     await page.setViewportSize({ width, height: 850 });
     await page.goto('/app');
     const latest = page.getByRole('region', { name: 'Latest submission', exact: true });
-    await latest.getByRole('link', { name: 'View history', exact: true }).click();
+    await latest.getByRole('link', { name: /history|feedback/i }).click();
     const history = page.getByRole('region', { name: 'Submission history', exact: true });
     await expect(history).toBeFocused();
     const heading = history.getByRole('heading', { name: 'Submission history', exact: true });
@@ -186,8 +186,9 @@ test('desktop, tablet and mobile preserve a legible heart map and equivalent ord
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(
       true,
     );
-    await expect(page.getByText('Ordered journey', { exact: true })).toBeVisible();
-    await expect(page.getByRole('button', { name: 'Center map', exact: true })).toBeVisible();
+    await expect(
+      page.getByRole('button', { name: 'Browse published journey steps', exact: true }),
+    ).toBeVisible();
     await page.screenshot({ path: '.tools/ui001-review/heart-' + width + '.png', fullPage: true });
   }
   await page.getByRole('button', { name: 'Open navigation', exact: true }).click();

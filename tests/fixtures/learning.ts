@@ -56,7 +56,9 @@ function curriculum() {
             : n.id === 'after-checkpoint'
               ? 'next-chapter'
               : 'practice-lab';
-    value.edges.push({ from: 'hello-go', to: 'even-or-odd', rule: 'requires_pass' });
+    if (!value.edges.some((e) => e.from === 'hello-go' && e.to === 'even-or-odd')) {
+      value.edges.push({ from: 'hello-go', to: 'even-or-odd', rule: 'requires_pass' });
+    }
     return { ...file, bytes: Buffer.from(stringify(value)) };
   });
   const c = parseCurriculum(files);

@@ -27,12 +27,15 @@ const { values, positionals } = parseArgs({
 });
 let status: Record<string, string>;
 try {
-  status = JSON.parse(
-    execFileSync('pnpm', ['exec', 'supabase', 'status', '-o', 'json'], {
-      encoding: 'utf8',
-      stdio: ['ignore', 'pipe', 'pipe'],
-    }),
-  ) as Record<string, string>;
+  const pnpmCmd = process.platform === 'win32' ? 'pnpm.cmd' : 'pnpm';
+  const raw = execFileSync(pnpmCmd, ['exec', 'supabase', 'status', '-o', 'json'], {
+    encoding: 'utf8',
+    stdio: ['ignore', 'pipe', 'pipe'],
+    shell: process.platform === 'win32',
+  });
+  const jsonMatch = raw.match(/\{[\s\S]*\}/);
+  if (!jsonMatch) throw new Error('No JSON in status output');
+  status = JSON.parse(jsonMatch[0]) as Record<string, string>;
 } catch {
   throw new Error('Local Supabase status unavailable.');
 }
@@ -70,7 +73,7 @@ if (command === 'storage') {
   const rel = relative(realpathSync(process.cwd()), output);
   if (
     !(rel === '..' || rel.startsWith(`..${sep}`) || isAbsolute(rel)) ||
-    statSync(output).mode & 0o077
+    (process.platform !== 'win32' && (statSync(output).mode & 0o077) !== 0)
   )
     throw new Error('Private worker credential directory outside checkout required.');
   for (const name of ['storage-reader.jwt', 'runner.env', 'worker.json'])

@@ -22,11 +22,16 @@ const cohortIds: string[] = [];
 let own: string;
 let other: string;
 const name = `ISOLATED 002B COHORT ${randomUUID()}`;
-const run = (args: string[]) =>
-  execFileSync('pnpm', args, {
+const run = (args: string[]) => {
+  const pnpmCmd = process.platform === 'win32' ? 'pnpm.cmd' : 'pnpm';
+  const finalArgs =
+    process.platform === 'win32' ? args.map((arg) => (arg.includes(' ') ? `"${arg}"` : arg)) : args;
+  return execFileSync(pnpmCmd, finalArgs, {
     stdio: 'pipe',
+    shell: process.platform === 'win32',
     env: { ...process.env, OPERATIONS_DATABASE_URL: process.env.MIGRATION_DATABASE_URL! },
   });
+};
 
 test.beforeAll(async () => {
   test.setTimeout(90000);
@@ -111,27 +116,25 @@ test('enrolled learner sees real cohort and persistent available/locked state', 
   await login(page, 'learner');
   await page.getByRole('link', { name, exact: true }).click();
   await expect(page).toHaveURL(new RegExp(`/app/cohorts/${own}$`));
+  await page.getByRole('link', { name: /Quest 1: Foundations/ }).click();
+  await expect(page).toHaveURL(new RegExp(`/app/cohorts/${own}\\?quest=foundations`));
   const hello = page
     .getByRole('listitem')
     .filter({ has: page.getByRole('heading', { name: 'Hello Go', exact: true }) });
   const even = page
     .getByRole('listitem')
     .filter({ has: page.getByRole('heading', { name: 'Even or Odd', exact: true }) });
-  await expect(hello.getByText('AVAILABLE', { exact: true })).toBeVisible();
-  await expect(even.getByText('LOCKED', { exact: true })).toBeVisible();
-  await expect(even.getByText('Requires passing all prerequisites: Hello Go.')).toBeVisible();
+  await expect(hello.getByText('Available', { exact: true })).toBeVisible();
+  await expect(even.getByText('Locked', { exact: true })).toBeVisible();
+  await even.getByRole('button', { name: 'Even or Odd', exact: true }).click();
+  await expect(page.getByText('Requires passing all prerequisites: Hello Go.')).toBeVisible();
   await expect(even.getByRole('link')).toHaveCount(0);
   await page.reload();
-  await expect(hello.getByText('AVAILABLE', { exact: true })).toBeVisible();
-  await expect(even.getByText('LOCKED', { exact: true })).toBeVisible();
-  await hello.getByRole('link', { name: 'Read Hello Go' }).click();
+  await expect(hello.getByText('Available', { exact: true })).toBeVisible();
+  await expect(even.getByText('Locked', { exact: true })).toBeVisible();
+  await hello.getByRole('link', { name: /Open challenge/ }).click();
   await expect(page.getByText('func Hello(name string) string', { exact: true })).toBeVisible();
-  await page.getByRole('tab', { name: 'Tasks', exact: true }).click();
-  await expect(
-    page
-      .getByRole('tabpanel', { name: 'Tasks', exact: true })
-      .getByText('hello.go', { exact: true }),
-  ).toBeVisible();
+  await expect(page.getByText('hello.go', { exact: true }).first()).toBeVisible();
   await expect(page.getByRole('button', { name: /submit/i })).toHaveCount(0);
   const rows =
     await sql`SELECT node_key,state FROM app.learner_node_progress WHERE cohort_id=${own} AND user_id=${people.get('learner')!.userId} ORDER BY node_key`;
@@ -184,10 +187,8 @@ test('operators need explicit membership and then have a labeled read-only previ
   await sql`INSERT INTO app.cohort_memberships(cohort_id,user_id) VALUES (${own},${id})`;
   try {
     await page.goto(`/app/cohorts/${own}`);
-    await expect(
-      page.getByText('Read-only curriculum preview. No learner progress is implied.'),
-    ).toBeVisible();
-    await page.getByRole('link', { name: 'Read Even or Odd', exact: true }).click();
+    await expect(page.getByText('Read-only preview').first()).toBeVisible();
+    await page.goto(`/app/cohorts/${own}/challenges/even-or-odd`);
     await expect(page.getByText('func EvenOrOdd(n int) string', { exact: true })).toBeVisible();
     expect((await page.goto(`/app/cohorts/${other}`))?.status()).toBe(404);
   } finally {

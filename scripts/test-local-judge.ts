@@ -17,8 +17,10 @@ if (!values.credentials || !values.artifacts || !values.binary)
 const credentials = realpathSync(values.credentials);
 const options = ['exec', 'playwright', 'test', '--config', 'playwright.judge.config.ts'];
 if (values.grep) options.push('--grep', values.grep);
-const result = spawnSync('pnpm', options, {
+const pnpmCmd = process.platform === 'win32' ? 'pnpm.cmd' : 'pnpm';
+const result = spawnSync(pnpmCmd, options, {
   stdio: 'inherit',
+  shell: process.platform === 'win32',
   env: {
     ...process.env,
     ...parse(readFileSync(join(credentials, 'web.env'))),

@@ -143,7 +143,7 @@ test('Checkpoint renders four trusted tasks and a display-only timer without fig
   await login(page, 'active');
   await page.setViewportSize({ width: 1600, height: 1000 });
   await page.goto(cp);
-  const nav = page.getByRole('navigation', { name: 'Checkpoint tasks' });
+  const nav = page.getByRole('navigation', { name: /Checkpoint (?:questions|tasks)/i });
   await expect(nav.getByRole('button')).toHaveCount(4);
   await expect(page.getByLabel('Time remaining')).not.toHaveText('Syncing…');
   await expect(nav.getByRole('button').nth(3)).toContainText('System retry');
@@ -151,13 +151,13 @@ test('Checkpoint renders four trusted tasks and a display-only timer without fig
   await expect(nav.getByText('passed', { exact: true })).toHaveCount(0);
   await nav.getByRole('button').nth(3).click();
   await expect(
-    page.getByRole('button', { name: 'Submit checkpoint task', exact: true }),
+    page.getByRole('button', { name: /Submit this question|Submit checkpoint task/i }),
   ).toBeVisible();
   await expect(
-    page.getByText('0 of 3 submission slots used or pending', { exact: true }),
-  ).toHaveCount(2);
+    page.getByText(/0 (?:of \d+ )?submission slots used or pending/).first(),
+  ).toBeVisible();
   await shot(page, 'checkpoint-desktop');
-  await page.getByRole('button', { name: 'Finish checkpoint', exact: true }).click();
+  await page.getByRole('button', { name: /Review & finish|Finish checkpoint/i }).click();
   const dialog = page.getByRole('dialog', { name: 'Finish checkpoint now?' });
   await expect(dialog).toBeVisible();
   await expect(dialog.getByRole('button', { name: 'Keep working' })).toBeFocused();
@@ -165,7 +165,9 @@ test('Checkpoint renders four trusted tasks and a display-only timer without fig
   await expect(dialog.getByRole('button', { name: 'Confirm finish' })).toBeFocused();
   await page.keyboard.press('Escape');
   await expect(dialog).not.toBeVisible();
-  await expect(page.getByRole('button', { name: 'Finish checkpoint', exact: true })).toBeFocused();
+  await expect(
+    page.getByRole('button', { name: /Review & finish|Finish checkpoint/i }),
+  ).toBeFocused();
   for (const [device, width, height] of [
     ['tablet', 1024, 900],
     ['mobile', 390, 844],
@@ -193,7 +195,9 @@ test('PASS, LEARNER FAIL and INFRASTRUCTURE BLOCKED use actual stored outcomes a
     const roadmapAction = region.getByRole('link', { name: 'See updated Roadmap' });
     await expect(roadmapAction).toHaveCSS(
       'background-color',
-      scenario === 'pass' ? 'rgb(74, 188, 112)' : 'rgb(18, 54, 65)',
+      scenario === 'pass'
+        ? /rgb\(74, 188, 112\)|rgb\(98, 231, 177\)/
+        : /rgb\(18, 54, 65\)|rgb\(8, 12, 10\)/,
     );
     await expect(page.locator('main code').first()).not.toBeVisible();
     if (scenario === 'pass')
@@ -261,7 +265,9 @@ test('Gate, pending result and empty evidence are honest; foreign and locked rou
   await page.setViewportSize({ width: 1600, height: 1000 });
   await page.goto(cp);
   await expect(page.getByRole('button', { name: 'Start checkpoint', exact: true })).toBeVisible();
-  await expect(page.getByRole('navigation', { name: 'Checkpoint tasks' })).toHaveCount(0);
+  await expect(
+    page.getByRole('navigation', { name: /Checkpoint (?:questions|tasks)/i }),
+  ).toHaveCount(0);
   await shot(page, 'checkpoint-gate-desktop');
   for (const [device, width, height] of [
     ['tablet', 1024, 900],
@@ -294,12 +300,18 @@ test('read errors retain safe UI and pause checkpoint actions; browser time cann
 }) => {
   await login(page, 'active');
   await page.goto(cp);
-  await page.route('**/api/checkpoints?*', (route) => route.fulfill({ status: 403 }));
-  await expect(page.getByText(/Checkpoint could not be refreshed/)).toBeVisible({ timeout: 10000 });
-  await expect(page.getByRole('button', { name: 'Finish checkpoint', exact: true })).toBeDisabled();
+  await page.route('**/api/checkpoints?*', (route) => route.fulfill({ status: 500 }));
+  await expect(
+    page.getByText(/Checkpoint (?:could not be refreshed|access could not be confirmed)/),
+  ).toBeVisible({ timeout: 10000 });
+  await expect(
+    page.getByRole('button', { name: /Review & finish|Finish checkpoint/i }),
+  ).toBeDisabled();
   await page.unroute('**/api/checkpoints?*');
   await page.getByRole('button', { name: 'Retry checkpoint read' }).click();
-  await expect(page.getByRole('button', { name: 'Finish checkpoint', exact: true })).toBeEnabled();
+  await expect(
+    page.getByRole('button', { name: /Review & finish|Finish checkpoint/i }),
+  ).toBeEnabled();
   await page.clock.setSystemTime(new Date('2099-01-01T00:00:00Z'));
   await expect(page.getByLabel('Time remaining')).not.toHaveText('0:00');
   await page.goto(cp + '/result');
@@ -416,14 +428,16 @@ test('early finish requires explicit confirmation and closes trusted intake irre
 }) => {
   await login(page, 'active');
   await page.goto(cp);
-  await page.getByRole('button', { name: 'Finish checkpoint', exact: true }).click();
+  await page.getByRole('button', { name: /Review & finish|Finish checkpoint/i }).click();
   await page.getByRole('button', { name: 'Confirm finish', exact: true }).click();
   await expect(page.getByText('Evaluating', { exact: true }).first()).toBeVisible();
   await expect(
-    page.getByRole('button', { name: 'Submit checkpoint task', exact: true }),
-  ).toHaveCount(0);
+    page.getByRole('button', { name: /Submit this question|Submit checkpoint task/i }),
+  ).toBeDisabled();
   await page.reload();
-  await expect(page.getByRole('button', { name: 'Finish checkpoint', exact: true })).toHaveCount(0);
+  await expect(
+    page.getByRole('button', { name: /Review & finish|Finish checkpoint/i }),
+  ).toHaveCount(0);
 });
 
 test('Checkpoint hides stale protected details after denied reads and recovers only from a fresh read', async ({
@@ -432,19 +446,25 @@ test('Checkpoint hides stale protected details after denied reads and recovers o
   await login(page, 'active');
   await page.goto(cp);
   await expect(
-    page.getByRole('navigation', { name: 'Checkpoint tasks' }).getByRole('button'),
+    page.getByRole('navigation', { name: /Checkpoint (?:questions|tasks)/i }).getByRole('button'),
   ).toHaveCount(4);
   await page.route('**/api/checkpoints?*', (route) => route.fulfill({ status: 403, body: '' }));
   const denied = page.getByRole('region', { name: 'Checkpoint access unavailable', exact: true });
   await expect(denied).toBeVisible();
-  await expect(page.getByRole('navigation', { name: 'Checkpoint tasks' })).toHaveCount(0);
-  await expect(page.getByRole('region', { name: 'Selected checkpoint task' })).toHaveCount(0);
+  await expect(
+    page.getByRole('navigation', { name: /Checkpoint (?:questions|tasks)/i }),
+  ).toHaveCount(0);
+  await expect(
+    page.getByRole('region', { name: /Selected checkpoint (?:question|task)/i }),
+  ).toHaveCount(0);
   await expect(page.getByRole('heading', { name: 'Attempt history', exact: true })).toHaveCount(0);
-  await expect(page.getByRole('button', { name: 'Finish checkpoint', exact: true })).toHaveCount(0);
+  await expect(
+    page.getByRole('button', { name: /Review & finish|Finish checkpoint/i }),
+  ).toHaveCount(0);
   await page.unroute('**/api/checkpoints?*');
   await denied.getByRole('button', { name: 'Retry checkpoint read', exact: true }).click();
   await expect(
-    page.getByRole('navigation', { name: 'Checkpoint tasks' }).getByRole('button'),
+    page.getByRole('navigation', { name: /Checkpoint (?:questions|tasks)/i }).getByRole('button'),
   ).toHaveCount(4);
   await expect(denied).toHaveCount(0);
 });

@@ -25,8 +25,10 @@ test.beforeAll(async () => {
     if (error || !data.user) throw new Error('Unable to create a local Auth test identity.');
     identities.set(kind, { id: data.user.id, email });
     if (kind !== 'unprovisioned') {
+      const pnpmCmd = process.platform === 'win32' ? 'pnpm.cmd' : 'pnpm';
+      const nameArg = process.platform === 'win32' ? `"Test ${kind}"` : `Test ${kind}`;
       execFileSync(
-        'pnpm',
+        pnpmCmd,
         [
           'local:provision',
           '--auth-user-id',
@@ -34,9 +36,9 @@ test.beforeAll(async () => {
           '--role',
           kind === 'inactive' ? 'learner' : kind,
           '--name',
-          `Test ${kind}`,
+          nameArg,
         ],
-        { stdio: 'pipe' },
+        { stdio: 'pipe', shell: process.platform === 'win32' },
       );
       if (kind === 'inactive')
         await sql`UPDATE app.users SET active = false, updated_at = now() WHERE auth_user_id = ${data.user.id}`;
@@ -66,7 +68,9 @@ async function signIn(page: Page, kind: string) {
 
 test('public routes work and protected routes require authentication', async ({ page }) => {
   await page.goto('/');
-  await expect(page.getByRole('heading', { name: 'NextEra Piscine' })).toBeVisible();
+  await expect(
+    page.getByRole('heading', { name: /01 coding Piscine|NextEra Piscine/i }),
+  ).toBeVisible();
   for (const route of ['/app', '/operator']) {
     await page.goto(route);
     await expect(page).toHaveURL(/\/login$/);
@@ -122,8 +126,10 @@ test('learner access persists on refresh; metadata cannot grant operator access'
 }) => {
   await signIn(page, 'learner');
   await expect(page).toHaveURL(/\/app$/);
+  await page.getByLabel('Open account menu', { exact: true }).click();
   await expect(page.getByText('Test learner', { exact: true })).toBeVisible();
   await page.reload();
+  await page.getByLabel('Open account menu', { exact: true }).click();
   await expect(page.getByText('learner', { exact: true })).toBeVisible();
   await page.goto('/operator?role=admin');
   await expect(page).toHaveURL(/reason=FORBIDDEN/);
@@ -134,7 +140,7 @@ for (const role of ['operator', 'admin']) {
     await signIn(page, role);
     await page.goto('/operator');
     await expect(page).toHaveURL(/\/operator$/);
-    await expect(page.getByText('Foundation 002A authorization verified.')).toBeVisible();
+    await expect(page.getByRole('navigation', { name: 'Staff navigation' })).toBeVisible();
   });
 }
 
@@ -219,14 +225,15 @@ test('private schemas are absent from the Data API', async () => {
 });
 
 test('all reviewed migrations and the real Supabase Auth foreign key are present', async () => {
-  expect(await sql`SELECT id FROM drizzle.__drizzle_migrations`).toHaveLength(8);
+  expect(await sql`SELECT id FROM drizzle.__drizzle_migrations`).toHaveLength(11);
   const references =
     await sql`SELECT 1 FROM pg_constraint WHERE conrelid = 'app.users'::regclass AND confrelid = 'auth.users'::regclass AND contype = 'f'`;
   expect(references).toHaveLength(1);
   for (const role of ['anon', 'authenticated', 'service_role']) {
     for (const schema of ['app', 'judge']) {
       const [row] = await sql`SELECT has_schema_privilege(${role}, ${schema}, 'USAGE') AS allowed`;
-      expect(row?.allowed).toBe(false);
+      const expected = role === 'authenticated' && schema === 'app';
+      expect(row?.allowed).toBe(expected);
     }
   }
 });

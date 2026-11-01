@@ -22,7 +22,7 @@ const output = realpathSync(resolve(values.output));
 const rel = relative(realpathSync(process.cwd()), output);
 if (
   !(rel === '..' || rel.startsWith(`..${sep}`) || isAbsolute(rel)) ||
-  statSync(output).mode & 0o077
+  (process.platform !== 'win32' && (statSync(output).mode & 0o077) !== 0)
 )
   throw new Error('Private directory outside checkout required.');
 for (const name of ['web.env', 'maintenance.env', 'application.env', 'runtime.json'])

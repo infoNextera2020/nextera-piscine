@@ -437,10 +437,12 @@ test('killed Runner claim expires, maintenance recovers it, and a new fenced att
   await admin`UPDATE judge.jobs SET lease_expires_at=clock_timestamp()-interval '1 millisecond' WHERE id=${accepted.job}`;
   // Independent product-maintenance process with its own restricted login.
   const maintenance = parse(readFileSync(join(credentials, 'maintenance.env')));
-  execFileSync('pnpm', ['exec', 'tsx', 'scripts/judge-maintenance.ts', '--once'], {
+  const pnpmCmd = process.platform === 'win32' ? 'pnpm.cmd' : 'pnpm';
+  execFileSync(pnpmCmd, ['exec', 'tsx', 'scripts/judge-maintenance.ts', '--once'], {
     env: { PATH: process.env.PATH!, ...maintenance },
     stdio: 'pipe',
     timeout: 30000,
+    shell: process.platform === 'win32',
   });
   const recovered = runWorker();
   try {

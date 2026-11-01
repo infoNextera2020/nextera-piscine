@@ -12,13 +12,16 @@ if (files.some(existsSync) && !process.argv.includes('--refresh')) {
 }
 let status: Record<string, string>;
 try {
-  status = JSON.parse(
-    execFileSync('pnpm', ['exec', 'supabase', 'status', '-o', 'json'], {
-      cwd: root,
-      encoding: 'utf8',
-      stdio: ['ignore', 'pipe', 'pipe'],
-    }),
-  ) as Record<string, string>;
+  const pnpmCmd = process.platform === 'win32' ? 'pnpm.cmd' : 'pnpm';
+  const raw = execFileSync(pnpmCmd, ['exec', 'supabase', 'status', '-o', 'json'], {
+    cwd: root,
+    encoding: 'utf8',
+    stdio: ['ignore', 'pipe', 'pipe'],
+    shell: process.platform === 'win32',
+  });
+  const jsonMatch = raw.match(/\{[\s\S]*\}/);
+  if (!jsonMatch) throw new Error('No JSON in status output');
+  status = JSON.parse(jsonMatch[0]) as Record<string, string>;
 } catch {
   // An exec error can contain captured status output, including local admin keys.
   throw new Error('Local Supabase status is unavailable. Start the local stack and retry.');
@@ -31,7 +34,9 @@ if (!databaseUrl || !apiUrl || !publishable || !serviceKey)
   throw new Error('Local Supabase status is missing required fields.');
 assertLocalUrl(databaseUrl, '54322');
 assertLocalUrl(apiUrl, '54321');
-const admin = postgres(databaseUrl, { max: 1, prepare: false });
+const adminUrl = new URL(databaseUrl);
+adminUrl.username = 'supabase_admin';
+const admin = postgres(adminUrl.toString(), { max: 1, prepare: false });
 const password = randomBytes(32).toString('hex');
 try {
   const [auth] = await admin`SELECT to_regclass('auth.schema_migrations') AS managed`;
@@ -56,7 +61,7 @@ runtime.password = password;
 const publicEnv = `NEXT_PUBLIC_SUPABASE_URL=${apiUrl}\nNEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY=${publishable}\n`;
 writeFileSync(
   files[0]!,
-  `# Local tooling only; never deploy this file.\nMIGRATION_DATABASE_URL=${databaseUrl}\nOPERATIONS_DATABASE_URL=${databaseUrl}\nDATABASE_URL=${runtime}\nSUPABASE_LOCAL_URL=${apiUrl}\nSUPABASE_LOCAL_SERVICE_ROLE_KEY=${serviceKey}\n`,
+  `# Local tooling only; never deploy this file.\nMIGRATION_DATABASE_URL=${adminUrl}\nOPERATIONS_DATABASE_URL=${adminUrl}\nDATABASE_URL=${runtime}\nSUPABASE_LOCAL_URL=${apiUrl}\nSUPABASE_LOCAL_SERVICE_ROLE_KEY=${serviceKey}\n`,
   { mode: 0o600 },
 );
 writeFileSync(files[1]!, `${publicEnv}DATABASE_URL=${runtime}\n`, { mode: 0o600 });
