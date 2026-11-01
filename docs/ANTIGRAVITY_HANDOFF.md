@@ -10,13 +10,13 @@ The owner requested all safe unpublished commits pushed. A bounded scan covered 
 
 **The actual push was rejected before execution by automatic approval review:** publishing the complete unpublished histories to this public destination requires explicit approval for that public payload. No push or alternate upload route was attempted afterward. Nothing new has been pushed at this checkpoint. Do not claim GitHub contains the current app until remote SHAs are verified. A local full Git bundle is prepared separately to preserve topology for private owner-controlled transfer. No credentials, runtime directories, untracked files or private external packs are included in that Git-only bundle.
 
-| Local branch | Source HEAD before this handoff-only commit | Unpublished commits at scan |
-| --- | --- | ---: |
-| `main` | `70a117f0d552a9cb8cee8612c49cf5f9808afffd` | 143 |
-| `auth-smtp2-source-20261031` | `83fb6129c96c89b6fcd48ca9408e390a2d02a751` | 134 |
-| `codex-db-only-container-wiring-20261101` | `40ad09d2963db371224fdd417291b1042faadbae` | 136 |
-| `codex-auth-browser-smtp1-source-20261031` | `434486b01d36b98932cb21f11b862b6fab4fe471` | 123 |
-| `codex-auth-smtp1-source-20261031` | `ef5312296dcfd2957aac9efb818d024fd8c8c1db` | 121 |
+| Local branch                               | Source HEAD before this handoff-only commit | Unpublished commits at scan |
+| ------------------------------------------ | ------------------------------------------- | --------------------------: |
+| `main`                                     | `70a117f0d552a9cb8cee8612c49cf5f9808afffd`  |                         143 |
+| `auth-smtp2-source-20261031`               | `83fb6129c96c89b6fcd48ca9408e390a2d02a751`  |                         134 |
+| `codex-db-only-container-wiring-20261101`  | `40ad09d2963db371224fdd417291b1042faadbae`  |                         136 |
+| `codex-auth-browser-smtp1-source-20261031` | `434486b01d36b98932cb21f11b862b6fab4fe471`  |                         123 |
+| `codex-auth-smtp1-source-20261031`         | `ef5312296dcfd2957aac9efb818d024fd8c8c1db`  |                         121 |
 
 Current main adds this handoff-only commit to the main source HEAD above; obtain its exact SHA with `git log -1 --format=%H`. Do not merge diagnostic branches into main blindly: their histories fork and their executable bindings are host-specific. All commits remain preserved; no force push, deletion, history rewrite or merge was done.
 
@@ -28,12 +28,12 @@ Other registered retained source snapshots: detached `cd8977e197c15d3e3f40e0e9f3
 
 These pre-existing dirty files were preserved byte-for-byte and are **not included in the Git bundle/clone**. Obtain them separately from the owner after review; do not discard or stage them as an unrelated fix. Their absence can affect visual parity or source imports on the destination.
 
-| Path relative to old canonical checkout | SHA256 |
-| --- | --- |
-| `apps/web/public/ASSETS.md` | `feca5ebec9df9b3842afadb1c0a6442e24b38ad479c9445e1f1d26f2cd9a3cf9` |
+| Path relative to old canonical checkout                    | SHA256                                                             |
+| ---------------------------------------------------------- | ------------------------------------------------------------------ |
+| `apps/web/public/ASSETS.md`                                | `feca5ebec9df9b3842afadb1c0a6442e24b38ad479c9445e1f1d26f2cd9a3cf9` |
 | `apps/web/components/learning/home-next-action.module.css` | `4eaa849950b223af5c220b8330ca6e3f732c865e907a66a454798dff22916d87` |
-| `apps/web/public/piscine/official-logo.svg` | `0fde8181d16ceb17ac55e6d52e8cab523c3f75976a9aaa81b8695942c7336e54` |
-| `docs/RELEASE_CANDIDATE_001_REPORT.md` | `95e04b9accaf10d922e5acac157d8d5d7ae33ef17284ccef042558fa0fbca2fd` |
+| `apps/web/public/piscine/official-logo.svg`                | `0fde8181d16ceb17ac55e6d52e8cab523c3f75976a9aaa81b8695942c7336e54` |
+| `docs/RELEASE_CANDIDATE_001_REPORT.md`                     | `95e04b9accaf10d922e5acac157d8d5d7ae33ef17284ccef042558fa0fbca2fd` |
 
 ## Approved Sunday scope and design
 
