@@ -1,9 +1,14 @@
 # Exam1 trace reader: restricted source contract
 
+> Source follow-up: `EXAM_DEBUG_PROJECTION_SOURCE_001.md` supplies a disabled q8
+> repair-source/evidence composition over required future native ports. Native q8
+> queue/Storage/Go/result adapters remain absent. The frozen 83fb612 Windows fake
+> guard test has now passed; this is not a container or database execution proof.
+
 This source milestone extends `EXAM_TRACE_PROCESSOR_SOURCE_001.md`. It implements
 the missing q6/q7 PostgreSQL reader adapter and proposes its native RPC and
 comparator compatibility change. It does not install them or enable grading.
-The separate PowerShell fake-test approval remains pending.
+At that earlier milestone, the separate PowerShell fake-test approval was pending.
 
 ## Source gaps closed
 

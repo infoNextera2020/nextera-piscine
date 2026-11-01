@@ -1,5 +1,10 @@
 # Exam1 functional producer composition audit
 
+> Source follow-up: `EXAM_DEBUG_PROJECTION_SOURCE_001.md` supplies a disabled q8
+> repair-source/evidence composition over required future native ports. Native q8
+> queue/Storage/Go/result adapters remain absent. The frozen 83fb612 Windows fake
+> guard test has now passed; this is not a container or database execution proof.
+
 ## Finding corrected
 
 `createScoredExamFunctionalProducer` in the database TypeScript package is a

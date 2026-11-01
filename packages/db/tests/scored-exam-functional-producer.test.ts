@@ -2,7 +2,10 @@ import { createHash } from 'node:crypto';
 import { readFileSync } from 'node:fs';
 import { describe, it, expect, vi } from 'vitest';
 import { scoredProjection } from '../../../scripts/curriculum/tests/scored-exam-fixture';
-import { scoredExamFramedDigest } from '../operations/scored-exam-publication';
+import {
+  scoredExamFramedDigest,
+  scoredExamRubricDigest,
+} from '../operations/scored-exam-publication';
 import {
   RECORD_EXAM_SCORING_EVENT_SQL,
   examScoringEventDigest,
@@ -10,6 +13,9 @@ import {
 } from '../queries/exam-scoring-review';
 import {
   prepareScoredExamFunctionalManifest,
+  prepareScoredExamDebugFunctionalManifest,
+  captureScoredExamFunctionalReport,
+  captureScoredExamDebugFunctionalReport,
   createScoredExamFunctionalProducer,
   readScoredExamFunctionalContext,
   buildScoredExamFunctionalEvidence,
@@ -353,5 +359,229 @@ describe('0032 protected producer reader proposal, no native proof', () => {
       'GRANT EXECUTE ON FUNCTION app.scored_exam_functional_context(uuid,uuid) TO nextera_exam_evaluator',
     );
     expect(sql).not.toMatch(/CREATE OR REPLACE FUNCTION app.record_exam_scoring_event/);
+  });
+});
+
+/** Synthetic q8 metadata only; no real private tests or publication approval. */
+function debugPublication(points = [3, 2, 2, 2]) {
+  const p = scoredProjection();
+  const oldBody = {
+    version: p.scoringRubric.version,
+    form: p.scoringRubric.form,
+    definitionDigest: p.scoringRubric.definitionDigest,
+    questions: p.scoringRubric.questions,
+  };
+  const functionalGroups = points.map((points, i) => ({
+    key: 'synthetic-debug-' + (i + 1),
+    points,
+    criteriaDigest: hash('synthetic-debug-criterion-' + i),
+  }));
+  const body = {
+    ...oldBody,
+    questions: oldBody.questions.map((q) =>
+      q.questionKey === 'q8' ? { ...q, functionalGroups } : q,
+    ),
+  };
+  const rubric = { ...body, digest: scoredExamRubricDigest(body) };
+  const sourceBinding = { ...p.scoringSourceBinding, rubric: body };
+  const cases = Array.from({ length: 4 }, (_, index) => ({ input: [index], expected: index }));
+  const publicText = JSON.stringify(cases.slice(0, 2));
+  const privateText = JSON.stringify(cases.slice(2));
+  const groups = functionalGroups.map((g, index) => ({
+    groupKey: g.key,
+    criteriaDigest: g.criteriaDigest,
+    cases: [{ index, caseSha256: hash(JSON.stringify(cases[index])) }],
+  }));
+  const manifest = {
+    version: 1,
+    failureSemantics: 'complete-observations-only-v1',
+    caseFiles: { publicSha256: hash(publicText), privateSha256: hash(privateText) },
+    groups,
+  };
+  const input = {
+    evaluatorKey: 'official-code' as const,
+    evaluatorDigest: h('e'),
+    testPackId: 'synthetic-q8-pack',
+    testPackDigest: h('f'),
+    questionKey: 'q8',
+    rubric,
+    sourceBinding,
+    sourceBindingDigest: scoredExamFramedDigest(
+      sourceBinding,
+      'nextera-exam1-rubric-source-binding',
+    ),
+    manifestBytes: Buffer.from(JSON.stringify(manifest)),
+    publicCasesBytes: Buffer.from(publicText),
+    privateCasesBytes: Buffer.from(privateText),
+  };
+  return { input, manifest };
+}
+function debugReport() {
+  const f = debugPublication();
+  const prepared = prepareScoredExamDebugFunctionalManifest(f.input);
+  const b = prepared.binding;
+  return {
+    ...fixture().report,
+    itemKey: 'q8',
+    testPackId: b.testPackId,
+    testPackDigest: b.testPackDigest,
+    manifestSha256: b.manifestSha256,
+    publicCasesSha256: b.publicCasesSha256,
+    privateCasesSha256: b.privateCasesSha256,
+    caseCount: b.caseCount,
+    groups: prepared.manifest.groups.map((g, i) => ({
+      groupKey: g.groupKey,
+      criteriaDigest: g.criteriaDigest,
+      passed: i !== 1,
+    })),
+  };
+}
+
+describe('explicit q8-only pure preparation and report capture', () => {
+  it('binds debug kind, exact four ordered approved weights and private case/source bytes without enabling runtime', () => {
+    const f = debugPublication();
+    const p = prepareScoredExamDebugFunctionalManifest(f.input);
+    expect(p.runtimeEnabled).toBe(false);
+    expect(p.binding).toMatchObject({
+      answerKind: 'debug_with_reason',
+      questionKey: 'q8',
+      caseCount: 4,
+      evaluatorKey: 'official-code',
+    });
+    expect(p.binding.rubricDigest).toBe(f.input.rubric.digest);
+    expect(p.binding.rubricSourceBindingDigest).toBe(f.input.sourceBindingDigest);
+    expect(p.binding.publicCasesSha256).toBe(hash(f.input.publicCasesBytes));
+    expect(p.binding.privateCasesSha256).toBe(hash(f.input.privateCasesBytes));
+    expect(p.manifestBindingDigest).toBe(
+      scoredExamFramedDigest(p.binding, '01coding-exam-functional-manifest-binding'),
+    );
+    expect(p.manifest.groups.map((g) => g.groupKey)).toEqual(
+      f.manifest.groups.map((g) => g.groupKey),
+    );
+    expect(Object.isFrozen(p.binding)).toBe(true);
+    expect(Object.isFrozen(p.manifest.groups[0]!.cases)).toBe(true);
+    expect(JSON.stringify(p)).not.toContain('"expected"');
+  });
+  it('keeps default coding APIs q1-q5 and requires an explicit q8 entrypoint', async () => {
+    const f = debugPublication();
+    expect(() => prepareScoredExamFunctionalManifest(f.input)).toThrow();
+    expect(() => prepareScoredExamDebugFunctionalManifest(publication().input)).toThrow();
+    const report = debugReport();
+    expect(() => captureScoredExamFunctionalReport(report)).toThrow();
+    expect(() => captureScoredExamDebugFunctionalReport(fixture().report)).toThrow();
+    const db = client();
+    await expect(
+      createScoredExamFunctionalProducer(db.client).prepare(report, id(7)),
+    ).rejects.toThrow();
+    expect(db.calls).toEqual([]);
+    expect(
+      Object.hasOwn(prepareScoredExamFunctionalManifest(publication().input).binding, 'answerKind'),
+    ).toBe(false);
+  });
+  it.each([
+    [2, 3, 2, 2],
+    [3, 2, 1, 3],
+    [3, 3, 3],
+  ])('rejects nonapproved q8 group weights/order %j', (...points) => {
+    expect(() =>
+      prepareScoredExamDebugFunctionalManifest(debugPublication(points).input),
+    ).toThrow();
+  });
+  it.each([
+    'wrong-source',
+    'wrong-file',
+    'wrong-case',
+    'wrong-order',
+    'partial',
+    'runtime-flag',
+  ] as const)('rejects q8 %s without inferred criteria or defaults', (fault) => {
+    const f = debugPublication();
+    const m = structuredClone(f.manifest);
+    if (fault === 'wrong-file') m.caseFiles.privateSha256 = h('0');
+    if (fault === 'wrong-case') m.groups[0]!.cases[0]!.caseSha256 = h('0');
+    if (fault === 'wrong-order') m.groups.reverse();
+    if (fault === 'partial') m.groups.pop();
+    const input = { ...f.input, manifestBytes: Buffer.from(JSON.stringify(m)) };
+    if (fault === 'wrong-source') input.sourceBindingDigest = h('0');
+    if (fault === 'runtime-flag') Object.assign(input, { runtimeEnabled: true });
+    expect(() => prepareScoredExamDebugFunctionalManifest(input)).toThrow();
+  });
+  it('captures the unchanged report ABI in q8 order and retains genuine false groups', () => {
+    const report = debugReport();
+    const captured = captureScoredExamDebugFunctionalReport(report);
+    expect(captured).toEqual(report);
+    expect(captured.groups.map((g) => g.passed)).toEqual([true, false, true, true]);
+    expect(Object.isFrozen(captured.groups[0])).toBe(true);
+    report.groups[0]!.passed = false;
+    expect(captured.groups[0]!.passed).toBe(true);
+  });
+  it.each(['wrong-key', 'missing-group', 'extra-points', 'bad-boolean', 'getter'] as const)(
+    'rejects malformed q8 report %s without running accessors',
+    (fault) => {
+      const report = debugReport();
+      const get = vi.fn(() => 'q8');
+      if (fault === 'wrong-key') report.itemKey = 'q6';
+      if (fault === 'missing-group') report.groups.pop();
+      if (fault === 'extra-points') Object.assign(report.groups[0]!, { points: 3 });
+      if (fault === 'bad-boolean') Object.assign(report.groups[0]!, { passed: 1 });
+      if (fault === 'getter') Object.defineProperty(report, 'itemKey', { get });
+      expect(() => captureScoredExamDebugFunctionalReport(report)).toThrow();
+      expect(get).not.toHaveBeenCalled();
+    },
+  );
+  it.each(['manifestBytes', 'publicCasesBytes', 'privateCasesBytes'] as const)(
+    'validates intrinsic bounds before copying %s and rejects coordinate getters',
+    (field) => {
+      const f = debugPublication();
+      const oversized = new Uint8Array(1048577);
+      Object.defineProperty(oversized, 'byteLength', { value: 1 });
+      expect(() =>
+        prepareScoredExamDebugFunctionalManifest({ ...f.input, [field]: oversized }),
+      ).toThrow();
+      const get = vi.fn(() => {
+        throw new Error('must not execute');
+      });
+      const view = new Uint8Array(f.input[field]);
+      Object.defineProperty(view, 'byteLength', { get });
+      expect(() =>
+        prepareScoredExamDebugFunctionalManifest({ ...f.input, [field]: view }),
+      ).toThrow();
+      expect(get).not.toHaveBeenCalled();
+    },
+  );
+  it('accepts Buffer subarrays without invoking input iterators and retains immutable captured bytes', () => {
+    const f = debugPublication();
+    const wrapper = Buffer.concat([Buffer.from('!'), f.input.manifestBytes, Buffer.from('!')]);
+    const view = wrapper.subarray(1, wrapper.length - 1);
+    const iterator = vi.fn(() => {
+      throw new Error('must not execute');
+    });
+    Object.defineProperty(view, Symbol.iterator, { value: iterator });
+    const p = prepareScoredExamDebugFunctionalManifest({ ...f.input, manifestBytes: view });
+    expect(p.binding.manifestSha256).toBe(hash(f.input.manifestBytes));
+    expect(iterator).not.toHaveBeenCalled();
+    const encoded = p.manifestBase64;
+    view.fill(0);
+    expect(p.manifestBase64).toBe(encoded);
+  });
+  it('rejects shared, resizable, detached, malformed UTF-8 and unsupported typed array views', () => {
+    const f = debugPublication();
+    const detached = new Uint8Array(f.input.manifestBytes);
+    structuredClone(detached.buffer, { transfer: [detached.buffer] });
+    const values = [
+      new Uint8Array(new SharedArrayBuffer(1)),
+      new Uint8Array(Reflect.construct(ArrayBuffer, [1, { maxByteLength: 2 }]) as ArrayBuffer),
+      detached,
+      new Uint8ClampedArray([65]),
+      new Uint16Array([65]),
+      new Uint8Array([0xc0, 0x80]),
+    ];
+    for (const value of values)
+      expect(() =>
+        prepareScoredExamDebugFunctionalManifest({
+          ...f.input,
+          manifestBytes: value as Uint8Array,
+        }),
+      ).toThrow();
   });
 });

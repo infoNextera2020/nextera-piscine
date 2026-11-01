@@ -72,9 +72,67 @@ function decimal(v: unknown): string {
   return v;
 }
 const digest = (v: Uint8Array | string) => createHash('sha256').update(v).digest('hex');
+const typedArrayPrototype: object = Object.getPrototypeOf(Uint8Array.prototype);
+const intrinsicGet = (prototype: object, name: PropertyKey) => {
+  const get = Object.getOwnPropertyDescriptor(prototype, name)?.get;
+  if (!get) return fail();
+  return (value: unknown): unknown => get.call(value);
+};
+const typedTag = intrinsicGet(typedArrayPrototype, Symbol.toStringTag);
+const typedLength = intrinsicGet(typedArrayPrototype, 'length');
+const typedByteLength = intrinsicGet(typedArrayPrototype, 'byteLength');
+const typedBuffer = intrinsicGet(typedArrayPrototype, 'buffer');
+const typedOffset = intrinsicGet(typedArrayPrototype, 'byteOffset');
+const bufferLength = intrinsicGet(ArrayBuffer.prototype, 'byteLength');
+const resizableBuffer = Object.getOwnPropertyDescriptor(ArrayBuffer.prototype, 'resizable')?.get;
+const intrinsicSet = Uint8Array.prototype.set;
+function copyManifestBytes(v: unknown): Uint8Array {
+  try {
+    if (typedTag(v) !== 'Uint8Array') return fail();
+    const length = typedLength(v),
+      byteLength = typedByteLength(v),
+      offset = typedOffset(v);
+    const buffer = typedBuffer(v) as ArrayBuffer;
+    const capacity = bufferLength(buffer); // Rejects SharedArrayBuffer before copying.
+    const prototype = Object.getPrototypeOf(v);
+    if (prototype !== Uint8Array.prototype && prototype !== Buffer.prototype) return fail();
+    if (
+      typeof length !== 'number' ||
+      !Number.isSafeInteger(length) ||
+      length < 1 ||
+      length > 1048576 ||
+      byteLength !== length ||
+      typeof offset !== 'number' ||
+      !Number.isSafeInteger(offset) ||
+      offset < 0 ||
+      typeof capacity !== 'number' ||
+      offset + length > capacity ||
+      resizableBuffer?.call(buffer)
+    )
+      return fail();
+    // Do not invoke caller-owned coordinate, iterator or constructor accessors.
+    for (const property of [
+      'length',
+      'byteLength',
+      'buffer',
+      'byteOffset',
+      'constructor',
+      Symbol.iterator,
+      Symbol.toStringTag,
+    ]) {
+      const d = Object.getOwnPropertyDescriptor(v, property);
+      if (d && !Object.hasOwn(d, 'value')) return fail();
+    }
+    const source = new Uint8Array(buffer, offset, length); // Rejects a detached buffer.
+    const bytes = new Uint8Array(length);
+    intrinsicSet.call(bytes, source);
+    return bytes;
+  } catch {
+    return fail();
+  }
+}
 function utf8(v: unknown): { bytes: Uint8Array; text: string } {
-  if (!(v instanceof Uint8Array) || v.byteLength < 1 || v.byteLength > 1048576) return fail();
-  const bytes = new Uint8Array(v);
+  const bytes = copyManifestBytes(v);
   let decoded: string;
   try {
     decoded = new TextDecoder('utf-8', { fatal: true, ignoreBOM: true }).decode(bytes);
@@ -183,21 +241,20 @@ function rawCases(source: string): string[] {
 }
 
 /** Private source preparation only. It proves supplied bytes/bindings, not owner identity or permission to publish. */
-export function prepareScoredExamFunctionalManifest(
-  input: Readonly<{
-    evaluatorKey: 'official-code';
-    evaluatorDigest: string;
-    testPackId: string;
-    testPackDigest: string;
-    questionKey: string;
-    rubric: ExamScoringRubric;
-    sourceBinding: unknown;
-    sourceBindingDigest: string;
-    manifestBytes: Uint8Array;
-    publicCasesBytes: Uint8Array;
-    privateCasesBytes: Uint8Array;
-  }>,
-) {
+type FunctionalManifestInput = Readonly<{
+  evaluatorKey: 'official-code';
+  evaluatorDigest: string;
+  testPackId: string;
+  testPackDigest: string;
+  questionKey: string;
+  rubric: ExamScoringRubric;
+  sourceBinding: unknown;
+  sourceBindingDigest: string;
+  manifestBytes: Uint8Array;
+  publicCasesBytes: Uint8Array;
+  privateCasesBytes: Uint8Array;
+}>;
+function prepareManifest(input: FunctionalManifestInput, profile: 'coding' | 'debug') {
   const captured = data(input, [
     'evaluatorKey',
     'evaluatorDigest',
@@ -231,9 +288,15 @@ export function prepareScoredExamFunctionalManifest(
     captured.evaluatorKey !== 'official-code'
   )
     return fail();
-  const questionKey = text(captured.questionKey, /^q[1-5]$/),
+  const questionKey = text(captured.questionKey, profile === 'coding' ? /^q[1-5]$/ : /^q8$/),
     q = rubric.questions.find((q) => q.questionKey === questionKey);
-  if (!q || q.kind !== 'coding') return fail();
+  if (!q || q.kind !== (profile === 'coding' ? 'coding' : 'debug_with_reason')) return fail();
+  if (
+    profile === 'debug' &&
+    (q.functionalGroups.length !== 4 ||
+      q.functionalGroups.some((g, i) => g.points !== [3, 2, 2, 2][i]))
+  )
+    return fail();
   const raw = utf8(captured.manifestBytes),
     pub = utf8(captured.publicCasesBytes),
     priv = utf8(captured.privateCasesBytes),
@@ -282,6 +345,24 @@ export function prepareScoredExamFunctionalManifest(
     binding,
     manifest: m,
     manifestBase64: Buffer.from(raw.bytes).toString('base64'),
+    manifestBindingDigest: scoredExamFramedDigest(
+      binding,
+      '01coding-exam-functional-manifest-binding',
+    ),
+  });
+}
+
+/** Existing coding preparation stays q1-q5; it never enables the debug path. */
+export function prepareScoredExamFunctionalManifest(input: FunctionalManifestInput) {
+  return prepareManifest(input, 'coding');
+}
+/** Explicit q8-only source preparation. No native context or runtime producer is enabled. */
+export function prepareScoredExamDebugFunctionalManifest(input: FunctionalManifestInput) {
+  const prepared = prepareManifest(input, 'debug');
+  const binding = Object.freeze({ ...prepared.binding, answerKind: 'debug_with_reason' as const });
+  return Object.freeze({
+    ...prepared,
+    binding,
     manifestBindingDigest: scoredExamFramedDigest(
       binding,
       '01coding-exam-functional-manifest-binding',
@@ -407,7 +488,7 @@ export type ScoredExamFunctionalReport = Readonly<{
   caseCount: number;
   groups: readonly (ScoredExamFunctionalGroup & Readonly<{ passed: boolean }>)[];
 }>;
-export function captureScoredExamFunctionalReport(value: unknown): ScoredExamFunctionalReport {
+function captureReport(value: unknown, profile: 'coding' | 'debug'): ScoredExamFunctionalReport {
   const r = data(value, [
     'version',
     'jobId',
@@ -438,7 +519,7 @@ export function captureScoredExamFunctionalReport(value: unknown): ScoredExamFun
     version: 1,
     jobId: id(r.jobId),
     submissionId: id(r.submissionId),
-    itemKey: text(r.itemKey, /^q[1-5]$/),
+    itemKey: text(r.itemKey, profile === 'coding' ? /^q[1-5]$/ : /^q8$/),
     evaluationSnapshotDigest: hash(r.evaluationSnapshotDigest),
     evaluationSpecDigest: hash(r.evaluationSpecDigest),
     artifactSha256: hash(r.artifactSha256),
@@ -450,6 +531,16 @@ export function captureScoredExamFunctionalReport(value: unknown): ScoredExamFun
     caseCount: integer(r.caseCount, true),
     groups: Object.freeze(groups),
   });
+}
+/** Existing native/coding report API remains q1-q5 only. */
+export function captureScoredExamFunctionalReport(value: unknown): ScoredExamFunctionalReport {
+  return captureReport(value, 'coding');
+}
+/** The same report ABI, restricted to q8 and its four ordered repair groups. */
+export function captureScoredExamDebugFunctionalReport(value: unknown): ScoredExamFunctionalReport {
+  const report = captureReport(value, 'debug');
+  if (report.groups.length !== 4) return fail();
+  return report;
 }
 export const READ_SCORED_EXAM_FUNCTIONAL_CONTEXT_SQL =
   'SELECT app.scored_exam_functional_context($1::uuid,$2::uuid) AS data';

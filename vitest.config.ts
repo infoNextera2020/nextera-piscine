@@ -21,6 +21,7 @@ export default defineConfig({
       'packages/db/tests/scored-exam-code-upload*.test.ts',
       'packages/db/tests/scored-exam-functional-producer.test.ts',
       'packages/db/tests/scored-exam-trace.test.ts',
+      'packages/db/tests/scored-exam-debug.test.ts',
       'packages/db/tests/scored-exam-trace-reader.test.ts',
       'packages/db/tests/scored-exam-trace-context-proposal.test.ts',
       'packages/db/tests/scored-exam-binary-result.test.ts',
