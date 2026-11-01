@@ -1,5 +1,14 @@
 # Exam1 rubric source freeze 001
 
+> Policy update: the exact generic group weights, manual point splits and
+> CRLF/LF plus one-terminal-newline equivalence were approved in
+> `Sentinel_e849fe300ea88191acd6431b61521c7a`. See
+> `EXAM1_GRADING_APPROVAL_20261101.md` for the current record and
+> `EXAM_TRACE_PROCESSOR_SOURCE_001.md` for the source integration boundary.
+> Older "proposed/unapproved" wording below is retained as historical evidence.
+> Private artifact/provenance bindings and actual native verification remain
+> required; this update grants no runtime authority or grading activation.
+
 This is source preparation, not owner approval of exact weights, curriculum publication, private test-pack construction or runtime activation. The approved categories remain coding 13+2, trace 3+2 and debugging 9+4+2. No answer, expected trace output, reference implementation or private case is included in the domain module.
 
 `scripts/curriculum/exam1-rubric.ts` freezes the existing proposed semantic weights into immutable A/B/C/D draft records, each with exact learner-paper SHA256, per-question SHA256 and per-group criterion digest. Hash inputs are UTF-8, canonical JSON with lexicographically sorted object keys and preserved array order. Draft domain is `nextera-exam1-rubric-draft-v1\0`; criterion domain is `nextera-exam1-criterion-v1\0`. Paper and question digests hash their original bytes, without newline normalization. The complete learner-paper digest also binds its instructions and input-domain exclusions.

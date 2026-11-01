@@ -14,3 +14,5 @@ export * from './piscine-pilot-policy';
 export * from './exam-scoring';
 
 export * from './scored-exam-lifecycle';
+
+export * from './exam-trace-output';

@@ -1,4 +1,5 @@
 import {
+  EXAM_TRACE_COMPARATOR_V1,
   validateExamScoringRubric,
   type ExamForm,
   type ExamQuestionKey,
@@ -12,7 +13,7 @@ export type Exam1RubricDecisions = Readonly<{
   weightsOwnerMessageId: string | null;
   approvedDraftSha256: string | null;
   traceComparatorOwnerMessageId: string | null;
-  traceComparator: 'exact_utf8' | null;
+  traceComparator: typeof EXAM_TRACE_COMPARATOR_V1 | null;
   /** Independently reviewed mentor rubric bytes, kept outside learner/public assets. */
   manualCriteriaSha256: string | null;
 }>;
@@ -22,6 +23,14 @@ export type Exam1RubricPreparation = Readonly<{
   publishedPaperSha256: string | null;
   decisions: Exam1RubricDecisions | null;
 }>;
+/** Authentic policy approval, not a runtime lease or approval of unseen private answers. */
+export const EXAM1_GRADING_APPROVAL_RECORD = Object.freeze({
+  proposalMessageId: 'Sentinel_772f0614fef88191b978c186a2bf8248',
+  ownerMessageId: 'Sentinel_e849fe300ea88191acd6431b61521c7a',
+  approvedAtUtc: null,
+  reportedTime: '2026-11-01 approximately 05:30 UTC; exact timestamp unavailable',
+  runtimeEnabled: false,
+} as const);
 const hashPattern = /^[a-f0-9]{64}$/;
 const ownerMessagePattern = /^Sentinel_[a-f0-9]{32}$/;
 function canonical(value: unknown): string {
@@ -51,10 +60,10 @@ const drafts = [
   {
     version: 1,
     form: 'A',
-    status: 'source-reviewed-draft',
+    status: 'source-reviewed-owner-approved-policy',
     paperSha256: 'b39bd12cd76e3f5e8a41399bc74fed5d4ebaa1949e2b21df0b27bb620b8b76f0',
-    weightsOwnerApproved: false,
-    traceComparator: null,
+    weightsOwnerApproved: true,
+    traceComparator: EXAM_TRACE_COMPARATOR_V1,
     questions: [
       {
         questionKey: 'q1',
@@ -90,10 +99,15 @@ const drafts = [
         ],
         manualCategories: [
           {
-            key: 'published-contract-method',
-            points: 2,
+            key: 'published-signature',
+            points: 1,
+            criterion: 'Matches the published function signature',
+          },
+          {
+            key: 'published-obligations',
+            points: 1,
             criterion:
-              'Only the published signature, return/mutation/no-print/preservation and explicitly requested manual method; no style or invented restriction',
+              'Meets the remaining published return/mutation/no-print/preservation and requested method obligations; no style or invented restriction',
           },
         ],
       },
@@ -125,10 +139,15 @@ const drafts = [
         ],
         manualCategories: [
           {
-            key: 'published-contract-method',
-            points: 2,
+            key: 'published-signature',
+            points: 1,
+            criterion: 'Matches the published function signature',
+          },
+          {
+            key: 'published-obligations',
+            points: 1,
             criterion:
-              'Only the published signature, return/mutation/no-print/preservation and explicitly requested manual method; no style or invented restriction',
+              'Meets the remaining published return/mutation/no-print/preservation and requested method obligations; no style or invented restriction',
           },
         ],
       },
@@ -172,10 +191,15 @@ const drafts = [
         ],
         manualCategories: [
           {
-            key: 'published-contract-method',
-            points: 2,
+            key: 'published-signature',
+            points: 1,
+            criterion: 'Matches the published function signature',
+          },
+          {
+            key: 'published-obligations',
+            points: 1,
             criterion:
-              'Only the published signature, return/mutation/no-print/preservation and explicitly requested manual method; no style or invented restriction',
+              'Meets the remaining published return/mutation/no-print/preservation and requested method obligations; no style or invented restriction',
           },
         ],
       },
@@ -213,10 +237,15 @@ const drafts = [
         ],
         manualCategories: [
           {
-            key: 'published-contract-method',
-            points: 2,
+            key: 'published-signature',
+            points: 1,
+            criterion: 'Matches the published function signature',
+          },
+          {
+            key: 'published-obligations',
+            points: 1,
             criterion:
-              'Only the published signature, return/mutation/no-print/preservation and explicitly requested manual method; no style or invented restriction',
+              'Meets the remaining published return/mutation/no-print/preservation and requested method obligations; no style or invented restriction',
           },
         ],
       },
@@ -254,10 +283,15 @@ const drafts = [
         ],
         manualCategories: [
           {
-            key: 'published-contract-method',
-            points: 2,
+            key: 'published-signature',
+            points: 1,
+            criterion: 'Matches the published function signature',
+          },
+          {
+            key: 'published-obligations',
+            points: 1,
             criterion:
-              'Only the published signature, return/mutation/no-print/preservation and explicitly requested manual method; no style or invented restriction',
+              'Meets the remaining published return/mutation/no-print/preservation and requested method obligations; no style or invented restriction',
           },
         ],
       },
@@ -270,10 +304,16 @@ const drafts = [
         functionalGroups: [],
         manualCategories: [
           {
-            key: 'causal-reasoning',
-            points: 2,
+            key: 'causal-checkpoint-one',
+            points: 1,
             criterion:
-              'Explains the supplied program causally; the exact two one-point checkpoints require an independently reviewed mentor rubric, not inferred answers',
+              'First causal checkpoint from the independently reviewed private mentor rubric; equivalent explanations accepted without required terminology',
+          },
+          {
+            key: 'causal-checkpoint-two',
+            points: 1,
+            criterion:
+              'Second causal checkpoint from the independently reviewed private mentor rubric; equivalent explanations accepted without required terminology',
           },
         ],
       },
@@ -286,10 +326,16 @@ const drafts = [
         functionalGroups: [],
         manualCategories: [
           {
-            key: 'causal-reasoning',
-            points: 2,
+            key: 'causal-checkpoint-one',
+            points: 1,
             criterion:
-              'Explains the supplied program causally; the exact two one-point checkpoints require an independently reviewed mentor rubric, not inferred answers',
+              'First causal checkpoint from the independently reviewed private mentor rubric; equivalent explanations accepted without required terminology',
+          },
+          {
+            key: 'causal-checkpoint-two',
+            points: 1,
+            criterion:
+              'Second causal checkpoint from the independently reviewed private mentor rubric; equivalent explanations accepted without required terminology',
           },
         ],
       },
@@ -327,29 +373,37 @@ const drafts = [
         ],
         manualCategories: [
           {
-            key: 'counterexample',
-            points: 4,
-            criterion:
-              'An in-domain concrete input and correct original-versus-repaired behavior; 2 points each',
+            key: 'counterexample-input',
+            points: 2,
+            criterion: 'Provides an in-domain concrete input that exposes the published defect',
           },
           {
-            key: 'explanation',
+            key: 'counterexample-effect',
             points: 2,
-            criterion:
-              'Identifies the published defect mechanism and explains the repair; 1 point each',
+            criterion: 'Correctly describes the original-versus-repaired behavior for that input',
+          },
+          {
+            key: 'defect-reason',
+            points: 1,
+            criterion: 'Explains the published defect mechanism; equivalent wording accepted',
+          },
+          {
+            key: 'repair-reason',
+            points: 1,
+            criterion: 'Explains why the repair works; equivalent wording accepted',
           },
         ],
       },
     ],
-    draftSha256: 'f24a6e52ea062def4f42eda51b6537237269d4f9eb53dbf59b0d1b5b85fb5554',
+    draftSha256: 'a410c44bf33b59c73b9ce6c7205942c4cadfd36f133ca1c63d3302254a1f9ab2',
   },
   {
     version: 1,
     form: 'B',
-    status: 'source-reviewed-draft',
+    status: 'source-reviewed-owner-approved-policy',
     paperSha256: '0476b7427bb0263d4315a0f003ca9ec02c4da6b86c847138c0e7c0e0c9cdc30f',
-    weightsOwnerApproved: false,
-    traceComparator: null,
+    weightsOwnerApproved: true,
+    traceComparator: EXAM_TRACE_COMPARATOR_V1,
     questions: [
       {
         questionKey: 'q1',
@@ -385,10 +439,15 @@ const drafts = [
         ],
         manualCategories: [
           {
-            key: 'published-contract-method',
-            points: 2,
+            key: 'published-signature',
+            points: 1,
+            criterion: 'Matches the published function signature',
+          },
+          {
+            key: 'published-obligations',
+            points: 1,
             criterion:
-              'Only the published signature, return/mutation/no-print/preservation and explicitly requested manual method; no style or invented restriction',
+              'Meets the remaining published return/mutation/no-print/preservation and requested method obligations; no style or invented restriction',
           },
         ],
       },
@@ -420,10 +479,15 @@ const drafts = [
         ],
         manualCategories: [
           {
-            key: 'published-contract-method',
-            points: 2,
+            key: 'published-signature',
+            points: 1,
+            criterion: 'Matches the published function signature',
+          },
+          {
+            key: 'published-obligations',
+            points: 1,
             criterion:
-              'Only the published signature, return/mutation/no-print/preservation and explicitly requested manual method; no style or invented restriction',
+              'Meets the remaining published return/mutation/no-print/preservation and requested method obligations; no style or invented restriction',
           },
         ],
       },
@@ -467,10 +531,15 @@ const drafts = [
         ],
         manualCategories: [
           {
-            key: 'published-contract-method',
-            points: 2,
+            key: 'published-signature',
+            points: 1,
+            criterion: 'Matches the published function signature',
+          },
+          {
+            key: 'published-obligations',
+            points: 1,
             criterion:
-              'Only the published signature, return/mutation/no-print/preservation and explicitly requested manual method; no style or invented restriction',
+              'Meets the remaining published return/mutation/no-print/preservation and requested method obligations; no style or invented restriction',
           },
         ],
       },
@@ -508,10 +577,15 @@ const drafts = [
         ],
         manualCategories: [
           {
-            key: 'published-contract-method',
-            points: 2,
+            key: 'published-signature',
+            points: 1,
+            criterion: 'Matches the published function signature',
+          },
+          {
+            key: 'published-obligations',
+            points: 1,
             criterion:
-              'Only the published signature, return/mutation/no-print/preservation and explicitly requested manual method; no style or invented restriction',
+              'Meets the remaining published return/mutation/no-print/preservation and requested method obligations; no style or invented restriction',
           },
         ],
       },
@@ -549,10 +623,15 @@ const drafts = [
         ],
         manualCategories: [
           {
-            key: 'published-contract-method',
-            points: 2,
+            key: 'published-signature',
+            points: 1,
+            criterion: 'Matches the published function signature',
+          },
+          {
+            key: 'published-obligations',
+            points: 1,
             criterion:
-              'Only the published signature, return/mutation/no-print/preservation and explicitly requested manual method; no style or invented restriction',
+              'Meets the remaining published return/mutation/no-print/preservation and requested method obligations; no style or invented restriction',
           },
         ],
       },
@@ -565,10 +644,16 @@ const drafts = [
         functionalGroups: [],
         manualCategories: [
           {
-            key: 'causal-reasoning',
-            points: 2,
+            key: 'causal-checkpoint-one',
+            points: 1,
             criterion:
-              'Explains the supplied program causally; the exact two one-point checkpoints require an independently reviewed mentor rubric, not inferred answers',
+              'First causal checkpoint from the independently reviewed private mentor rubric; equivalent explanations accepted without required terminology',
+          },
+          {
+            key: 'causal-checkpoint-two',
+            points: 1,
+            criterion:
+              'Second causal checkpoint from the independently reviewed private mentor rubric; equivalent explanations accepted without required terminology',
           },
         ],
       },
@@ -581,10 +666,16 @@ const drafts = [
         functionalGroups: [],
         manualCategories: [
           {
-            key: 'causal-reasoning',
-            points: 2,
+            key: 'causal-checkpoint-one',
+            points: 1,
             criterion:
-              'Explains the supplied program causally; the exact two one-point checkpoints require an independently reviewed mentor rubric, not inferred answers',
+              'First causal checkpoint from the independently reviewed private mentor rubric; equivalent explanations accepted without required terminology',
+          },
+          {
+            key: 'causal-checkpoint-two',
+            points: 1,
+            criterion:
+              'Second causal checkpoint from the independently reviewed private mentor rubric; equivalent explanations accepted without required terminology',
           },
         ],
       },
@@ -622,29 +713,37 @@ const drafts = [
         ],
         manualCategories: [
           {
-            key: 'counterexample',
-            points: 4,
-            criterion:
-              'An in-domain concrete input and correct original-versus-repaired behavior; 2 points each',
+            key: 'counterexample-input',
+            points: 2,
+            criterion: 'Provides an in-domain concrete input that exposes the published defect',
           },
           {
-            key: 'explanation',
+            key: 'counterexample-effect',
             points: 2,
-            criterion:
-              'Identifies the published defect mechanism and explains the repair; 1 point each',
+            criterion: 'Correctly describes the original-versus-repaired behavior for that input',
+          },
+          {
+            key: 'defect-reason',
+            points: 1,
+            criterion: 'Explains the published defect mechanism; equivalent wording accepted',
+          },
+          {
+            key: 'repair-reason',
+            points: 1,
+            criterion: 'Explains why the repair works; equivalent wording accepted',
           },
         ],
       },
     ],
-    draftSha256: 'fa3cc948659e339c2c7a9082d61cab931a36ad1b882330544bebb2946b92e83c',
+    draftSha256: 'e4b4e98454d9797ef494b54f3cf1d186355566808997917c97c6de37948821a1',
   },
   {
     version: 1,
     form: 'C',
-    status: 'source-reviewed-draft',
+    status: 'source-reviewed-owner-approved-policy',
     paperSha256: 'a528401ba443b7101568919c3b5de5625ed48f140ad52ff59859648a03cf0c97',
-    weightsOwnerApproved: false,
-    traceComparator: null,
+    weightsOwnerApproved: true,
+    traceComparator: EXAM_TRACE_COMPARATOR_V1,
     questions: [
       {
         questionKey: 'q1',
@@ -680,10 +779,15 @@ const drafts = [
         ],
         manualCategories: [
           {
-            key: 'published-contract-method',
-            points: 2,
+            key: 'published-signature',
+            points: 1,
+            criterion: 'Matches the published function signature',
+          },
+          {
+            key: 'published-obligations',
+            points: 1,
             criterion:
-              'Only the published signature, return/mutation/no-print/preservation and explicitly requested manual method; no style or invented restriction',
+              'Meets the remaining published return/mutation/no-print/preservation and requested method obligations; no style or invented restriction',
           },
         ],
       },
@@ -715,10 +819,15 @@ const drafts = [
         ],
         manualCategories: [
           {
-            key: 'published-contract-method',
-            points: 2,
+            key: 'published-signature',
+            points: 1,
+            criterion: 'Matches the published function signature',
+          },
+          {
+            key: 'published-obligations',
+            points: 1,
             criterion:
-              'Only the published signature, return/mutation/no-print/preservation and explicitly requested manual method; no style or invented restriction',
+              'Meets the remaining published return/mutation/no-print/preservation and requested method obligations; no style or invented restriction',
           },
         ],
       },
@@ -762,10 +871,15 @@ const drafts = [
         ],
         manualCategories: [
           {
-            key: 'published-contract-method',
-            points: 2,
+            key: 'published-signature',
+            points: 1,
+            criterion: 'Matches the published function signature',
+          },
+          {
+            key: 'published-obligations',
+            points: 1,
             criterion:
-              'Only the published signature, return/mutation/no-print/preservation and explicitly requested manual method; no style or invented restriction',
+              'Meets the remaining published return/mutation/no-print/preservation and requested method obligations; no style or invented restriction',
           },
         ],
       },
@@ -803,10 +917,15 @@ const drafts = [
         ],
         manualCategories: [
           {
-            key: 'published-contract-method',
-            points: 2,
+            key: 'published-signature',
+            points: 1,
+            criterion: 'Matches the published function signature',
+          },
+          {
+            key: 'published-obligations',
+            points: 1,
             criterion:
-              'Only the published signature, return/mutation/no-print/preservation and explicitly requested manual method; no style or invented restriction',
+              'Meets the remaining published return/mutation/no-print/preservation and requested method obligations; no style or invented restriction',
           },
         ],
       },
@@ -844,10 +963,15 @@ const drafts = [
         ],
         manualCategories: [
           {
-            key: 'published-contract-method',
-            points: 2,
+            key: 'published-signature',
+            points: 1,
+            criterion: 'Matches the published function signature',
+          },
+          {
+            key: 'published-obligations',
+            points: 1,
             criterion:
-              'Only the published signature, return/mutation/no-print/preservation and explicitly requested manual method; no style or invented restriction',
+              'Meets the remaining published return/mutation/no-print/preservation and requested method obligations; no style or invented restriction',
           },
         ],
       },
@@ -860,10 +984,16 @@ const drafts = [
         functionalGroups: [],
         manualCategories: [
           {
-            key: 'causal-reasoning',
-            points: 2,
+            key: 'causal-checkpoint-one',
+            points: 1,
             criterion:
-              'Explains the supplied program causally; the exact two one-point checkpoints require an independently reviewed mentor rubric, not inferred answers',
+              'First causal checkpoint from the independently reviewed private mentor rubric; equivalent explanations accepted without required terminology',
+          },
+          {
+            key: 'causal-checkpoint-two',
+            points: 1,
+            criterion:
+              'Second causal checkpoint from the independently reviewed private mentor rubric; equivalent explanations accepted without required terminology',
           },
         ],
       },
@@ -876,10 +1006,16 @@ const drafts = [
         functionalGroups: [],
         manualCategories: [
           {
-            key: 'causal-reasoning',
-            points: 2,
+            key: 'causal-checkpoint-one',
+            points: 1,
             criterion:
-              'Explains the supplied program causally; the exact two one-point checkpoints require an independently reviewed mentor rubric, not inferred answers',
+              'First causal checkpoint from the independently reviewed private mentor rubric; equivalent explanations accepted without required terminology',
+          },
+          {
+            key: 'causal-checkpoint-two',
+            points: 1,
+            criterion:
+              'Second causal checkpoint from the independently reviewed private mentor rubric; equivalent explanations accepted without required terminology',
           },
         ],
       },
@@ -917,29 +1053,37 @@ const drafts = [
         ],
         manualCategories: [
           {
-            key: 'counterexample',
-            points: 4,
-            criterion:
-              'An in-domain concrete input and correct original-versus-repaired behavior; 2 points each',
+            key: 'counterexample-input',
+            points: 2,
+            criterion: 'Provides an in-domain concrete input that exposes the published defect',
           },
           {
-            key: 'explanation',
+            key: 'counterexample-effect',
             points: 2,
-            criterion:
-              'Identifies the published defect mechanism and explains the repair; 1 point each',
+            criterion: 'Correctly describes the original-versus-repaired behavior for that input',
+          },
+          {
+            key: 'defect-reason',
+            points: 1,
+            criterion: 'Explains the published defect mechanism; equivalent wording accepted',
+          },
+          {
+            key: 'repair-reason',
+            points: 1,
+            criterion: 'Explains why the repair works; equivalent wording accepted',
           },
         ],
       },
     ],
-    draftSha256: '7f1eda3dd0625fa526340f89d00f879998f1ac78df0ce4b2e3f7084e5b2bc06e',
+    draftSha256: '05d5d00a7d7f1d5a385a30dd9b59fbeaebd80104dc1d48ea0f1172903dfc6578',
   },
   {
     version: 1,
     form: 'D',
-    status: 'source-reviewed-draft',
+    status: 'source-reviewed-owner-approved-policy',
     paperSha256: 'a6246dab869f14c60bfda3ed896865c1fa64c90176e7f7d3f5f9877410cd8151',
-    weightsOwnerApproved: false,
-    traceComparator: null,
+    weightsOwnerApproved: true,
+    traceComparator: EXAM_TRACE_COMPARATOR_V1,
     questions: [
       {
         questionKey: 'q1',
@@ -975,10 +1119,15 @@ const drafts = [
         ],
         manualCategories: [
           {
-            key: 'published-contract-method',
-            points: 2,
+            key: 'published-signature',
+            points: 1,
+            criterion: 'Matches the published function signature',
+          },
+          {
+            key: 'published-obligations',
+            points: 1,
             criterion:
-              'Only the published signature, return/mutation/no-print/preservation and explicitly requested manual method; no style or invented restriction',
+              'Meets the remaining published return/mutation/no-print/preservation and requested method obligations; no style or invented restriction',
           },
         ],
       },
@@ -1010,10 +1159,15 @@ const drafts = [
         ],
         manualCategories: [
           {
-            key: 'published-contract-method',
-            points: 2,
+            key: 'published-signature',
+            points: 1,
+            criterion: 'Matches the published function signature',
+          },
+          {
+            key: 'published-obligations',
+            points: 1,
             criterion:
-              'Only the published signature, return/mutation/no-print/preservation and explicitly requested manual method; no style or invented restriction',
+              'Meets the remaining published return/mutation/no-print/preservation and requested method obligations; no style or invented restriction',
           },
         ],
       },
@@ -1057,10 +1211,15 @@ const drafts = [
         ],
         manualCategories: [
           {
-            key: 'published-contract-method',
-            points: 2,
+            key: 'published-signature',
+            points: 1,
+            criterion: 'Matches the published function signature',
+          },
+          {
+            key: 'published-obligations',
+            points: 1,
             criterion:
-              'Only the published signature, return/mutation/no-print/preservation and explicitly requested manual method; no style or invented restriction',
+              'Meets the remaining published return/mutation/no-print/preservation and requested method obligations; no style or invented restriction',
           },
         ],
       },
@@ -1098,10 +1257,15 @@ const drafts = [
         ],
         manualCategories: [
           {
-            key: 'published-contract-method',
-            points: 2,
+            key: 'published-signature',
+            points: 1,
+            criterion: 'Matches the published function signature',
+          },
+          {
+            key: 'published-obligations',
+            points: 1,
             criterion:
-              'Only the published signature, return/mutation/no-print/preservation and explicitly requested manual method; no style or invented restriction',
+              'Meets the remaining published return/mutation/no-print/preservation and requested method obligations; no style or invented restriction',
           },
         ],
       },
@@ -1139,10 +1303,15 @@ const drafts = [
         ],
         manualCategories: [
           {
-            key: 'published-contract-method',
-            points: 2,
+            key: 'published-signature',
+            points: 1,
+            criterion: 'Matches the published function signature',
+          },
+          {
+            key: 'published-obligations',
+            points: 1,
             criterion:
-              'Only the published signature, return/mutation/no-print/preservation and explicitly requested manual method; no style or invented restriction',
+              'Meets the remaining published return/mutation/no-print/preservation and requested method obligations; no style or invented restriction',
           },
         ],
       },
@@ -1155,10 +1324,16 @@ const drafts = [
         functionalGroups: [],
         manualCategories: [
           {
-            key: 'causal-reasoning',
-            points: 2,
+            key: 'causal-checkpoint-one',
+            points: 1,
             criterion:
-              'Explains the supplied program causally; the exact two one-point checkpoints require an independently reviewed mentor rubric, not inferred answers',
+              'First causal checkpoint from the independently reviewed private mentor rubric; equivalent explanations accepted without required terminology',
+          },
+          {
+            key: 'causal-checkpoint-two',
+            points: 1,
+            criterion:
+              'Second causal checkpoint from the independently reviewed private mentor rubric; equivalent explanations accepted without required terminology',
           },
         ],
       },
@@ -1171,10 +1346,16 @@ const drafts = [
         functionalGroups: [],
         manualCategories: [
           {
-            key: 'causal-reasoning',
-            points: 2,
+            key: 'causal-checkpoint-one',
+            points: 1,
             criterion:
-              'Explains the supplied program causally; the exact two one-point checkpoints require an independently reviewed mentor rubric, not inferred answers',
+              'First causal checkpoint from the independently reviewed private mentor rubric; equivalent explanations accepted without required terminology',
+          },
+          {
+            key: 'causal-checkpoint-two',
+            points: 1,
+            criterion:
+              'Second causal checkpoint from the independently reviewed private mentor rubric; equivalent explanations accepted without required terminology',
           },
         ],
       },
@@ -1212,21 +1393,29 @@ const drafts = [
         ],
         manualCategories: [
           {
-            key: 'counterexample',
-            points: 4,
-            criterion:
-              'An in-domain concrete input and correct original-versus-repaired behavior; 2 points each',
+            key: 'counterexample-input',
+            points: 2,
+            criterion: 'Provides an in-domain concrete input that exposes the published defect',
           },
           {
-            key: 'explanation',
+            key: 'counterexample-effect',
             points: 2,
-            criterion:
-              'Identifies the published defect mechanism and explains the repair; 1 point each',
+            criterion: 'Correctly describes the original-versus-repaired behavior for that input',
+          },
+          {
+            key: 'defect-reason',
+            points: 1,
+            criterion: 'Explains the published defect mechanism; equivalent wording accepted',
+          },
+          {
+            key: 'repair-reason',
+            points: 1,
+            criterion: 'Explains why the repair works; equivalent wording accepted',
           },
         ],
       },
     ],
-    draftSha256: 'db5a5d4cac0a92334edc5d33ebef972fabe14b57991bb78ab18982af5a8d13c3',
+    draftSha256: 'dc452d7d11281ddb2fabe598dba63da1b64af630bbf4ded1cfe0dd7bceb2a14c',
   },
 ] as const;
 
@@ -1259,7 +1448,7 @@ export function prepareExam1ScoringRubric(
     reasons.push('exact_draft_weights_not_approved');
   if (
     !decision ||
-    decision.traceComparator !== 'exact_utf8' ||
+    decision.traceComparator !== EXAM_TRACE_COMPARATOR_V1 ||
     !ownerMessagePattern.test(decision.traceComparatorOwnerMessageId ?? '')
   )
     reasons.push('trace_comparator_not_approved');
@@ -1308,7 +1497,7 @@ export function prepareExam1ScoringRubric(
     rubric,
     sourceBinding,
     sourceBindingDigest,
-    traceComparator: 'exact_utf8' as const,
+    traceComparator: EXAM_TRACE_COMPARATOR_V1,
     manualCriteriaSha256: decision!.manualCriteriaSha256!,
     draftSha256: draft.draftSha256,
     paperSha256: draft.paperSha256!,

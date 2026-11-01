@@ -1,11 +1,12 @@
 import { createHash } from 'node:crypto';
 import { describe, expect, it, vi } from 'vitest';
 import {
+  EXAM1_GRADING_APPROVAL_RECORD,
   getExam1RubricDraft,
   prepareExam1ScoringRubric,
   type Exam1RubricPreparation,
 } from '../exam1-rubric';
-import { validateExamScoringRubric } from '@nextera/domain';
+import { EXAM_TRACE_COMPARATOR_V1, validateExamScoringRubric } from '@nextera/domain';
 
 const hash = (value: string) => createHash('sha256').update(value).digest('hex');
 const forms = ['A', 'B', 'C', 'D'] as const;
@@ -19,13 +20,13 @@ function input(form: 'A' | 'B' | 'C' | 'D' = 'A'): Exam1RubricPreparation {
       weightsOwnerMessageId: 'Sentinel_' + 'b'.repeat(32),
       approvedDraftSha256: draft.draftSha256,
       traceComparatorOwnerMessageId: 'Sentinel_' + 'c'.repeat(32),
-      traceComparator: 'exact_utf8',
+      traceComparator: EXAM_TRACE_COMPARATOR_V1,
       manualCriteriaSha256: 'd'.repeat(64),
     },
   };
 }
 describe('Exam1 source-only frozen rubric preparation', () => {
-  it('maps all four exact learner sources without claiming weight or comparator approval', () => {
+  it('maps all four learner sources to the approved generic scoring policy without activation', () => {
     for (const form of forms) {
       const draft = getExam1RubricDraft(form);
       expect(draft.questions.map((q) => q.questionKey)).toEqual([
@@ -38,9 +39,9 @@ describe('Exam1 source-only frozen rubric preparation', () => {
         'q7',
         'q8',
       ]);
-      expect(draft.status).toBe('source-reviewed-draft');
-      expect(draft.weightsOwnerApproved).toBe(false);
-      expect(draft.traceComparator).toBeNull();
+      expect(draft.status).toBe('source-reviewed-owner-approved-policy');
+      expect(draft.weightsOwnerApproved).toBe(true);
+      expect(draft.traceComparator).toBe(EXAM_TRACE_COMPARATOR_V1);
       expect(draft.questions.every((q) => q.publishedCriteriaDigest !== null)).toBe(true);
     }
     const b = getExam1RubricDraft('B');
@@ -64,6 +65,45 @@ describe('Exam1 source-only frozen rubric preparation', () => {
       null,
       'sumall.go',
     ]);
+  });
+  it('records authentic approval identity without inventing its missing exact timestamp', () => {
+    expect(EXAM1_GRADING_APPROVAL_RECORD).toMatchObject({
+      proposalMessageId: 'Sentinel_772f0614fef88191b978c186a2bf8248',
+      ownerMessageId: 'Sentinel_e849fe300ea88191acd6431b61521c7a',
+      approvedAtUtc: null,
+      runtimeEnabled: false,
+    });
+    expect(Object.isFrozen(EXAM1_GRADING_APPROVAL_RECORD)).toBe(true);
+  });
+  it.each(forms)(
+    'keeps approved manual splits generic and private answer criteria explicitly unbound for %s',
+    (form) => {
+      const questions = getExam1RubricDraft(form).questions;
+      expect(questions.slice(0, 5).map((q) => q.manualCategories.map((c) => c.points))).toEqual(
+        Array(5).fill([1, 1]),
+      );
+      expect(questions.slice(5, 7).map((q) => q.manualCategories.map((c) => c.points))).toEqual([
+        [1, 1],
+        [1, 1],
+      ]);
+      expect(questions[7].manualCategories.map((c) => c.points)).toEqual([2, 2, 1, 1]);
+      const f = input(form);
+      const result = prepareExam1ScoringRubric(
+        { ...f, decisions: { ...f.decisions!, manualCriteriaSha256: null } },
+        hash,
+      );
+      expect(result.available).toBe(false);
+    },
+  );
+  it('does not silently prepare a new candidate using the historical exact comparator', () => {
+    const f = input();
+    const result = prepareExam1ScoringRubric(
+      { ...f, decisions: { ...f.decisions!, traceComparator: 'exact_utf8' as never } },
+      hash,
+    );
+    expect(result.available).toBe(false);
+    if (result.available) throw new Error('Unexpected historical preparation');
+    expect(result.reasons).toContain('trace_comparator_not_approved');
   });
   it('pins the independently verified learner-source provenance', () => {
     expect(getExam1RubricDraft('B').paperSha256).toBe(
@@ -111,10 +151,10 @@ describe('Exam1 source-only frozen rubric preparation', () => {
     expect(
       result.rubric.questions.map((q) => q.functionalGroups.reduce((n, g) => n + g.points, 0)),
     ).toEqual([13, 13, 13, 13, 13, 0, 0, 9]);
-    expect(result.traceComparator).toBe('exact_utf8');
+    expect(result.traceComparator).toBe(EXAM_TRACE_COMPARATOR_V1);
     expect(result.rubric.digest).toMatch(/^[a-f0-9]{64}$/);
   });
-  it('does not infer approved exact weights from the approved scoring categories', () => {
+  it('still requires explicit exact form/source/private-criteria bindings after policy approval', () => {
     const f = input();
     const result = prepareExam1ScoringRubric({ ...f, decisions: null }, hash);
     expect(result).toMatchObject({ available: false, runtimeEnabled: false });

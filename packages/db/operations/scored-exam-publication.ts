@@ -1,7 +1,12 @@
 import { createHash } from 'node:crypto';
 import { Buffer } from 'node:buffer';
 import { TextDecoder, TextEncoder } from 'node:util';
-import { validateExamScoringRubric, type ExamScoringRubric } from '@nextera/domain';
+import {
+  EXAM_TRACE_COMPARATOR_V1,
+  validateExamScoringRubric,
+  type ExamScoringRubric,
+  type ExamTraceComparator,
+} from '@nextera/domain';
 
 const hash = /^[a-f0-9]{64}$/;
 const fail = (): never => {
@@ -157,7 +162,8 @@ export type ScoredExamSourceBinding = Readonly<{
     weightsOwnerMessageId: string;
     approvedDraftSha256: string;
     traceComparatorOwnerMessageId: string;
-    traceComparator: 'exact_utf8';
+    /** Historical exact_utf8 bindings retain their original semantics. */
+    traceComparator: ExamTraceComparator;
     manualCriteriaSha256: string;
   }>;
   rubric: Omit<ExamScoringRubric, 'digest'>;
@@ -190,7 +196,8 @@ export function assertScoredExamSourceBinding(
     typeof decisions.traceComparatorOwnerMessageId !== 'string' ||
     !/^Sentinel_[a-f0-9]{32}$/.test(decisions.traceComparatorOwnerMessageId) ||
     decisions.approvedDraftSha256 !== b.draftSha256 ||
-    decisions.traceComparator !== 'exact_utf8' ||
+    (decisions.traceComparator !== 'exact_utf8' &&
+      decisions.traceComparator !== EXAM_TRACE_COMPARATOR_V1) ||
     typeof decisions.manualCriteriaSha256 !== 'string' ||
     !hash.test(decisions.manualCriteriaSha256) ||
     checkpointCanonicalJson(b.rubric) !== checkpointCanonicalJson(body)

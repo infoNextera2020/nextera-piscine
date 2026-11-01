@@ -32,7 +32,8 @@
     "./scored-exam-functional-producer": "./queries/scored-exam-functional-producer.ts",
     "./scored-exam-manual-evidence": "./queries/scored-exam-manual-evidence.ts",
     "./atm-evidence": "./queries/atm-evidence.ts",
-    "./quest-review-postgres": "./queries/quest-review-postgres.ts"
+    "./quest-review-postgres": "./queries/quest-review-postgres.ts",
+    "./operations/scored-exam-trace": "./operations/scored-exam-trace.ts"
   },
   "scripts": {
     "build": "tsc -p tsconfig.json",

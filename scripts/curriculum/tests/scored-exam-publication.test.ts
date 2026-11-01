@@ -1,4 +1,9 @@
 import { describe, expect, it } from 'vitest';
+import { EXAM_TRACE_COMPARATOR_V1 } from '@nextera/domain';
+import {
+  assertScoredExamSourceBinding,
+  scoredExamFramedDigest,
+} from '../../../packages/db/operations/scored-exam-publication';
 import { PgDialect } from 'drizzle-orm/pg-core';
 import type { SQL } from 'drizzle-orm';
 import * as schema from '../../../packages/db/schema';
@@ -247,6 +252,58 @@ describe('configured transaction publication (fake client only)', () => {
     row.source_binding_digest = 'f'.repeat(64);
     await expect(importCurriculum(d.db, f.curriculum, 'a'.repeat(40), projections)).rejects.toThrow(
       /differs/,
+    );
+  });
+});
+
+describe('versioned trace comparator provenance (pure binding checks)', () => {
+  it('accepts explicitly bound historical and approved names without conflating their source digests', () => {
+    const f = scoredExamFixture();
+    const projection = resolveEvaluations(f.curriculum, f.catalog).find(
+      (p) => 'scoringRubric' in p,
+    )!;
+    if (!('scoringRubric' in projection)) throw new Error('Expected synthetic scoring projection');
+    const oldBinding = projection.scoringSourceBinding;
+    const approvedBinding = {
+      ...structuredClone(oldBinding),
+      decisions: { ...oldBinding.decisions, traceComparator: EXAM_TRACE_COMPARATOR_V1 },
+    };
+    expect(() => assertScoredExamSourceBinding(oldBinding, projection.scoringRubric)).not.toThrow();
+    expect(() =>
+      assertScoredExamSourceBinding(approvedBinding, projection.scoringRubric),
+    ).not.toThrow();
+    expect(scoredExamFramedDigest(approvedBinding, 'nextera-exam1-rubric-source-binding')).not.toBe(
+      scoredExamFramedDigest(oldBinding, 'nextera-exam1-rubric-source-binding'),
+    );
+    expect(oldBinding.decisions.traceComparator).toBe('exact_utf8');
+  });
+  it('rejects missing, unknown and getter-backed version labels', () => {
+    const f = scoredExamFixture();
+    const projection = resolveEvaluations(f.curriculum, f.catalog).find(
+      (p) => 'scoringRubric' in p,
+    )!;
+    if (!('scoringRubric' in projection)) throw new Error('Expected synthetic scoring projection');
+    for (const invalid of [
+      null,
+      undefined,
+      'exact_utf8_trimmed',
+      'crlf_lf_optional_terminal_lf_v2',
+    ]) {
+      const b = structuredClone(projection.scoringSourceBinding);
+      Object.assign(b.decisions, { traceComparator: invalid });
+      expect(() => assertScoredExamSourceBinding(b, projection.scoringRubric)).toThrow(
+        'SCORED_EXAM_PUBLICATION_INVALID',
+      );
+    }
+    const b = structuredClone(projection.scoringSourceBinding);
+    Object.defineProperty(b.decisions, 'traceComparator', {
+      get() {
+        throw new Error('must not execute');
+      },
+      enumerable: true,
+    });
+    expect(() => assertScoredExamSourceBinding(b, projection.scoringRubric)).toThrow(
+      'SCORED_EXAM_PUBLICATION_INVALID',
     );
   });
 });

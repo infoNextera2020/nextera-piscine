@@ -1,5 +1,14 @@
 # Exam1 q6-q8 source integration inventory
 
+> Policy update: the exact generic group weights, manual point splits and
+> CRLF/LF plus one-terminal-newline equivalence were approved in
+> `Sentinel_e849fe300ea88191acd6431b61521c7a`. See
+> `EXAM1_GRADING_APPROVAL_20261101.md` for the current record and
+> `EXAM_TRACE_PROCESSOR_SOURCE_001.md` for the source integration boundary.
+> Older "proposed/unapproved" wording below is retained as historical evidence.
+> Private artifact/provenance bindings and actual native verification remain
+> required; this update grants no runtime authority or grading activation.
+
 Audited from `8458e889de8608d8dc0a7fcfd1dbb9626fa18b31`, following Go,
 TypeScript and draft SQL call paths. This updates the earlier inventory; it is
 not a live-readiness or migration-activation claim.

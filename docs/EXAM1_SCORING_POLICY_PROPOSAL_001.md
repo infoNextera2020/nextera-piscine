@@ -1,5 +1,14 @@
 # Exam1 scoring details — bounded owner proposal
 
+> Policy update: the exact generic group weights, manual point splits and
+> CRLF/LF plus one-terminal-newline equivalence were approved in
+> `Sentinel_e849fe300ea88191acd6431b61521c7a`. See
+> `EXAM1_GRADING_APPROVAL_20261101.md` for the current record and
+> `EXAM_TRACE_PROCESSOR_SOURCE_001.md` for the source integration boundary.
+> Older "proposed/unapproved" wording below is retained as historical evidence.
+> Private artifact/provenance bindings and actual native verification remain
+> required; this update grants no runtime authority or grading activation.
+
 Status: categories and Sunday submission/review/attempt rules approved on 30 October; see the owner-decision section below. Exact per-item semantic weights and output comparator remain unconfigured proposals. This document activates no runtime or role. Do not use the separate mentor DSA rubric.
 
 ## Already approved

@@ -20,6 +20,7 @@ export default defineConfig({
       'packages/db/tests/scored-exam-intake.test.ts',
       'packages/db/tests/scored-exam-code-upload*.test.ts',
       'packages/db/tests/scored-exam-functional-producer.test.ts',
+      'packages/db/tests/scored-exam-trace.test.ts',
       'packages/db/tests/scored-exam-binary-result.test.ts',
       'packages/db/tests/scored-exam-manual-evidence-proposal.test.ts',
       'packages/db/tests/atm-evidence*.test.ts',
