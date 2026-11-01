@@ -31,8 +31,10 @@ const nativeFs: NativeDescriptorFs = {
   close: (fd) => nodeFs.closeSync(fd),
 };
 const C = nodeFs.constants;
-const DIRECTORY = C.O_RDONLY | C.O_DIRECTORY | C.O_NOFOLLOW;
-const FILE = C.O_RDONLY | C.O_NOFOLLOW;
+const O_DIRECTORY = C.O_DIRECTORY ?? 0x10000;
+const O_NOFOLLOW = C.O_NOFOLLOW ?? 0x20000;
+const DIRECTORY = C.O_RDONLY | O_DIRECTORY | O_NOFOLLOW;
+const FILE = C.O_RDONLY | O_NOFOLLOW;
 const HASH = /^[a-f0-9]{64}$/;
 const fail = (): never => {
   throw new Error('INVITATION_PROTECTED_INPUT_UNAVAILABLE');

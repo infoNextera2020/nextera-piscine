@@ -245,14 +245,14 @@ async function insertProgress(
 }
 
 describe('migrated PostgreSQL constraints', () => {
-  it('creates exactly twenty domain tables and a repeatable migration history', async () => {
+  it('creates exactly twenty-nine domain tables and a repeatable migration history', async () => {
     const rows = await client<
       { count: string }[]
     >`SELECT count(*)::text AS count FROM information_schema.tables
       WHERE table_schema IN ('app','judge') AND table_type='BASE TABLE'`;
-    expect(rows[0]?.count).toBe('20');
+    expect(rows[0]?.count).toBe('29');
     const history = await client`SELECT * FROM drizzle.__drizzle_migrations`;
-    expect(history).toHaveLength(8);
+    expect(history).toHaveLength(11);
   });
 
   it.each(['locked', 'available', 'in_progress', 'mastered'])(

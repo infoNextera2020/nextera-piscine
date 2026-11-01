@@ -102,7 +102,7 @@ jobs:
         run: mkdir -p .tools && pnpm supabase:start > .tools/supabase-start.log 2>&1
       - run: pnpm db:migrate
         env:
-          MIGRATION_DATABASE_URL: postgresql://postgres:postgres@127.0.0.1:54322/postgres
+          MIGRATION_DATABASE_URL: postgresql://supabase_admin:postgres@127.0.0.1:54322/postgres
       - run: pnpm local:env
       - run: pnpm build
       - run: pnpm test:auth

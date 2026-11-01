@@ -225,7 +225,14 @@ describe('approved ATM source v2 actual package and configured project loader', 
       const base = join(temp, directory);
       mkdirSync(base, { recursive: true });
       writeFileSync(join(base, 'README.md'), 'fixture');
-      symlinkSync('README.md', join(base, 'unexpected-link.md'));
+      try {
+        symlinkSync('README.md', join(base, 'unexpected-link.md'));
+      } catch (err: unknown) {
+        if ((err as NodeJS.ErrnoException).code === 'EPERM' && process.platform === 'win32') {
+          return;
+        }
+        throw err;
+      }
       expect(() => readLocalAtmProjectFiles(temp)).toThrow(/symlink/);
     } finally {
       rmSync(temp, { recursive: true, force: true });

@@ -7,5 +7,6 @@ export default defineConfig({
     include: ['packages/db/tests/integration/**/*.test.ts'],
     fileParallelism: false,
     hookTimeout: 30000,
+    setupFiles: [fileURLToPath(new URL('./tests/integration/setup.ts', import.meta.url))],
   },
 });

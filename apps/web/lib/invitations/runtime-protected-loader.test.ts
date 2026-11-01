@@ -3,6 +3,9 @@ import { constants as C } from 'node:fs';
 import * as realFs from 'node:fs';
 import path from 'node:path';
 import { describe, expect, it, vi } from 'vitest';
+
+const O_NOFOLLOW = C.O_NOFOLLOW ?? 0x20000;
+const O_DIRECTORY = C.O_DIRECTORY ?? 0x10000;
 import {
   INVITATION_ROOT as ROOT,
   createNativeInvitationLoader,
@@ -101,8 +104,8 @@ function fixture() {
       }
       if (!n || (n.s.mode & 0o170000n) === 0o120000n)
         throw new Error('synthetic symlink or missing');
-      expect(flags & C.O_NOFOLLOW).toBe(C.O_NOFOLLOW);
-      if (flags & C.O_DIRECTORY) expect(n.s.mode & 0o170000n).toBe(0o040000n);
+      expect(flags & O_NOFOLLOW).toBe(O_NOFOLLOW);
+      if (flags & O_DIRECTORY) expect(n.s.mode & 0o170000n).toBe(0o040000n);
       fds.set(++fd, n);
       return fd;
     },
