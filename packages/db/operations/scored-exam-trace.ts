@@ -403,11 +403,31 @@ function context(value: unknown, receiptId: string, maxBytes: number, maxAnswerB
     return fail();
   // Output can legitimately be empty. No deadline/active-intake check: this is grading an accepted receipt.
   return Object.freeze({
+    native: captured as Readonly<Record<string, unknown>>,
     binding,
     contextDigest: scoredExamFramedDigest(captured, '01coding-exam-trace-context'),
     actualOutput: Buffer.from(answer.output, 'utf8'),
   });
 }
+/** Shared bounded native-response parser; it grants no reader authority. */
+export function captureScoredExamTraceReaderResult(
+  value: unknown,
+  receiptId: string,
+  limits: Readonly<{ maxContextBytes: number; maxAnswerBytes: number }>,
+): Readonly<Record<string, unknown>> {
+  try {
+    const l = object(limits, ['maxContextBytes', 'maxAnswerBytes']);
+    return context(
+      value,
+      id(receiptId),
+      integer(l.maxContextBytes, ceiling),
+      integer(l.maxAnswerBytes, 262144),
+    ).native;
+  } catch {
+    return fail();
+  }
+}
+
 export type PreparedScoredExamTraceWrite = Readonly<{
   version: 1;
   write: ExamScoringWrite;

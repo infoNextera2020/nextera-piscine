@@ -1,5 +1,10 @@
 # Exam1 trace processor: source integration boundary
 
+> Source follow-up: `EXAM_TRACE_NATIVE_READER_SOURCE_001.md` now supplies the
+> restricted PostgreSQL adapter and an unregistered RPC/comparator draft.
+> The missing-source inventory below describes the earlier processor milestone;
+> native SQL, authority, durability and live delivery are still unverified.
+
 Generic grading details are approved in owner message
 `Sentinel_e849fe300ea88191acd6431b61521c7a`, replying to proposal
 `Sentinel_772f0614fef88191b978c186a2bf8248`. The exact approval timestamp was not
