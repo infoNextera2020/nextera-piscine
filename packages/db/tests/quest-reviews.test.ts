@@ -481,3 +481,153 @@ it('rejects an adapter lookup that returns a receipt for a different request ID'
   ).rejects.toMatchObject({ code: 'idempotency_conflict' });
   expect(f.state()).toEqual(state);
 });
+
+function deferred() {
+  let release!: () => void;
+  const promise = new Promise<void>((resolve) => {
+    release = resolve;
+  });
+  return { promise, release };
+}
+
+describe('Quest command identity across asynchronous repository ports', () => {
+  it('keeps the original quest identity if the caller edits its scope while sampling', async () => {
+    const f = new Fixture(),
+      entered = deferred(),
+      resume = deferred();
+    f.sample.mockImplementationOnce(async () => {
+      entered.release();
+      await resume.promise;
+      return ['e', 'c', 'a', 'b', 'f'];
+    });
+    const input = { scope: { ...scope }, subjectId: 'auth:learner-1' };
+    const pending = prepareQuestReview(f, f.runtime, input);
+    await entered.promise;
+    input.scope.questKey = 'foreign-quest-after-await';
+    resume.release();
+    const result = await pending;
+    expect(result.cycle.questKey).toBe(scope.questKey);
+    expect(f.state().cycle.questKey).toBe(scope.questKey);
+    expect(input.scope.questKey).toBe('foreign-quest-after-await');
+    expect(Object.isFrozen(input.scope)).toBe(false);
+  });
+
+  it('keeps the original request ID after the duplicate-receipt lookup has started', async () => {
+    const f = new Fixture();
+    await f.prepare();
+    const entered = deferred(),
+      resume = deferred();
+    const repository: QuestReviewRepository = {
+      transaction: (identity, work) =>
+        f.transaction(identity, (tx) =>
+          work({
+            ...tx,
+            receipt: async (requestId) => {
+              entered.release();
+              await resume.promise;
+              return tx.receipt(requestId);
+            },
+          }),
+        ),
+    };
+    const input = {
+      scope: { ...scope },
+      subjectId: 'auth:learner-2',
+      cycleId: f.state().cycle.cycleId,
+      assignmentId: f.state().assignments[0]!.id,
+      requestId: 'original-request',
+      decision: 'submitted' as const,
+    };
+    const pending = submitQuestReview(repository, f.runtime, input);
+    await entered.promise;
+    input.requestId = 'changed-after-locked-lookup';
+    resume.release();
+    const result = await pending;
+    expect(result.receipt.id).toBe('original-request');
+    expect(f.state().receipts.map((receipt) => receipt.id)).toEqual(['original-request']);
+    expect(input.requestId).toBe('changed-after-locked-lookup');
+    expect(Object.isFrozen(input)).toBe(false);
+  });
+});
+
+describe('Quest command ingress snapshots', () => {
+  it('rejects required accessors and inherited values without repository I/O or invoking getters', async () => {
+    const getter = vi.fn(() => {
+      throw new Error('Caller getter must never execute');
+    });
+    const base = { scope: { ...scope }, subjectId: 'auth:learner-1' };
+    const rootAccessor = Object.defineProperty({ ...base }, 'scope', { get: getter });
+    const scopeAccessor = {
+      ...base,
+      scope: Object.defineProperty({ ...scope }, 'questKey', { get: getter }),
+    };
+    const inherited = Object.assign(Object.create({ subjectId: base.subjectId }), {
+      scope: { ...scope },
+    });
+    const repository: QuestReviewRepository = { transaction: vi.fn() };
+    const f = new Fixture();
+    for (const input of [rootAccessor, scopeAccessor, inherited, null, []]) {
+      await expect(
+        prepareQuestReview(
+          repository,
+          f.runtime,
+          input as Parameters<typeof prepareQuestReview>[2],
+        ),
+      ).rejects.toMatchObject({ code: 'forbidden' });
+    }
+    expect(getter).not.toHaveBeenCalled();
+    expect(repository.transaction).not.toHaveBeenCalled();
+  });
+
+  it('validates the full submission identity before any adapter call', async () => {
+    const f = new Fixture(),
+      repository: QuestReviewRepository = { transaction: vi.fn() };
+    const base = {
+      scope: { ...scope },
+      subjectId: 'auth:learner-2',
+      cycleId: 'cycle',
+      assignmentId: 'assignment',
+      requestId: 'request',
+      decision: 'submitted' as const,
+    };
+    for (const input of [
+      { ...base, requestId: '' },
+      { ...base, cycleId: 'bad\0id' },
+      { ...base, assignmentId: '' },
+      { ...base, decision: 'self_pass' },
+      Object.defineProperty({ ...base }, 'requestId', {
+        get() {
+          throw new Error('Do not execute');
+        },
+      }),
+    ]) {
+      await expect(
+        submitQuestReview(repository, f.runtime, input as Parameters<typeof submitQuestReview>[2]),
+      ).rejects.toMatchObject({ code: 'forbidden' });
+    }
+    expect(repository.transaction).not.toHaveBeenCalled();
+  });
+
+  it('binds a detached frozen transaction key while the caller can still edit its input', async () => {
+    const f = new Fixture();
+    const captured: Parameters<QuestReviewRepository['transaction']>[0][] = [];
+    const repository: QuestReviewRepository = {
+      transaction: (identity, work) => {
+        captured.push(identity);
+        return f.transaction(identity, work);
+      },
+    };
+    const input = { scope: { ...scope }, subjectId: 'auth:learner-1' };
+    const pending = prepareQuestReview(repository, f.runtime, input);
+    input.scope = { ...scope, questKey: 'other' };
+    input.subjectId = 'auth:other';
+    await expect(pending).resolves.toMatchObject({
+      cycle: { questKey: scope.questKey, learnerId: 'learner-1' },
+    });
+    expect(captured[0]).toEqual({ scope, subjectId: 'auth:learner-1', requestId: null });
+    expect(Object.keys(captured[0]!).sort()).toEqual(['requestId', 'scope', 'subjectId']);
+    expect(Object.isFrozen(captured[0])).toBe(true);
+    expect(Object.isFrozen(captured[0]!.scope)).toBe(true);
+    expect(Object.isFrozen(input)).toBe(false);
+  });
+});

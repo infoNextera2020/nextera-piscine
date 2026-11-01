@@ -117,6 +117,59 @@ function samePolicy(a: QuestReviewPolicy, b: QuestReviewPolicy) {
   );
 }
 type Command = Readonly<{ scope: QuestReviewScope; subjectId: string }>;
+type SubmissionCommand = Command &
+  Readonly<{
+    cycleId: string;
+    assignmentId: string;
+    requestId: string;
+    decision: QuestReviewReceipt['decision'];
+  }>;
+
+function ownData(value: unknown, names: readonly string[]): Record<string, unknown> {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) fail('forbidden');
+  const prototype = Object.getPrototypeOf(value);
+  if (prototype !== Object.prototype && prototype !== null) fail('forbidden');
+  const result: Record<string, unknown> = {};
+  for (const name of names) {
+    const field = Object.getOwnPropertyDescriptor(value, name);
+    if (!field || !Object.hasOwn(field, 'value')) fail('forbidden');
+    result[name] = field.value;
+  }
+  return result;
+}
+
+/** Snapshot caller data before the first repository call/await. Freeze only our
+ * copies, so a queued request cannot change the lock scope or receipt identity. */
+function captureCommand(value: unknown): Command {
+  const fields = ownData(value, ['scope', 'subjectId']);
+  const { cohortId, questKey, learnerId } = ownData(fields.scope, [
+    'cohortId',
+    'questKey',
+    'learnerId',
+  ]);
+  const subjectId = fields.subjectId;
+  if (!id(cohortId) || !id(questKey) || !id(learnerId) || !id(subjectId)) fail('forbidden');
+  return Object.freeze({ scope: Object.freeze({ cohortId, questKey, learnerId }), subjectId });
+}
+
+function captureSubmission(value: unknown): SubmissionCommand {
+  const command = captureCommand(value);
+  const { cycleId, assignmentId, requestId, decision } = ownData(value, [
+    'cycleId',
+    'assignmentId',
+    'requestId',
+    'decision',
+  ]);
+  if (
+    !id(cycleId) ||
+    !id(assignmentId) ||
+    !id(requestId) ||
+    (decision !== 'submitted' && decision !== 'approved' && decision !== 'changes_requested')
+  )
+    fail('forbidden');
+  return Object.freeze({ ...command, cycleId, assignmentId, requestId, decision });
+}
+
 async function run<T>(
   repository: QuestReviewRepository,
   input: Command,
@@ -131,17 +184,20 @@ async function run<T>(
   )
     fail('forbidden');
   try {
-    return await repository.transaction({ ...input, requestId }, async (tx) => {
-      const context = await tx.context();
-      if (
-        !id(context.actor.id) ||
-        context.actor.active !== true ||
-        context.actor.cohortId !== input.scope.cohortId ||
-        context.learnerAccess !== true
-      )
-        fail('forbidden');
-      return work(tx, context);
-    });
+    return await repository.transaction(
+      Object.freeze({ scope: input.scope, subjectId: input.subjectId, requestId }),
+      async (tx) => {
+        const context = await tx.context();
+        if (
+          !id(context.actor.id) ||
+          context.actor.active !== true ||
+          context.actor.cohortId !== input.scope.cohortId ||
+          context.learnerAccess !== true
+        )
+          fail('forbidden');
+        return work(tx, context);
+      },
+    );
   } catch (error) {
     if (error instanceof QuestReviewStorageError) throw error;
     if (
@@ -273,8 +329,9 @@ export async function prepareQuestReview(
   runtime: QuestReviewRuntime,
   input: Command,
 ): Promise<QuestReviewSummary> {
-  return run(repository, input, null, async (tx, context) => {
-    if (context.actor.role !== 'learner' || context.actor.id !== input.scope.learnerId)
+  const command = captureCommand(input);
+  return run(repository, command, null, async (tx, context) => {
+    if (context.actor.role !== 'learner' || context.actor.id !== command.scope.learnerId)
       fail('forbidden');
     const policy = configured(context);
     let record = await tx.read();
@@ -286,7 +343,7 @@ export async function prepareQuestReview(
       let cycle: QuestReviewCycle;
       try {
         cycle = freezeQuestReviewCycle({
-          identity: { ...input.scope, ...context.evidence, cycleId: runtime.nextId() },
+          identity: { ...command.scope, ...context.evidence, cycleId: runtime.nextId() },
           bank: context.bank!,
           selection: {
             policyVersion: context.selectionPolicyVersion!,
@@ -299,10 +356,10 @@ export async function prepareQuestReview(
         fail('configuration_required');
       }
       record = { cycle, policy: Object.freeze({ ...policy }), assignments: [], receipts: [] };
-      checked(record, context, input.scope);
+      checked(record, context, command.scope);
       await tx.insertCycle(cycle, record.policy);
     }
-    return advance(tx, runtime, context, checked(record, context, input.scope));
+    return advance(tx, runtime, context, checked(record, context, command.scope));
   });
 }
 
@@ -321,30 +378,33 @@ export async function submitQuestReview(
 ): Promise<
   Readonly<{ receipt: QuestReviewReceipt; replayed: boolean; eligibility: QuestReviewEligibility }>
 > {
-  return run(repository, input, input.requestId, async (tx, context) => {
+  const command = captureSubmission(input);
+  return run(repository, command, command.requestId, async (tx, context) => {
     const stored = await tx.read();
     if (!stored) fail('forbidden');
-    const record = checked(stored, context, input.scope);
-    const assignment = record.assignments.find((candidate) => candidate.id === input.assignmentId);
+    const record = checked(stored, context, command.scope);
+    const assignment = record.assignments.find(
+      (candidate) => candidate.id === command.assignmentId,
+    );
     if (
       !assignment ||
-      record.cycle.cycleId !== input.cycleId ||
+      record.cycle.cycleId !== command.cycleId ||
       assignment.reviewerId !== context.actor.id ||
       context.actor.eligible !== true ||
-      context.actor.id === input.scope.learnerId ||
+      context.actor.id === command.scope.learnerId ||
       (assignment.kind === 'peer'
-        ? context.actor.role !== 'learner' || input.decision !== 'submitted'
+        ? context.actor.role !== 'learner' || command.decision !== 'submitted'
         : !['operator', 'admin'].includes(context.actor.role) ||
-          !['approved', 'changes_requested'].includes(input.decision))
+          !['approved', 'changes_requested'].includes(command.decision))
     )
       fail('forbidden');
-    const previous = await tx.receipt(input.requestId);
+    const previous = await tx.receipt(command.requestId);
     if (previous) {
       if (
-        previous.id !== input.requestId ||
+        previous.id !== command.requestId ||
         previous.assignmentId !== assignment.id ||
         previous.reviewerId !== context.actor.id ||
-        previous.decision !== input.decision ||
+        previous.decision !== command.decision ||
         !sameQuestReviewCycle(previous.cycle, record.cycle) ||
         !record.receipts.some(
           (receipt) =>
@@ -366,11 +426,11 @@ export async function submitQuestReview(
     if (record.receipts.some((receipt) => receipt.assignmentId === assignment.id))
       fail('idempotency_conflict');
     const receipt: QuestReviewReceipt = Object.freeze({
-      id: input.requestId,
+      id: command.requestId,
       assignmentId: assignment.id,
       cycle: record.cycle,
       reviewerId: context.actor.id,
-      decision: input.decision,
+      decision: command.decision,
       submittedAtMs: runtime.nowMs(),
     });
     assertQuestReviewReceipt({
