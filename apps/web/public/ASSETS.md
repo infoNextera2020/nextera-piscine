@@ -1,5 +1,16 @@
 # Piscine UI asset provenance
 
+## Home v2 next-action pilot (M1A)
+
+`piscine/official-logo.svg` is copied byte-for-byte from the supplied Home v2
+review pack, `assets/official-logo.svg` (SHA-256
+`0fde8181d16ceb17ac55e6d52e8cab523c3f75976a9aaa81b8695942c7336e54`).
+The inline decorative path illustration in `HomeNextAction` preserves the
+Home v2 `template.html` path-scene geometry; its unused checkpoint gate is omitted.
+The verified standalone reference HTML has SHA-256
+`c85727be66f42a8ee3274127cca3326258027e6e68f8c81100efa1b82308920b`.
+No illustration geometry or logo was generated for this pilot.
+
 The UI uses decorative artwork supplied with the approved V5 prototype and self-hosted Poppins. These assets contain no application state. All live labels, counts, statuses and controls are HTML.
 
 ## Approved prototype artwork
