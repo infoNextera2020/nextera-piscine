@@ -30,6 +30,7 @@
     "supabase:start": "supabase start --network-id nextera-piscine-local",
     "supabase:stop": "supabase stop",
     "local:env": "tsx scripts/local-env.ts",
+    "local:create-user": "tsx scripts/create-auth-user.ts",
     "local:provision": "tsx scripts/provision-user.ts",
     "local:demo:prepare": "tsx scripts/local-demo.ts prepare",
     "local:demo": "tsx scripts/local-demo.ts start",
