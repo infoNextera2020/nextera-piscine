@@ -33,6 +33,12 @@ export async function applyInvitationDrafts(connectionString?: string) {
         DO $$ BEGIN
           IF EXISTS (SELECT FROM pg_roles WHERE rolname = 'nextera_web_local') THEN
             GRANT nextera_invitation_runtime TO nextera_web_local;
+            IF EXISTS (SELECT FROM pg_auth_members m JOIN pg_roles r ON r.oid=m.member JOIN pg_roles g ON g.oid=m.roleid WHERE r.rolname='nextera_web_local' AND g.rolname='nextera_invitation_issuer') THEN
+              REVOKE nextera_invitation_issuer FROM nextera_web_local;
+            END IF;
+            IF EXISTS (SELECT FROM pg_auth_members m JOIN pg_roles r ON r.oid=m.member JOIN pg_roles g ON g.oid=m.roleid WHERE r.rolname='nextera_web_local' AND g.rolname='nextera_invitation_owner') THEN
+              REVOKE nextera_invitation_owner FROM nextera_web_local;
+            END IF;
           END IF;
         END $$;
       `);

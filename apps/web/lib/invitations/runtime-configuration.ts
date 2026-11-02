@@ -37,6 +37,11 @@ export async function getInvitationActivationSettings(request: Request) {
     return createInvitationRequestConfiguration(native).activation(request);
   }
 
+  // Fallback is strictly disallowed in production; production requires the approved native broker.
+  if (process.env.NODE_ENV === 'production') {
+    return null;
+  }
+
   const dbUrl = process.env.DATABASE_URL || process.env.OPERATIONS_DATABASE_URL;
   const supabaseUrl = process.env.SUPABASE_LOCAL_URL || process.env.NEXT_PUBLIC_SUPABASE_URL;
   const serviceKey =
@@ -56,7 +61,11 @@ export async function getInvitationActivationSettings(request: Request) {
     'http://127.0.0.1:3000',
     'http://localhost:3000',
   ];
-  if (requestOrigin && !allowedOrigins.includes(requestOrigin)) {
+  if (
+    requestOrigin &&
+    (requestOrigin.startsWith('http://127.0.0.1:') || requestOrigin.startsWith('http://localhost:')) &&
+    !allowedOrigins.includes(requestOrigin)
+  ) {
     allowedOrigins.push(requestOrigin);
   }
 
@@ -115,6 +124,11 @@ export async function getInvitationSignupPublicPolicy(): Promise<InvitationSignu
   const native = await nativeDependencies();
   if (native) {
     return createInvitationRequestConfiguration(native).publicPolicy();
+  }
+
+  // Fallback is strictly disallowed in production; production requires the approved native broker.
+  if (process.env.NODE_ENV === 'production') {
+    return null;
   }
 
   const dbUrl = process.env.DATABASE_URL || process.env.OPERATIONS_DATABASE_URL;

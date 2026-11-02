@@ -23,6 +23,7 @@ export default defineConfig({
   // Do not reuse a developer server that might point at a different database.
   webServer: {
     env: {
+      DATABASE_URL: process.env.DATABASE_URL || '',
       MIGRATION_DATABASE_URL: '',
       OPERATIONS_DATABASE_URL: '',
       MAINTENANCE_DATABASE_URL: '',
