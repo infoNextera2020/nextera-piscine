@@ -132,6 +132,27 @@ function timestamp(v: unknown): number {
     return fail();
   return v;
 }
+function parseTimeoutMs(v: unknown): number | null {
+  if (typeof v !== 'string') return null;
+  const match = /^(\d+)(ms|s|min|h|d)?$/.exec(v.trim());
+  if (!match) return null;
+  const val = Number(match[1]);
+  const unit = match[2] ?? 'ms';
+  switch (unit) {
+    case 'ms':
+      return val;
+    case 's':
+      return val * 1000;
+    case 'min':
+      return val * 60000;
+    case 'h':
+      return val * 3600000;
+    case 'd':
+      return val * 86400000;
+    default:
+      return null;
+  }
+}
 function array(v: unknown): unknown[] {
   if (!Array.isArray(v) || Reflect.ownKeys(v).length !== v.length + 1) return fail();
   return Array.from({ length: v.length }, (_, i) => {
@@ -513,9 +534,16 @@ export function createQuestReviewPostgresRepository(
         return Object.freeze(Object.fromEntries(pairs));
       };
       const boundedJson = (value: unknown) => {
-        const raw = JSON.stringify(copyJson(value));
+        const copied = copyJson(value);
+        const raw = JSON.stringify(copied);
         if (typeof raw !== 'string' || Buffer.byteLength(raw, 'utf8') > cfg.limits.maxMetadataBytes)
           return fail();
+        if (Array.isArray(copied)) {
+          return Object.assign(Object.create(Array.prototype, { toString: { value: () => raw } }), copied);
+        }
+        if (typeof copied === 'object' && copied !== null) {
+          return Object.assign(Object.create(Object.prototype, { toString: { value: () => raw } }), copied);
+        }
         return raw;
       };
       try {
@@ -567,16 +595,15 @@ export function createQuestReviewPostgresRepository(
                 remaining,
               ].map((x) => x + 'ms');
               const bounds = await raw(QUEST_REVIEW_BOUNDS_SQL, settings, methodBound);
+              const b =
+                bounds.length === 1
+                  ? data(bounds[0], ['statement_timeout', 'lock_timeout', 'idle_timeout'])
+                  : null;
               if (
-                bounds.length !== 1 ||
-                canonical(
-                  data(bounds[0], ['statement_timeout', 'lock_timeout', 'idle_timeout']),
-                ) !==
-                  canonical({
-                    statement_timeout: settings[0],
-                    lock_timeout: settings[1],
-                    idle_timeout: settings[2],
-                  })
+                !b ||
+                parseTimeoutMs(b.statement_timeout) !== parseTimeoutMs(settings[0]) ||
+                parseTimeoutMs(b.lock_timeout) !== parseTimeoutMs(settings[1]) ||
+                parseTimeoutMs(b.idle_timeout) !== parseTimeoutMs(settings[2])
               )
                 return fail();
               return raw(sql, params, methodBound);
