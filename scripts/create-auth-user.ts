@@ -1,8 +1,12 @@
+import { readFile } from 'node:fs/promises';
 import { parseArgs } from 'node:util';
 import { createClient } from '@supabase/supabase-js';
 import { config } from 'dotenv';
 import postgres from 'postgres';
+import { drizzle } from 'drizzle-orm/postgres-js';
 import { USER_ROLES } from '@nextera/domain';
+import { enrollLearner } from '@nextera/db/operations/cohorts';
+import * as schema from '@nextera/db/schema';
 import { assertLocalUrl, required } from './local-environment';
 
 config({ path: '.env', quiet: true });
@@ -76,6 +80,28 @@ try {
   console.info(`  Domain ID:    ${rows[0]!.id}`);
   console.info(`  Display Name: ${name}`);
   console.info(`  Role:         ${rows[0]!.role}`);
+
+  try {
+    const demoRaw = await readFile('.tools/local-demo.json', 'utf8');
+    const fixture = JSON.parse(demoRaw) as { database: string; cohort: string };
+    const demoDb = postgres(fixture.database, { max: 1, prepare: false });
+    try {
+      await demoDb.unsafe('INSERT INTO auth.users(id) VALUES($1) ON CONFLICT DO NOTHING', [
+        authUserId,
+      ]);
+      const [demoUser] = await demoDb.unsafe(
+        'INSERT INTO app.users(auth_user_id,display_name,role) VALUES($1,$2,$3) ON CONFLICT (auth_user_id) DO UPDATE SET display_name = EXCLUDED.display_name, role = EXCLUDED.role, active = true RETURNING id',
+        [authUserId, name, role],
+      );
+      await enrollLearner(drizzle(demoDb, { schema }), fixture.cohort, String(demoUser!.id));
+      console.info(`✓ Auto-enrolled into active local demo cohort.`);
+    } finally {
+      await demoDb.end();
+    }
+  } catch {
+    // Demo fixture not active, skip
+  }
+
   console.info(`\nNext step to run local demo:`);
   console.info(`  pnpm local:demo:prepare --auth-user-id ${authUserId}`);
   console.info(`  pnpm local:demo\n`);

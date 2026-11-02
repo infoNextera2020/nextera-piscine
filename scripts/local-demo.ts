@@ -21,14 +21,7 @@ if (positionals[0] === 'prepare') {
   const authId = values['auth-user-id'];
   if (!authId || !/^[a-f0-9]{8}(?:-[a-f0-9]{4}){3}-[a-f0-9]{12}$/i.test(authId))
     throw new Error('Supply your existing local Auth UUID with --auth-user-id.');
-  try {
-    await readFile(state);
-    throw new Error(
-      'A demo already exists. Use pnpm local:demo; settings are in .tools/local-demo.json.',
-    );
-  } catch (error) {
-    if ((error as NodeJS.ErrnoException).code !== 'ENOENT') throw error;
-  }
+
   const authUrl = process.env.SUPABASE_LOCAL_URL!;
   if (new URL(authUrl).hostname !== '127.0.0.1') throw new Error('Local Auth required.');
   const auth = createClient(authUrl, process.env.SUPABASE_LOCAL_SERVICE_ROLE_KEY!, {
@@ -36,6 +29,33 @@ if (positionals[0] === 'prepare') {
   });
   const { data, error } = await auth.auth.admin.getUserById(authId);
   if (error || !data.user) throw new Error('Existing local Auth account not found.');
+
+  let existingFixture: LearningFixture | null = null;
+  try {
+    existingFixture = JSON.parse(await readFile(state, 'utf8')) as LearningFixture;
+  } catch (error) {
+    if ((error as NodeJS.ErrnoException).code !== 'ENOENT') throw error;
+  }
+
+  if (existingFixture) {
+    const db = postgres(existingFixture.database, { max: 1, prepare: false });
+    try {
+      await db.unsafe('INSERT INTO auth.users(id) VALUES($1) ON CONFLICT DO NOTHING', [authId]);
+      const [user] = await db.unsafe(
+        'INSERT INTO app.users(auth_user_id,display_name,role) VALUES($1,$2,$3) ON CONFLICT (auth_user_id) DO UPDATE SET display_name = EXCLUDED.display_name, role = EXCLUDED.role, active = true RETURNING id',
+        [authId, String(data.user.user_metadata?.display_name ?? 'Demo learner'), 'learner'],
+      );
+      await enrollLearner(drizzle(db, { schema }), existingFixture.cohort, String(user!.id));
+      console.info(`Enrolled ${authId} (${data.user.email}) into active demo cohort.`);
+      console.info('Demo is ready! Go to http://127.0.0.1:3103 and sign in.');
+      process.exit(0);
+    } catch {
+      // If the old database is unavailable, recreate below
+    } finally {
+      await db.end();
+    }
+  }
+
   const { fixture } = await prepareLearningFixture({ assessments: true });
   const db = postgres(fixture.database, { max: 1, prepare: false });
   try {
