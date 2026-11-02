@@ -28,6 +28,7 @@ export default defineConfig({
       MAINTENANCE_DATABASE_URL: '',
       SUPABASE_LOCAL_SERVICE_ROLE_KEY: '',
       SUPABASE_LOCAL_URL: '',
+      NEXTERA_INVITATION_SERVICE_ROLE_KEY: process.env.SUPABASE_LOCAL_SERVICE_ROLE_KEY ?? '',
     },
     command: 'pnpm --filter @nextera/web start --hostname 127.0.0.1 --port 3100',
     url: 'http://127.0.0.1:3100/api/health',
