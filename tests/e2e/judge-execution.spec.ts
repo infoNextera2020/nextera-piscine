@@ -50,7 +50,7 @@ let helloCohort: string, evenCohort: string;
 let initialProgress: string;
 const verdicts = JSON.parse(
   execFileSync(
-    'python3',
+    process.platform === 'win32' ? 'python' : 'python3',
     [
       '-c',
       "import sys,json;sys.path.insert(0,'infra/runner');from sandbox_test import fixtures;print(json.dumps({p:fixtures(p) for p in ['hello-go-v1','even-or-odd-v1']}))",
@@ -87,6 +87,12 @@ test.beforeAll(async () => {
       ); // Separate exact-byte root fixture; no progression/unlock writes.
     const evaluations = fixture.curriculum.nodes.map((node) => {
       const entry = candidate.catalog.test_packs[node.testPackId]!;
+      const layoutPath =
+        process.platform === 'win32'
+          ? join(artifacts, node.testPackId)
+              .replace(/^[a-zA-Z]:[\\/]/, (m) => `/mnt/host/${(m[0] ?? 'c').toLowerCase()}/`)
+              .replace(/\\/g, '/')
+          : join(artifacts, node.testPackId);
       const spec = {
         ...entry,
         test_only: true,
@@ -97,7 +103,7 @@ test.beforeAll(async () => {
         subject_digest: node.subjectDigest,
         configuration_digest: node.configurationDigest,
         test_pack_id: node.testPackId,
-        test_pack_artifact: `oci://${join(artifacts, node.testPackId)}@sha256:${entry.test_pack_digest}`,
+        test_pack_artifact: `oci://${layoutPath.startsWith('/') ? '' : '/'}${layoutPath}@sha256:${entry.test_pack_digest}`,
       };
       return { nodeKey: node.key, spec, digest: evaluationDigest(spec) };
     });

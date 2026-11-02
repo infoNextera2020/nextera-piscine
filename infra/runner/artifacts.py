@@ -55,7 +55,7 @@ def private_path(path):
     if path == ROOT or ROOT in path.parents:
         raise ValueError("Trusted private inputs/outputs must be outside product checkout")
     path.mkdir(parents=True, exist_ok=True, mode=0o700)
-    if path.stat().st_mode & 0o077:
+    if os.name != "nt" and path.stat().st_mode & 0o077:
         raise ValueError("Trusted private directory requires mode 0700")
     return path
 
@@ -123,7 +123,7 @@ def pack(inputs, output, pack_id, env):
 def image(name, dockerfile, context, output):
     metadata = output / (name + "-build.json")
     destination = output / (name + ".oci.tar")
-    sources = [(str(p.relative_to(context)), p.read_bytes()) for p in sorted(context.rglob("*")) if p.is_file() and (p.suffix == ".go" or p.name in ("go.mod", "go.sum"))]
+    sources = [(p.relative_to(context).as_posix(), p.read_bytes()) for p in sorted(context.rglob("*")) if p.is_file() and (p.suffix == ".go" or p.name in ("go.mod", "go.sum"))]
     source_digest = "sha256:" + sha(encoded([(name, sha(data)) for name, data in sources]))
     command(["docker", "buildx", "build", "--platform=linux/amd64", "--provenance=false",
              "--sbom=false", "--build-arg=SOURCE_DATE_EPOCH=0", "--output",
@@ -158,7 +158,12 @@ def build(inputs, output):
     # Only metadata leaves the private context. It is deliberately rejected by
     # Foundation 002B's exact approved-catalog parser.
     public_metadata = ROOT / "infra/runner/catalog/candidate.json"
-    public_metadata.write_bytes(encoded(candidate) + b"\n")
+    if public_metadata.exists():
+        existing = json.loads(public_metadata.read_bytes())
+        existing.setdefault("catalog", {}).setdefault("test_packs", {}).update(entries)
+        public_metadata.write_bytes(encoded(existing) + b"\n")
+    else:
+        public_metadata.write_bytes(encoded(candidate) + b"\n")
     public_metadata.chmod(0o644)
     print("Local candidate built; publication remains blocked.")
 
