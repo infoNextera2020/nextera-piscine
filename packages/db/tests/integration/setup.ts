@@ -11,20 +11,34 @@ let originalDbUrl: string | undefined;
 
 beforeAll(async () => {
   originalDbUrl = process.env.TEST_DATABASE_URL || process.env.MIGRATION_DATABASE_URL;
-  if (!originalDbUrl) return;
+  if (!originalDbUrl) {
+    throw new Error(
+      'Database test isolation requires TEST_DATABASE_URL or MIGRATION_DATABASE_URL to be set.',
+    );
+  }
 
   const url = new URL(originalDbUrl);
-  if (!['localhost', '127.0.0.1', '[::1]'].includes(url.hostname)) return;
+  if (!['localhost', '127.0.0.1', '[::1]'].includes(url.hostname)) {
+    throw new Error(
+      `Database test isolation requires a local database connection (got ${url.hostname}).`,
+    );
+  }
 
   const rootUrl = new URL(originalDbUrl);
   rootUrl.pathname = '/postgres';
 
+  const uniqueHex = randomUUID().replaceAll('-', '').slice(0, 16);
+  isolatedDbName = `foundation_test_${uniqueHex}`;
+
+  let created = false;
+  let lastError: unknown;
+
   try {
     rootClient = postgres(rootUrl.toString(), { max: 1, prepare: false, onnotice: () => {} });
-    const uniqueHex = randomUUID().replaceAll('-', '').slice(0, 16);
-    isolatedDbName = `foundation_test_${uniqueHex}`;
     await rootClient.unsafe(`CREATE DATABASE ${isolatedDbName}`);
-  } catch {
+    created = true;
+  } catch (err) {
+    lastError = err;
     try {
       if (rootClient) await rootClient.end();
     } catch {
@@ -33,13 +47,19 @@ beforeAll(async () => {
     try {
       rootUrl.pathname = '/template1';
       rootClient = postgres(rootUrl.toString(), { max: 1, prepare: false, onnotice: () => {} });
-      const uniqueHex = randomUUID().replaceAll('-', '').slice(0, 16);
-      isolatedDbName = `foundation_test_${uniqueHex}`;
       await rootClient.unsafe(`CREATE DATABASE ${isolatedDbName}`);
-    } catch {
-      // If base connection fails, keep originalDbUrl
-      return;
+      created = true;
+    } catch (err2) {
+      lastError = err2;
     }
+  }
+
+  if (!created) {
+    throw new Error(
+      `Database test isolation failed to provision isolated database ${isolatedDbName}: ${
+        lastError instanceof Error ? lastError.message : String(lastError)
+      }`,
+    );
   }
 
   const isolatedUrl = new URL(originalDbUrl);

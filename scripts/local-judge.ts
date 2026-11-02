@@ -1,20 +1,13 @@
 /** Controlled local tooling only. Never run in the web deployment or print captured CLI secrets. */
 import { execFileSync } from 'node:child_process';
 import { createHmac, randomBytes, randomUUID } from 'node:crypto';
-import {
-  existsSync,
-  mkdirSync,
-  readFileSync,
-  realpathSync,
-  statSync,
-  writeFileSync,
-} from 'node:fs';
+import { existsSync, mkdirSync, readFileSync, realpathSync, writeFileSync } from 'node:fs';
 import { isAbsolute, join, relative, resolve, sep } from 'node:path';
 import { parseArgs } from 'node:util';
 import { config } from 'dotenv';
 import postgres from 'postgres';
 import { createClient } from '@supabase/supabase-js';
-import { assertLocalUrl } from './local-environment';
+import { assertLocalUrl, assertPrivateDirectoryPermissions } from './local-environment';
 
 config({ quiet: true });
 const { values, positionals } = parseArgs({
@@ -71,11 +64,30 @@ if (command === 'storage') {
   mkdirSync(resolve(values.output), { recursive: true, mode: 0o700 });
   const output = realpathSync(resolve(values.output));
   const rel = relative(realpathSync(process.cwd()), output);
-  if (
-    !(rel === '..' || rel.startsWith(`..${sep}`) || isAbsolute(rel)) ||
-    (process.platform !== 'win32' && (statSync(output).mode & 0o077) !== 0)
-  )
+  if (!(rel === '..' || rel.startsWith(`..${sep}`) || isAbsolute(rel))) {
     throw new Error('Private worker credential directory outside checkout required.');
+  }
+  if (process.platform === 'win32') {
+    const username = process.env.USERNAME;
+    if (username) {
+      try {
+        execFileSync(
+          'icacls',
+          [
+            output,
+            '/inheritance:r',
+            '/grant:r',
+            `${username}:(OI)(CI)F`,
+            '*S-1-5-32-544:(OI)(CI)F',
+          ],
+          { stdio: 'ignore' },
+        );
+      } catch {
+        // Checked below
+      }
+    }
+  }
+  assertPrivateDirectoryPermissions(output, 'Private worker credential directory');
   for (const name of ['storage-reader.jwt', 'runner.env', 'worker.json'])
     if (existsSync(join(output, name)))
       throw new Error('Use a fresh credential directory; existing files are never replaced.');

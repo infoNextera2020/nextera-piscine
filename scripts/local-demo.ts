@@ -49,8 +49,13 @@ if (positionals[0] === 'prepare') {
       console.info(`Enrolled ${authId} (${data.user.email}) into active demo cohort.`);
       console.info('Demo is ready! Go to http://127.0.0.1:3103 and sign in.');
       process.exit(0);
-    } catch {
-      // If the old database is unavailable, recreate below
+    } catch (err) {
+      console.error(
+        `Failed to enroll ${authId} into existing demo database: ${
+          err instanceof Error ? err.message : String(err)
+        }`,
+      );
+      throw err;
     } finally {
       await db.end();
     }

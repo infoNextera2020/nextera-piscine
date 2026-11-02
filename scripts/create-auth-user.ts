@@ -98,8 +98,15 @@ try {
     } finally {
       await demoDb.end();
     }
-  } catch {
-    // Demo fixture not active, skip
+  } catch (error) {
+    if ((error as NodeJS.ErrnoException).code !== 'ENOENT') {
+      console.error(
+        `Failed to enroll user into active demo cohort: ${
+          error instanceof Error ? error.message : String(error)
+        }`,
+      );
+      throw error;
+    }
   }
 
   console.info(`\nNext step to run local demo:`);

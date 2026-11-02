@@ -1,11 +1,13 @@
 /** Explicit disposable-database setup. This is never a startup hook or production provisioner. */
+import { execFileSync } from 'node:child_process';
 import { randomBytes } from 'node:crypto';
-import { existsSync, mkdirSync, realpathSync, statSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdirSync, realpathSync, writeFileSync } from 'node:fs';
 import { isAbsolute, join, relative, resolve, sep } from 'node:path';
 import { parseArgs } from 'node:util';
 import { drizzle } from 'drizzle-orm/postgres-js';
 import { migrate } from 'drizzle-orm/postgres-js/migrator';
 import postgres from 'postgres';
+import { assertPrivateDirectoryPermissions } from './local-environment';
 
 const { values } = parseArgs({
   options: { database: { type: 'string' }, output: { type: 'string' } },
@@ -20,11 +22,24 @@ if (
 mkdirSync(resolve(values.output), { recursive: true, mode: 0o700 });
 const output = realpathSync(resolve(values.output));
 const rel = relative(realpathSync(process.cwd()), output);
-if (
-  !(rel === '..' || rel.startsWith(`..${sep}`) || isAbsolute(rel)) ||
-  (process.platform !== 'win32' && (statSync(output).mode & 0o077) !== 0)
-)
+if (!(rel === '..' || rel.startsWith(`..${sep}`) || isAbsolute(rel))) {
   throw new Error('Private directory outside checkout required.');
+}
+if (process.platform === 'win32') {
+  const username = process.env.USERNAME;
+  if (username) {
+    try {
+      execFileSync(
+        'icacls',
+        [output, '/inheritance:r', '/grant:r', `${username}:(OI)(CI)F`, '*S-1-5-32-544:(OI)(CI)F'],
+        { stdio: 'ignore' },
+      );
+    } catch {
+      // Checked below
+    }
+  }
+}
+assertPrivateDirectoryPermissions(output, 'Private directory outside checkout');
 for (const name of ['web.env', 'maintenance.env', 'application.env', 'runtime.json'])
   if (existsSync(join(output, name)))
     throw new Error('Use a fresh credential directory; existing files are never replaced.');
