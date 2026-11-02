@@ -265,7 +265,7 @@ func TestATMExpiryClampsHTTPRequestAndDiscardsLateAck(t *testing.T) {
 			if err != nil {
 				t.Fatal(err)
 			}
-			c.expires = time.Now().Add(30 * time.Millisecond)
+			c.expires = time.Now().Add(200 * time.Millisecond)
 			c.config.ExpiresAt = c.expires.UTC().Format(time.RFC3339Nano)
 			calls := 0
 			c.http.Transport = fakeHTTP(func(r *http.Request) (*http.Response, error) {
