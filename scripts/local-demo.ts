@@ -68,11 +68,13 @@ if (positionals[0] === 'prepare') {
   console.info(
     'Fixture outcomes are seeded examples. Live Judge execution is not configured for this demo.',
   );
+  const pnpmCmd = process.platform === 'win32' ? 'pnpm.cmd' : 'pnpm';
   const child = spawn(
-    'pnpm',
+    pnpmCmd,
     ['--filter', '@nextera/web', 'dev', '--hostname', '127.0.0.1', '--port', '3103'],
     {
       stdio: 'inherit',
+      shell: process.platform === 'win32',
       env: {
         ...process.env,
         DATABASE_URL: fixture.webDatabase,

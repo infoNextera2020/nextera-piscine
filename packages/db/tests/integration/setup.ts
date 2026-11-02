@@ -1,13 +1,16 @@
 import { randomUUID } from 'node:crypto';
+import { config } from 'dotenv';
 import postgres from 'postgres';
 import { afterAll, beforeAll } from 'vitest';
+
+config({ path: '.env', quiet: true });
 
 let rootClient: ReturnType<typeof postgres> | undefined;
 let isolatedDbName: string | undefined;
 let originalDbUrl: string | undefined;
 
 beforeAll(async () => {
-  originalDbUrl = process.env.TEST_DATABASE_URL;
+  originalDbUrl = process.env.TEST_DATABASE_URL || process.env.MIGRATION_DATABASE_URL;
   if (!originalDbUrl) return;
 
   const url = new URL(originalDbUrl);
