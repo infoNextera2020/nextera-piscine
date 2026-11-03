@@ -89,7 +89,11 @@ async function createPrincipal(
 }
 
 beforeAll(async () => {
-  const targetUrl = new URL(process.env.TEST_DATABASE_URL!);
+  const connection = process.env.TEST_DATABASE_URL;
+  if (!connection) {
+    throw new Error('Disposable foundation_test database required for quest-review integration tests.');
+  }
+  const targetUrl = new URL(connection);
   if (
     !['localhost', '127.0.0.1'].includes(targetUrl.hostname) ||
     !targetUrl.pathname.startsWith('/foundation_test')
@@ -307,14 +311,16 @@ beforeAll(async () => {
 
 afterAll(async () => {
   await webClient?.end();
-  for (const name of logins) {
-    try {
-      await admin.unsafe(`ALTER ROLE ${name} NOLOGIN`);
-    } catch {
-      // Best effort
+  if (admin) {
+    for (const name of logins) {
+      try {
+        await admin.unsafe(`ALTER ROLE ${name} NOLOGIN`);
+      } catch {
+        // Best effort
+      }
     }
+    await admin.end();
   }
-  await admin?.end();
 });
 
 describe('Real PostgreSQL Quest Review Integration', () => {

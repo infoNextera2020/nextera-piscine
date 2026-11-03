@@ -45,7 +45,6 @@ export default defineConfig({
       'packages/db/tests/quest-reviews.test.ts',
       'packages/db/tests/quest-review-postgres.test.ts',
       'packages/db/tests/quest-review-persistence-proposal.test.ts',
-      'packages/db/tests/integration/quest-review-real.test.ts',
       'packages/db/tests/checkpoint-editor-context.test.ts',
       'packages/db/tests/checkpoint-policy-v2.test.ts',
       'packages/db/tests/visible-runs.test.ts',
