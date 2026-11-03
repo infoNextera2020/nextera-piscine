@@ -25,8 +25,8 @@ export default defineConfig({
     env: {
       NEXTERA_ALLOW_LOCAL_FALLBACK: '1',
       DATABASE_URL:
-        process.env.TEST_DATABASE_URL ||
-        'postgresql://nextera_web_local:e395801a0323048d44ad0ac010bae2bddfd805c1ce81da1eed44c99b2316d867@127.0.0.1:54322/foundation_test_slice_001',
+        process.env.DATABASE_URL ||
+        '',
       MIGRATION_DATABASE_URL: '',
       OPERATIONS_DATABASE_URL: '',
       MAINTENANCE_DATABASE_URL: '',

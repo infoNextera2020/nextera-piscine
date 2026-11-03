@@ -74,6 +74,25 @@ async function main() {
 
     // 4. Configure issuance policy
     const [cohortRow] = await sql`SELECT curriculum_version_id FROM app.cohorts WHERE id = ${cohortId}`;
+
+    // Check if email already has an invitation in this cohort (ledger enforces UNIQUE(cohort_id, email))
+    const existingInvitation = await sql`
+      SELECT id, phase, expires_at 
+      FROM app.invitation_activations 
+      WHERE email = ${email} AND cohort_id = ${cohortId}
+      LIMIT 1
+    `;
+    if (existingInvitation.length > 0) {
+      console.error('\n⚠️ Conflict: An invitation has already been issued for this email in this cohort.');
+      console.error(`   Email : ${email}`);
+      console.error(`   Cohort: ${cohortId}`);
+      console.error(`   Status: Phase "${existingInvitation[0]!.phase}", Expires at ${existingInvitation[0]!.expires_at}`);
+      console.error('\nUnder the Piscine security ledger, each email can only receive one invitation per cohort.');
+      console.error('To invite this learner, either:');
+      console.error('  1. Use a fresh email address (e.g. --email "ali.student2@test.local" or "ali+1@student.test")');
+      console.error('  2. Omit the --email argument to automatically generate a unique test email address.\n');
+      process.exit(1);
+    }
     await sql`
       INSERT INTO app.invitation_issuance_policy (
         issuer_id, cohort_id, curriculum_version_id, issuer_login, enabled, max_lifetime_ms
