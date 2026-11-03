@@ -33,7 +33,7 @@ func compilationPlan(s protocol.Snapshot, source []byte) (map[string][]byte, []s
 		// Archive remains flat. Only this trusted fixed command creates package
 		// directories; the learner basename and source bytes are retained exactly.
 		files := map[string][]byte{c.File: source, "function-transport": functionAdapter(c), "go.mod": []byte("module nextera.local/learner\n\ngo 1.27.2\n")}
-		command := "cp -as /opt/go-cache /workspace/cache && mkdir /workspace/piscine /workspace/cmd && cp -- /workspace/" + c.File + " /workspace/piscine/" + c.File + " && cp -- /workspace/function-transport /workspace/cmd/main.go && cd /workspace && GOTOOLCHAIN=local GOPROXY=off GOSUMDB=off GOWORK=off exec go build -trimpath -buildvcs=false -p=1 -ldflags=-buildid= -o /workspace/program ./cmd"
+		command := "cp -as /opt/go-cache /workspace/cache && mkdir /workspace/piscine /workspace/cmd && cp -- /workspace/" + c.File + " /workspace/piscine/" + c.File + " && cp -- /workspace/function-transport /workspace/cmd/main.go && cd /workspace && GO111MODULE=on GOTOOLCHAIN=local GOPROXY=off GOSUMDB=off GOWORK=off exec go build -trimpath -buildvcs=false -p=1 -ldflags=-buildid= -o /workspace/program ./cmd"
 		return files, []string{"/bin/sh", "-c", command}, nil
 	}
 	if c.Version == 2 || c.Version == 4 {

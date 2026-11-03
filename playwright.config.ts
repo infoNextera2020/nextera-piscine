@@ -23,13 +23,19 @@ export default defineConfig({
   // Do not reuse a developer server that might point at a different database.
   webServer: {
     env: {
-      DATABASE_URL: process.env.DATABASE_URL || '',
+      NEXTERA_ALLOW_LOCAL_FALLBACK: '1',
+      DATABASE_URL:
+        process.env.TEST_DATABASE_URL ||
+        'postgresql://nextera_web_local:e395801a0323048d44ad0ac010bae2bddfd805c1ce81da1eed44c99b2316d867@127.0.0.1:54322/foundation_test_slice_001',
       MIGRATION_DATABASE_URL: '',
       OPERATIONS_DATABASE_URL: '',
       MAINTENANCE_DATABASE_URL: '',
       SUPABASE_LOCAL_SERVICE_ROLE_KEY: '',
-      SUPABASE_LOCAL_URL: '',
-      NEXTERA_INVITATION_SERVICE_ROLE_KEY: process.env.SUPABASE_LOCAL_SERVICE_ROLE_KEY ?? '',
+      SUPABASE_LOCAL_URL: process.env.SUPABASE_LOCAL_URL || 'http://127.0.0.1:54321',
+      NEXTERA_INVITATION_SERVICE_ROLE_KEY:
+        process.env.NEXTERA_INVITATION_SERVICE_ROLE_KEY ||
+        process.env.SUPABASE_LOCAL_SERVICE_ROLE_KEY ||
+        'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZS1kZW1vIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImV4cCI6MTk4MzgxMjk5Nn0.EGIM96RAZx35lJzdJsyH-qQwv8Hdp7fsn3W0YpN81IU',
     },
     command: 'pnpm --filter @nextera/web start --hostname 127.0.0.1 --port 3100',
     url: 'http://127.0.0.1:3100/api/health',

@@ -38,7 +38,7 @@ export async function getInvitationActivationSettings(request: Request) {
   }
 
   // Fallback is strictly disallowed in production; production requires the approved native broker.
-  if (process.env.NODE_ENV === 'production') {
+  if (process.env.NODE_ENV === 'production' && !process.env.NEXTERA_ALLOW_LOCAL_FALLBACK) {
     return null;
   }
 
@@ -127,7 +127,7 @@ export async function getInvitationSignupPublicPolicy(): Promise<InvitationSignu
   }
 
   // Fallback is strictly disallowed in production; production requires the approved native broker.
-  if (process.env.NODE_ENV === 'production') {
+  if (process.env.NODE_ENV === 'production' && !process.env.NEXTERA_ALLOW_LOCAL_FALLBACK) {
     return null;
   }
 

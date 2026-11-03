@@ -31,7 +31,7 @@ const admin = createClient(
 );
 
 const artifacts = 'C:\\Users\\NEXTERA\\nextera-judge-artifacts';
-const credentials = 'C:\\Users\\NEXTERA\\nextera-credentials-run002';
+const credentials = process.env.NEXTERA_CREDENTIALS_DIR || 'C:\\Users\\NEXTERA\\nextera-credentials-run003';
 const candidate = JSON.parse(readFileSync(join(artifacts, 'candidate.json'), 'utf8'));
 const worker = JSON.parse(readFileSync(join(credentials, 'worker.json'), 'utf8'));
 const runnerEnv = parse(readFileSync(join(credentials, 'runner.env')));
@@ -450,7 +450,8 @@ test.describe('Real Invitation Journey', () => {
 
     // Execute real Runner on protected host
     const runner1 = runWorker();
-    await runner1.exited;
+    const { code: rCode1 } = await runner1.exited;
+    console.log('Runner 1 exit code:', rCode1, 'stdout:', runner1.getLogs(), 'stderr:', runner1.getErrors());
 
     // Verify terminal result in PostgreSQL
     await expect
@@ -500,7 +501,8 @@ test.describe('Real Invitation Journey', () => {
 
     // Execute real Runner on protected host
     const runner2 = runWorker();
-    await runner2.exited;
+    const { code: rCode2 } = await runner2.exited;
+    console.log('Runner 2 exit code:', rCode2, 'stdout:', runner2.getLogs(), 'stderr:', runner2.getErrors());
 
     let passResultId: string | null = null;
     await expect
