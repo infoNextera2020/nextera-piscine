@@ -62,7 +62,13 @@ func ContractFor(id string, declared *ExecutionContract) (ExecutionContract, err
 			(c.Input == "int_int" && c.Output == "div_mod") ||
 			(c.Input == "int_slice_int_int" && c.Output == "int_slice_preserved") ||
 			(c.Input == "string" && c.Output == "int") ||
-			(c.Input == "int_slice" && c.Output == "int_slice_preserved")
+			(c.Input == "int_slice" && c.Output == "int_slice_preserved") ||
+			(c.Input == "int" && c.Output == "string") ||
+			(c.Input == "count_up_down" && c.Output == "stdout") ||
+			(c.Input == "int_int" && c.Output == "stdout") ||
+			(c.Input == "int" && c.Output == "int") ||
+			(c.Input == "int" && c.Output == "stdout") ||
+			(c.Input == "string" && c.Output == "string")
 		if !valid {
 			return ExecutionContract{}, ErrInvalid
 		}

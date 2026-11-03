@@ -8,13 +8,13 @@ packs = candidate["catalog"]["test_packs"]
 
 failed = 0
 for pack_id in packs:
-    layout = f"/mnt/host/c/Users/NEXTERA/nextera-judge-artifacts/{pack_id}"
+    layout = f"/mnt/c/Users/NEXTERA/nextera-judge-artifacts/{pack_id}"
     cmd = [
         "wsl",
-        "/mnt/host/c/Users/NEXTERA/Desktop/nextera-piscine/.tools/runner",
+        "/mnt/c/Users/NEXTERA/Desktop/nextera-piscine/.tools/runner",
         "verify-artifact",
         "--layout", layout,
-        "--candidate", "/mnt/host/c/Users/NEXTERA/nextera-judge-artifacts/candidate.json",
+        "--candidate", "/mnt/c/Users/NEXTERA/nextera-judge-artifacts/candidate.json",
         "--pack-id", pack_id
     ]
     res = subprocess.run(cmd, capture_output=True, text=True)

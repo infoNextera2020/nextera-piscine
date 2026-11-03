@@ -8,11 +8,15 @@ export function assertLearnerSubmission(user: DomainUser) {
 
 /** A filename is an allowlisted label, never a path or an executable guarantee. */
 export function validateSubmissionFile(name: string, size: number, rules: SubmissionRules) {
+  const extMatch = rules.allowed_extensions.some((ext) => {
+    if (ext === '') return !name.includes('.');
+    return name.endsWith(ext);
+  });
   if (
-    !/^[A-Za-z0-9_][A-Za-z0-9_.-]*\.go$/.test(name) ||
+    !/^[A-Za-z0-9_][A-Za-z0-9_.-]*$/.test(name) ||
     rules.required_files.length !== 1 ||
     rules.required_files[0] !== name ||
-    !rules.allowed_extensions.includes('.go') ||
+    !extMatch ||
     !Number.isSafeInteger(size) ||
     size <= 0 ||
     size > Math.min(262144, rules.max_size_kb * 1024)

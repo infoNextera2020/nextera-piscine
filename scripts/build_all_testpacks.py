@@ -88,7 +88,7 @@ def build_all():
         [{"input": "", "expected": "Hello, Go learner!\nI can run a program.\n"}]
     )
     
-    # 2. sign-label-v1 (Contract 1, signlabel.go SignLabel int64 -> string)
+    # 2. sign-label-v3 (Contract 3, signlabel.go SignLabel int -> string)
     sign_pub = [
         {"input": -4, "expected": "negative"},
         {"input": 0, "expected": "zero"},
@@ -103,94 +103,112 @@ def build_all():
     ]
     make_pack(
         artifacts,
-        "sign-label-v1",
-        {"version": 1, "item_key": "sign-label", "learner_file": "signlabel.go", "function": "SignLabel", "input_type": "int64", "output_type": "string"},
+        "sign-label-v3",
+        {"version": 3, "item_key": "sign-label", "learner_file": "signlabel.go", "function": "SignLabel", "input_type": "int", "output_type": "string"},
         sign_pub, sign_priv
     )
 
-    # 3. count-up-and-down-v2 (Contract 2, main.go stdin_utf8 -> stdout_utf8_exact)
+    # 3. count-up-and-down-v3 (Contract 3, counting.go CountUp / CountDown count_up_down -> stdout)
     count_pub = [
-        {"input": "3\n", "expected": "1\n2\n3\n3\n2\n1\n"},
-        {"input": "1\n", "expected": "1\n1\n"}
+        {"input": {"action": "up", "n": 3}, "expected": "1\n2\n3\n"},
+        {"input": {"action": "down", "n": 3}, "expected": "3\n2\n1\n"},
+        {"input": {"action": "up", "n": 1}, "expected": "1\n"},
+        {"input": {"action": "down", "n": 1}, "expected": "1\n"}
     ]
     count_priv = count_pub + [
-        {"input": "0\n", "expected": ""},
-        {"input": "-2\n", "expected": ""},
-        {"input": "4\n", "expected": "1\n2\n3\n4\n4\n3\n2\n1\n"}
+        {"input": {"action": "up", "n": 0}, "expected": ""},
+        {"input": {"action": "down", "n": 0}, "expected": ""},
+        {"input": {"action": "up", "n": -2}, "expected": ""},
+        {"input": {"action": "down", "n": -2}, "expected": ""},
+        {"input": {"action": "up", "n": 4}, "expected": "1\n2\n3\n4\n"},
+        {"input": {"action": "down", "n": 4}, "expected": "4\n3\n2\n1\n"}
     ]
     make_pack(
         artifacts,
-        "count-up-and-down-v2",
-        {"version": 2, "item_key": "count-up-and-down", "learner_file": "main.go", "function": "", "input_type": "stdin_utf8", "output_type": "stdout_utf8_exact"},
+        "count-up-and-down-v3",
+        {"version": 3, "item_key": "count-up-and-down", "learner_file": "counting.go", "function": "CountUpDown", "input_type": "count_up_down", "output_type": "stdout"},
         count_pub, count_priv
     )
 
-    # 4. even-range-v2 (Contract 2, main.go stdin_utf8 -> stdout_utf8_exact)
+    # 4. even-range-v3 (Contract 3, printevens.go PrintEvens int_int -> stdout)
     even_pub = [
-        {"input": "1 5\n", "expected": "2\n4\n"},
-        {"input": "-4 2\n", "expected": "-4\n-2\n0\n2\n"}
+        {"input": {"a": -3, "b": 3}, "expected": "-2\n0\n2\n"},
+        {"input": {"a": 2, "b": 2}, "expected": "2\n"},
+        {"input": {"a": 3, "b": 3}, "expected": ""},
+        {"input": {"a": 4, "b": 1}, "expected": ""}
     ]
     even_priv = even_pub + [
-        {"input": "5 1\n", "expected": ""},
-        {"input": "0 0\n", "expected": "0\n"},
-        {"input": "2 2\n", "expected": "2\n"},
-        {"input": "1 1\n", "expected": ""}
+        {"input": {"a": 1, "b": 5}, "expected": "2\n4\n"},
+        {"input": {"a": -4, "b": 2}, "expected": "-4\n-2\n0\n2\n"},
+        {"input": {"a": 0, "b": 0}, "expected": "0\n"},
+        {"input": {"a": 1, "b": 1}, "expected": ""},
+        {"input": {"a": 10, "b": 2}, "expected": ""}
     ]
     make_pack(
         artifacts,
-        "even-range-v2",
-        {"version": 2, "item_key": "even-range", "learner_file": "main.go", "function": "", "input_type": "stdin_utf8", "output_type": "stdout_utf8_exact"},
+        "even-range-v3",
+        {"version": 3, "item_key": "even-range", "learner_file": "printevens.go", "function": "PrintEvens", "input_type": "int_int", "output_type": "stdout"},
         even_pub, even_priv
     )
 
-    # 5. sum-to-n-v2 (Contract 2, main.go stdin_utf8 -> stdout_utf8_exact)
+    # 5. sum-to-n-v3 (Contract 3, sumto.go SumTo int -> int)
     sum_pub = [
-        {"input": "3\n", "expected": "6\n"},
-        {"input": "5\n", "expected": "15\n"}
+        {"input": 4, "expected": 10},
+        {"input": 1, "expected": 1},
+        {"input": 0, "expected": 0},
+        {"input": -3, "expected": 0}
     ]
     sum_priv = sum_pub + [
-        {"input": "1\n", "expected": "1\n"},
-        {"input": "0\n", "expected": "0\n"},
-        {"input": "-5\n", "expected": "0\n"},
-        {"input": "10\n", "expected": "55\n"}
+        {"input": 5, "expected": 15},
+        {"input": -5, "expected": 0},
+        {"input": 10, "expected": 55},
+        {"input": 20, "expected": 210}
     ]
     make_pack(
         artifacts,
-        "sum-to-n-v2",
-        {"version": 2, "item_key": "sum-to-n", "learner_file": "main.go", "function": "", "input_type": "stdin_utf8", "output_type": "stdout_utf8_exact"},
+        "sum-to-n-v3",
+        {"version": 3, "item_key": "sum-to-n", "learner_file": "sumto.go", "function": "SumTo", "input_type": "int", "output_type": "int"},
         sum_pub, sum_priv
     )
 
-    # 6. star-rectangle-v2 (Contract 2, main.go stdin_utf8 -> stdout_utf8_exact)
+    # 6. star-rectangle-v3 (Contract 3, printrectangle.go PrintRectangle int_int -> stdout)
     rect_pub = [
-        {"input": "3 2\n", "expected": "***\n***\n"},
-        {"input": "1 1\n", "expected": "*\n"}
+        {"input": {"a": 2, "b": 3}, "expected": "***\n***\n"},
+        {"input": {"a": 1, "b": 1}, "expected": "*\n"},
+        {"input": {"a": 0, "b": 3}, "expected": ""},
+        {"input": {"a": 2, "b": 0}, "expected": ""},
+        {"input": {"a": -1, "b": 2}, "expected": ""}
     ]
     rect_priv = rect_pub + [
-        {"input": "0 2\n", "expected": ""},
-        {"input": "4 1\n", "expected": "****\n"},
-        {"input": "2 3\n", "expected": "**\n**\n**\n"}
+        {"input": {"a": 3, "b": 2}, "expected": "**\n**\n**\n"},
+        {"input": {"a": 4, "b": 1}, "expected": "*\n*\n*\n*\n"},
+        {"input": {"a": 1, "b": 4}, "expected": "****\n"},
+        {"input": {"a": -2, "b": -3}, "expected": ""},
+        {"input": {"a": 3, "b": 5}, "expected": "*****\n*****\n*****\n"}
     ]
     make_pack(
         artifacts,
-        "star-rectangle-v2",
-        {"version": 2, "item_key": "star-rectangle", "learner_file": "main.go", "function": "", "input_type": "stdin_utf8", "output_type": "stdout_utf8_exact"},
+        "star-rectangle-v3",
+        {"version": 3, "item_key": "star-rectangle", "learner_file": "printrectangle.go", "function": "PrintRectangle", "input_type": "int_int", "output_type": "stdout"},
         rect_pub, rect_priv
     )
 
-    # 7. ordered-pairs-v2 (Contract 2, main.go stdin_utf8 -> stdout_utf8_exact)
+    # 7. ordered-pairs-v3 (Contract 3, printorderedpairs.go PrintOrderedPairs int -> stdout)
     pairs_pub = [
-        {"input": "3\n", "expected": "1 2\n1 3\n2 3\n"},
-        {"input": "2\n", "expected": "1 2\n"}
+        {"input": 2, "expected": "0 1\n0 2\n1 2\n"},
+        {"input": 1, "expected": "0 1\n"},
+        {"input": 0, "expected": ""},
+        {"input": -1, "expected": ""}
     ]
     pairs_priv = pairs_pub + [
-        {"input": "1\n", "expected": ""},
-        {"input": "4\n", "expected": "1 2\n1 3\n1 4\n2 3\n2 4\n3 4\n"}
+        {"input": 3, "expected": "0 1\n0 2\n0 3\n1 2\n1 3\n2 3\n"},
+        {"input": -5, "expected": ""},
+        {"input": 4, "expected": "0 1\n0 2\n0 3\n0 4\n1 2\n1 3\n1 4\n2 3\n2 4\n3 4\n"}
     ]
     make_pack(
         artifacts,
-        "ordered-pairs-v2",
-        {"version": 2, "item_key": "ordered-pairs", "learner_file": "main.go", "function": "", "input_type": "stdin_utf8", "output_type": "stdout_utf8_exact"},
+        "ordered-pairs-v3",
+        {"version": 3, "item_key": "ordered-pairs", "learner_file": "printorderedpairs.go", "function": "PrintOrderedPairs", "input_type": "int", "output_type": "stdout"},
         pairs_pub, pairs_priv
     )
 
@@ -340,7 +358,7 @@ def build_all():
         sumslice_pub, sumslice_priv
     )
 
-    # 15. str-rev-v1 (Contract 1, strrev.go StrRev string -> string)
+    # 15. str-rev-v3 (Contract 3, strrev.go StrRev string -> string)
     strrev_pub = [
         {"input": "Hello World!", "expected": "!dlroW olleH"},
         {"input": "NextEra", "expected": "arEtxeN"}
@@ -353,8 +371,8 @@ def build_all():
     ]
     make_pack(
         artifacts,
-        "str-rev-v1",
-        {"version": 1, "item_key": "str-rev", "learner_file": "strrev.go", "function": "StrRev", "input_type": "string", "output_type": "string"},
+        "str-rev-v3",
+        {"version": 3, "item_key": "str-rev", "learner_file": "strrev.go", "function": "StrRev", "input_type": "string", "output_type": "string"},
         strrev_pub, strrev_priv
     )
 

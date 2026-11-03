@@ -12,6 +12,11 @@ func TestFunctionABI3AcceptsOnlyApprovedProfiles(t *testing.T) {
 		{"int_slice_int_int", "int_slice_preserved"},
 		{"string", "int"},
 		{"int_slice", "int_slice_preserved"},
+		{"int", "string"},
+		{"count_up_down", "stdout"},
+		{"int_int", "stdout"},
+		{"int", "int"},
+		{"int", "stdout"},
 	} {
 		c := ExecutionContract{3, "fixture-function", "original-name.go", "Fixture", row[0], row[1]}
 		if got, err := ContractFor("fixture-function-v3", &c); err != nil || got != c {
@@ -24,7 +29,7 @@ func TestFunctionABI3AcceptsOnlyApprovedProfiles(t *testing.T) {
 			func(v *ExecutionContract) { v.File = "source.go;echo" },
 			func(v *ExecutionContract) { v.Function = "fixture" },
 			func(v *ExecutionContract) { v.Input = "any" },
-			func(v *ExecutionContract) { v.Output = "string" },
+			func(v *ExecutionContract) { v.Output = "invalid_output_type" },
 		} {
 			bad := c
 			mutate(&bad)

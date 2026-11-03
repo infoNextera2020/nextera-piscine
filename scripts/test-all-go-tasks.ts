@@ -30,10 +30,10 @@ const worker = JSON.parse(readFileSync(join(credentials, 'worker.json'), 'utf8')
 const runnerEnv = parse(readFileSync(join(credentials, 'runner.env')));
 
 const toWslPath = (p: string) =>
-  p.replace(/^[a-zA-Z]:[\\/]/, (m) => `/mnt/host/${m[0]!.toLowerCase()}/`).replace(/\\/g, '/');
+  p.replace(/^[a-zA-Z]:[\\/]/, (m) => `/mnt/${m[0]!.toLowerCase()}/`).replace(/\\/g, '/');
 
 function runWorker() {
-  const wslRunner = '/mnt/host/c/Users/NEXTERA/Desktop/nextera-piscine/.tools/runner';
+  const wslRunner = '/mnt/c/Users/NEXTERA/Desktop/nextera-piscine/.tools/runner';
   execFileSync('wsl', [
     'sh',
     '-c',
@@ -43,7 +43,7 @@ function runWorker() {
     'env',
     `JUDGE_DATABASE_URL=${runnerEnv.JUDGE_DATABASE_URL}`,
     `JUDGE_STORAGE_PUBLISHABLE_KEY=${runnerEnv.JUDGE_STORAGE_PUBLISHABLE_KEY}`,
-    'DOCKER_HOST=/var/run/docker.sock',
+    'DOCKER_HOST=unix:///mnt/wsl/docker-desktop/shared-sockets/guest-services/docker.proxy.sock',
     wslRunner,
     'work',
     '--candidate',
@@ -93,49 +93,49 @@ const goTasks: TaskSolution[] = [
     nodeKey: 'sign-label',
     title: 'F2 Sign Label',
     file: 'signlabel.go',
-    packId: 'sign-label-v1',
-    wrongSource: 'package main\n\nfunc SignLabel(n int64) string {\n\treturn "wrong"\n}\n',
-    correctSource: 'package main\n\nfunc SignLabel(n int64) string {\n\tif n < 0 {\n\t\treturn "negative"\n\t}\n\tif n == 0 {\n\t\treturn "zero"\n\t}\n\treturn "positive"\n}\n',
+    packId: 'sign-label-v3',
+    wrongSource: 'package piscine\n\nfunc SignLabel(n int) string {\n\treturn "wrong"\n}\n',
+    correctSource: 'package piscine\n\nfunc SignLabel(n int) string {\n\tif n < 0 {\n\t\treturn "negative"\n\t}\n\tif n == 0 {\n\t\treturn "zero"\n\t}\n\treturn "positive"\n}\n',
   },
   {
     nodeKey: 'count-up-and-down',
     title: 'L1 Count Up and Down',
-    file: 'main.go',
-    packId: 'count-up-and-down-v2',
-    wrongSource: 'package main\n\nfunc main() {}\n',
-    correctSource: 'package main\n\nimport ("fmt"; "os")\n\nfunc main() {\n\tvar n int\n\tif _, err := fmt.Fscan(os.Stdin, &n); err != nil || n <= 0 {\n\t\treturn\n\t}\n\tfor i := 1; i <= n; i++ {\n\t\tfmt.Println(i)\n\t}\n\tfor i := n; i >= 1; i-- {\n\t\tfmt.Println(i)\n\t}\n}\n',
+    file: 'counting.go',
+    packId: 'count-up-and-down-v3',
+    wrongSource: 'package piscine\n\nfunc CountUp(n int) {}\nfunc CountDown(n int) {}\n',
+    correctSource: 'package piscine\n\nimport "fmt"\n\nfunc CountUp(n int) {\n\tfor i := 1; i <= n; i++ {\n\t\tfmt.Println(i)\n\t}\n}\n\nfunc CountDown(n int) {\n\tfor i := n; i >= 1; i-- {\n\t\tfmt.Println(i)\n\t}\n}\n',
   },
   {
     nodeKey: 'even-range',
     title: 'L2 Even Range',
-    file: 'main.go',
-    packId: 'even-range-v2',
-    wrongSource: 'package main\n\nfunc main() {}\n',
-    correctSource: 'package main\n\nimport ("fmt"; "os")\n\nfunc main() {\n\tvar low, high int\n\tif _, err := fmt.Fscan(os.Stdin, &low, &high); err != nil || low > high {\n\t\treturn\n\t}\n\tfor i := low; i <= high; i++ {\n\t\tif i%2 == 0 {\n\t\t\tfmt.Println(i)\n\t\t}\n\t}\n}\n',
+    file: 'printevens.go',
+    packId: 'even-range-v3',
+    wrongSource: 'package piscine\n\nfunc PrintEvens(low, high int) {}\n',
+    correctSource: 'package piscine\n\nimport "fmt"\n\nfunc PrintEvens(low, high int) {\n\tif low > high {\n\t\treturn\n\t}\n\tfor i := low; i <= high; i++ {\n\t\tif i%2 == 0 {\n\t\t\tfmt.Println(i)\n\t\t}\n\t}\n}\n',
   },
   {
     nodeKey: 'sum-to-n',
     title: 'L3 Sum to N',
-    file: 'main.go',
-    packId: 'sum-to-n-v2',
-    wrongSource: 'package main\n\nfunc main() {}\n',
-    correctSource: 'package main\n\nimport ("fmt"; "os")\n\nfunc main() {\n\tvar n int\n\tif _, err := fmt.Fscan(os.Stdin, &n); err != nil || n <= 0 {\n\t\tfmt.Println(0)\n\t\treturn\n\t}\n\tsum := 0\n\tfor i := 1; i <= n; i++ {\n\t\tsum += i\n\t}\n\tfmt.Println(sum)\n}\n',
+    file: 'sumto.go',
+    packId: 'sum-to-n-v3',
+    wrongSource: 'package piscine\n\nfunc SumTo(n int) int {\n\treturn -1\n}\n',
+    correctSource: 'package piscine\n\nfunc SumTo(n int) int {\n\tif n <= 0 {\n\t\treturn 0\n\t}\n\tsum := 0\n\tfor i := 1; i <= n; i++ {\n\t\tsum += i\n\t}\n\treturn sum\n}\n',
   },
   {
     nodeKey: 'star-rectangle',
     title: 'L4 Star Rectangle',
-    file: 'main.go',
-    packId: 'star-rectangle-v2',
-    wrongSource: 'package main\n\nfunc main() {}\n',
-    correctSource: 'package main\n\nimport ("fmt"; "os"; "strings")\n\nfunc main() {\n\tvar w, h int\n\tif _, err := fmt.Fscan(os.Stdin, &w, &h); err != nil || w <= 0 || h <= 0 {\n\t\treturn\n\t}\n\tfor i := 0; i < h; i++ {\n\t\tfmt.Println(strings.Repeat("*", w))\n\t}\n}\n',
+    file: 'printrectangle.go',
+    packId: 'star-rectangle-v3',
+    wrongSource: 'package piscine\n\nfunc PrintRectangle(rows, columns int) {}\n',
+    correctSource: 'package piscine\n\nimport "fmt"\n\nfunc PrintRectangle(rows, columns int) {\n\tif rows <= 0 || columns <= 0 {\n\t\treturn\n\t}\n\tfor r := 0; r < rows; r++ {\n\t\tfor c := 0; c < columns; c++ {\n\t\t\tfmt.Print("*")\n\t\t}\n\t\tfmt.Println()\n\t}\n}\n',
   },
   {
     nodeKey: 'ordered-pairs',
     title: 'L5 Ordered Pairs',
-    file: 'main.go',
-    packId: 'ordered-pairs-v2',
-    wrongSource: 'package main\n\nfunc main() {}\n',
-    correctSource: 'package main\n\nimport ("fmt"; "os")\n\nfunc main() {\n\tvar limit int\n\tif _, err := fmt.Fscan(os.Stdin, &limit); err != nil || limit < 2 {\n\t\treturn\n\t}\n\tfor i := 1; i < limit; i++ {\n\t\tfor j := i + 1; j <= limit; j++ {\n\t\t\tfmt.Printf("%d %d\\n", i, j)\n\t\t}\n\t}\n}\n',
+    file: 'printorderedpairs.go',
+    packId: 'ordered-pairs-v3',
+    wrongSource: 'package piscine\n\nfunc PrintOrderedPairs(n int) {}\n',
+    correctSource: 'package piscine\n\nimport "fmt"\n\nfunc PrintOrderedPairs(n int) {\n\tif n <= 0 {\n\t\treturn\n\t}\n\tfor a := 0; a < n; a++ {\n\t\tfor b := a + 1; b <= n; b++ {\n\t\t\tfmt.Printf("%d %d\\n", a, b)\n\t\t}\n\t}\n}\n',
   },
 
   // --- Quest 3 ---
@@ -207,9 +207,9 @@ const goTasks: TaskSolution[] = [
     nodeKey: 'str-rev',
     title: '9 StrRev',
     file: 'strrev.go',
-    packId: 'str-rev-v1',
-    wrongSource: 'package main\n\nfunc StrRev(s string) string {\n\treturn "wrong"\n}\n',
-    correctSource: 'package main\n\nfunc StrRev(s string) string {\n\trunes := []rune(s)\n\tfor i, j := 0, len(runes)-1; i < j; i, j = i+1, j-1 {\n\t\trunes[i], runes[j] = runes[j], runes[i]\n\t}\n\treturn string(runes)\n}\n',
+    packId: 'str-rev-v3',
+    wrongSource: 'package piscine\n\nfunc StrRev(s string) string {\n\treturn "wrong"\n}\n',
+    correctSource: 'package piscine\n\nfunc StrRev(s string) string {\n\trunes := []rune(s)\n\tfor i, j := 0, len(runes)-1; i < j; i, j = i+1, j-1 {\n\t\trunes[i], runes[j] = runes[j], runes[i]\n\t}\n\treturn string(runes)\n}\n',
   },
 ];
 
@@ -284,9 +284,9 @@ async function submitAndGrade(params: {
 async function main() {
   console.log('=== VERIFYING REAL VERTICAL EVALUATION FOR ALL WEEK 1 GO TASKS ===\n');
 
-  // 1. Get active week1-trial-cohort-v6
-  const [cohort] = await sql`SELECT * FROM app.cohorts WHERE slug = 'week1-trial-cohort-v6' AND status = 'active'`;
-  if (!cohort) throw new Error('Cohort week1-trial-cohort-v6 not found');
+  // 1. Get active week1-trial-cohort-v8
+  const [cohort] = await sql`SELECT * FROM app.cohorts WHERE slug = 'week1-trial-cohort-v8' AND status = 'active'`;
+  if (!cohort) throw new Error('Cohort week1-trial-cohort-v8 not found');
   const cohortId = String(cohort.id);
   const cvId = String(cohort.curriculum_version_id);
 
@@ -443,7 +443,7 @@ async function main() {
   `;
 
   console.log('\n======================================================================');
-  console.log('✓ ALL 15 GO TASKS PROVED: WRONG (FAIL) -> CORRECT (PASS) -> PERSISTED');
+  console.log('✓ ALL 16 GO TASKS PROVED: WRONG (FAIL) -> CORRECT (PASS) -> PERSISTED');
   console.log('======================================================================\n');
 
   console.table(

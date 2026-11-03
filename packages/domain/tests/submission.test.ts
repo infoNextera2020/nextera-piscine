@@ -5,6 +5,27 @@ const rules = { required_files: ['hello.go'], allowed_extensions: ['.go'], max_s
 describe('submission intake policy', () => {
   it('bounds exact filenames and bytes without interpreting the file as code', () => {
     expect(() => validateSubmissionFile('hello.go', 262144, rules)).not.toThrow();
+    expect(() =>
+      validateSubmissionFile('welcome.txt', 1024, {
+        required_files: ['welcome.txt'],
+        allowed_extensions: ['.txt'],
+        max_size_kb: 64,
+      }),
+    ).not.toThrow();
+    expect(() =>
+      validateSubmissionFile('r', 10, {
+        required_files: ['r'],
+        allowed_extensions: [''],
+        max_size_kb: 64,
+      }),
+    ).not.toThrow();
+    expect(() =>
+      validateSubmissionFile('hello.sh', 100, {
+        required_files: ['hello.sh'],
+        allowed_extensions: ['.sh'],
+        max_size_kb: 64,
+      }),
+    ).not.toThrow();
     for (const [name, size] of [
       ['../hello.go', 10],
       ['hello.go/extra', 10],

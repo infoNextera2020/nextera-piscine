@@ -26,8 +26,13 @@ func validateFunctionSources(c artifact.ExecutionContract, files map[string][]by
 		return errProgramSource
 	}
 	parsed, err := parser.ParseFile(token.NewFileSet(), c.File, source, parser.ParseComments|parser.AllErrors)
-	if err != nil || parsed == nil || parsed.Name == nil || parsed.Name.Name != "piscine" || len(parsed.Imports) != 0 {
+	if err != nil || parsed == nil || parsed.Name == nil || parsed.Name.Name != "piscine" {
 		return errProgramSource
+	}
+	for _, imp := range parsed.Imports {
+		if imp.Path == nil || imp.Path.Value != `"fmt"` {
+			return errProgramSource
+		}
 	}
 	for _, group := range parsed.Comments {
 		for _, comment := range group.List {
@@ -42,8 +47,16 @@ func validateFunctionSources(c artifact.ExecutionContract, files map[string][]by
 	for _, declaration := range parsed.Decls {
 		switch d := declaration.(type) {
 		case *ast.GenDecl:
-			if d.Tok == token.IMPORT || d.Tok == token.VAR {
+			if d.Tok == token.VAR {
 				return errProgramSource
+			}
+			if d.Tok == token.IMPORT {
+				for _, spec := range d.Specs {
+					is, ok := spec.(*ast.ImportSpec)
+					if !ok || is.Path == nil || is.Path.Value != `"fmt"` {
+						return errProgramSource
+					}
+				}
 			}
 		case *ast.FuncDecl:
 			if d.Name.Name == "init" {
@@ -112,6 +125,24 @@ func functionInput(c artifact.ExecutionContract, raw json.RawMessage) ([]int64, 
 	}
 	var keys []string
 	switch c.Input {
+	case "int":
+		if _, err := functionInt(raw); err != nil {
+			return nil, err
+		}
+		return nil, nil
+	case "count_up_down":
+		fields, err := functionFields(raw, "action", "n")
+		if err != nil {
+			return nil, err
+		}
+		var action string
+		if artifact.Strict(fields["action"], &action) != nil || (action != "up" && action != "down") {
+			return nil, artifact.ErrInvalid
+		}
+		if _, err := functionInt(fields["n"]); err != nil {
+			return nil, err
+		}
+		return nil, nil
 	case "string":
 		var value string
 		if len(raw) < 2 || raw[0] != '"' || artifact.Strict(raw, &value) != nil {
@@ -151,6 +182,12 @@ func functionInput(c artifact.ExecutionContract, raw json.RawMessage) ([]int64, 
 
 func functionExpectedCheck(c artifact.ExecutionContract, raw json.RawMessage) error {
 	switch c.Output {
+	case "stdout", "string":
+		var s string
+		if len(raw) < 2 || raw[0] != '"' || artifact.Strict(raw, &s) != nil {
+			return artifact.ErrInvalid
+		}
+		return nil
 	case "swap":
 		fields, err := functionFields(raw, "a", "b")
 		if err != nil {
@@ -212,14 +249,31 @@ func functionCases(files map[string][]byte, c artifact.ExecutionContract) ([]jso
 func functionAdapter(c artifact.ExecutionContract) []byte {
 	var typ, signature, call string
 	switch c.Input {
+	case "int":
+		typ = "int"
+		if c.Output == "stdout" {
+			signature = "func(int)"
+			call = `outputs=append(outputs,map[string]any{"stdout":captureStdout(func(){invoke(v)})})`
+		} else if c.Output == "string" {
+			signature = "func(int) string"
+			call = `outputs=append(outputs,map[string]any{"return":invoke(v)})`
+		} else {
+			signature = "func(int) int"
+			call = `outputs=append(outputs,map[string]any{"return":invoke(v)})`
+		}
+	case "count_up_down":
+		typ = `struct{Action string ` + "`json:\"action\"`" + `;N int ` + "`json:\"n\"`" + `}`
+		call = `outputs=append(outputs,map[string]any{"stdout":captureStdout(func(){if v.Action=="up"{invokeUp(v.N)}else if v.Action=="down"{invokeDown(v.N)}})})`
 	case "int_int":
+		typ = `struct{A int ` + "`json:\"a\"`" + `;B int ` + "`json:\"b\"`" + `}`
 		if c.Output == "div_mod" {
 			signature = "func(int,int,*int,*int)"
-			typ = `struct{A int ` + "`json:\"a\"`" + `;B int ` + "`json:\"b\"`" + `}`
 			call = `var div,mod int;invoke(v.A,v.B,&div,&mod);outputs=append(outputs,map[string]any{"div":div,"mod":mod})`
+		} else if c.Output == "stdout" {
+			signature = "func(int,int)"
+			call = `outputs=append(outputs,map[string]any{"stdout":captureStdout(func(){invoke(v.A,v.B)})})`
 		} else {
 			signature = "func(int,int) int"
-			typ = `struct{A int ` + "`json:\"a\"`" + `;B int ` + "`json:\"b\"`" + `}`
 			call = `outputs=append(outputs,map[string]any{"return":invoke(v.A,v.B)})`
 		}
 	case "pointer_pair":
@@ -240,6 +294,9 @@ func functionAdapter(c artifact.ExecutionContract) []byte {
 		call = `result:=invoke(v.Slice,v.A,v.B);post:=snapshot(v.Slice);outputs=append(outputs,map[string]any{"return":result,"slice":post})`
 	case "string", "int_slice":
 		signature = "func(string) int"
+		if c.Output == "string" {
+			signature = "func(string) string"
+		}
 		typ = "string"
 		call = `outputs=append(outputs,map[string]any{"return":invoke(v)})`
 		if c.Input == "int_slice" {
@@ -250,9 +307,29 @@ func functionAdapter(c artifact.ExecutionContract) []byte {
 	default:
 		return nil
 	}
+	var header string
+	if c.Input == "count_up_down" {
+		header = `var invokeUp func(int) = piscine.CountUp
+var invokeDown func(int) = piscine.CountDown`
+	} else {
+		header = `var invoke ` + signature + ` = piscine.` + c.Function
+	}
 	return []byte(`package main
-import("encoding/json";"os";"nextera.local/learner/piscine")
-var invoke ` + signature + ` = piscine.` + c.Function + `
+import("bytes";"encoding/json";"io";"os";"nextera.local/learner/piscine")
+` + header + `
+func captureStdout(fn func()) string {
+	r, w, err := os.Pipe()
+	if err != nil { return "" }
+	old := os.Stdout
+	os.Stdout = w
+	fn()
+	w.Close()
+	var buf bytes.Buffer
+	io.Copy(&buf, r)
+	r.Close()
+	os.Stdout = old
+	return buf.String()
+}
 func snapshot(v []int) []int {if v==nil{return nil};post:=make([]int,len(v));copy(post,v);return post}
 func main(){var inputs []` + typ + `;if json.NewDecoder(os.Stdin).Decode(&inputs)!=nil{os.Exit(2)};outputs:=make([]map[string]any,0,len(inputs));for _,v:=range inputs{` + call + `};wire:=os.NewFile(3,"function-results");if wire==nil||json.NewEncoder(wire).Encode(outputs)!=nil{os.Exit(2)}}
 `)
@@ -276,6 +353,34 @@ func compareFunctionObservations(c artifact.ExecutionContract, inputs []json.Raw
 	for i, row := range rows {
 		var matched bool
 		switch c.Output {
+		case "stdout":
+			fields, err := functionFields(row, "stdout")
+			if err != nil {
+				return "runtime_error", nil
+			}
+			var actual string
+			if artifact.Strict(fields["stdout"], &actual) != nil {
+				return "runtime_error", nil
+			}
+			var want string
+			if artifact.Strict(json.RawMessage(expected[i]), &want) != nil {
+				return "runtime_error", nil
+			}
+			matched = actual == want
+		case "string":
+			fields, err := functionFields(row, "return")
+			if err != nil {
+				return "runtime_error", nil
+			}
+			var actual string
+			if artifact.Strict(fields["return"], &actual) != nil {
+				return "runtime_error", nil
+			}
+			var want string
+			if artifact.Strict(json.RawMessage(expected[i]), &want) != nil {
+				return "runtime_error", nil
+			}
+			matched = actual == want
 		case "swap":
 			fields, err := functionFields(row, "a", "b")
 			if err != nil {

@@ -15,7 +15,7 @@ const sql = postgres(targetDbUrl, { max: 2, prepare: false });
 
 const artifacts = 'C:\\Users\\NEXTERA\\nextera-judge-artifacts';
 const toWslPath = (p: string) =>
-  p.replace(/^[a-zA-Z]:[\\/]/, (m) => `/mnt/host/${m[0]!.toLowerCase()}/`).replace(/\\/g, '/');
+  p.replace(/^[a-zA-Z]:[\\/]/, (m) => `/mnt/${m[0]!.toLowerCase()}/`).replace(/\\/g, '/');
 
 const candidate = JSON.parse(fs.readFileSync(path.join(artifacts, 'candidate.json'), 'utf8'));
 
@@ -209,7 +209,7 @@ async function main() {
       subjectMarkdown: extractSection(q2Md, '## F2 Sign label', '## Five approved gentle-loop tasks'),
       skills: ['conditions', 'functions', 'returns'],
       submissionRules: { required_files: ['signlabel.go'], allowed_extensions: ['.go'], max_size_kb: 256 },
-      runnableTestPackId: 'sign-label-v1',
+      runnableTestPackId: 'sign-label-v3',
     },
     {
       key: 'count-up-and-down',
@@ -220,8 +220,8 @@ async function main() {
       difficulty: 1,
       subjectMarkdown: extractSection(q2Md, '### L1 Count up then count down', '### L2 Print even values in a range'),
       skills: ['loops', 'counting'],
-      submissionRules: { required_files: ['main.go'], allowed_extensions: ['.go'], max_size_kb: 256 },
-      runnableTestPackId: 'count-up-and-down-v2',
+      submissionRules: { required_files: ['counting.go'], allowed_extensions: ['.go'], max_size_kb: 256 },
+      runnableTestPackId: 'count-up-and-down-v3',
     },
     {
       key: 'even-range',
@@ -232,8 +232,8 @@ async function main() {
       difficulty: 1,
       subjectMarkdown: extractSection(q2Md, '### L2 Print even values in a range', '### L3 Sum to N'),
       skills: ['loops', 'modulo', 'even-numbers'],
-      submissionRules: { required_files: ['main.go'], allowed_extensions: ['.go'], max_size_kb: 256 },
-      runnableTestPackId: 'even-range-v2',
+      submissionRules: { required_files: ['printevens.go'], allowed_extensions: ['.go'], max_size_kb: 256 },
+      runnableTestPackId: 'even-range-v3',
     },
     {
       key: 'sum-to-n',
@@ -244,8 +244,8 @@ async function main() {
       difficulty: 1,
       subjectMarkdown: extractSection(q2Md, '### L3 Sum to N', '### L4 Star rectangle'),
       skills: ['loops', 'accumulation'],
-      submissionRules: { required_files: ['main.go'], allowed_extensions: ['.go'], max_size_kb: 256 },
-      runnableTestPackId: 'sum-to-n-v2',
+      submissionRules: { required_files: ['sumto.go'], allowed_extensions: ['.go'], max_size_kb: 256 },
+      runnableTestPackId: 'sum-to-n-v3',
     },
     {
       key: 'star-rectangle',
@@ -256,8 +256,8 @@ async function main() {
       difficulty: 1,
       subjectMarkdown: extractSection(q2Md, '### L4 Star rectangle', '### L5 Ordered pairs'),
       skills: ['nested-loops', 'formatting'],
-      submissionRules: { required_files: ['main.go'], allowed_extensions: ['.go'], max_size_kb: 256 },
-      runnableTestPackId: 'star-rectangle-v2',
+      submissionRules: { required_files: ['printrectangle.go'], allowed_extensions: ['.go'], max_size_kb: 256 },
+      runnableTestPackId: 'star-rectangle-v3',
     },
     {
       key: 'ordered-pairs',
@@ -268,8 +268,8 @@ async function main() {
       difficulty: 1,
       subjectMarkdown: extractSection(q2Md, '### L5 Ordered pairs', '## Review and evidence'),
       skills: ['nested-loops', 'ordered-pairs'],
-      submissionRules: { required_files: ['main.go'], allowed_extensions: ['.go'], max_size_kb: 256 },
-      runnableTestPackId: 'ordered-pairs-v2',
+      submissionRules: { required_files: ['printorderedpairs.go'], allowed_extensions: ['.go'], max_size_kb: 256 },
+      runnableTestPackId: 'ordered-pairs-v3',
     },
     {
       key: 'quest2-review',
@@ -390,7 +390,7 @@ async function main() {
       subjectMarkdown: extractSection(q3Md, '## 9 Reverse rune order', '## Review and next steps'),
       skills: ['strings', 'runes', 'reversal'],
       submissionRules: { required_files: ['strrev.go'], allowed_extensions: ['.go'], max_size_kb: 256 },
-      runnableTestPackId: 'str-rev-v1',
+      runnableTestPackId: 'str-rev-v3',
     },
     {
       key: 'quest3-review',
@@ -424,7 +424,7 @@ async function main() {
       artifactUri = `oci://${layoutPath.startsWith('/') ? '' : '/'}${layoutPath}@sha256:${testPackDigest}`;
     } else {
       testPackDigest = sha256(`testpack-${n.key}`);
-      const layoutPath = `/mnt/host/c/Users/NEXTERA/nextera-judge-artifacts/${n.key}`;
+      const layoutPath = `/mnt/c/Users/NEXTERA/nextera-judge-artifacts/${n.key}`;
       artifactUri = `oci://${layoutPath.startsWith('/') ? '' : '/'}${layoutPath}@sha256:${testPackDigest}`;
     }
 
@@ -511,7 +511,7 @@ async function main() {
   console.log('[OK] Successfully published curriculum version!');
 
   // 6. Create Dedicated Test Cohort for Week 1
-  const cohortSlug = `week1-trial-cohort-v6`;
+  const cohortSlug = `week1-trial-cohort-v8`;
   const cohortName = 'Week 1 Trial Cohort (Quests 1–3)';
   const startsAt = '2026-11-01T14:00:00Z';
 

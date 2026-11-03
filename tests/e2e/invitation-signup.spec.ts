@@ -37,10 +37,10 @@ const worker = JSON.parse(readFileSync(join(credentials, 'worker.json'), 'utf8')
 const runnerEnv = parse(readFileSync(join(credentials, 'runner.env')));
 
 const toWslPath = (p: string) =>
-  p.replace(/^[a-zA-Z]:[\\/]/, (m) => `/mnt/host/${m[0]!.toLowerCase()}/`).replace(/\\/g, '/');
+  p.replace(/^[a-zA-Z]:[\\/]/, (m) => `/mnt/${m[0]!.toLowerCase()}/`).replace(/\\/g, '/');
 
 function runWorker() {
-  const wslRunner = '/mnt/host/c/Users/NEXTERA/Desktop/nextera-piscine/.tools/runner';
+  const wslRunner = '/mnt/c/Users/NEXTERA/Desktop/nextera-piscine/.tools/runner';
   // Ensure token file is in WSL /tmp with mode 0600
   execFileSync('wsl', [
     'sh',
@@ -51,7 +51,7 @@ function runWorker() {
     'env',
     `JUDGE_DATABASE_URL=${runnerEnv.JUDGE_DATABASE_URL}`,
     `JUDGE_STORAGE_PUBLISHABLE_KEY=${runnerEnv.JUDGE_STORAGE_PUBLISHABLE_KEY}`,
-    'DOCKER_HOST=/var/run/docker.sock',
+    'DOCKER_HOST=unix:///mnt/wsl/docker-desktop/shared-sockets/guest-services/docker.proxy.sock',
     wslRunner,
     'work',
     '--candidate',
@@ -142,6 +142,7 @@ test.beforeAll(async () => {
 
   // 3. Set up published curriculum with real candidate evaluations and active cohort
   const fixture = testCurriculum();
+  fixture.curriculum.key = `foundation-test-only-${randomUUID().slice(0, 8)}`;
   const evaluations = fixture.curriculum.nodes.map((node) => {
     const entry = candidate.catalog.test_packs[node.testPackId]!;
     const layoutPath = toWslPath(join(artifacts, node.testPackId));
@@ -176,15 +177,10 @@ test.beforeAll(async () => {
   `;
   cohortId = String(cohort!.id);
 
-  // 4. Update worker capabilities with cohortId
+  // 4. Update worker capabilities with cohortId strictly
   await sql`
     UPDATE judge.workers 
-    SET capabilities = jsonb_set(capabilities, '{fixture_cohort_ids}', 
-      (SELECT jsonb_agg(DISTINCT elem) FROM (
-        SELECT jsonb_array_elements_text(capabilities->'fixture_cohort_ids') AS elem
-        UNION SELECT ${cohortId}::text
-      ) s)
-    )
+    SET capabilities = jsonb_set(capabilities, '{fixture_cohort_ids}', jsonb_build_array(${cohortId}::text))
     WHERE id = ${worker.worker_id}
   `;
 
@@ -444,14 +440,12 @@ test.describe('Real Invitation Journey', () => {
     const resp1 = await submitResponse1;
     expect(resp1.status()).toBe(202);
     const body1 = (await resp1.json()) as { id: string };
-
-    const [sub1Row] = await sql`SELECT active_judge_job_id FROM app.submissions WHERE id = ${body1.id}`;
+    const [sub1Row] = await sql`SELECT active_judge_job_id FROM app.submissions WHERE id = ${body1.id}::uuid`;
     const jobId1 = String(sub1Row!.active_judge_job_id);
 
     // Execute real Runner on protected host
     const runner1 = runWorker();
     const { code: rCode1 } = await runner1.exited;
-    console.log('Runner 1 exit code:', rCode1, 'stdout:', runner1.getLogs(), 'stderr:', runner1.getErrors());
 
     // Verify terminal result in PostgreSQL
     await expect
@@ -460,7 +454,7 @@ test.describe('Real Invitation Journey', () => {
           const [row] = await sql`
             SELECT r.verdict FROM judge.jobs j
             JOIN judge.results r ON r.id = j.terminal_result_id
-            WHERE j.id = ${jobId1}
+            WHERE j.id = ${jobId1}::uuid
           `;
           return (row?.verdict as string | undefined) ?? null;
         },

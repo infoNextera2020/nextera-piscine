@@ -45,6 +45,8 @@ let mentorAuth: string;
 let mentorUserId: string;
 let assignedPeerId: string;
 let assignedPeerAuth: string;
+let assignedMentorId: string;
+let assignedMentorAuth: string;
 
 let cycleSummary: QuestReviewSummary;
 let peerAssignmentId: string;
@@ -58,7 +60,7 @@ let currentTimeMs = 10000;
 function createRuntime(): QuestReviewRuntime {
   return {
     nowMs: () => (currentTimeMs += 1000),
-    nextId: () => `00000000-0000-0000-0000-${(++sequence).toString(16).padStart(12, '0')}`,
+    nextId: () => randomUUID(),
     sampler: {
       policyVersion: 'selection-1',
       select: async (bank) => bank.questionIds.slice(0, 5),
@@ -118,16 +120,19 @@ beforeAll(async () => {
     migrationsFolder: fileURLToPath(new URL('../../migrations', import.meta.url)),
   });
 
-  // 3. Apply unregistered DRAFT 0037
-  const draftSql = readFileSync(
-    fileURLToPath(new URL('../../migration-drafts/0037_quest_review_persistence.DRAFT.sql', import.meta.url)),
-    'utf8',
-  );
-  const migrationClient = postgres(targetUrl.toString(), { max: 1, prepare: false, onnotice: () => {} });
-  try {
-    await migrationClient.unsafe(draftSql);
-  } finally {
-    await migrationClient.end();
+  // 3. Apply unregistered DRAFT 0037 if not already applied
+  const [alreadyApplied] = await admin`SELECT to_regclass('app.quest_review_cycles') as regclass`;
+  if (!alreadyApplied?.regclass) {
+    const draftSql = readFileSync(
+      fileURLToPath(new URL('../../migration-drafts/0037_quest_review_persistence.DRAFT.sql', import.meta.url)),
+      'utf8',
+    );
+    const migrationClient = postgres(targetUrl.toString(), { max: 1, prepare: false, onnotice: () => {} });
+    try {
+      await migrationClient.unsafe(draftSql);
+    } finally {
+      await migrationClient.end();
+    }
   }
 
   // 4. Seed published curriculum with 'foundations' quest
@@ -475,7 +480,11 @@ describe('Real PostgreSQL Quest Review Integration', () => {
       WHERE cycle_id = ${cycleSummary.cycle.cycleId}::uuid AND kind = 'mentor'
     `;
     expect(mentorAssignment).toBeDefined();
-    expect(mentorAssignment!.reviewer_id).toBe(mentorUserId);
+    assignedMentorId = String(mentorAssignment!.reviewer_id);
+    const [mentorUserRow] = await admin`
+      SELECT auth_user_id FROM app.users WHERE id = ${assignedMentorId}::uuid
+    `;
+    assignedMentorAuth = String(mentorUserRow!.auth_user_id);
     mentorAssignmentId = String(mentorAssignment!.id);
   });
 
@@ -498,7 +507,7 @@ describe('Real PostgreSQL Quest Review Integration', () => {
 
     const result = await submitQuestReview(repository, runtime, {
       scope: { cohortId, questKey, learnerId: learnerUserId },
-      subjectId: mentorAuth,
+      subjectId: assignedMentorAuth,
       cycleId: cycleSummary.cycle.cycleId,
       assignmentId: mentorAssignmentId,
       requestId: mentorReceiptId,
@@ -518,7 +527,7 @@ describe('Real PostgreSQL Quest Review Integration', () => {
     `;
     expect(receiptRow).toBeDefined();
     expect(receiptRow!.decision).toBe('approved');
-    expect(receiptRow!.reviewer_id).toBe(mentorUserId);
+    expect(receiptRow!.reviewer_id).toBe(assignedMentorId);
   });
 
   it('persists all review data across client disconnection and reconnection', async () => {
@@ -550,7 +559,7 @@ describe('Real PostgreSQL Quest Review Integration', () => {
       expect(assignments[0]!.kind).toBe('peer');
       expect(assignments[0]!.reviewer_id).toBe(assignedPeerId);
       expect(assignments[1]!.kind).toBe('mentor');
-      expect(assignments[1]!.reviewer_id).toBe(mentorUserId);
+      expect(assignments[1]!.reviewer_id).toBe(assignedMentorId);
 
       const receipts = await admin`
         SELECT * FROM app.quest_review_receipts
