@@ -100,6 +100,9 @@ func TestFunctionTransportWithTrustedFixturesOnly(t *testing.T) {
 	for _, row := range []struct{ input, output, source, arguments, result string }{
 		{"int_int", "int", "func Fixture(a,b int) int{return a*10+b}", `[{"a":2,"b":3}]`, `[{"return":23}]`},
 		{"pointer_int_int", "pointer_int", "func Fixture(p *int,v int){*p=v}", `[{"pointer":9,"value":4}]`, `[{"pointer":4}]`},
+		{"pointer_int", "pointer_int", "func Fixture(p *int){*p=1}", `[{"pointer":7}]`, `[{"pointer":1}]`},
+		{"pointer_pair", "swap", "func Fixture(a,b *int){*a,*b=*b,*a}", `[{"a":3,"b":8}]`, `[{"a":8,"b":3}]`},
+		{"int_int", "div_mod", "func Fixture(a,b int,div,mod *int){*div=a/b;*mod=a%b}", `[{"a":13,"b":2}]`, `[{"div":6,"mod":1}]`},
 		{"int_slice_int_int", "int_slice_preserved", "func Fixture(v []int,a,b int) int{return len(v)+a+b}", `[{"slice":[7,8],"a":3,"b":4}]`, `[{"return":9,"slice":[7,8]}]`},
 		{"string", "int", "func Fixture(s string) int{return len(s)}", `["abc"]`, `[{"return":3}]`},
 		{"int_slice", "int_slice_preserved", "func Fixture(v []int) int{return len(v)}", `[[1,2],[],null]`, `[{"return":2,"slice":[1,2]},{"return":0,"slice":[]},{"return":0,"slice":null}]`},
@@ -189,6 +192,8 @@ func TestFunctionTransportBindsExactBuiltinReturnAndArgumentTypes(t *testing.T) 
 	}
 	for _, row := range []struct{ input, output, signature string }{
 		{"int_int", "int", "func(int,int) int"}, {"pointer_int_int", "pointer_int", "func(*int,int)"},
+		{"pointer_int", "pointer_int", "func(*int)"}, {"pointer_pair", "swap", "func(*int,*int)"},
+		{"int_int", "div_mod", "func(int,int,*int,*int)"},
 		{"int_slice_int_int", "int_slice_preserved", "func([]int,int,int) int"}, {"string", "int", "func(string) int"},
 		{"int_slice", "int_slice_preserved", "func([]int) int"},
 	} {
@@ -206,6 +211,9 @@ func TestFunctionCasesAndHostPoststateComparison(t *testing.T) {
 	for _, row := range []struct{ input, output, argument, want, actual string }{
 		{"int_int", "int", `{"a":-2,"b":3}`, `1`, `[{"return":1}]`},
 		{"pointer_int_int", "pointer_int", `{"pointer":8,"value":4}`, `4`, `[{"pointer":4}]`},
+		{"pointer_int", "pointer_int", `{"pointer":7}`, `1`, `[{"pointer":1}]`},
+		{"pointer_pair", "swap", `{"a":3,"b":8}`, `{"a":8,"b":3}`, `[{"a":8,"b":3}]`},
+		{"int_int", "div_mod", `{"a":13,"b":2}`, `{"div":6,"mod":1}`, `[{"div":6,"mod":1}]`},
 		{"int_slice_int_int", "int_slice_preserved", `{"slice":[2,3],"a":0,"b":1}`, `5`, `[{"return":5,"slice":[2,3]}]`},
 		{"string", "int", `"abc"`, `3`, `[{"return":3}]`},
 		{"int_slice", "int_slice_preserved", `[]`, `0`, `[{"return":0,"slice":[]}]`},

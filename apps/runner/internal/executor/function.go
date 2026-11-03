@@ -120,8 +120,10 @@ func functionInput(c artifact.ExecutionContract, raw json.RawMessage) ([]int64, 
 		return nil, nil
 	case "int_slice":
 		return functionSlice(raw)
-	case "int_int":
+	case "int_int", "pointer_pair":
 		keys = []string{"a", "b"}
+	case "pointer_int":
+		keys = []string{"pointer"}
 	case "pointer_int_int":
 		keys = []string{"pointer", "value"}
 	case "int_slice_int_int":
@@ -147,6 +149,38 @@ func functionInput(c artifact.ExecutionContract, raw json.RawMessage) ([]int64, 
 	return original, nil
 }
 
+func functionExpectedCheck(c artifact.ExecutionContract, raw json.RawMessage) error {
+	switch c.Output {
+	case "swap":
+		fields, err := functionFields(raw, "a", "b")
+		if err != nil {
+			return err
+		}
+		if _, err := functionInt(fields["a"]); err != nil {
+			return err
+		}
+		if _, err := functionInt(fields["b"]); err != nil {
+			return err
+		}
+		return nil
+	case "div_mod":
+		fields, err := functionFields(raw, "div", "mod")
+		if err != nil {
+			return err
+		}
+		if _, err := functionInt(fields["div"]); err != nil {
+			return err
+		}
+		if _, err := functionInt(fields["mod"]); err != nil {
+			return err
+		}
+		return nil
+	default:
+		_, err := functionInt(raw)
+		return err
+	}
+}
+
 func functionCases(files map[string][]byte, c artifact.ExecutionContract) ([]json.RawMessage, []string, error) {
 	var inputs []json.RawMessage
 	var expected []string
@@ -162,7 +196,7 @@ func functionCases(files map[string][]byte, c artifact.ExecutionContract) ([]jso
 			if _, err := functionInput(c, row.Input); err != nil {
 				return nil, nil, err
 			}
-			if _, err := functionInt(row.Expected); err != nil {
+			if err := functionExpectedCheck(c, row.Expected); err != nil {
 				return nil, nil, err
 			}
 			inputs = append(inputs, row.Input)
@@ -179,9 +213,23 @@ func functionAdapter(c artifact.ExecutionContract) []byte {
 	var typ, signature, call string
 	switch c.Input {
 	case "int_int":
-		signature = "func(int,int) int"
+		if c.Output == "div_mod" {
+			signature = "func(int,int,*int,*int)"
+			typ = `struct{A int ` + "`json:\"a\"`" + `;B int ` + "`json:\"b\"`" + `}`
+			call = `var div,mod int;invoke(v.A,v.B,&div,&mod);outputs=append(outputs,map[string]any{"div":div,"mod":mod})`
+		} else {
+			signature = "func(int,int) int"
+			typ = `struct{A int ` + "`json:\"a\"`" + `;B int ` + "`json:\"b\"`" + `}`
+			call = `outputs=append(outputs,map[string]any{"return":invoke(v.A,v.B)})`
+		}
+	case "pointer_pair":
+		signature = "func(*int,*int)"
 		typ = `struct{A int ` + "`json:\"a\"`" + `;B int ` + "`json:\"b\"`" + `}`
-		call = `outputs=append(outputs,map[string]any{"return":invoke(v.A,v.B)})`
+		call = `invoke(&v.A,&v.B);outputs=append(outputs,map[string]any{"a":v.A,"b":v.B})`
+	case "pointer_int":
+		signature = "func(*int)"
+		typ = `struct{Pointer int ` + "`json:\"pointer\"`" + `}`
+		call = `invoke(&v.Pointer);outputs=append(outputs,map[string]any{"pointer":v.Pointer})`
 	case "pointer_int_int":
 		signature = "func(*int,int)"
 		typ = `struct{Pointer int ` + "`json:\"pointer\"`" + `;Value int ` + "`json:\"value\"`" + `}`
@@ -226,32 +274,88 @@ func compareFunctionObservations(c artifact.ExecutionContract, inputs []json.Raw
 	passed := true
 	observations := make([]bool, 0, len(inputs))
 	for i, row := range rows {
-		keys := []string{"return"}
-		if c.Output == "pointer_int" {
-			keys = []string{"pointer"}
-		} else if c.Output == "int_slice_preserved" {
-			keys = append(keys, "slice")
-		}
-		fields, err := functionFields(row, keys...)
-		if err != nil {
-			return "runtime_error", nil
-		}
-		actual, err := functionInt(fields[keys[0]])
-		if err != nil {
-			return "runtime_error", nil
-		}
-		want, err := functionInt(json.RawMessage(expected[i]))
-		if err != nil {
-			return "runtime_error", nil
-		}
-		matched := actual == want
-		if c.Output == "int_slice_preserved" {
-			original, _ := functionInput(c, inputs[i])
-			post, err := functionSlice(fields["slice"])
+		var matched bool
+		switch c.Output {
+		case "swap":
+			fields, err := functionFields(row, "a", "b")
 			if err != nil {
 				return "runtime_error", nil
 			}
-			matched = matched && reflect.DeepEqual(original, post)
+			actualA, err := functionInt(fields["a"])
+			if err != nil {
+				return "runtime_error", nil
+			}
+			actualB, err := functionInt(fields["b"])
+			if err != nil {
+				return "runtime_error", nil
+			}
+			wantFields, err := functionFields(json.RawMessage(expected[i]), "a", "b")
+			if err != nil {
+				return "runtime_error", nil
+			}
+			wantA, err := functionInt(wantFields["a"])
+			if err != nil {
+				return "runtime_error", nil
+			}
+			wantB, err := functionInt(wantFields["b"])
+			if err != nil {
+				return "runtime_error", nil
+			}
+			matched = (actualA == wantA) && (actualB == wantB)
+		case "div_mod":
+			fields, err := functionFields(row, "div", "mod")
+			if err != nil {
+				return "runtime_error", nil
+			}
+			actualDiv, err := functionInt(fields["div"])
+			if err != nil {
+				return "runtime_error", nil
+			}
+			actualMod, err := functionInt(fields["mod"])
+			if err != nil {
+				return "runtime_error", nil
+			}
+			wantFields, err := functionFields(json.RawMessage(expected[i]), "div", "mod")
+			if err != nil {
+				return "runtime_error", nil
+			}
+			wantDiv, err := functionInt(wantFields["div"])
+			if err != nil {
+				return "runtime_error", nil
+			}
+			wantMod, err := functionInt(wantFields["mod"])
+			if err != nil {
+				return "runtime_error", nil
+			}
+			matched = (actualDiv == wantDiv) && (actualMod == wantMod)
+		default:
+			keys := []string{"return"}
+			if c.Output == "pointer_int" {
+				keys = []string{"pointer"}
+			} else if c.Output == "int_slice_preserved" {
+				keys = append(keys, "slice")
+			}
+			fields, err := functionFields(row, keys...)
+			if err != nil {
+				return "runtime_error", nil
+			}
+			actual, err := functionInt(fields[keys[0]])
+			if err != nil {
+				return "runtime_error", nil
+			}
+			want, err := functionInt(json.RawMessage(expected[i]))
+			if err != nil {
+				return "runtime_error", nil
+			}
+			matched = actual == want
+			if c.Output == "int_slice_preserved" {
+				original, _ := functionInput(c, inputs[i])
+				post, err := functionSlice(fields["slice"])
+				if err != nil {
+					return "runtime_error", nil
+				}
+				matched = matched && reflect.DeepEqual(original, post)
+			}
 		}
 		observations = append(observations, matched)
 		passed = passed && matched
@@ -276,7 +380,7 @@ func (e Executor) executeFunctionObserved(ctx context.Context, s protocol.Snapsh
 		if _, err := functionInput(c, input); err != nil {
 			return "", nil, err
 		}
-		if _, err := functionInt(json.RawMessage(expected[i])); err != nil {
+		if err := functionExpectedCheck(c, json.RawMessage(expected[i])); err != nil {
 			return "", nil, err
 		}
 	}

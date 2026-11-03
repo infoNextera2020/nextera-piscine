@@ -34,7 +34,9 @@ export type ExecutionContract = {
     }
   | ({ version: 3; function: string } & (
       | { input_type: 'int_int' | 'string'; output_type: 'int' }
-      | { input_type: 'pointer_int_int'; output_type: 'pointer_int' }
+      | { input_type: 'pointer_int_int' | 'pointer_int'; output_type: 'pointer_int' }
+      | { input_type: 'pointer_pair'; output_type: 'swap' }
+      | { input_type: 'int_int'; output_type: 'div_mod' }
       | { input_type: 'int_slice_int_int' | 'int_slice'; output_type: 'int_slice_preserved' }
     ))
 );

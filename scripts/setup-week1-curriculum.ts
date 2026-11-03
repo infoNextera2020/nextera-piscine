@@ -306,6 +306,7 @@ async function main() {
       subjectMarkdown: extractSection(q3Md, '## 2 Change one caller value', '## 3 Swap two caller values'),
       skills: ['pointers', 'dereference', 'mutation'],
       submissionRules: { required_files: ['pointone.go'], allowed_extensions: ['.go'], max_size_kb: 256 },
+      runnableTestPackId: 'pointone-v1',
     },
     {
       key: 'swap',
@@ -317,6 +318,7 @@ async function main() {
       subjectMarkdown: extractSection(q3Md, '## 3 Swap two caller values', '## 4 Store a quotient and remainder'),
       skills: ['pointers', 'swap'],
       submissionRules: { required_files: ['swap.go'], allowed_extensions: ['.go'], max_size_kb: 256 },
+      runnableTestPackId: 'swap-v3',
     },
     {
       key: 'div-mod',
@@ -328,6 +330,7 @@ async function main() {
       subjectMarkdown: extractSection(q3Md, '## 4 Store a quotient and remainder', '## 5 Turn valid digit text into a number'),
       skills: ['pointers', 'division', 'modulo'],
       submissionRules: { required_files: ['divmod.go'], allowed_extensions: ['.go'], max_size_kb: 256 },
+      runnableTestPackId: 'div-mod-v3',
     },
     {
       key: 'basic-atoi',
@@ -508,7 +511,7 @@ async function main() {
   console.log('[OK] Successfully published curriculum version!');
 
   // 6. Create Dedicated Test Cohort for Week 1
-  const cohortSlug = `week1-trial-cohort-v5`;
+  const cohortSlug = `week1-trial-cohort-v6`;
   const cohortName = 'Week 1 Trial Cohort (Quests 1–3)';
   const startsAt = '2026-11-01T14:00:00Z';
 

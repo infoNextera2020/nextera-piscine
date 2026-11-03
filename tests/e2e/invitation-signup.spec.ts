@@ -171,7 +171,7 @@ test.beforeAll(async () => {
   const slug = `invitation-e2e-cohort-${randomUUID()}`;
   const [cohort] = await sql`
     INSERT INTO app.cohorts (slug, name, curriculum_version_id, status, starts_at)
-    VALUES (${slug}, 'Invitation E2E Cohort', ${curriculumVersionId}, 'active', '2026-11-20T00:00:00Z')
+    VALUES (${slug}, 'Invitation E2E Cohort', ${curriculumVersionId}, 'active', '2026-11-01T00:00:00Z')
     RETURNING id
   `;
   cohortId = String(cohort!.id);

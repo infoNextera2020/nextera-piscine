@@ -148,24 +148,32 @@ const goTasks: TaskSolution[] = [
     correctSource: 'package piscine\n\nfunc StrLen(s string) int {\n\tcount := 0\n\tfor range s {\n\t\tcount++\n\t}\n\treturn count\n}\n',
   },
   {
+    nodeKey: 'pointone',
+    title: '2 PointOne',
+    file: 'pointone.go',
+    packId: 'pointone-v1',
+    wrongSource: 'package piscine\n\nfunc PointOne(n *int) {\n\t*n = 0\n}\n',
+    correctSource: 'package piscine\n\nfunc PointOne(n *int) {\n\t*n = 1\n}\n',
+  },
+  {
     nodeKey: 'swap',
-    title: '2 Swap',
-    file: 'main.go',
-    packId: 'swap-v2',
-    wrongSource: 'package main\n\nfunc main() {}\n',
-    correctSource: 'package main\n\nimport ("fmt"; "os")\n\nfunc main() {\n\tvar a, b int\n\tif _, err := fmt.Fscan(os.Stdin, &a, &b); err != nil {\n\t\treturn\n\t}\n\tfmt.Printf("%d %d\\n", b, a)\n}\n',
+    title: '3 Swap',
+    file: 'swap.go',
+    packId: 'swap-v3',
+    wrongSource: 'package piscine\n\nfunc Swap(a *int, b *int) {}\n',
+    correctSource: 'package piscine\n\nfunc Swap(a *int, b *int) {\n\t*a, *b = *b, *a\n}\n',
   },
   {
     nodeKey: 'div-mod',
-    title: '3 DivMod',
-    file: 'main.go',
-    packId: 'div-mod-v2',
-    wrongSource: 'package main\n\nfunc main() {}\n',
-    correctSource: 'package main\n\nimport ("fmt"; "os")\n\nfunc main() {\n\tvar a, b int\n\tif _, err := fmt.Fscan(os.Stdin, &a, &b); err != nil || b == 0 {\n\t\treturn\n\t}\n\tfmt.Printf("%d %d\\n", a/b, a%b)\n}\n',
+    title: '4 DivMod',
+    file: 'divmod.go',
+    packId: 'div-mod-v3',
+    wrongSource: 'package piscine\n\nfunc DivMod(a int, b int, div *int, mod *int) {}\n',
+    correctSource: 'package piscine\n\nfunc DivMod(a int, b int, div *int, mod *int) {\n\t*div = a / b\n\t*mod = a % b\n}\n',
   },
   {
     nodeKey: 'basic-atoi',
-    title: '4 BasicAtoi',
+    title: '5 BasicAtoi',
     file: 'basicatoi.go',
     packId: 'basic-atoi-v3',
     wrongSource: 'package piscine\n\nfunc BasicAtoi(s string) int {\n\treturn -1\n}\n',
@@ -173,7 +181,7 @@ const goTasks: TaskSolution[] = [
   },
   {
     nodeKey: 'basic-atoi2',
-    title: '5 BasicAtoi2',
+    title: '6 BasicAtoi2',
     file: 'basicatoi2.go',
     packId: 'basic-atoi2-v3',
     wrongSource: 'package piscine\n\nfunc BasicAtoi2(s string) int {\n\treturn -1\n}\n',
@@ -181,7 +189,7 @@ const goTasks: TaskSolution[] = [
   },
   {
     nodeKey: 'atoi',
-    title: '6 Atoi',
+    title: '7 Atoi',
     file: 'atoi.go',
     packId: 'atoi-v3',
     wrongSource: 'package piscine\n\nfunc Atoi(s string) int {\n\treturn -1\n}\n',
@@ -189,7 +197,7 @@ const goTasks: TaskSolution[] = [
   },
   {
     nodeKey: 'sum-slice',
-    title: '7 SumSlice',
+    title: '8 SumSlice',
     file: 'sumslice.go',
     packId: 'sum-slice-v3',
     wrongSource: 'package piscine\n\nfunc SumSlice(numbers []int) int {\n\treturn -1\n}\n',
@@ -197,7 +205,7 @@ const goTasks: TaskSolution[] = [
   },
   {
     nodeKey: 'str-rev',
-    title: '8 StrRev',
+    title: '9 StrRev',
     file: 'strrev.go',
     packId: 'str-rev-v1',
     wrongSource: 'package main\n\nfunc StrRev(s string) string {\n\treturn "wrong"\n}\n',
@@ -276,9 +284,9 @@ async function submitAndGrade(params: {
 async function main() {
   console.log('=== VERIFYING REAL VERTICAL EVALUATION FOR ALL WEEK 1 GO TASKS ===\n');
 
-  // 1. Get active week1-trial-cohort-v4
-  const [cohort] = await sql`SELECT * FROM app.cohorts WHERE slug = 'week1-trial-cohort-v4' AND status = 'active'`;
-  if (!cohort) throw new Error('Cohort week1-trial-cohort-v4 not found');
+  // 1. Get active week1-trial-cohort-v6
+  const [cohort] = await sql`SELECT * FROM app.cohorts WHERE slug = 'week1-trial-cohort-v6' AND status = 'active'`;
+  if (!cohort) throw new Error('Cohort week1-trial-cohort-v6 not found');
   const cohortId = String(cohort.id);
   const cvId = String(cohort.curriculum_version_id);
 

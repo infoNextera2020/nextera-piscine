@@ -39,7 +39,7 @@ export default defineConfig({
     },
     command: 'pnpm --filter @nextera/web start --hostname 127.0.0.1 --port 3100',
     url: 'http://127.0.0.1:3100/api/health',
-    reuseExistingServer: false,
+    reuseExistingServer: true,
     timeout: 60000,
   },
 });

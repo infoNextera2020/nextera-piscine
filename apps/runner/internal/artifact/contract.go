@@ -57,6 +57,9 @@ func ContractFor(id string, declared *ExecutionContract) (ExecutionContract, err
 		}
 		valid := (c.Input == "int_int" && c.Output == "int") ||
 			(c.Input == "pointer_int_int" && c.Output == "pointer_int") ||
+			(c.Input == "pointer_int" && c.Output == "pointer_int") ||
+			(c.Input == "pointer_pair" && c.Output == "swap") ||
+			(c.Input == "int_int" && c.Output == "div_mod") ||
 			(c.Input == "int_slice_int_int" && c.Output == "int_slice_preserved") ||
 			(c.Input == "string" && c.Output == "int") ||
 			(c.Input == "int_slice" && c.Output == "int_slice_preserved")

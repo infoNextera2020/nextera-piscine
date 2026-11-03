@@ -255,7 +255,10 @@ export function assertScoredExamExecutionTask(value: unknown): void {
   const profile =
     ((contract.input_type === 'int_int' || contract.input_type === 'string') &&
       contract.output_type === 'int') ||
-    (contract.input_type === 'pointer_int_int' && contract.output_type === 'pointer_int') ||
+    ((contract.input_type === 'pointer_int_int' || contract.input_type === 'pointer_int') &&
+      contract.output_type === 'pointer_int') ||
+    (contract.input_type === 'pointer_pair' && contract.output_type === 'swap') ||
+    (contract.input_type === 'int_int' && contract.output_type === 'div_mod') ||
     ((contract.input_type === 'int_slice_int_int' || contract.input_type === 'int_slice') &&
       contract.output_type === 'int_slice_preserved');
   if (

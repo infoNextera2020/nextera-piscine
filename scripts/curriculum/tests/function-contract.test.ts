@@ -35,6 +35,9 @@ describe('source-only typed function ABI3 catalog boundary', () => {
   it.each([
     ['int_int', 'int'],
     ['pointer_int_int', 'pointer_int'],
+    ['pointer_int', 'pointer_int'],
+    ['pointer_pair', 'swap'],
+    ['int_int', 'div_mod'],
     ['int_slice_int_int', 'int_slice_preserved'],
     ['string', 'int'],
     ['int_slice', 'int_slice_preserved'],

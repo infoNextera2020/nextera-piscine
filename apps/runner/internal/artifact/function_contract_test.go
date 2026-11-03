@@ -3,7 +3,16 @@ package artifact
 import "testing"
 
 func TestFunctionABI3AcceptsOnlyApprovedProfiles(t *testing.T) {
-	for _, row := range [][2]string{{"int_int", "int"}, {"pointer_int_int", "pointer_int"}, {"int_slice_int_int", "int_slice_preserved"}, {"string", "int"}, {"int_slice", "int_slice_preserved"}} {
+	for _, row := range [][2]string{
+		{"int_int", "int"},
+		{"pointer_int_int", "pointer_int"},
+		{"pointer_int", "pointer_int"},
+		{"pointer_pair", "swap"},
+		{"int_int", "div_mod"},
+		{"int_slice_int_int", "int_slice_preserved"},
+		{"string", "int"},
+		{"int_slice", "int_slice_preserved"},
+	} {
 		c := ExecutionContract{3, "fixture-function", "original-name.go", "Fixture", row[0], row[1]}
 		if got, err := ContractFor("fixture-function-v3", &c); err != nil || got != c {
 			t.Fatal("approved signature rejected", row, err)

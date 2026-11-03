@@ -213,35 +213,57 @@ def build_all():
         strlen_pub, strlen_priv
     )
 
-    # 9. swap-v2 (Contract 2, main.go stdin_utf8 -> stdout_utf8_exact)
-    swap_pub = [
-        {"input": "1 2\n", "expected": "2 1\n"},
-        {"input": "10 -5\n", "expected": "-5 10\n"}
+    # 9. pointone-v1 (Contract 3, pointone.go PointOne pointer_int -> pointer_int)
+    pointone_pub = [
+        {"input": {"pointer": 7}, "expected": 1},
+        {"input": {"pointer": -3}, "expected": 1}
     ]
-    swap_priv = swap_pub + [
-        {"input": "0 0\n", "expected": "0 0\n"},
-        {"input": "42 99\n", "expected": "99 42\n"}
+    pointone_priv = pointone_pub + [
+        {"input": {"pointer": 1}, "expected": 1},
+        {"input": {"pointer": 0}, "expected": 1},
+        {"input": {"pointer": 100}, "expected": 1},
+        {"input": {"pointer": -100}, "expected": 1}
     ]
     make_pack(
         artifacts,
-        "swap-v2",
-        {"version": 2, "item_key": "swap", "learner_file": "main.go", "function": "", "input_type": "stdin_utf8", "output_type": "stdout_utf8_exact"},
+        "pointone-v1",
+        {"version": 3, "item_key": "pointone", "learner_file": "pointone.go", "function": "PointOne", "input_type": "pointer_int", "output_type": "pointer_int"},
+        pointone_pub, pointone_priv
+    )
+
+    # 10. swap-v3 (Contract 3, swap.go Swap pointer_pair -> swap)
+    swap_pub = [
+        {"input": {"a": 3, "b": 8}, "expected": {"a": 8, "b": 3}},
+        {"input": {"a": -2, "b": 0}, "expected": {"a": 0, "b": -2}}
+    ]
+    swap_priv = swap_pub + [
+        {"input": {"a": 4, "b": 4}, "expected": {"a": 4, "b": 4}},
+        {"input": {"a": 100, "b": -100}, "expected": {"a": -100, "b": 100}},
+        {"input": {"a": 0, "b": 42}, "expected": {"a": 42, "b": 0}}
+    ]
+    make_pack(
+        artifacts,
+        "swap-v3",
+        {"version": 3, "item_key": "swap", "learner_file": "swap.go", "function": "Swap", "input_type": "pointer_pair", "output_type": "swap"},
         swap_pub, swap_priv
     )
 
-    # 10. div-mod-v2 (Contract 2, main.go stdin_utf8 -> stdout_utf8_exact)
+    # 11. div-mod-v3 (Contract 3, divmod.go DivMod int_int -> div_mod)
     divmod_pub = [
-        {"input": "13 5\n", "expected": "2 3\n"},
-        {"input": "10 2\n", "expected": "5 0\n"}
+        {"input": {"a": 13, "b": 2}, "expected": {"div": 6, "mod": 1}},
+        {"input": {"a": 12, "b": 3}, "expected": {"div": 4, "mod": 0}}
     ]
     divmod_priv = divmod_pub + [
-        {"input": "7 10\n", "expected": "0 7\n"},
-        {"input": "100 7\n", "expected": "14 2\n"}
+        {"input": {"a": 0, "b": 5}, "expected": {"div": 0, "mod": 0}},
+        {"input": {"a": 3, "b": 5}, "expected": {"div": 0, "mod": 3}},
+        {"input": {"a": 100, "b": 10}, "expected": {"div": 10, "mod": 0}},
+        {"input": {"a": 100, "b": 7}, "expected": {"div": 14, "mod": 2}},
+        {"input": {"a": 1, "b": 1}, "expected": {"div": 1, "mod": 0}}
     ]
     make_pack(
         artifacts,
-        "div-mod-v2",
-        {"version": 2, "item_key": "div-mod", "learner_file": "main.go", "function": "", "input_type": "stdin_utf8", "output_type": "stdout_utf8_exact"},
+        "div-mod-v3",
+        {"version": 3, "item_key": "div-mod", "learner_file": "divmod.go", "function": "DivMod", "input_type": "int_int", "output_type": "div_mod"},
         divmod_pub, divmod_priv
     )
 
