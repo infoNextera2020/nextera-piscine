@@ -71,6 +71,7 @@ export async function POST(request: Request) {
       { status: 202, headers: { 'Cache-Control': 'private, no-store' } },
     );
   } catch (error) {
+    console.error('API SUBMISSION ROUTE ERROR:', error);
     let databaseError: { code?: unknown; message?: unknown } = {};
     let current: unknown = error;
     for (let depth = 0; depth < 5 && current && typeof current === 'object'; depth++) {

@@ -117,6 +117,23 @@ export async function POST(request: Request) {
         decision,
       });
 
+      let masteryRecorded = false;
+      if (decision === 'approved' && result.eligibility.masteryEligible) {
+        try {
+          const [rec] = await client`
+            SELECT app.quest_review_record_mastery(
+              ${cohortId}::uuid,
+              ${learnerId}::uuid,
+              ${questKey}::text,
+              ${cycleId}::uuid
+            ) as recorded;
+          `;
+          masteryRecorded = Boolean(rec?.recorded);
+        } catch (err) {
+          console.error('Failed to record quest mastery in learner_node_progress:', err);
+        }
+      }
+
       return Response.json({
         ok: true,
         receipt: {
@@ -124,6 +141,7 @@ export async function POST(request: Request) {
           decision: result.receipt.decision,
         },
         eligibility: result.eligibility,
+        masteryRecorded,
       });
     }
 

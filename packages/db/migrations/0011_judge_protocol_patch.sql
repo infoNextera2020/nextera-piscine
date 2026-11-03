@@ -19,9 +19,10 @@ CREATE OR REPLACE FUNCTION app.submission_context(auth_id uuid,cohort uuid,node 
 LANGUAGE plpgsql STABLE SECURITY DEFINER SET search_path=pg_catalog AS $$
 DECLARE ctx jsonb;
 BEGIN
- SELECT jsonb_build_object('submission_id',gen_random_uuid(),'cohort_id',c.id,'user_id',u.id,'node_key',n.node_key,
-   'curriculum_version_id',v.id,'node_kind',n.kind,'submission_rules',n.submission_rules,
-   'evaluation_spec_digest',n.evaluation_spec_digest) INTO ctx
+  SELECT jsonb_build_object('submission_id',gen_random_uuid(),'cohort_id',c.id,'user_id',u.id,'node_key',n.node_key,
+    'curriculum_version_id',v.id,'node_kind',n.kind,'submission_rules',n.submission_rules,
+    'rules',n.submission_rules,'kind',n.kind,
+    'evaluation_spec_digest',n.evaluation_spec_digest) INTO ctx
  FROM app.users u
  JOIN app.cohort_memberships m ON m.cohort_id=cohort AND m.user_id=u.id
  JOIN app.cohorts c ON c.id=cohort

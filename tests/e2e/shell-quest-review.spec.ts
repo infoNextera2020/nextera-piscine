@@ -265,6 +265,13 @@ test.describe('Real Shell Submission and Peer-Mentor Review Journey', () => {
     expect(prepareJson.summary.questionIds.length).toBe(5);
 
     // 4. PEER REVIEWER BROWSER SESSION
+    const [peerAssignment] = await sql`
+      SELECT id FROM app.quest_review_assignments
+      WHERE cycle_id = ${cycleId}::uuid AND kind = 'peer'
+      LIMIT 1
+    `;
+    expect(peerAssignment).toBeDefined();
+
     const peerContext = await browser.newContext();
     const peerPage = await peerContext.newPage();
 
@@ -275,35 +282,24 @@ test.describe('Real Shell Submission and Peer-Mentor Review Journey', () => {
     await peerPage.getByRole('button', { name: 'Sign in', exact: true }).click();
     await peerPage.waitForURL(/\/app/);
 
-    // Peer queries assigned reviews from Web API
-    const peerQueryRes = await peerPage.request.get(`/api/quest-reviews?cohortId=${cohortId}`);
-    expect(peerQueryRes.ok()).toBe(true);
-    const peerQueryJson = await peerQueryRes.json();
-    const peerAssignment = peerQueryJson.assignedReviews?.find((a: any) => a.cycle_id === cycleId && a.kind === 'peer');
-    expect(peerAssignment).toBeDefined();
-    expect(peerAssignment.question_ids.length).toBe(5);
+    // Navigate to Reviews UI screen in browser
+    await peerPage.goto(`/app/reviews?cohort=${cohortId}`);
+    await expect(peerPage.getByRole('heading', { name: 'Quest Reviews' })).toBeVisible();
+    const peerCard = peerPage.locator(`[data-assignment-id="${peerAssignment.id}"]`);
+    await expect(peerCard).toBeVisible();
 
-    // Peer submits review decision 'submitted' via Web API
-    const peerSubmitRes = await peerPage.request.post('/api/quest-reviews', {
-      data: {
-        action: 'submit',
-        cohortId,
-        questKey,
-        learnerId,
-        cycleId,
-        assignmentId: peerAssignment.assignment_id,
-        decision: 'submitted',
-      },
-    });
-    expect(peerSubmitRes.ok()).toBe(true);
-    const peerSubmitJson = await peerSubmitRes.json();
-    expect(peerSubmitJson.ok).toBe(true);
-    expect(peerSubmitJson.receipt.decision).toBe('submitted');
+    // Peer submits review decision 'submitted' via UI button
+    const peerSubmitButton = peerCard.getByRole('button', { name: 'Submit Peer Review (Complete)' });
+    await expect(peerSubmitButton).toBeVisible();
+    await peerSubmitButton.click();
+
+    // Expect confirmation in UI DOM
+    await expect(peerPage.locator('#review-action-message')).toContainText('Peer review submitted successfully!');
 
     // 5. MENTOR BROWSER SESSION
     // Identify assigned mentor from database and ensure password for web login
     const [assignedMentorRow] = await sql`
-      SELECT a.reviewer_id, u.auth_user_id, au.email
+      SELECT a.id as assignment_id, a.reviewer_id, u.auth_user_id, au.email
       FROM app.quest_review_assignments a
       JOIN app.users u ON u.id = a.reviewer_id
       JOIN auth.users au ON au.id = u.auth_user_id
@@ -323,31 +319,23 @@ test.describe('Real Shell Submission and Peer-Mentor Review Journey', () => {
     await mentorPage.getByRole('button', { name: 'Sign in', exact: true }).click();
     await mentorPage.waitForURL(/\/(?:app|operator)/);
 
-    // Mentor queries assigned reviews from Web API
-    const mentorQueryRes = await mentorPage.request.get(`/api/quest-reviews?cohortId=${cohortId}`);
-    expect(mentorQueryRes.ok()).toBe(true);
-    const mentorQueryJson = await mentorQueryRes.json();
-    const mentorAssignment = mentorQueryJson.assignedReviews?.find((a: any) => a.cycle_id === cycleId && a.kind === 'mentor');
-    expect(mentorAssignment).toBeDefined();
+    // Mentor navigates to Reviews UI screen in browser
+    await mentorPage.goto(`/app/reviews?cohort=${cohortId}`);
+    await expect(mentorPage.getByRole('heading', { name: 'Quest Reviews' })).toBeVisible();
+    const mentorCard = mentorPage.locator(`[data-assignment-id="${assignedMentorRow.assignment_id}"]`);
+    await expect(mentorCard).toBeVisible();
 
-    // Mentor submits approval decision 'approved' via Web API
-    const mentorSubmitRes = await mentorPage.request.post('/api/quest-reviews', {
-      data: {
-        action: 'submit',
-        cohortId,
-        questKey,
-        learnerId,
-        cycleId,
-        assignmentId: mentorAssignment.assignment_id,
-        decision: 'approved',
-      },
-    });
-    expect(mentorSubmitRes.ok()).toBe(true);
-    const mentorSubmitJson = await mentorSubmitRes.json();
-    expect(mentorSubmitJson.ok).toBe(true);
-    expect(mentorSubmitJson.receipt.decision).toBe('approved');
-    expect(mentorSubmitJson.eligibility.state).toBe('completion_eligible');
-    expect(mentorSubmitJson.eligibility.masteryEligible).toBe(true);
+    // Mentor submits approval decision 'approved' via UI button
+    const mentorApproveButton = mentorCard.getByRole('button', { name: 'Approve (Mark Mastered)' });
+    await expect(mentorApproveButton).toBeVisible();
+    await mentorApproveButton.click();
+
+    // Expect confirmation in UI DOM
+    await expect(mentorPage.locator('#review-action-message')).toContainText('Review approved successfully!');
+
+    // Learner re-visits Reviews UI screen to verify Mastered status in UI
+    await learnerPage.goto(`/app/reviews?cohort=${cohortId}`);
+    await expect(learnerPage.locator('text=MASTERED')).toBeVisible();
 
     // 6. FINAL DATABASE VERIFICATION
     const receipts = await sql`
@@ -363,6 +351,17 @@ test.describe('Real Shell Submission and Peer-Mentor Review Journey', () => {
     expect(receipts[0]!.decision).toBe('submitted');
     expect(receipts[1]!.kind).toBe('mentor');
     expect(receipts[1]!.decision).toBe('approved');
+
+    // Verify Mastery is recorded in learner_node_progress
+    const [progress] = await sql`
+      SELECT state, mastered_at, first_passing_submission_id
+      FROM app.learner_node_progress
+      WHERE cohort_id = ${cohortId}::uuid AND user_id = ${learnerId}::uuid AND node_key = 'run-first-script'
+    `;
+    expect(progress).toBeDefined();
+    expect(progress!.state).toBe('mastered');
+    expect(progress!.mastered_at).not.toBeNull();
+    expect(progress!.first_passing_submission_id).toBe(submissions[0]!.id);
 
     // Clean up browser contexts
     await learnerContext.close();

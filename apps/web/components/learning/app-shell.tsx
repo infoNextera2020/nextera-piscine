@@ -76,7 +76,7 @@ export function AppShell({
       key: 'reviews',
       title: 'Team reviews',
       icon: 'folder',
-      href: '/operator/raids',
+      href: user.role === 'learner' ? '/app/reviews' : '/operator/raids',
       current: active === 'reviews',
     },
     {

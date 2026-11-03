@@ -137,3 +137,60 @@ RETURNS TABLE (
 $$;
 ALTER FUNCTION app.quest_review_learner_cycles(uuid, uuid) OWNER TO nextera_quest_review_owner;
 GRANT EXECUTE ON FUNCTION app.quest_review_learner_cycles(uuid, uuid) TO nextera_web;
+
+GRANT SELECT, UPDATE ON app.learner_node_progress TO nextera_quest_review_owner;
+GRANT SELECT ON app.submissions TO nextera_quest_review_owner;
+
+CREATE OR REPLACE FUNCTION app.quest_review_record_mastery(
+  p_cohort_id uuid,
+  p_learner_id uuid,
+  p_quest_key text,
+  p_cycle_id uuid
+) RETURNS boolean
+LANGUAGE plpgsql VOLATILE SECURITY DEFINER SET search_path=pg_catalog AS $$
+DECLARE
+  v_eligible boolean;
+  v_rows_updated integer := 0;
+BEGIN
+  -- Verify the cycle exists and has reached mentor approval
+  SELECT EXISTS (
+    SELECT 1 FROM app.quest_review_receipts r
+    JOIN app.quest_review_assignments a ON a.id = r.assignment_id
+    WHERE r.cycle_id = p_cycle_id
+      AND a.kind = 'mentor'
+      AND r.decision = 'approved'
+  ) INTO v_eligible;
+
+  IF v_eligible IS NOT TRUE THEN
+    RETURN false;
+  END IF;
+
+  -- Update learner node progress for the quest nodes to mastered
+  -- Only update nodes that have an actual submission by the learner
+  UPDATE app.learner_node_progress p
+  SET state = 'mastered',
+      unlocked_at = coalesce(p.unlocked_at, clock_timestamp()),
+      started_at = coalesce(p.started_at, clock_timestamp()),
+      mastered_at = clock_timestamp(),
+      first_passing_submission_id = coalesce(p.first_passing_submission_id, sub.id)
+  FROM app.cohorts c
+  JOIN app.curriculum_nodes n ON n.curriculum_version_id = c.curriculum_version_id
+  JOIN LATERAL (
+    SELECT s.id FROM app.submissions s
+    WHERE s.cohort_id = p_cohort_id AND s.user_id = p_learner_id AND s.node_key = n.node_key
+    ORDER BY s.created_at DESC LIMIT 1
+  ) sub ON true
+  WHERE c.id = p_cohort_id
+    AND n.quest_key = p_quest_key
+    AND p.cohort_id = p_cohort_id
+    AND p.user_id = p_learner_id
+    AND p.node_key = n.node_key
+    AND p.curriculum_version_id = c.curriculum_version_id
+    AND p.state IN ('available', 'in_progress');
+
+  GET DIAGNOSTICS v_rows_updated = ROW_COUNT;
+  RETURN v_rows_updated > 0;
+END $$;
+
+ALTER FUNCTION app.quest_review_record_mastery(uuid, uuid, text, uuid) OWNER TO nextera_quest_review_owner;
+GRANT EXECUTE ON FUNCTION app.quest_review_record_mastery(uuid, uuid, text, uuid) TO nextera_web;

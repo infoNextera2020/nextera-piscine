@@ -24,8 +24,7 @@ describe('Approved Home motion automatically loops after eligibility', () => {
     expect(html).toContain('01-coding-home-v10-poster-black.png');
     expect(html).toContain('width="600"');
     expect(html).toContain('height="660"');
-    expect(html).toContain('Static artwork');
-    expect(html).toContain('disabled=""');
+    expect(html).not.toContain('<button');
   });
   it('retains exact V10 input bytes and V9 sources with a lossless static fallback', () => {
     const directory = 'apps/web/public/piscine/home-animation/';

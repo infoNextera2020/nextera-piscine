@@ -26,13 +26,13 @@ async function main() {
 
   const sql = postgres(dbUrl, { max: 2, prepare: false });
   try {
-    // 1. Get or pick active cohort
+    // 1. Get or pick active cohort (prefer canonical Week 1 cohort)
     let cohortId = values.cohort;
     if (!cohortId) {
       const cohorts = await sql`
-        SELECT id FROM app.cohorts 
+        SELECT id, name FROM app.cohorts 
         WHERE status = 'active' 
-        ORDER BY starts_at DESC 
+        ORDER BY (CASE WHEN slug = 'week1-trial-cohort-v8' THEN 1 WHEN name ILIKE '%Week 1%' THEN 2 ELSE 3 END), starts_at DESC 
         LIMIT 1
       `;
       if (cohorts.length === 0) {

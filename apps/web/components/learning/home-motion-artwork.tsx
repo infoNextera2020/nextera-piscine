@@ -148,22 +148,6 @@ export function HomeMotionArtwork() {
           </video>
         )}
       </div>
-      <button
-        type="button"
-        className={s.control}
-        onClick={toggle}
-        disabled={!eligible}
-        aria-pressed={wantsPlayback}
-        aria-describedby={statusId}
-      >
-        {!eligible
-          ? 'Static artwork'
-          : failed
-            ? 'Retry artwork'
-            : paused
-              ? 'Play artwork'
-              : 'Pause artwork'}
-      </button>
       <p id={statusId} className={s.srOnly} role="status">
         {failed
           ? 'Animation unavailable. Static artwork is shown.'
