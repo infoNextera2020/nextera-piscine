@@ -75,7 +75,7 @@ export const QUEST_REVIEW_CONTEXT_SQL =
 export const QUEST_REVIEW_AUTHORITY_LOCK_SQL =
   'SELECT app.quest_review_lock_authority($1::uuid,$2::uuid,$3::text,$4::uuid,$5::uuid[]) AS data';
 export const QUEST_REVIEW_DISPATCH_SQL =
-  'SELECT app.quest_review_dispatch($1::uuid,$2::uuid,$3::text,$4::uuid,$5::uuid,$6::text,$7::jsonb) AS data';
+  'SELECT app.quest_review_dispatch($1::uuid,$2::uuid,$3::text,$4::uuid,$5::uuid,$6::text,($7::text)::jsonb) AS data';
 
 export const QUEST_REVIEW_NATIVE_METADATA_CEILING = 1048576;
 const uuidPattern = /^[0-9a-f]{8}(?:-[0-9a-f]{4}){3}-[0-9a-f]{12}$/;
@@ -538,12 +538,6 @@ export function createQuestReviewPostgresRepository(
         const raw = JSON.stringify(copied);
         if (typeof raw !== 'string' || Buffer.byteLength(raw, 'utf8') > cfg.limits.maxMetadataBytes)
           return fail();
-        if (Array.isArray(copied)) {
-          return Object.assign(Object.create(Array.prototype, { toString: { value: () => raw } }), copied);
-        }
-        if (typeof copied === 'object' && copied !== null) {
-          return Object.assign(Object.create(Object.prototype, { toString: { value: () => raw } }), copied);
-        }
         return raw;
       };
       try {

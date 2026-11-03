@@ -89,3 +89,51 @@ BEGIN
 END $$;
 ALTER FUNCTION app._quest_review_authority_current(uuid, uuid, text, uuid) OWNER TO nextera_quest_review_owner;
 REVOKE ALL ON FUNCTION app._quest_review_authority_current(uuid, uuid, text, uuid) FROM PUBLIC, nextera_web, nextera_runner;
+
+CREATE OR REPLACE FUNCTION app.quest_review_reviewer_assignments(reviewer_user_id uuid, cohort_filter uuid)
+RETURNS TABLE (
+  assignment_id uuid,
+  cycle_id uuid,
+  cohort_id uuid,
+  quest_key text,
+  learner_id uuid,
+  kind text,
+  assigned_at_ms bigint,
+  question_ids text[],
+  learner_name text,
+  existing_decision text
+) LANGUAGE sql STABLE SECURITY DEFINER SET search_path=pg_catalog AS $$
+  SELECT a.id, a.cycle_id, a.cohort_id, a.quest_key, a.learner_id, a.kind, a.assigned_at_ms,
+         c.question_ids, u.display_name,
+         r.decision
+  FROM app.quest_review_assignments a
+  JOIN app.quest_review_cycles c ON c.id = a.cycle_id
+  JOIN app.users u ON u.id = a.learner_id
+  LEFT JOIN app.quest_review_receipts r ON r.assignment_id = a.id
+  WHERE a.reviewer_id = reviewer_user_id
+    AND (cohort_filter IS NULL OR a.cohort_id = cohort_filter)
+  ORDER BY a.recorded_at DESC;
+$$;
+ALTER FUNCTION app.quest_review_reviewer_assignments(uuid, uuid) OWNER TO nextera_quest_review_owner;
+GRANT EXECUTE ON FUNCTION app.quest_review_reviewer_assignments(uuid, uuid) TO nextera_web;
+
+CREATE OR REPLACE FUNCTION app.quest_review_learner_cycles(learner_user_id uuid, cohort_filter uuid)
+RETURNS TABLE (
+  cycle_id uuid,
+  cohort_id uuid,
+  quest_key text,
+  question_ids text[],
+  recorded_at timestamptz,
+  peer_receipts_count bigint,
+  mentor_verdict text
+) LANGUAGE sql STABLE SECURITY DEFINER SET search_path=pg_catalog AS $$
+  SELECT c.id, c.cohort_id, c.quest_key, c.question_ids, c.recorded_at,
+         (SELECT count(*) FROM app.quest_review_receipts WHERE cycle_id = c.id AND decision = 'submitted'),
+         (SELECT decision FROM app.quest_review_receipts WHERE cycle_id = c.id AND decision IN ('approved', 'changes_requested') LIMIT 1)
+  FROM app.quest_review_cycles c
+  WHERE c.learner_id = learner_user_id
+    AND (cohort_filter IS NULL OR c.cohort_id = cohort_filter)
+  ORDER BY c.recorded_at DESC;
+$$;
+ALTER FUNCTION app.quest_review_learner_cycles(uuid, uuid) OWNER TO nextera_quest_review_owner;
+GRANT EXECUTE ON FUNCTION app.quest_review_learner_cycles(uuid, uuid) TO nextera_web;

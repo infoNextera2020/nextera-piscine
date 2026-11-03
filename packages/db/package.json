@@ -33,6 +33,7 @@
     "./scored-exam-manual-evidence": "./queries/scored-exam-manual-evidence.ts",
     "./atm-evidence": "./queries/atm-evidence.ts",
     "./quest-review-postgres": "./queries/quest-review-postgres.ts",
+    "./operations/quest-reviews": "./operations/quest-reviews.ts",
     "./operations/scored-exam-trace": "./operations/scored-exam-trace.ts",
     "./scored-exam-trace-reader": "./queries/scored-exam-trace-reader.ts",
     "./scored-exam-debug": "./operations/scored-exam-debug.ts"

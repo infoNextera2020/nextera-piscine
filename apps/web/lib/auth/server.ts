@@ -15,6 +15,7 @@ import { createClient } from '../supabase/server';
 
 let database: ReturnType<typeof createDatabase> | undefined;
 export const getDatabase = () => (database ??= createDatabase()).db;
+export const getDatabaseClient = () => (database ??= createDatabase()).client;
 
 export const requireAuthenticatedUser = cache(async () => {
   const supabase = await createClient();
